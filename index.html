@@ -5,26 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>42 Madrid — Design Playground</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   /* ─── DESIGN TOKENS ─────────────────────────────────── */
   :root {
-    --bg:           #1a1614;
-    --surface:      #242018;
-    --surface-2:    #2e2820;
-    --surface-3:    #38302a;
-    --accent:       #f5a24a;
-    --accent-dim:   #c07830;
-    --success:      #4ade80;
-    --danger:       #f87171;
-    --text-1:       #f5f0e8;
-    --text-2:       #9a8f7e;
-    --text-3:       #5e5448;
-    --border:       rgba(245,162,74,0.12);
+    --bg:           #0a0a0a;
+    --surface:      #171717;
+    --surface-2:    #262626;
+    --surface-3:    #404040;
+    --accent:       #f97316;
+    --accent-dim:   #ea580c;
+    --success:      #22c55e;
+    --danger:       #ef4444;
+    --text-1:       #f5f5f5;
+    --text-2:       #a3a3a3;
+    --text-3:       #737373;
+    --border:       rgba(255,255,255,0.08);
     --radius-sm:    6px;
-    --radius-md:    12px;
-    --radius-lg:    20px;
-    --font-body:    'Outfit', sans-serif;
+    --radius-md:    8px;
+    --radius-lg:    12px;
+    --font-body:    'Manrope', sans-serif;
     --font-mono:    'JetBrains Mono', monospace;
   }
 
@@ -599,78 +599,78 @@
     <div class="control-row">
       <span class="control-label">--bg</span>
       <div class="control-inputs">
-        <input type="color" id="c-bg" value="#1a1614" oninput="setVar('--bg',this.value,'hex-bg')">
-        <input type="text" class="hex-input" id="hex-bg" value="#1a1614" oninput="setVarFromHex('--bg',this.value,'c-bg')">
+        <input type="color" id="c-bg" value="#0a0a0a" oninput="setVar('--bg',this.value,'hex-bg')">
+        <input type="text" class="hex-input" id="hex-bg" value="#0a0a0a" oninput="setVarFromHex('--bg',this.value,'c-bg')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--surface</span>
       <div class="control-inputs">
-        <input type="color" id="c-surface" value="#242018" oninput="setVar('--surface',this.value,'hex-surface')">
-        <input type="text" class="hex-input" id="hex-surface" value="#242018" oninput="setVarFromHex('--surface',this.value,'c-surface')">
+        <input type="color" id="c-surface" value="#171717" oninput="setVar('--surface',this.value,'hex-surface')">
+        <input type="text" class="hex-input" id="hex-surface" value="#171717" oninput="setVarFromHex('--surface',this.value,'c-surface')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--surface-2</span>
       <div class="control-inputs">
-        <input type="color" id="c-surface2" value="#2e2820" oninput="setVar('--surface-2',this.value,'hex-surface2')">
-        <input type="text" class="hex-input" id="hex-surface2" value="#2e2820" oninput="setVarFromHex('--surface-2',this.value,'c-surface2')">
+        <input type="color" id="c-surface2" value="#262626" oninput="setVar('--surface-2',this.value,'hex-surface2')">
+        <input type="text" class="hex-input" id="hex-surface2" value="#262626" oninput="setVarFromHex('--surface-2',this.value,'c-surface2')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--surface-3</span>
       <div class="control-inputs">
-        <input type="color" id="c-surface3" value="#38302a" oninput="setVar('--surface-3',this.value,'hex-surface3')">
-        <input type="text" class="hex-input" id="hex-surface3" value="#38302a" oninput="setVarFromHex('--surface-3',this.value,'c-surface3')">
+        <input type="color" id="c-surface3" value="#404040" oninput="setVar('--surface-3',this.value,'hex-surface3')">
+        <input type="text" class="hex-input" id="hex-surface3" value="#404040" oninput="setVarFromHex('--surface-3',this.value,'c-surface3')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--accent</span>
       <div class="control-inputs">
-        <input type="color" id="c-accent" value="#f5a24a" oninput="setVar('--accent',this.value,'hex-accent')">
-        <input type="text" class="hex-input" id="hex-accent" value="#f5a24a" oninput="setVarFromHex('--accent',this.value,'c-accent')">
+        <input type="color" id="c-accent" value="#f97316" oninput="setVar('--accent',this.value,'hex-accent')">
+        <input type="text" class="hex-input" id="hex-accent" value="#f97316" oninput="setVarFromHex('--accent',this.value,'c-accent')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--accent-dim</span>
       <div class="control-inputs">
-        <input type="color" id="c-accentdim" value="#c07830" oninput="setVar('--accent-dim',this.value,'hex-accentdim')">
-        <input type="text" class="hex-input" id="hex-accentdim" value="#c07830" oninput="setVarFromHex('--accent-dim',this.value,'c-accentdim')">
+        <input type="color" id="c-accentdim" value="#ea580c" oninput="setVar('--accent-dim',this.value,'hex-accentdim')">
+        <input type="text" class="hex-input" id="hex-accentdim" value="#ea580c" oninput="setVarFromHex('--accent-dim',this.value,'c-accentdim')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--success</span>
       <div class="control-inputs">
-        <input type="color" id="c-success" value="#4ade80" oninput="setVar('--success',this.value,'hex-success')">
-        <input type="text" class="hex-input" id="hex-success" value="#4ade80" oninput="setVarFromHex('--success',this.value,'c-success')">
+        <input type="color" id="c-success" value="#22c55e" oninput="setVar('--success',this.value,'hex-success')">
+        <input type="text" class="hex-input" id="hex-success" value="#22c55e" oninput="setVarFromHex('--success',this.value,'c-success')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--danger</span>
       <div class="control-inputs">
-        <input type="color" id="c-danger" value="#f87171" oninput="setVar('--danger',this.value,'hex-danger')">
-        <input type="text" class="hex-input" id="hex-danger" value="#f87171" oninput="setVarFromHex('--danger',this.value,'c-danger')">
+        <input type="color" id="c-danger" value="#ef4444" oninput="setVar('--danger',this.value,'hex-danger')">
+        <input type="text" class="hex-input" id="hex-danger" value="#ef4444" oninput="setVarFromHex('--danger',this.value,'c-danger')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--text-1</span>
       <div class="control-inputs">
-        <input type="color" id="c-text1" value="#f5f0e8" oninput="setVar('--text-1',this.value,'hex-text1')">
-        <input type="text" class="hex-input" id="hex-text1" value="#f5f0e8" oninput="setVarFromHex('--text-1',this.value,'c-text1')">
+        <input type="color" id="c-text1" value="#f5f5f5" oninput="setVar('--text-1',this.value,'hex-text1')">
+        <input type="text" class="hex-input" id="hex-text1" value="#f5f5f5" oninput="setVarFromHex('--text-1',this.value,'c-text1')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--text-2</span>
       <div class="control-inputs">
-        <input type="color" id="c-text2" value="#9a8f7e" oninput="setVar('--text-2',this.value,'hex-text2')">
-        <input type="text" class="hex-input" id="hex-text2" value="#9a8f7e" oninput="setVarFromHex('--text-2',this.value,'c-text2')">
+        <input type="color" id="c-text2" value="#a3a3a3" oninput="setVar('--text-2',this.value,'hex-text2')">
+        <input type="text" class="hex-input" id="hex-text2" value="#a3a3a3" oninput="setVarFromHex('--text-2',this.value,'c-text2')">
       </div>
     </div>
     <div class="control-row">
       <span class="control-label">--text-3</span>
       <div class="control-inputs">
-        <input type="color" id="c-text3" value="#5e5448" oninput="setVar('--text-3',this.value,'hex-text3')">
-        <input type="text" class="hex-input" id="hex-text3" value="#5e5448" oninput="setVarFromHex('--text-3',this.value,'c-text3')">
+        <input type="color" id="c-text3" value="#737373" oninput="setVar('--text-3',this.value,'hex-text3')">
+        <input type="text" class="hex-input" id="hex-text3" value="#737373" oninput="setVarFromHex('--text-3',this.value,'c-text3')">
       </div>
     </div>
   </div>
@@ -688,16 +688,16 @@
     <div class="range-row">
       <div class="range-header">
         <span>--radius-md</span>
-        <span id="val-rmd">12px</span>
+        <span id="val-rmd">8px</span>
       </div>
-      <input type="range" min="0" max="28" value="12" oninput="setRadiusMd(this.value)">
+      <input type="range" min="0" max="28" value="8" oninput="setRadiusMd(this.value)">
     </div>
     <div class="range-row">
       <div class="range-header">
         <span>--radius-lg</span>
-        <span id="val-rlg">20px</span>
+        <span id="val-rlg">12px</span>
       </div>
-      <input type="range" min="0" max="40" value="20" oninput="setRadiusLg(this.value)">
+      <input type="range" min="0" max="40" value="12" oninput="setRadiusLg(this.value)">
     </div>
   </div>
 
@@ -720,10 +720,10 @@
       <span class="control-label">Font family</span>
       <select id="font-picker" onchange="setFont(this.value)"
         style="width:100%; background:var(--surface-3); border:1px solid var(--border); color:var(--text-1); padding:6px 8px; border-radius:var(--radius-sm); font-family:inherit; font-size:12px; outline:none;">
-        <option value="'Outfit', sans-serif">Outfit</option>
+        <option value="'Manrope', sans-serif" selected>Manrope (original)</option>
         <option value="'DM Sans', sans-serif">DM Sans</option>
+        <option value="'Outfit', sans-serif">Outfit</option>
         <option value="'Syne', sans-serif">Syne</option>
-        <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
         <option value="'Barlow', sans-serif">Barlow</option>
         <option value="Georgia, serif">Georgia (serif)</option>
       </select>
@@ -933,20 +933,20 @@
 
 <script>
   const vars = {
-    '--bg':        '#1a1614',
-    '--surface':   '#242018',
-    '--surface-2': '#2e2820',
-    '--surface-3': '#38302a',
-    '--accent':    '#f5a24a',
-    '--accent-dim':'#c07830',
-    '--success':   '#4ade80',
-    '--danger':    '#f87171',
-    '--text-1':    '#f5f0e8',
-    '--text-2':    '#9a8f7e',
-    '--text-3':    '#5e5448',
+    '--bg':        '#0a0a0a',
+    '--surface':   '#171717',
+    '--surface-2': '#262626',
+    '--surface-3': '#404040',
+    '--accent':    '#f97316',
+    '--accent-dim':'#ea580c',
+    '--success':   '#22c55e',
+    '--danger':    '#ef4444',
+    '--text-1':    '#f5f5f5',
+    '--text-2':    '#a3a3a3',
+    '--text-3':    '#737373',
     '--radius-sm': '6px',
-    '--radius-md': '12px',
-    '--radius-lg': '20px',
+    '--radius-md': '8px',
+    '--radius-lg': '12px',
   };
 
   function setVar(varName, value, hexId) {
@@ -979,7 +979,7 @@
   }
 
   const presets = {
-    default: { '--bg':'#1a1614','--surface':'#242018','--surface-2':'#2e2820','--surface-3':'#38302a','--accent':'#f5a24a','--accent-dim':'#c07830','--success':'#4ade80','--danger':'#f87171','--text-1':'#f5f0e8','--text-2':'#9a8f7e','--text-3':'#5e5448' },
+    default: { '--bg':'#0a0a0a','--surface':'#171717','--surface-2':'#262626','--surface-3':'#404040','--accent':'#f97316','--accent-dim':'#ea580c','--success':'#22c55e','--danger':'#ef4444','--text-1':'#f5f5f5','--text-2':'#a3a3a3','--text-3':'#737373' },
     blue:    { '--bg':'#0d1117','--surface':'#161b22','--surface-2':'#1f2937','--surface-3':'#273344','--accent':'#38bdf8','--accent-dim':'#0284c7','--success':'#34d399','--danger':'#f87171','--text-1':'#e6edf3','--text-2':'#7d8590','--text-3':'#3d444d' },
     green:   { '--bg':'#030a04','--surface':'#091409','--surface-2':'#102010','--surface-3':'#183018','--accent':'#22c55e','--accent-dim':'#16a34a','--success':'#86efac','--danger':'#f87171','--text-1':'#dcfce7','--text-2':'#4ade80','--text-3':'#166534' },
     purple:  { '--bg':'#0c0a14','--surface':'#141020','--surface-2':'#1e1830','--surface-3':'#28203e','--accent':'#c084fc','--accent-dim':'#9333ea','--success':'#4ade80','--danger':'#f87171','--text-1':'#faf5ff','--text-2':'#a78bfa','--text-3':'#4c1d95' },
