@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>42 Madrid — Design Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ─── DESIGN TOKENS (mirrors [data-theme=dark] from your build) ─────── */
+  :root {
+    --surface:     #0a0a0a;
+    --surface-2:   #171717;
+    --surface-3:   #262626;
+    --fg:          #f5f5f5;
+    --fg-muted:    #a3a3a3;
+    --fg-subtle:   #737373;
+    --border:      #404040;
+    --border-soft: #262626;
+    --brand:       #f97316;
+    --brand-fg:    #0a0a0a;
+    --brand-soft:  rgba(249, 115, 22, 0.18);
+    --brand-strong:#fb923c;
+    --ok:          #22c55e;
+    --warn:        #eab308;
+    --err:         #ef4444;
+    --info:        #3b82f6;
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    --font-body: 'Manrope', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── RESET ─────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--surface);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.4;
+    display: flex;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: inherit; text-decoration: none; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #525252; }
+
+  /* ─── SIDEBAR ───────────────────────────────────────────────────────── */
+  .sidebar {
+    width: 320px;
+    min-width: 320px;
+    background: var(--surface-2);
+    border-right: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand-mark {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .brand-mark .logo {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--brand);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .brand-mark .logo-sub {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--fg);
+  }
+  .brand-mark .tag {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--fg-subtle);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 6px;
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+  }
+
+  .panel-section {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .panel-section h2 {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+    margin-bottom: 10px;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .control-row:last-child { margin-bottom: 0; }
+  .control-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .control-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    padding: 2px;
+    background: var(--surface-3);
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 3px; }
+  .hex-input {
+    width: 78px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 5px 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .hex-input:focus { border-color: var(--brand); }
+
+  .range-row { margin-bottom: 12px; }
+  .range-row:last-child { margin-bottom: 0; }
+  .range-head {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .range-head .lbl { color: var(--fg-muted); }
+  .range-head .val { color: var(--brand); }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    background: var(--brand);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--surface-2);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    background: var(--brand);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--surface-2);
+  }
+
+  .preset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .preset-btn {
+    background: var(--surface-3);
+    border: 1px solid var(--border-soft);
+    color: var(--fg-muted);
+    padding: 7px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .preset-btn:hover {
+    border-color: var(--brand);
+    color: var(--fg);
+  }
+  .preset-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .export-btn {
+    margin: 14px 20px 20px;
+    padding: 11px;
+    background: var(--brand);
+    color: var(--brand-fg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: filter 0.15s;
+  }
+  .export-btn:hover { filter: brightness(1.1); }
+  .export-btn.success { background: var(--ok); color: #052e16; }
+
+  /* ─── MAIN PREVIEW (mirrors the dashboard) ──────────────────────────── */
+  .main {
+    flex: 1;
+    background: var(--surface);
+    overflow-x: hidden;
+  }
+
+  /* TOP NAV */
+  .topnav {
+    height: 56px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topnav-logo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .topnav-logo .num { color: var(--brand); }
+  .topnav-logo .city { color: var(--fg); }
+  .topnav-links {
+    display: flex;
+    gap: 22px;
+    flex: 1;
+    overflow: hidden;
+  }
+  .topnav-link {
+    font-size: 13px;
+    color: var(--fg-muted);
+    font-weight: 500;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .topnav-link:hover, .topnav-link.active { color: var(--fg); }
+  .topnav-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .topnav-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+    border: 2px solid var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--brand-fg);
+  }
+  .topnav-username {
+    font-size: 13px;
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .topnav-logout {
+    background: transparent;
+    border: none;
+    color: var(--fg-muted);
+    font-size: 13px;
+  }
+  .topnav-logout:hover { color: var(--err); }
+
+  /* DASHBOARD GRID */
+  .dashboard {
+    padding: 20px;
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    gap: 16px;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 920px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* ─── PROFILE CARD ──────────────────────────────────────────────────── */
+  .profile-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border-top: 3px solid var(--brand);
+  }
+  .profile-head {
+    position: relative;
+    padding: 20px 24px 16px;
+    background:
+      radial-gradient(ellipse at top left, var(--brand-soft) 0%, transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(249,115,22,0.06) 0%, transparent 70%);
+  }
+  .profile-row {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    position: relative;
+  }
+  .coalition-watermark {
+    position: absolute;
+    top: 6px; right: 18px;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--brand);
+    opacity: 0.22;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--brand);
+  }
+  .coalition-watermark::before {
+    content: '';
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--brand);
+  }
+  .avatar-big {
+    width: 80px; height: 80px;
+    border-radius: var(--radius-md);
+    background: var(--surface-3);
+    box-shadow: 0 0 0 2px rgba(249,115,22,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--brand);
+    flex-shrink: 0;
+    background-image: linear-gradient(135deg, var(--surface-3), var(--surface));
+  }
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-name {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+  }
+  .profile-fullname {
+    font-size: 13px;
+    color: var(--fg-muted);
+    margin-bottom: 10px;
+  }
+  .badge-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .badge-coalition {
+    background: var(--brand-soft);
+    color: var(--brand);
+    border: 1px solid rgba(249,115,22,0.4);
+  }
+  .badge-coalition .sep {
+    border-left: 1px solid rgba(249,115,22,0.4);
+    padding-left: 6px;
+    margin-left: 1px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+  }
+  .badge-intra {
+    background: var(--surface-3);
+    color: var(--fg-muted);
+    border: 1px solid var(--border-soft);
+    transition: all 0.15s;
+  }
+  .badge-intra:hover {
+    color: var(--brand);
+    border-color: rgba(249,115,22,0.5);
+  }
+
+  .level-section { margin-top: 18px; }
+  .level-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .level-label { color: var(--fg-muted); }
+  .level-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--brand);
+    font-size: 14px;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--surface-3);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--brand);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 10px rgba(249,115,22,0.4);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid var(--border-soft);
+  }
+  .stat-cell {
+    padding: 16px 12px;
+    text-align: center;
+    border-right: 1px solid var(--border-soft);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    line-height: 1.1;
+    margin-bottom: 3px;
+  }
+  .stat-value.brand { color: var(--brand); }
+  .stat-value.ok { color: var(--ok); }
+  .stat-label {
+    font-size: 11px;
+    color: var(--fg-subtle);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── CARDS (Calendar / Evaluations / Skills / Chart) ──────────────── */
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xl);
+    padding: 18px 20px;
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+  .card-body { min-height: 0; }
+
+  /* Toggle */
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-track {
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-soft);
+    position: relative;
+    transition: background 0.2s;
+  }
+  .toggle-track.on { background: var(--brand); border-color: var(--brand); }
+  .toggle-thumb {
+    position: absolute;
+    top: 1px; left: 1px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--fg-muted);
+    transition: all 0.2s;
+  }
+  .toggle-track.on .toggle-thumb { left: 15px; background: var(--brand-fg); }
+  .toggle-label { font-size: 12px; color: var(--fg-muted); }
+
+  .ghost-btn {
+    background: var(--surface-3);
+    border: 1px solid var(--border-soft);
+    color: var(--fg-muted);
+    padding: 5px 11px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .ghost-btn:hover {
+    color: var(--brand);
+    border-color: rgba(249,115,22,0.5);
+  }
+
+  /* CALENDAR EVENTS */
+  .events { display: flex; flex-direction: column; gap: 8px; }
+  .event {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: var(--surface-3);
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .event:hover { border-color: rgba(249,115,22,0.3); }
+  .event-date {
+    text-align: center;
+    flex-shrink: 0;
+    width: 48px;
+  }
+  .event-date .dow {
+    font-size: 9.5px;
+    color: var(--fg-subtle);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .event-date .day {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brand);
+    line-height: 1;
+    margin: 1px 0;
+  }
+  .event-date .mon {
+    font-size: 9.5px;
+    color: var(--fg-subtle);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .event-body { flex: 1; min-width: 0; }
+  .event-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .event-title .name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .event-tag {
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 4px;
+    text-transform: lowercase;
+    font-weight: 600;
+  }
+  .event-tag.conference {
+    background: rgba(59,130,246,0.15);
+    color: var(--info);
+    border: 1px solid rgba(59,130,246,0.3);
+  }
+  .event-tag.exam {
+    background: rgba(239,68,68,0.15);
+    color: var(--err);
+    border: 1px solid rgba(239,68,68,0.3);
+  }
+  .event-desc {
+    font-size: 12px;
+    color: var(--fg-muted);
+    line-height: 1.45;
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+  }
+  .event-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* EVALUATIONS empty */
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 280px;
+    color: var(--fg-subtle);
+    font-size: 13px;
+  }
+
+  /* ─── SKILLS RADAR ──────────────────────────────────────────────────── */
+  .skills-card { display: flex; flex-direction: column; }
+  .seg-control {
+    display: flex;
+    background: var(--surface-3);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    font-size: 11px;
+  }
+  .seg-control button {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    color: var(--fg-muted);
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .seg-control button.active {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  .radar-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
+    min-height: 280px;
+  }
+  .radar-svg { width: 100%; max-width: 340px; height: auto; }
+
+  /* ─── CHART (Evaluation History) ───────────────────────────────────── */
+  .chart-card { display: flex; flex-direction: column; }
+  .chart-wrap {
+    flex: 1;
+    width: 100%;
+    min-height: 260px;
+    position: relative;
+  }
+  .chart-svg { width: 100%; height: 260px; display: block; }
+
+  /* FOOTER */
+  .page-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-soft);
+    color: var(--fg-subtle);
+    font-size: 11px;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .page-footer .accent { color: var(--brand); }
+
+  /* ─── EXPORT MODAL ──────────────────────────────────────────────────── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    width: min(560px, 100%);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-head h3 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--fg-muted);
+    font-size: 18px;
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-close:hover { background: var(--surface-3); color: var(--fg); }
+  .modal-body {
+    padding: 16px 20px 20px;
+    overflow-y: auto;
+  }
+  .css-output {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .css-output .k { color: var(--brand); }
+  .css-output .v { color: var(--fg); }
+  .css-output .c { color: var(--fg-subtle); font-style: italic; }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 9px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border-soft);
+    background: var(--surface-3);
+    color: var(--fg);
+    transition: all 0.15s;
+  }
+  .modal-actions button.primary {
+    background: var(--brand);
+    color: var(--brand-fg);
+    border-color: var(--brand);
+  }
+  .modal-actions button:hover { filter: brightness(1.1); }
+
+  /* COLLAPSE for narrow */
+  @media (max-width: 760px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; min-width: 0; height: auto; max-height: 50vh; position: static; }
+    .topnav-links { display: none; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-cell { border-bottom: 1px solid var(--border-soft); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="brand-mark">
+    <span class="logo">42</span>
+    <span class="logo-sub">Madrid</span>
+    <span class="tag">tokens</span>
+  </div>
+
+  <!-- SURFACES -->
+  <div class="panel-section">
+    <h2>Surfaces</h2>
+    <div id="grp-surface"></div>
+  </div>
+
+  <!-- TEXT -->
+  <div class="panel-section">
+    <h2>Text</h2>
+    <div id="grp-text"></div>
+  </div>
+
+  <!-- BRAND -->
+  <div class="panel-section">
+    <h2>Brand</h2>
+    <div id="grp-brand"></div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="panel-section">
+    <h2>Status</h2>
+    <div id="grp-status"></div>
+  </div>
+
+  <!-- BORDERS -->
+  <div class="panel-section">
+    <h2>Borders</h2>
+    <div id="grp-border"></div>
+  </div>
+
+  <!-- SHAPE -->
+  <div class="panel-section">
+    <h2>Shape</h2>
+    <div class="range-row">
+      <div class="range-head"><span class="lbl">--radius-sm</span><span class="val" id="val-rsm">6px</span></div>
+      <input type="range" min="0" max="14" value="6" oninput="setRadius('--radius-sm', this.value, 'val-rsm')">
+    </div>
+    <div class="range-row">
+      <div class="range-head"><span class="lbl">--radius-md</span><span class="val" id="val-rmd">8px</span></div>
+      <input type="range" min="0" max="20" value="8" oninput="setRadius('--radius-md', this.value, 'val-rmd')">
+    </div>
+    <div class="range-row">
+      <div class="range-head"><span class="lbl">--radius-lg</span><span class="val" id="val-rlg">12px</span></div>
+      <input type="range" min="0" max="28" value="12" oninput="setRadius('--radius-lg', this.value, 'val-rlg')">
+    </div>
+    <div class="range-row">
+      <div class="range-head"><span class="lbl">--radius-xl</span><span class="val" id="val-rxl">16px</span></div>
+      <input type="range" min="0" max="40" value="16" oninput="setRadius('--radius-xl', this.value, 'val-rxl')">
+    </div>
+  </div>
+
+  <!-- LIVE DEMO -->
+  <div class="panel-section">
+    <h2>Live demo</h2>
+    <div class="range-row">
+      <div class="range-head"><span class="lbl">Level progress</span><span class="val" id="val-prog">49%</span></div>
+      <input type="range" min="0" max="100" value="49" oninput="setProgress(this.value)">
+    </div>
+  </div>
+
+  <!-- PRESETS -->
+  <div class="panel-section">
+    <h2>Presets</h2>
+    <div class="preset-grid">
+      <button class="preset-btn" onclick="loadPreset('default')"><span class="preset-dot" style="background:#f97316"></span>42 default</button>
+      <button class="preset-btn" onclick="loadPreset('cyber')"><span class="preset-dot" style="background:#38bdf8"></span>Cyber blue</button>
+      <button class="preset-btn" onclick="loadPreset('terminal')"><span class="preset-dot" style="background:#22c55e"></span>Terminal</button>
+      <button class="preset-btn" onclick="loadPreset('neon')"><span class="preset-dot" style="background:#c084fc"></span>Neon</button>
+      <button class="preset-btn" onclick="loadPreset('crimson')"><span class="preset-dot" style="background:#ef4444"></span>Crimson</button>
+      <button class="preset-btn" onclick="loadPreset('mono')"><span class="preset-dot" style="background:#e5e5e5"></span>Mono</button>
+    </div>
+  </div>
+
+  <button class="export-btn" onclick="openExport()">⬇ Export CSS</button>
+</aside>
+
+<!-- ═══ MAIN PREVIEW ═══════════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- TOP NAV -->
+  <header class="topnav">
+    <div class="topnav-logo">
+      <span class="num">42</span><span class="city">Madrid</span>
+    </div>
+    <nav class="topnav-links">
+      <a class="topnav-link active" href="#">Leaderboard</a>
+      <a class="topnav-link" href="#">Campus</a>
+      <a class="topnav-link" href="#">Latest projects</a>
+      <a class="topnav-link" href="#">Friends</a>
+      <a class="topnav-link" href="#">Exams</a>
+      <a class="topnav-link" href="#">Clusters</a>
+      <a class="topnav-link" href="#">Coalitions</a>
+      <a class="topnav-link" href="#">Calculator</a>
+      <a class="topnav-link" href="#">RNCP</a>
+    </nav>
+    <div class="topnav-user">
+      <div class="topnav-avatar">R</div>
+      <span class="topnav-username">ravazque</span>
+      <button class="topnav-logout">Logout</button>
+    </div>
+  </header>
+
+  <div class="dashboard">
+
+    <!-- PROFILE CARD -->
+    <article class="profile-card">
+      <div class="profile-head">
+        <div class="profile-row">
+          <div class="coalition-watermark"></div>
+          <div class="avatar-big">R</div>
+          <div class="profile-info">
+            <h1 class="profile-name">X-mas hero ravazque <span style="font-size:18px;">🎄</span></h1>
+            <p class="profile-fullname">Raúl Vázquez Pérez</p>
+            <div class="badge-row">
+              <span class="badge badge-coalition">Zefiria <span class="sep">#24</span></span>
+              <a class="badge badge-intra" href="#">42 Intra ↗</a>
+            </div>
+          </div>
+        </div>
+        <div class="level-section">
+          <div class="level-row">
+            <span class="level-label">Level 9 — <span id="prog-pct">49</span>%</span>
+            <span class="level-value" id="level-num">9.49</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="prog-fill" style="width:49%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-cell"><div class="stat-value brand">4,420</div><div class="stat-label">Coalition Points</div></div>
+        <div class="stat-cell"><div class="stat-value">20</div><div class="stat-label">Evaluation points</div></div>
+        <div class="stat-cell"><div class="stat-value">132</div><div class="stat-label">Wallet</div></div>
+        <div class="stat-cell"><div class="stat-value">107</div><div class="stat-label">Evaluations</div></div>
+        <div class="stat-cell"><div class="stat-value ok">Active</div><div class="stat-label">Status</div></div>
+      </div>
+    </article>
+
+    <!-- CALENDAR + EVALUATIONS -->
+    <div class="grid-2">
+      <article class="card">
+        <header class="card-head">
+          <h3 class="card-title">Calendar</h3>
+          <label class="toggle" onclick="this.querySelector('.toggle-track').classList.toggle('on')">
+            <span class="toggle-track on"><span class="toggle-thumb"></span></span>
+            <span class="toggle-label">All events</span>
+          </label>
+        </header>
+        <div class="events">
+          <div class="event">
+            <div class="event-date"><div class="dow">TUE</div><div class="day">12</div><div class="mon">MAY</div></div>
+            <div class="event-body">
+              <div class="event-title">
+                <span class="name">Alumni Fireside Chat #18</span>
+                <span class="event-tag conference">conference</span>
+              </div>
+              <p class="event-desc">On May 12th at 6:00 PM (CET), join us for the 18th edition of the Alumni Fireside Chat — an online conversation (in Eng).</p>
+              <div class="event-meta"><span>🕐 06:00 PM</span><span>⏱ 1h</span><span>📍 Online (Zoom)</span><span>👥 100&nbsp;</span></div>
+            </div>
+          </div>
+          <div class="event">
+            <div class="event-date"><div class="dow">TUE</div><div class="day">12</div><div class="mon">MAY</div></div>
+            <div class="event-body">
+              <div class="event-title">
+                <span class="name">Exam Session Afternoon</span>
+                <span class="event-tag exam">exam</span>
+              </div>
+              <div class="event-meta"><span>🕐 06:00 PM</span><span>⏱ 3h</span><span>📍 Cluster 3</span><span>👥 5</span></div>
+            </div>
+          </div>
+          <div class="event">
+            <div class="event-date"><div class="dow">THU</div><div class="day">14</div><div class="mon">MAY</div></div>
+            <div class="event-body">
+              <div class="event-title">
+                <span class="name">Exam Session Morning</span>
+                <span class="event-tag exam">exam</span>
+              </div>
+              <div class="event-meta"><span>🕐 10:00 AM</span><span>⏱ 3h</span><span>📍 Cluster 3</span><span>👥 2</span></div>
+            </div>
+          </div>
+          <div class="event">
+            <div class="event-date"><div class="dow">MON</div><div class="day">18</div><div class="mon">MAY</div></div>
+            <div class="event-body">
+              <div class="event-title">
+                <span class="name">Exam Session Morning</span>
+                <span class="event-tag exam">exam</span>
+              </div>
+              <div class="event-meta"><span>🕐 10:00 AM</span><span>⏱ 3h</span><span>📍 Cluster 3</span><span>👥 1</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <header class="card-head">
+          <h3 class="card-title">Evaluations</h3>
+          <button class="ghost-btn">Manage Slots</button>
+        </header>
+        <div class="empty-state">No upcoming slots</div>
+      </article>
+    </div>
+
+    <!-- SKILLS + EVAL HISTORY -->
+    <div class="grid-2">
+      <article class="card skills-card">
+        <header class="card-head">
+          <h3 class="card-title" style="text-transform:none;letter-spacing:0;font-size:15px;">Skills</h3>
+          <div class="seg-control">
+            <button class="active">Radar</button>
+            <button>Bars</button>
+          </div>
+        </header>
+        <div class="radar-wrap" id="radar-wrap"></div>
+      </article>
+
+      <article class="card chart-card">
+        <header class="card-head">
+          <h3 class="card-title" style="text-transform:none;letter-spacing:0;font-size:15px;">Evaluation History</h3>
+        </header>
+        <div class="chart-wrap" id="chart-wrap"></div>
+      </article>
+    </div>
+
+    <footer class="page-footer">
+      <span class="accent">42 Madrid</span> · Design playground · Made for <span class="accent">ravazque</span>
+    </footer>
+  </div>
+</main>
+
+<!-- ═══ EXPORT MODAL ═══════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal" onclick="if(event.target===this)closeExport()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Generated tokens</h3>
+      <button class="modal-close" onclick="closeExport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre class="css-output" id="css-out"></pre>
+      <div class="modal-actions">
+        <button onclick="closeExport()">Close</button>
+        <button class="primary" id="copy-btn" onclick="copyCSS()">Copy to clipboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── TOKEN STATE ─────────────────────────────────────────────────────
+  const TOKENS = {
+    surface: [
+      { name: '--surface',     val: '#0a0a0a' },
+      { name: '--surface-2',   val: '#171717' },
+      { name: '--surface-3',   val: '#262626' },
+    ],
+    text: [
+      { name: '--fg',          val: '#f5f5f5' },
+      { name: '--fg-muted',    val: '#a3a3a3' },
+      { name: '--fg-subtle',   val: '#737373' },
+    ],
+    brand: [
+      { name: '--brand',       val: '#f97316' },
+      { name: '--brand-fg',    val: '#0a0a0a' },
+      { name: '--brand-strong',val: '#fb923c' },
+    ],
+    status: [
+      { name: '--ok',          val: '#22c55e' },
+      { name: '--warn',        val: '#eab308' },
+      { name: '--err',         val: '#ef4444' },
+      { name: '--info',        val: '#3b82f6' },
+    ],
+    border: [
+      { name: '--border',      val: '#404040' },
+      { name: '--border-soft', val: '#262626' },
+    ],
+  };
+
+  const RADII = {
+    '--radius-sm': '6px',
+    '--radius-md': '8px',
+    '--radius-lg': '12px',
+    '--radius-xl': '16px',
+  };
+
+  // ─── BUILD CONTROLS ──────────────────────────────────────────────────
+  function buildGroup(groupId, items) {
+    const wrap = document.getElementById(groupId);
+    wrap.innerHTML = '';
+    items.forEach(t => {
+      const id = t.name.replace(/-/g, '');
+      const row = document.createElement('div');
+      row.className = 'control-row';
+      row.innerHTML = `
+        <span class="control-label">${t.name}</span>
+        <div class="control-inputs">
+          <input type="color" id="c${id}" value="${t.val}">
+          <input type="text" class="hex-input" id="h${id}" value="${t.val}">
+        </div>
+      `;
+      wrap.appendChild(row);
+      const cInput = row.querySelector(`#c${id}`);
+      const hInput = row.querySelector(`#h${id}`);
+      cInput.addEventListener('input', () => {
+        hInput.value = cInput.value;
+        applyToken(t.name, cInput.value);
+      });
+      hInput.addEventListener('input', () => {
+        if (/^#[0-9a-fA-F]{6}$/.test(hInput.value)) {
+          cInput.value = hInput.value;
+          applyToken(t.name, hInput.value);
+        }
+      });
+    });
+  }
+
+  function applyToken(name, val) {
+    document.documentElement.style.setProperty(name, val);
+    // Find and update model
+    Object.values(TOKENS).flat().forEach(t => {
+      if (t.name === name) t.val = val;
+    });
+    if (name === '--brand') {
+      // Recompute brand-soft (rgba with alpha 0.18)
+      const rgb = hexToRgb(val);
+      if (rgb) {
+        const soft = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
+        document.documentElement.style.setProperty('--brand-soft', soft);
+      }
+    }
+  }
+
+  function hexToRgb(hex) {
+    const m = /^#([0-9a-fA-F]{6})$/.exec(hex);
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  function setRadius(name, v, displayId) {
+    const px = v + 'px';
+    document.documentElement.style.setProperty(name, px);
+    document.getElementById(displayId).textContent = px;
+    RADII[name] = px;
+  }
+
+  function setProgress(v) {
+    document.getElementById('prog-fill').style.width = v + '%';
+    document.getElementById('prog-pct').textContent = v;
+    document.getElementById('val-prog').textContent = v + '%';
+    document.getElementById('level-num').textContent = '9.' + String(v).padStart(2, '0');
+  }
+
+  // ─── PRESETS ─────────────────────────────────────────────────────────
+  const PRESETS = {
+    default: {
+      '--surface':'#0a0a0a','--surface-2':'#171717','--surface-3':'#262626',
+      '--fg':'#f5f5f5','--fg-muted':'#a3a3a3','--fg-subtle':'#737373',
+      '--brand':'#f97316','--brand-fg':'#0a0a0a','--brand-strong':'#fb923c',
+      '--ok':'#22c55e','--warn':'#eab308','--err':'#ef4444','--info':'#3b82f6',
+      '--border':'#404040','--border-soft':'#262626',
+    },
+    cyber: {
+      '--surface':'#070b14','--surface-2':'#0d1424','--surface-3':'#172033',
+      '--fg':'#e6edf3','--fg-muted':'#7d8590','--fg-subtle':'#4d5562',
+      '--brand':'#38bdf8','--brand-fg':'#040814','--brand-strong':'#7dd3fc',
+      '--ok':'#34d399','--warn':'#fbbf24','--err':'#f87171','--info':'#a78bfa',
+      '--border':'#1f2937','--border-soft':'#111827',
+    },
+    terminal: {
+      '--surface':'#030a04','--surface-2':'#0a1409','--surface-3':'#142010',
+      '--fg':'#dcfce7','--fg-muted':'#86efac','--fg-subtle':'#4ade80',
+      '--brand':'#22c55e','--brand-fg':'#031208','--brand-strong':'#4ade80',
+      '--ok':'#86efac','--warn':'#facc15','--err':'#f87171','--info':'#67e8f9',
+      '--border':'#166534','--border-soft':'#0a3d1d',
+    },
+    neon: {
+      '--surface':'#0c0a14','--surface-2':'#141020','--surface-3':'#1e1830',
+      '--fg':'#faf5ff','--fg-muted':'#c4b5fd','--fg-subtle':'#7c3aed',
+      '--brand':'#c084fc','--brand-fg':'#1a0a2e','--brand-strong':'#d8b4fe',
+      '--ok':'#4ade80','--warn':'#fde047','--err':'#fb7185','--info':'#22d3ee',
+      '--border':'#3b2563','--border-soft':'#1e1530',
+    },
+    crimson: {
+      '--surface':'#0a0606','--surface-2':'#150a0a','--surface-3':'#231010',
+      '--fg':'#fef2f2','--fg-muted':'#fca5a5','--fg-subtle':'#7f1d1d',
+      '--brand':'#ef4444','--brand-fg':'#150404','--brand-strong':'#f87171',
+      '--ok':'#34d399','--warn':'#fbbf24','--err':'#fb7185','--info':'#60a5fa',
+      '--border':'#7f1d1d','--border-soft':'#3f0a0a',
+    },
+    mono: {
+      '--surface':'#0a0a0a','--surface-2':'#1a1a1a','--surface-3':'#2a2a2a',
+      '--fg':'#fafafa','--fg-muted':'#a3a3a3','--fg-subtle':'#525252',
+      '--brand':'#e5e5e5','--brand-fg':'#0a0a0a','--brand-strong':'#fafafa',
+      '--ok':'#84cc16','--warn':'#facc15','--err':'#f87171','--info':'#7dd3fc',
+      '--border':'#404040','--border-soft':'#262626',
+    },
+  };
+
+  function loadPreset(name) {
+    const p = PRESETS[name];
+    if (!p) return;
+    Object.entries(p).forEach(([k, v]) => {
+      applyToken(k, v);
+      const id = k.replace(/-/g, '');
+      const c = document.getElementById('c' + id);
+      const h = document.getElementById('h' + id);
+      if (c) c.value = v;
+      if (h) h.value = v;
+    });
+  }
+
+  // ─── EXPORT ──────────────────────────────────────────────────────────
+  function buildCSS() {
+    const all = [...TOKENS.surface, ...TOKENS.text, ...TOKENS.brand, ...TOKENS.status, ...TOKENS.border];
+    const lines = all.map(t => `  <span class="k">${t.name}</span>: <span class="v">${t.val}</span>;`).join('\n');
+    const radii = Object.entries(RADII).map(([k,v]) => `  <span class="k">${k}</span>: <span class="v">${v}</span>;`).join('\n');
+    return `<span class="c">/* Paste into your [data-theme=dark] block */</span>\n[data-theme=dark] {\n${lines}\n${radii}\n}`;
+  }
+
+  function buildPlainCSS() {
+    const all = [...TOKENS.surface, ...TOKENS.text, ...TOKENS.brand, ...TOKENS.status, ...TOKENS.border];
+    const lines = all.map(t => `  ${t.name}: ${t.val};`).join('\n');
+    const radii = Object.entries(RADII).map(([k,v]) => `  ${k}: ${v};`).join('\n');
+    return `[data-theme=dark] {\n${lines}\n${radii}\n}`;
+  }
+
+  function openExport() {
+    document.getElementById('css-out').innerHTML = buildCSS();
+    document.getElementById('modal').classList.add('show');
+  }
+  function closeExport() {
+    document.getElementById('modal').classList.remove('show');
+  }
+  function copyCSS() {
+    navigator.clipboard.writeText(buildPlainCSS()).then(() => {
+      const btn = document.getElementById('copy-btn');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+  }
+
+  // ─── RADAR CHART ─────────────────────────────────────────────────────
+  const SKILLS = [
+    { name: 'Adapt. & creativity', level: 6.2 },
+    { name: 'Algorithms & AI', level: 5.4 },
+    { name: 'Basics', level: 8.1 },
+    { name: 'Company exp.', level: 0 },
+    { name: 'DB & Data', level: 3.0 },
+    { name: 'Functional prog.', level: 0 },
+    { name: 'Graphics', level: 0 },
+    { name: 'Group & inter.', level: 1.2 },
+    { name: 'Imperative prog.', level: 11.5 },
+    { name: 'Network & sys.', level: 7.4 },
+    { name: 'Object-oriented', level: 0 },
+    { name: 'Organization', level: 0 },
+    { name: 'Parallel comp.', level: 0 },
+    { name: 'Rigor', level: 4.8 },
+    { name: 'Ruby', level: 0 },
+    { name: 'Security', level: 0 },
+    { name: 'Shell', level: 5.6 },
+    { name: 'Tech integration', level: 0 },
+    { name: 'Unix', level: 9.0 },
+    { name: 'Web', level: 4.5 },
+  ];
+
+  function buildRadar() {
+    const wrap = document.getElementById('radar-wrap');
+    const size = 340;
+    const cx = size / 2, cy = size / 2;
+    const R = size * 0.32;
+    const N = SKILLS.length;
+    const MAX = 20;
+
+    let svg = `<svg class="radar-svg" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Concentric polygons (grid)
+    for (let lvl = 1; lvl <= 4; lvl++) {
+      const rr = (R * lvl) / 4;
+      const pts = [];
+      for (let i = 0; i < N; i++) {
+        const a = (Math.PI * 2 * i) / N - Math.PI / 2;
+        pts.push(`${cx + rr * Math.cos(a)},${cy + rr * Math.sin(a)}`);
+      }
+      svg += `<polygon points="${pts.join(' ')}" fill="none" stroke="var(--border)" stroke-width="0.5" />`;
+    }
+
+    // Spokes
+    for (let i = 0; i < N; i++) {
+      const a = (Math.PI * 2 * i) / N - Math.PI / 2;
+      svg += `<line x1="${cx}" y1="${cy}" x2="${cx + R * Math.cos(a)}" y2="${cy + R * Math.sin(a)}" stroke="var(--border)" stroke-width="0.5" />`;
+    }
+
+    // Data polygon
+    const dataPts = SKILLS.map((s, i) => {
+      const a = (Math.PI * 2 * i) / N - Math.PI / 2;
+      const r = (R * s.level) / MAX;
+      return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
+    });
+    svg += `<polygon points="${dataPts.join(' ')}" fill="var(--brand-soft)" stroke="var(--brand)" stroke-width="1.5" stroke-linejoin="round" />`;
+
+    // Labels
+    SKILLS.forEach((s, i) => {
+      const a = (Math.PI * 2 * i) / N - Math.PI / 2;
+      const lx = cx + (R + 12) * Math.cos(a);
+      const ly = cy + (R + 12) * Math.sin(a);
+      const cosA = Math.cos(a), sinA = Math.sin(a);
+      let anchor = 'middle';
+      if (cosA > 0.3) anchor = 'start';
+      else if (cosA < -0.3) anchor = 'end';
+      const dy = sinA > 0.5 ? 8 : sinA < -0.5 ? -2 : 3;
+      svg += `<text x="${lx}" y="${ly + dy}" text-anchor="${anchor}" fill="var(--fg-muted)" font-size="8" font-family="Manrope, sans-serif">${s.name}</text>`;
+    });
+
+    svg += '</svg>';
+    wrap.innerHTML = svg;
+  }
+
+  // ─── LINE CHART (Evaluation History) ─────────────────────────────────
+  function buildChart() {
+    const wrap = document.getElementById('chart-wrap');
+    const w = wrap.clientWidth || 540;
+    const h = 260;
+    const pad = { l: 32, r: 12, t: 12, b: 28 };
+    const iw = w - pad.l - pad.r;
+    const ih = h - pad.t - pad.b;
+
+    // Generate sample data points (mimics the chart's shape)
+    const N = 100;
+    const data = [];
+    let total = 4;
+    const seed = [4, 6, 8, 12, 16, 20, 25, 28, 26, 30, 32, 28, 24, 20, 15, 12, 8, 5, 7, 10, 13, 17, 14, 11, 8, 6, 9, 12, 16, 18, 20, 22, 19, 16, 13, 15, 18, 19];
+    for (let i = 0; i < N; i++) {
+      const idx = i / N * (seed.length - 1);
+      const a = Math.floor(idx), b = Math.min(a + 1, seed.length - 1);
+      const t = idx - a;
+      const v = seed[a] * (1 - t) + seed[b] * t + (Math.sin(i * 0.7) * 1.2);
+      data.push(Math.max(2, v));
+    }
+
+    const yMin = 2, yMax = 32;
+    const xs = i => pad.l + (i / (N - 1)) * iw;
+    const ys = v => pad.t + ih - ((v - yMin) / (yMax - yMin)) * ih;
+
+    let path = '';
+    let area = '';
+    data.forEach((v, i) => {
+      const x = xs(i), y = ys(v);
+      path += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    });
+    area = path + `L${xs(N-1).toFixed(1)},${ys(yMin).toFixed(1)} L${xs(0).toFixed(1)},${ys(yMin).toFixed(1)} Z`;
+
+    let dots = '';
+    for (let i = 0; i < N; i += 3) {
+      const v = data[i];
+      const dv = i > 0 ? v - data[i - 1] : 0;
+      const color = dv > 0.2 ? 'var(--ok)' : dv < -0.2 ? 'var(--err)' : 'var(--fg-subtle)';
+      dots += `<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="2.2" fill="${color}" opacity="0.85" />`;
+    }
+
+    // Y-axis ticks
+    let yAxis = '';
+    [10, 20, 30].forEach(t => {
+      const y = ys(t);
+      yAxis += `<text x="${pad.l - 6}" y="${y + 3}" text-anchor="end" fill="var(--fg-subtle)" font-size="10" font-family="Manrope">${t}</text>`;
+    });
+    // X-axis ticks
+    const months = ['Dec 12', 'Jan 12', 'Feb 12', 'Mar 12', 'Apr 12'];
+    let xAxis = '';
+    months.forEach((m, idx) => {
+      const x = pad.l + (idx / (months.length - 1)) * iw;
+      xAxis += `<text x="${x}" y="${h - 8}" text-anchor="middle" fill="var(--fg-subtle)" font-size="10" font-family="Manrope">${m}</text>`;
+    });
+
+    const svg = `
+      <svg class="chart-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="var(--brand)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        ${yAxis}
+        ${xAxis}
+        <path d="${area}" fill="url(#chart-grad)" />
+        <path d="${path}" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" />
+        ${dots}
+      </svg>
+    `;
+    wrap.innerHTML = svg;
+  }
+
+  // ─── INIT ────────────────────────────────────────────────────────────
+  buildGroup('grp-surface', TOKENS.surface);
+  buildGroup('grp-text', TOKENS.text);
+  buildGroup('grp-brand', TOKENS.brand);
+  buildGroup('grp-status', TOKENS.status);
+  buildGroup('grp-border', TOKENS.border);
+  buildRadar();
+  buildChart();
+
+  // Rebuild chart on resize
+  let resizeT;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(buildChart, 120);
+  });
+
+  // Close modal with Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeExport();
+  });
+</script>
+</body>
+</html>
