@@ -1,0 +1,71 @@
+{
+ "_notes": "Projects of the 42 Madrid Common Core by rank (circle), by API slug. Any other 42cursus project counts as Outer Core; C Piscine projects (cursus 9) are Piscine. Move or add slugs if 42 changes the curriculum.",
+ "common_core": {
+  "rank-00": [
+   "42cursus-libft",
+   "libft"
+  ],
+  "rank-01": [
+   "42cursus-get_next_line",
+   "get_next_line",
+   "42cursus-ft_printf",
+   "ft_printf",
+   "born2beroot"
+  ],
+  "rank-02": [
+   "42cursus-push_swap",
+   "push_swap",
+   "pipex",
+   "42cursus-pipex",
+   "minitalk",
+   "42cursus-minitalk",
+   "so_long",
+   "42cursus-so_long",
+   "fdf",
+   "42cursus-fdf",
+   "42cursus-fract-ol",
+   "fract-ol",
+   "exam-rank-02"
+  ],
+  "rank-03": [
+   "42cursus-philosophers",
+   "philosophers",
+   "42cursus-minishell",
+   "minishell",
+   "exam-rank-03"
+  ],
+  "rank-04": [
+   "cub3d",
+   "42cursus-cub3d",
+   "minirt",
+   "42cursus-minirt",
+   "netpractice",
+   "42cursus-netpractice",
+   "cpp-module-00",
+   "cpp-module-01",
+   "cpp-module-02",
+   "cpp-module-03",
+   "cpp-module-04",
+   "exam-rank-04"
+  ],
+  "rank-05": [
+   "cpp-module-05",
+   "cpp-module-06",
+   "cpp-module-07",
+   "cpp-module-08",
+   "cpp-module-09",
+   "inception",
+   "42cursus-inception",
+   "webserv",
+   "42cursus-webserv",
+   "ft_irc",
+   "42cursus-ft_irc",
+   "exam-rank-05"
+  ],
+  "rank-06": [
+   "ft_transcendence",
+   "42cursus-ft_transcendence",
+   "exam-rank-06"
+  ]
+ }
+}

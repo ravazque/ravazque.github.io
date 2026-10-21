@@ -1,0 +1,190 @@
+import json
+import re
+from pathlib import Path
+
+import pytest
+
+from app.extract import extract
+from app.store import Store
+from app.worker import extract_job
+
+FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "42.json").read_text())
+UID = FIXTURE["user"]["id"]
+
+
+class FakeApi:
+    """Answers like the 42 API from the fixture; records every path."""
+
+    def __init__(self, data=FIXTURE, fail_on=None):
+        self.data, self.calls, self.fail_on = data, [], fail_on
+
+    def _answer(self, path, params):
+        self.calls.append(path)
+        if self.fail_on and self.fail_on in path:
+            from app.api42 import Api42Error
+            raise Api42Error(503, path)
+        d = self.data
+        if path == f"/v2/users/{UID}":
+            return d["user"]
+        if path == f"/v2/users/{UID}/coalitions":
+            return d["coalitions"]
+        if m := re.match(rf"^/v2/users/{UID}/(.+)$", path):
+            key = {"scale_teams/as_corrected": "evals_received", "scale_teams/as_corrector": "evals_given",
+                   "correction_point_historics": "correction_points"}.get(m.group(1), m.group(1))
+            return d[key]
+        if path == "/v2/achievements_users":
+            return d["achievements_users"]
+        if m := re.match(r"^/v2/achievements/(\d+)$", path):
+            return next((a for a in d["achievements"] if a["id"] == int(m.group(1))), {"id": int(m.group(1)), "name": "?"})
+        if path == "/v2/users":
+            ids = {int(x) for x in params["filter[id]"].split(",")}
+            return [p for p in d["people"] if p["id"] in ids]
+        if path == "/v2/projects":
+            return d["projects"]
+        if path == "/v2/cursus/21/cursus_users":
+            return d.get("promo", []) if "range[begin_at]" in params else d["cursus_users_batch"]
+        if path == "/v2/feedbacks":
+            ids = {int(x) for x in params["filter[feedbackable_id]"].split(",")}
+            return [f for f in d.get("feedbacks_api", []) if f["feedbackable_id"] in ids]
+        if path == "/v2/blocs":
+            return d.get("blocs", [])
+        if m := re.match(r"^/v2/users/(\d+)/scale_teams/as_corrector$", path):
+            return d.get("contact_evals", {}).get(int(m.group(1)), [])
+        if path == "/v2/quests_users":
+            return d["quests_batch"]
+        raise AssertionError(f"unexpected path {path}")
+
+    async def get(self, path, **params):
+        return self._answer(path, params)
+
+    async def get_all(self, path, **params):
+        return self._answer(path, params)
+
+
+async def noop(_):
+    return None
+
+
+async def test_extract_light_set_only():
+    api = FakeApi()
+    data = await extract(api, UID, progress=noop)
+    assert data["light"] is True and data["page"] == "web" and set(data["periods"]) == {"piscine", "student", "all"}
+    # feedback comes in batches of 100 (/v2/feedbacks), never one request per evaluation; no one else's sessions
+    assert not any(re.search(r"/scale_teams/\d+/feedbacks", c) or ("/locations" in c and str(UID) not in c) for c in api.calls)
+    assert all(p.get("image") is None for p in data["periods"]["all"]["people"])
+    assert data["periods"]["all"]["profile"]["image"] == "/avatar/me"
+    assert set(data["connections"]) == {"piscine", "student", "all"}
+    assert data["periods"]["all"]["profile"]["coalition"]["color"]
+    stats = data["periods"]["all"]["stats"]
+    assert set(stats) >= {"failed_given", "outstanding_reciprocity", "by_group", "by_hour"} and stats["by_group"]
+    assert all("track" in p and "xp_earned" in p for p in data["periods"]["all"]["projects"])
+
+
+async def test_other_people_keep_only_login_name_and_group():
+    data = await extract(FakeApi(), UID, progress=noop)
+    assert "cdn.intra.42.fr/x.jpg" not in json.dumps(data)
+    for nodes in data["connections"].values():
+        assert all(set(n) == {"login", "name", "group", "received", "given", "last"} for n in nodes)
+    for report in data["periods"].values():
+        assert all(p.get("image") is None and "level" not in p and "staff" in p and not p["staff"] for p in report["people"])
+
+
+async def test_new_student_with_no_history_extracts():
+    empty = {**FIXTURE, **{k: [] for k in ("projects_users", "teams", "evals_received", "evals_given", "locations",
+                                          "correction_points", "events_users", "quests_users", "titles_users", "expertises_users",
+                                          "achievements_users", "people", "projects", "cursus_users_batch", "quests_batch")}}
+    data = await extract(FakeApi(empty), UID, progress=noop)
+    assert data["periods"]["all"]["logtime"]["sessions"] == 0 and data["connections"]["all"] == []
+
+
+@pytest.fixture
+def ctx(redis, settings):
+    return {"store": Store(redis, settings)}
+
+
+async def test_success_saves_report_and_starts_cooldown(ctx):
+    ctx["api"] = FakeApi()
+    await extract_job(ctx, UID)
+    store = ctx["store"]
+    assert (await store.status(UID))["state"] == "done" and (await store.load_report(UID))["light"] is True
+    assert 3590 < await store.refresh_wait(UID) <= 3600
+
+
+async def test_failed_job_keeps_report_and_does_not_start_cooldown(ctx):
+    ctx["api"] = FakeApi(fail_on="scale_teams")
+    store = ctx["store"]
+    await store.save_report(UID, {"old": True})
+    await extract_job(ctx, UID)
+    s = await store.status(UID)
+    assert s["state"] == "failed" and s["message"] == "status.failed"
+    assert await store.load_report(UID) == {"old": True} and await store.refresh_wait(UID) == 0
+    assert await store.try_lock(UID)  # the lock was released
+
+
+async def test_progress_ends_at_exactly_one():
+    seen = []
+    async def record(f):
+        seen.append(f)
+    await extract(FakeApi(), UID, progress=record)
+    assert max(seen) == 1 and seen[-1] == 1 and seen == sorted(seen)
+
+
+async def test_an_upcoming_evaluation_with_a_hidden_corrector_does_not_break_the_extraction():
+    upcoming = {**FIXTURE["evals_received"][0], "id": 1, "corrector": "invisible", "final_mark": None, "flag": None}
+    data = await extract(FakeApi({**FIXTURE, "evals_received": FIXTURE["evals_received"] + [upcoming]}), UID, progress=noop)
+    assert data["periods"]["all"]["summary"]["received"] == (await extract(FakeApi(), UID, progress=noop))["periods"]["all"]["summary"]["received"]
+
+
+async def test_a_profile_that_lost_access_is_refused_and_its_data_removed(ctx):
+    store = ctx["store"]
+    await store.save_report(UID, {"page": "web"})
+    user = {**FIXTURE["user"], "cursus_users": [{**c, "end_at": "2026-01-01T00:00:00.000Z", "grade": None}
+                                                 if c.get("cursus_id") == 21 else c for c in FIXTURE["user"]["cursus_users"]]}
+    api = FakeApi({**FIXTURE, "user": user})
+    ctx["api"] = api
+    await extract_job(ctx, UID)
+    status = await store.status(UID)
+    assert status["state"] == "refused" and status["message"] == "blackholed"
+    assert await store.load_report(UID) is None
+    assert len(api.calls) == 1  # refused right after reading the profile: no budget spent on the rest
+
+
+
+def paid_fixture():
+    first = FIXTURE["evals_received"][0]
+    coalition_id = FIXTURE["coalitions"][0]["id"]
+    people = {p["login"]: p["id"] for p in FIXTURE["people"]}
+    a, b = sorted(people)[:2]
+    return {**FIXTURE,
+            "feedbacks_api": [{"feedbackable_id": first["id"], "feedbackable_type": "ScaleTeam", "rating": 4, "comment": "Kind and precise.",
+                               "created_at": first["begin_at"], "user": {"id": 1, "login": "ravazque", "image": "x"},
+                               "feedback_details": [{"kind": "nice", "rate": 4}, {"kind": "punctuality", "rate": 3}]},
+                              {"feedbackable_id": first["id"], "feedbackable_type": "ScaleTeam", "rating": 1, "comment": "A teammate's opinion.",
+                               "created_at": first["begin_at"], "user": {"id": 2, "login": "peer07"}, "feedback_details": []}],
+            "blocs": [{"coalitions": [{"id": coalition_id, "name": "Mine", "color": "#E39F0B", "score": 500},
+                                      {"id": -1, "name": "Other", "color": "#123456", "score": 900}]}],
+            "promo": [{"level": 3.0, "user": {"login": "someone"}}, {"level": 9.5, "user": {"login": "other"}},
+                      {"level": 16.9, "user": {"login": "ravazque"}}],
+            "contact_evals": {people[a]: [{"correcteds": [{"login": b}]}]}}
+
+
+async def test_paid_extras_are_cheap_bounded_and_keep_no_names():
+    api = FakeApi(paid_fixture())
+    data = await extract(api, UID, progress=noop)
+    assert data["default_period"] == "student"
+    assert [c["name"] for c in data["coalitions"]] == ["Other", "Mine"] and data["coalitions"][1]["mine"]
+    assert data["promo"]["size"] == 3 and data["promo"]["rank"] == 1
+    assert "login" not in json.dumps(data["promo"]) and "someone" not in json.dumps(data)
+    assert data["network"]["nodes"][0] == {"login": "ravazque", "group": "me"}
+    assert any(l["count"] == 1 for l in data["network"]["links"])
+    assert sum(1 for c in api.calls if c.endswith("/scale_teams/as_corrector") and f"/{UID}/" not in c) <= 30
+    assert sum(1 for c in api.calls if c == "/v2/feedbacks") <= 5
+
+
+async def test_feedback_details_reach_the_evaluations():
+    data = await extract(FakeApi(paid_fixture()), UID, progress=noop)
+    first = FIXTURE["evals_received"][0]["id"]
+    ev = next(e for e in data["periods"]["all"]["received"] if e["id"] == first)
+    assert ev["feedbacks"] and ev["feedbacks"][0]["nice"] == 4 and ev["feedbacks"][0]["comment"] == "Kind and precise."
+    assert "image" not in json.dumps(ev["feedbacks"])
+    assert [f["by"] for f in ev["feedbacks"]] == ["ravazque"]  # a teammate's feedback on the corrector is not ours to keep

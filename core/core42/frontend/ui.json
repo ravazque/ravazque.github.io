@@ -1,0 +1,767 @@
+{
+ "_notes": {
+  "how": "Edit any value and reload the page. Colours accept #hex, rgb()/rgba(), transparent or a reference like \"@ink\" (another variable). Sizes accept px, rem, em, vh, vw, % or ch.",
+  "breakpoints": "Minimum viewport width in px where each step starts. The rail turns into a top header (and the section nav into a bar) below the 'desktop' width.",
+  "components": "Values directly inside a component apply from 0 px up; an object named after a breakpoint (\"desktop\", \"large\"…) overrides them from that width up.",
+  "panels": "Each panel is a block inside a section, on a 12-column grid: span (1-12), order, height of its chart, hidden.",
+  "positions": "rail.side: left | right. mobile-nav.position: bottom | top."
+ },
+ "breakpoints": {
+  "mobile": 0,
+  "tablet": 600,
+  "desktop": 960,
+  "large": 1280,
+  "wide": 1600
+ },
+ "tokens": {
+  "light": {
+   "ground": "#f4f5f7",
+   "surface": "#ffffff",
+   "sunken": "#ebedf1",
+   "ink": "#1e2430",
+   "text-2": "#4a5262",
+   "muted": "#5f6878",
+   "rule": "#dde1e7",
+   "rule-strong": "#1e2430",
+   "control": "#7d8696",
+   "amber": "#00babc",
+   "amber-data": "#009c9e",
+   "amber-ink": "#007778",
+   "amber-rail": "#00babc",
+   "on-amber": "#1e2430",
+   "ramp-lo": "#c7f0f0",
+   "ramp-hi": "#009c9e",
+   "slate": "#3f5a73",
+   "slate-lo": "#dfe6ee",
+   "good": "#237a4b",
+   "critical": "#c2402f",
+   "neutral": "#7d8696",
+   "seat-empty": "#dde1e7",
+   "focus": "#1e2430",
+   "rail": "#1e2430",
+   "rail-2": "#2a3242",
+   "rail-text": "#f4f5f7",
+   "rail-muted": "#9aa3b2",
+   "rail-rule": "#3a4253",
+   "edge-shadow": "rgba(30, 36, 48, .18)",
+   "tip-shadow": "0 6px 18px rgba(0, 0, 0, .2)",
+   "list-shadow": "0 10px 28px rgba(30, 36, 48, .18)",
+   "mask": "#000000",
+   "bubble-fill": "38%",
+   "rail-accent": "#00babc",
+   "on-rail-accent": "#1e2430"
+  },
+  "dark": {
+   "ground": "#12161d",
+   "surface": "#1a1f28",
+   "sunken": "#222833",
+   "ink": "#eef0f3",
+   "text-2": "#b8bfcb",
+   "muted": "#949caa",
+   "rule": "#2a313d",
+   "rule-strong": "#c9ced6",
+   "control": "#7a8394",
+   "amber-data": "#00babc",
+   "amber-ink": "#00babc",
+   "ramp-lo": "#0d474d",
+   "ramp-hi": "#00babc",
+   "slate": "#8fb0cf",
+   "slate-lo": "#25313e",
+   "good": "#4cc38a",
+   "critical": "#f0715e",
+   "neutral": "#7a8394",
+   "seat-empty": "#262d38",
+   "focus": "@amber-ink",
+   "rail": "#0b0e13",
+   "rail-2": "#1a1f28",
+   "rail-rule": "#222833",
+   "edge-shadow": "rgba(0, 0, 0, .55)",
+   "list-shadow": "0 10px 28px rgba(0, 0, 0, .5)",
+   "bubble-fill": "52%",
+   "amber": "#00babc",
+   "on-amber": "#1e2430",
+   "amber-rail": "#00babc",
+   "rail-accent": "#00babc",
+   "on-rail-accent": "#1e2430"
+  },
+  "type": {
+   "font-display": "\"Barlow Semi Condensed\", \"Barlow\", system-ui, sans-serif",
+   "font-text": "\"Barlow\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+   "size-body": "16px",
+   "line-body": "1.5"
+  },
+  "radius": {
+   "s": "2px",
+   "m": "4px",
+   "l": "6px",
+   "pill": "999px"
+  },
+  "motion": {
+   "fast": ".15s",
+   "settle": ".22s",
+   "entrance": ".5s",
+   "ease": "cubic-bezier(.16, 1, .3, 1)"
+  }
+ },
+ "components": {
+  "page": {
+   "padding-x": "16px",
+   "padding-bottom": "48px",
+   "max-width": "1360px",
+   "desktop": {
+    "padding-x": "48px",
+    "padding-bottom": "64px"
+   }
+  },
+  "section": {
+   "padding-top": "44px",
+   "h2-size": "26px",
+   "h2-rule": "3px",
+   "h2-gap": "16px",
+   "h3-size": "20px",
+   "lede-size": "17px",
+   "lede-gap": "28px",
+   "note-size": "14px",
+   "grid-gap-y": "40px",
+   "grid-gap-x": "12px",
+   "grid-top": "36px",
+   "desktop": {
+    "padding-top": "56px",
+    "h2-size": "30px",
+    "grid-gap-x": "48px"
+   }
+  },
+  "rail": {
+   "width": "340px",
+   "side": "left",
+   "padding-x": "16px",
+   "padding-top": "22px",
+   "padding-bottom": "22px",
+   "gap": "18px",
+   "avatar-size": "52px",
+   "name-size": "22px",
+   "meta-size": "15px",
+   "desktop": {
+    "padding-x": "24px",
+    "padding-top": "28px",
+    "padding-bottom": "20px",
+    "gap": "26px"
+   }
+  },
+  "figure": {
+   "size": "64px",
+   "stat-size": "24px",
+   "label-size": "15px",
+   "desktop": {
+    "size": "80px"
+   }
+  },
+  "mobile-nav": {
+   "position": "bottom",
+   "height": "60px",
+   "padding-x": "8px",
+   "padding-y": "6px",
+   "link-padding-x": "12px",
+   "link-padding-y": "10px",
+   "border-width": "1px"
+  },
+  "nav": {
+   "link-padding-x": "10px",
+   "link-padding-y": "7px",
+   "font-size": "15px",
+   "radius": "@radius-m"
+  },
+  "period-switch": {
+   "height": "44px",
+   "padding-x": "10px",
+   "padding-y": "8px",
+   "gap": "6px",
+   "radius": "4px",
+   "border-width": "1px",
+   "font-size": "14px",
+   "value-size": "14px",
+   "fg": "@rail-text",
+   "bg": "transparent",
+   "border": "@rail-rule",
+   "border-hover": "@rail-muted",
+   "bg-active": "@rail-accent",
+   "fg-active": "@on-rail-accent",
+   "desktop": {
+    "padding-x": "14px",
+    "padding-y": "10px",
+    "font-size": "16px",
+    "value-size": "15px"
+   }
+  },
+  "rail-segmented": {
+   "height": "34px",
+   "padding": "3px",
+   "gap": "3px",
+   "radius": "5px",
+   "item-radius": "3px",
+   "padding-x": "10px",
+   "font-size": "14px",
+   "border": "@rail-rule",
+   "fg": "@rail-muted",
+   "fg-hover": "@rail-text",
+   "bg-active": "@rail-text",
+   "fg-active": "@rail"
+  },
+  "segmented": {
+   "height": "38px",
+   "padding-x": "14px",
+   "border-width": "2px",
+   "radius": "4px",
+   "font-size": "15px",
+   "border": "@rule-strong",
+   "fg": "@text-2",
+   "fg-hover": "@ink",
+   "bg-active": "@rule-strong",
+   "fg-active": "@ground"
+  },
+  "button": {
+   "height": "44px",
+   "padding-x": "18px",
+   "radius": "4px",
+   "border-width": "2px",
+   "font-size": "16px",
+   "disabled-opacity": ".45",
+   "primary": {
+    "bg": "@amber",
+    "fg": "@on-amber",
+    "border": "@amber",
+    "border-hover": "@ink"
+   },
+   "secondary": {
+    "bg": "transparent",
+    "fg": "@ink",
+    "border": "@rule-strong",
+    "bg-hover": "@sunken"
+   },
+   "ghost": {
+    "bg": "transparent",
+    "fg": "@text-2",
+    "border": "transparent",
+    "fg-hover": "@ink",
+    "bg-hover": "@sunken"
+   },
+   "rail": {
+    "bg": "transparent",
+    "fg": "@rail-text",
+    "border": "@rail-rule",
+    "border-hover": "@rail-muted"
+   }
+  },
+  "switch": {
+   "track-width": "40px",
+   "track-height": "22px",
+   "knob-size": "16px",
+   "gap": "10px",
+   "font-size": "15px",
+   "on-bg": "@amber-data",
+   "off-bg": "@control",
+   "knob": "@surface"
+  },
+  "input": {
+   "height": "40px",
+   "padding-x": "12px",
+   "radius": "4px",
+   "border-width": "1px",
+   "border": "@control",
+   "border-focus": "@focus",
+   "bg": "@surface",
+   "fg": "@ink",
+   "font-size": "15px",
+   "min-width": "0",
+   "placeholder": "@muted",
+   "caret": "@amber-data",
+   "label-size": "14px",
+   "desktop": {
+    "min-width": "220px"
+   }
+  },
+  "select": {
+   "list-max-height": "280px",
+   "option-padding-y": "8px",
+   "option-padding-x": "12px",
+   "list-bg": "@surface",
+   "list-border": "@rule",
+   "list-shadow": "@list-shadow",
+   "option-bg-active": "@sunken",
+   "option-fg-selected": "@amber-ink",
+   "arrow-size": "5px"
+  },
+  "sort-header": {
+   "font-size": "14px",
+   "padding": "10px",
+   "fg": "@text-2",
+   "fg-hover": "@ink",
+   "fg-active": "@ink",
+   "arrow-size": "5px"
+  },
+  "table": {
+   "font-size": "15px",
+   "cell-padding-y": "9px",
+   "cell-padding-x": "10px",
+   "head-rule": "2px",
+   "radius": "6px",
+   "max-height": "640px",
+   "tall-max-height": "900px",
+   "bg": "@surface",
+   "border": "@rule",
+   "row-hover": "@sunken"
+  },
+  "chip": {
+   "padding-x": "6px",
+   "radius": "3px",
+   "font-size": "14px"
+  },
+  "badge": {
+   "padding-x": "8px",
+   "padding-y": "1px",
+   "radius": "999px",
+   "font-size": "13px"
+  },
+  "tooltip": {
+   "max-width": "320px",
+   "padding-x": "10px",
+   "padding-y": "7px",
+   "radius": "4px",
+   "font-size": "14px",
+   "bg": "@ink",
+   "fg": "@ground",
+   "shadow": "@tip-shadow"
+  },
+  "disclosure": {
+   "marker-size": "5px",
+   "gap": "6px",
+   "fg": "@text-2"
+  },
+  "scrollbar": {
+   "size": "10px",
+   "thumb": "@control",
+   "thumb-hover": "@text-2",
+   "track": "transparent",
+   "radius": "999px"
+  },
+  "focus": {
+   "width": "2px",
+   "offset": "2px"
+  },
+  "seat": {
+   "height": "18px",
+   "radius": "3px",
+   "gap": "4px",
+   "label-width": "32px",
+   "ring": "1px",
+   "top-ring": "2px"
+  },
+  "cell": {
+   "radius": "2px",
+   "gap": "3px"
+  },
+  "cluster": {
+   "label-size": "38px",
+   "rule": "3px",
+   "gap-x": "44px",
+   "gap-y": "28px",
+   "min-width": "210px"
+  },
+  "lead": {
+   "size": "44px",
+   "first-size": "64px",
+   "rule": "3px",
+   "desktop": {
+    "size": "56px",
+    "first-size": "88px"
+   }
+  },
+  "compare": {
+   "size": "44px",
+   "rule": "3px",
+   "desktop": {
+    "size": "52px"
+   }
+  },
+  "legend": {
+   "swatch": "12px",
+   "font-size": "14px"
+  },
+  "bubble": {
+   "stroke-width": "1.5px",
+   "stroke": "@ground",
+   "label-size": "13px",
+   "link": "@rule-strong",
+   "link-width": "1.5px",
+   "focus-width": "3px"
+  },
+  "site": {
+   "max-width": "72ch",
+   "padding-x": "16px",
+   "title-size": "44px",
+   "h1-size": "34px",
+   "h2-size": "20px",
+   "mark-size": "150px",
+   "head-mark-size": "26px",
+   "plan-width": "100%",
+   "desktop": {
+    "padding-x": "48px",
+    "title-size": "76px",
+    "h1-size": "44px",
+    "mark-size": "300px",
+    "plan-width": "42%"
+   }
+  },
+  "consent": {
+   "box": "20px",
+   "radius": "4px",
+   "border": "@rule-strong",
+   "on-bg": "@amber-data",
+   "mark": "@surface",
+   "font-size": "15px"
+  },
+  "lang": {
+   "height": "32px",
+   "padding-x": "10px",
+   "radius": "4px",
+   "font-size": "13px",
+   "border": "@rule-strong",
+   "fg": "@text-2",
+   "bg-active": "@rule-strong",
+   "fg-active": "@ground"
+  },
+  "kpi": {
+   "size": "40px",
+   "rule": "3px",
+   "desktop": {
+    "size": "52px",
+    "lead-size": "72px"
+   },
+   "lead-size": "64px"
+  },
+  "boot": {
+   "bar-height": "8px",
+   "max-width": "520px"
+  },
+  "topbar": {
+   "height": "56px",
+   "padding-x": "16px",
+   "brand-size": "19px",
+   "desktop": {
+    "height": "60px",
+    "padding-x": "24px"
+   }
+  },
+  "island": {
+   "bg": "@surface",
+   "border": "@rule",
+   "radius": "8px",
+   "padding": "16px",
+   "desktop": {
+    "padding": "22px"
+   }
+  },
+  "settings": {
+   "width": "300px",
+   "radius": "8px",
+   "padding": "16px"
+  }
+ },
+ "panels": {
+  "seat-plan": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "hours-month": {
+   "mobile": {
+    "span": 12,
+    "height": "200px"
+   }
+  },
+  "calendar": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "heat-presence": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "table-seats": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "table-sessions": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "timeline": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "correctors": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "table-people": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "where-plan": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "where-clusters": {
+   "mobile": {
+    "span": 12,
+    "height": "200px"
+   }
+  },
+  "table-log": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "connections": {
+   "mobile": {
+    "span": 12,
+    "height": "420px"
+   },
+   "desktop": {
+    "height": "560px"
+   }
+  },
+  "retries": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "cum-retries": {
+   "mobile": {
+    "span": 12,
+    "height": "380px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "recv-monthly": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "marks": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "cum-evals": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "cum-out": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "heat-recv": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "heat-given": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "duration": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "lead": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "given-monthly": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "given-projects": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "table-feedback": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "low-feedback": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "points": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "table-reasons": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "skills": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "achievements": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "events": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "misc": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "kpis": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "projects-table": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "fail-rates": {
+   "mobile": {
+    "span": 12
+   }
+  },
+  "by-group": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "by-hour": {
+   "mobile": {
+    "span": 12,
+    "height": "280px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "network": {
+   "mobile": {
+    "span": 12,
+    "height": "480px"
+   },
+   "desktop": {
+    "height": "640px"
+   }
+  },
+  "coalitions": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 5
+   }
+  },
+  "promo": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 7
+   }
+  }
+ }
+}
