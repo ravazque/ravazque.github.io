@@ -8,6 +8,9 @@ updates:
     directory: /web
     schedule: {interval: weekly}
     groups: {python: {patterns: ["*"]}}
+    ignore:
+      - dependency-name: redis  # arq requires redis<6
+        versions: [">=6"]
   - package-ecosystem: docker
     directory: /web
     schedule: {interval: weekly}
