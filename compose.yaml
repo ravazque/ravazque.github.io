@@ -12,7 +12,7 @@ x-app: &app
 
 services:
   caddy:
-    image: caddy:2.8
+    image: caddy:2.11
     ports: ["80:80", "443:443"]
     volumes:
       - ./web/Caddyfile.local:/etc/caddy/Caddyfile:ro
@@ -26,7 +26,7 @@ services:
     <<: *app
     command: ["arq", "app.worker.WorkerSettings"]
   redis:
-    image: redis:7.4-alpine
+    image: redis:8.10-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes: ["redis_data:/data"]
     restart: unless-stopped
