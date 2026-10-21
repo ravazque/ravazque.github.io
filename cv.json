@@ -1,0 +1,109 @@
+{
+ "_note": "The CV on ravazque.github.io, edited by hand (EN and ES). The 42 part comes from data/42.json, published from ravazque.top. This file is public: never add a phone number, a private email or an address.",
+ "headline": {
+  "en": "Data Engineer & Software Developer",
+  "es": "Data Engineer y desarrollador de software"
+ },
+ "about": {
+  "en": "Software developer trained at 42 Madrid, now specialising in data engineering. I design relational databases, process data with Python and run it on containerised, automated infrastructure (Docker, Kubernetes, CI/CD). I have co-built two freelance products in small teams, from the database to the screen.",
+  "es": "Desarrollador de software formado en 42 Madrid y especializándome en ingeniería de datos. Diseño bases de datos relacionales, proceso datos con Python y los pongo en marcha sobre infraestructura en contenedores y automatizada (Docker, Kubernetes, CI/CD). He co-desarrollado dos productos freelance en equipos pequeños, de la base de datos a la pantalla."
+ },
+ "now": {
+  "en": "Working toward the RNCP Level 7 (master's level) in database architecture and data at 42.",
+  "es": "Preparando el RNCP nivel 7 (nivel máster) en arquitectura de bases de datos y data en 42."
+ },
+ "experience": [
+  {
+   "year": "2026",
+   "role": {"en": "Full-stack web developer", "es": "Desarrollador web full-stack"},
+   "kind": {"en": "Freelance", "es": "Freelance"},
+   "text": {
+    "en": "Designed the database (PostgreSQL) of a live e-learning platform — multilingual course catalogue, single and bundled course sales, live-class scheduling and a CMS the client manages — and built its backend with payments (Stripe) and sign-in.",
+    "es": "Diseñé la base de datos (PostgreSQL) de una plataforma de e-learning en producción —catálogo multilingüe, venta de cursos sueltos y en packs, agenda de clases en directo y un CMS que gestiona el cliente— y construí su backend con pagos (Stripe) e inicio de sesión."
+   },
+   "stack": ["PostgreSQL", "Prisma", "Nuxt", "TypeScript", "Stripe"]
+  },
+  {
+   "year": "2025",
+   "role": {"en": "Application developer", "es": "Desarrollador de aplicaciones"},
+   "kind": {"en": "Freelance", "es": "Freelance"},
+   "text": {
+    "en": "Built from scratch a desktop app for a psychology practice: two decks of cards that can be edited, shuffled and moved freely. Delivered in a small team, for a real client and their constraints.",
+    "es": "Creé desde cero una aplicación de escritorio para una consulta de psicología: dos mazos de cartas que se editan, barajan y mueven libremente. Entregada en un equipo pequeño, para un cliente real y sus condiciones."
+   },
+   "stack": ["JavaScript", "React", "Electron", "CSS"]
+  }
+ ],
+ "projects": [
+  {
+   "name": "Inception of Things",
+   "year": "2026",
+   "text": {
+    "en": "Set up a small Kubernetes cluster from scratch and automated its deployments: every change pushed to GitHub reaches the running apps on its own.",
+    "es": "Monté desde cero un pequeño clúster de Kubernetes y automaticé sus despliegues: cada cambio subido a GitHub llega solo a las aplicaciones en marcha."
+   },
+   "keywords": ["Kubernetes (K3s, K3d)", "Docker", "Vagrant", "Argo CD", "GitOps", "CI/CD"]
+  },
+  {
+   "name": "DSLR",
+   "year": "2026",
+   "text": {
+    "en": "Data science from first principles: explored and charted a dataset, then wrote a logistic-regression classifier without machine-learning libraries to sort Hogwarts students into their houses.",
+    "es": "Ciencia de datos desde cero: exploré y representé un conjunto de datos y programé, sin librerías de machine learning, un clasificador de regresión logística que reparte a los alumnos de Hogwarts en sus casas."
+   },
+   "keywords": ["Python", "Data analysis", "Data visualisation", "Logistic regression", "Gradient descent"]
+  },
+  {
+   "name": "Leaffliction",
+   "year": "2026",
+   "text": {
+    "en": "Image data pipeline for leaf-disease recognition: analysed and balanced the dataset, augmented and transformed the images, and trained a deep-learning classifier above 90% validation accuracy.",
+    "es": "Pipeline de datos de imagen para reconocer enfermedades en hojas: analicé y equilibré el conjunto de datos, aumenté y transformé las imágenes y entrené un clasificador de deep learning por encima del 90% de acierto en validación."
+   },
+   "keywords": ["Python", "Computer vision", "Data augmentation", "Deep learning", "NumPy", "PlantCV"]
+  },
+  {
+   "name": "Learn2Slither",
+   "year": "2026",
+   "text": {
+    "en": "Taught an agent to play Snake by trial and error, seeing only four directions from its head, and compared how fast it learned across training sizes.",
+    "es": "Enseñé a un agente a jugar a Snake a base de prueba y error, viendo solo cuatro direcciones desde su cabeza, y comparé lo rápido que aprendía según el tamaño del entrenamiento."
+   },
+   "keywords": ["Python", "Reinforcement learning", "Q-learning", "NumPy"]
+  }
+ ],
+ "education": [
+  {
+   "years": "2024 – 2028",
+   "where": "42 Network",
+   "title": {
+    "en": "Software Engineering and Master's in Data — RNCP Level 7, database architecture and data (ongoing)",
+    "es": "Ingeniería de software y máster en datos — RNCP nivel 7, arquitectura de bases de datos y data (en curso)"
+   },
+   "text": {
+    "en": "Project-based, peer-to-peer school: no lectures or teachers; you learn by building and by evaluating each other.",
+    "es": "Escuela por proyectos y entre iguales: sin clases ni profesores; se aprende construyendo y evaluándose unos a otros."
+   }
+  },
+  {
+   "years": "2023 – 2026",
+   "where": "IES Lope de Vega",
+   "title": {"en": "Science and Technology Baccalaureate", "es": "Bachillerato de Ciencias y Tecnología"}
+  }
+ ],
+ "languages": [
+  {"name": {"en": "Spanish", "es": "Español"}, "level": {"en": "native", "es": "nativo"}},
+  {"name": {"en": "English", "es": "Inglés"}, "level": {"en": "B2", "es": "B2"}}
+ ],
+ "stack": [
+  {"group": {"en": "Languages", "es": "Lenguajes"}, "items": ["SQL", "Python", "C / C++", "TypeScript", "JavaScript", "Bash"]},
+  {"group": {"en": "Data", "es": "Datos"}, "items": ["PostgreSQL", "Relational data modelling", "pandas", "NumPy"]},
+  {"group": {"en": "Infrastructure & DevOps", "es": "Infraestructura y DevOps"}, "items": ["Docker", "Kubernetes (K3s, K3d)", "Argo CD", "GitOps", "CI/CD", "Vagrant"]},
+  {"group": {"en": "Tools", "es": "Herramientas"}, "items": ["Linux", "Git", "Clean Code", "SOLID"]}
+ ],
+ "links": [
+  {"label": "GitHub", "icon": "github", "url": "https://github.com/ravazque"},
+  {"label": "LinkedIn", "icon": "linkedin", "url": "https://www.linkedin.com/in/ra%C3%BAl-v%C3%A1zquez-p%C3%A9rez-1a9b89382"},
+  {"label": "42 intra", "icon": "intra", "url": "https://profile.intra.42.fr/users/ravazque"}
+ ]
+}
