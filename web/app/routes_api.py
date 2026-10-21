@@ -49,33 +49,38 @@ async def delete(request: Request, user: dict = Depends(current_user)):
     return response
 
 
-@router.post("/api/me/publish")
-async def publish(request: Request, user: dict = Depends(current_user)):
+async def run_publish(request: Request, user: dict) -> tuple[int, dict]:
     """The owner commits the public snapshot of their own, freshly extracted profile to the GitHub Pages site."""
-    if not await csrf_ok(request, user):
-        return JSONResponse({"error": "csrf"}, status_code=403)
     settings = request.app.state.settings
     if not settings.owner_login or user.get("login") != settings.owner_login:
-        return JSONResponse({"error": "owner"}, status_code=403)
+        return 403, {"error": "owner"}
     if not can_publish(settings, user):
-        return JSONResponse({"error": "publish-off"}, status_code=503)
+        return 503, {"error": "publish-off"}
     store = _store(request)
     last = (await store.status(user["id"])).get("last")
     data = await store.load_report(user["id"])
     if data is None or not is_fresh(last, datetime.now(timezone.utc), settings.cooldown_s):
-        return JSONResponse({"error": "stale"}, status_code=409)
+        return 409, {"error": "stale"}
     redis = request.app.state.redis
     if not await redis.set("lock:publish", 1, nx=True, ex=60):
-        return JSONResponse({"error": "busy"}, status_code=409)
+        return 409, {"error": "busy"}
     try:
         url = await publish_snapshot(request.app.state.http, settings, snapshot(data, last))
     except PublishError:
-        return JSONResponse({"error": "github"}, status_code=502)
+        return 502, {"error": "github"}
     finally:
         await redis.delete("lock:publish")
     published = datetime.now(timezone.utc).isoformat(timespec="seconds")
     await store.set_status(user["id"], published=published)
-    return {"url": url, "published": published}
+    return 200, {"url": url, "published": published}
+
+
+@router.post("/api/me/publish")
+async def publish(request: Request, user: dict = Depends(current_user)):
+    if not await csrf_ok(request, user):
+        return JSONResponse({"error": "csrf"}, status_code=403)
+    code, payload = await run_publish(request, user)
+    return JSONResponse(payload, status_code=code)
 
 
 @router.get("/avatar/me")

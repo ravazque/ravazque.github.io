@@ -1,0 +1,8 @@
+<section id="days">
+  <h2>{{ s.title }}</h2>
+  <p class="lede">{{ s.lede }}</p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="calendar"><h3>{{ t("days.calendar_title") }}</h3><div class="cal-scroll">{{ s.calendar }}</div>{{ s.calendar_scale }}</div>
+    <div class="block" data-panel="heat-presence"><h3>{{ t("days.heat_title") }}</h3><p class="note">{{ t("days.heat_note") }}</p><div class="heat-wide">{{ s.heat }}</div></div>
+  </div>
+</section>

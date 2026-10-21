@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyCacheSize":0}'>
+<title>{{ title }} · {{ t("site.name") }}</title>
+<script src="/shared/theme.js"></script>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml"><link rel="icon" href="/static/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="stylesheet" href="/shared/vendor/fonts.css"><link rel="stylesheet" href="/ui.css">
+<link rel="stylesheet" href="/shared/controls.css"><link rel="stylesheet" href="/shared/report.css"><link rel="stylesheet" href="/static/dash.css">
+</head>
+<body data-page="web-{{ key }}" data-accent="{{ accent }}" data-coalition="{{ coalition_color }}" hx-headers='{"X-CSRF-Token": "{{ csrf }}"}'>
+<a class="skip" href="#main">{{ t("a11y.skip") }}</a>
+
+<header class="topbar">
+  <a class="brand" href="{{ page.url('home') if page else '/app' }}">{% include "dash/_brand.html" %}<span>{{ t("brand.name") }}</span></a>
+  {% if page %}
+  <nav class="pages" aria-label="{{ t('pages.label') }}" hx-boost="true">
+    {% for k in pages %}<a href="{{ page.url(k) }}"{% if k == key %} aria-current="page"{% endif %}>{{ t("pages." ~ k) }}</a>{% endfor %}
+  </nav>
+  {% endif %}
+  <div class="topbar-end">
+    {% include "dash/_sync.html" %}
+    <details class="settings-wrap">
+      <summary class="gear" aria-label="{{ t('settings.label') }}" title="{{ t('settings.label') }}">{% include "dash/_gear.html" %}</summary>
+      <div class="settings" role="group" aria-label="{{ t('settings.label') }}">
+        <p class="s-label">{{ t("settings.accent") }}</p>
+        <div class="theme" id="accentChoice" role="group" aria-label="{{ t('settings.accent') }}">
+          <button type="button" data-v="intra">{{ t("settings.accent_intra") }}</button><button type="button" data-v="coalition"{% if not coalition_color %} disabled{% endif %}>{{ t("settings.accent_coalition") }}</button>
+        </div>
+        <p class="s-label">{{ t("theme.label") }}</p>
+        <div class="theme" id="theme" role="group" aria-label="{{ t('theme.label') }}">
+          <button type="button" data-v="auto">{{ t("theme.auto") }}</button><button type="button" data-v="light">{{ t("theme.light") }}</button><button type="button" data-v="dark">{{ t("theme.dark") }}</button>
+        </div>
+        <div class="web-controls">
+          <p class="s-label">{{ t("settings.language") }}</p>
+          <form class="theme" method="post" action="/lang" aria-label="{{ t('site.language') }}">
+            <input type="hidden" name="next" value="{{ here }}">
+            <button type="submit" name="lang" value="en" aria-pressed="{{ 'true' if lang == 'en' else 'false' }}">EN</button><button type="submit" name="lang" value="es" aria-pressed="{{ 'true' if lang == 'es' else 'false' }}">ES</button>
+          </form>
+          <p class="s-label">{{ t("settings.account") }}</p>
+          {% if publish %}
+          <div class="publish">
+            <a class="btn on-rail" href="/app/publish"{% if not publish.ready %} aria-disabled="true"{% endif %}>{{ t("publish.button") }}</a>
+            {% if publish.note %}<p class="wait">{{ publish.note }}</p>{% endif %}
+          </div>
+          {% endif %}
+          <div class="row-links">
+            <a class="link-btn" href="/app/delete">{{ t("delete.button") }}</a>
+            <form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link-btn" type="submit">{{ t("signout.button") }}</button></form>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</header>
+
+{% block body %}{% endblock %}
+
+<div id="tip" role="tooltip"></div>
+<script src="/static/vendor/htmx.min.js"></script>
+<script src="/shared/controls.js"></script>
+<script src="/shared/accent.js"></script>
+<script src="/static/dash.js"></script>
+</body>
+</html>

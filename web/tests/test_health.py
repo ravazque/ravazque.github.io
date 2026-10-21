@@ -4,8 +4,9 @@ async def test_healthz(client):
 
 
 async def test_static_and_shared_frontend_served(client):
-    assert (await client.get("/shared/report.js")).status_code == 200
-    assert (await client.get("/shared/vendor/chart.umd.min.js")).status_code == 200
+    assert (await client.get("/shared/accent.js")).status_code == 200
+    assert (await client.get("/static/vendor/htmx.min.js")).status_code == 200
+    assert (await client.get("/static/dash.js")).status_code == 200
 
 
 async def test_ui_css_generated_from_ui_json(client):

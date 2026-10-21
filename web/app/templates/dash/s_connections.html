@@ -1,0 +1,11 @@
+<section id="connections">
+  <div class="panel-head"><h2>{{ s.title }}</h2>{% for sw in s.switches %}{{ sw }}{% endfor %}</div>
+  <p class="lede">{{ s.lede }}</p>
+  <div class="cols" data-grid><div class="block graph-panel" data-panel="connections">
+    {{ s.legend }}
+    {% if s.wide %}<div class="graph-wide">{{ s.wide }}</div><div class="graph-narrow">{{ s.narrow }}</div>
+    {% else %}<p class="note">{{ s.empty }}</p>{% endif %}
+    {% if s.view == "bubbles" %}<p class="note">{{ t("stats.group_note") }}</p>
+    <details class="graph-table"><summary>{{ t("connections.table") }}</summary><div class="table-wrap">{{ s.table }}</div></details>{% endif %}
+  </div></div>
+</section>

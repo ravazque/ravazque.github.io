@@ -1,0 +1,9 @@
+<section id="seats">
+  <h2>{{ s.title }}<span class="count"><span class="sep"> · </span>{{ s.count }}</span></h2>
+  <p class="lede">{{ s.lede }}</p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="seat-plan">{{ s.plan }}{{ s.scale }}
+      <details class="graph-table"><summary>{{ s.computers_title }}</summary><div class="table-wrap">{{ s.computers }}</div></details></div>
+    <div class="block" data-panel="hours-month"><h3>{{ s.monthly_title }}</h3>{{ s.monthly }}</div>
+  </div>
+</section>

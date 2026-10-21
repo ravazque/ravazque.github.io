@@ -1,0 +1,11 @@
+<section id="sessions">
+  <h2>{{ s.title }}</h2>
+  <p class="lede">{{ s.lede }}</p>
+  {% call m.filters("/app/campus", "sessions", {"period": page.period, "where": page.q("where")}) %}
+    {{ m.search("sq", s.q, t("common.search"), t("sessions.search_placeholder")) }}
+  {% endcall %}
+  <div id="sessions-results">
+    <p class="controls-after"><span class="note">{{ s.count }}</span></p>
+    <div class="cols" data-grid><div class="block" data-panel="table-sessions"><div class="table-wrap">{{ s.table }}</div></div></div>
+  </div>
+</section>

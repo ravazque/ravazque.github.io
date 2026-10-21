@@ -1,0 +1,12 @@
+<section id="when">
+  <h2>{{ s.title }}</h2>
+  <p class="lede">{{ s.lede }}</p>
+  {% if s.facts %}<dl class="facts">{{ s.facts }}</dl>{% endif %}
+  <div class="cols" data-grid>
+    <div class="block" data-panel="heat-recv"><h3>{{ t("when.heat_recv_title") }}</h3>{{ s.heat_recv }}</div>
+    <div class="block" data-panel="heat-given"><h3>{{ t("when.heat_given_title") }}</h3>{{ s.heat_given }}</div>
+    <div class="block" data-panel="duration"><h3>{{ t("when.duration_title") }}</h3>{{ s.roles }}{{ s.duration }}<p class="note">{{ t("when.duration_note") }}</p></div>
+    <div class="block" data-panel="lead"><h3>{{ t("when.lead_title") }}</h3>{{ s.roles }}{{ s.lead }}<p class="note">{{ t("when.lead_note") }}</p></div>
+    {% if s.depth %}<div class="block" data-panel="depth-projects"><h3>{{ t("depth.title") }}</h3><div class="table-wrap tall">{{ s.depth }}</div></div>{% endif %}
+  </div>
+</section>

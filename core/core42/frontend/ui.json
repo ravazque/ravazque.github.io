@@ -412,6 +412,18 @@
     "plan-width": "42%"
    }
   },
+  "chart": {
+   "height": "240px",
+   "axis-width": "40px",
+   "font-size": "12px",
+   "bar-gap": "3px",
+   "bar-max": "40px",
+   "row-height": "24px",
+   "row-label-width": "36%",
+   "timeline-label-width": "30%",
+   "timeline-row": "20px",
+   "desktop": {"height": "280px"}
+  },
   "consent": {
    "box": "20px",
    "radius": "4px",

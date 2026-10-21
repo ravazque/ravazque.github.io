@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from core42 import FRONTEND_DIR
 from core42.ui import UI_FILE, css_from_ui, load_ui
 
-from . import auth, pages, routes_api
+from . import auth, pages, routes_api, routes_dash
 from .api42 import Api42
 from .limiter import RateLimiter
 from .redis import make_redis
@@ -57,6 +57,7 @@ def create_app(settings: Settings, redis, http: httpx.AsyncClient | None = None,
     app.include_router(auth.router)
     app.include_router(pages.router)
     app.include_router(routes_api.router)
+    app.include_router(routes_dash.router)
     ui_css = UiCss()
 
     @app.get("/healthz")

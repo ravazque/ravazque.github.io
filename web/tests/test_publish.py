@@ -206,5 +206,7 @@ async def test_publish_route_reports_github_failures(owner):
 
 async def test_dashboard_marks_the_owner_for_the_publish_button(owner, signed_in):
     client, store = owner
-    assert 'data-publish="1"' in (await client.get("/app")).text
-    assert "data-publish" not in (await signed_in.get("/app")).text
+    assert 'href="/app/publish"' in (await client.get("/app")).text
+    assert 'href="/app/publish"' not in (await signed_in.get("/app")).text
+    assert 'action="/app/publish"' in (await client.get("/app/publish")).text
+    assert (await client.post("/app/publish", headers={"X-CSRF-Token": "wrong"})).status_code == 403

@@ -21,7 +21,7 @@ class PublishError(Exception):
 
 
 def _stage(cursus: dict | None, quests: list[dict]) -> str | None:
-    """Same rule as myRank() in report.js: alumni, outer-core once the Common Core is done, else the rank being worked on."""
+    """Same rule as views.my_rank(): alumni, outer-core once the Common Core is done, else the rank being worked on."""
     if not cursus:
         return None
     if cursus.get("grade") == "Alumni":
