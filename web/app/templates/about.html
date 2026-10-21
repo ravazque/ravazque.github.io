@@ -1,0 +1,8 @@
+{% extends "_page.html" %}
+{% block content %}
+<p class="lede">{{ t["about.p1"] }}</p>
+<p>{{ t["about.p2"] }}</p>
+<p>{{ t["about.p3"] }}</p>
+<p>{{ t["about.p4"] }}</p>
+<p class="note">{{ t["about.contact"].replace("{email}", email) }}</p>
+{% endblock %}

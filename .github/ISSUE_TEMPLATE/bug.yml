@@ -1,0 +1,30 @@
+name: Bug report
+description: Something on the site is wrong or broken.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are public. Do not paste tokens, cookies, emails, or other students' logins, names or seats.
+  - type: dropdown
+    id: page
+    attributes:
+      label: Page
+      options: [Sign-in / landing, Home, Corrections, Campus, About / Privacy, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: input
+    id: env
+    attributes:
+      label: Browser and device
+      placeholder: Firefox 131 on Android, 390 px wide, dark theme

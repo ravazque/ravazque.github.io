@@ -1,0 +1,563 @@
+{
+ "schema": 1,
+ "updated": "2026-10-18 22:41",
+ "login": "ravazque",
+ "name": "Raúl Vázquez Pérez",
+ "campus": "42 Madrid",
+ "title": "Mastermind ravazque",
+ "coalition": {
+  "name": "Zefiria",
+  "color": "#E39F0B"
+ },
+ "cursus": {
+  "level": 16.9,
+  "grade": "Transcender",
+  "stage": "outer-core",
+  "kickoff": "2024-09-16",
+  "common_core": "2026-05-28"
+ },
+ "skills": {
+  "student": [
+   {
+    "name": "Adaptation & creativity",
+    "level": 2.0
+   },
+   {
+    "name": "Algorithms & AI",
+    "level": 12.08
+   },
+   {
+    "name": "Basics",
+    "level": 0
+   },
+   {
+    "name": "Company experience",
+    "level": 0
+   },
+   {
+    "name": "DB & Data",
+    "level": 4.41
+   },
+   {
+    "name": "Functional programming",
+    "level": 4.03
+   },
+   {
+    "name": "Graphics",
+    "level": 5.04
+   },
+   {
+    "name": "Group & interpersonal",
+    "level": 5.17
+   },
+   {
+    "name": "Imperative programming",
+    "level": 5.25
+   },
+   {
+    "name": "Network & system administration",
+    "level": 13.36
+   },
+   {
+    "name": "Object-oriented programming",
+    "level": 7.7
+   },
+   {
+    "name": "Organization",
+    "level": 1.6400000000000001
+   },
+   {
+    "name": "Parallel computing",
+    "level": 0
+   },
+   {
+    "name": "Rigor",
+    "level": 12.73
+   },
+   {
+    "name": "Ruby",
+    "level": 0
+   },
+   {
+    "name": "Security",
+    "level": 0
+   },
+   {
+    "name": "Shell",
+    "level": 0
+   },
+   {
+    "name": "Technology integration",
+    "level": 7.05
+   },
+   {
+    "name": "Unix",
+    "level": 4.45
+   },
+   {
+    "name": "Web",
+    "level": 7.85
+   }
+  ],
+  "piscine": [
+   {
+    "name": "Adaptation & creativity",
+    "level": 1.5
+   },
+   {
+    "name": "Algorithms & AI",
+    "level": 3.58
+   },
+   {
+    "name": "Group & interpersonal",
+    "level": 0
+   },
+   {
+    "name": "Imperative programming",
+    "level": 0
+   },
+   {
+    "name": "Rigor",
+    "level": 3.49
+   },
+   {
+    "name": "Unix",
+    "level": 5.77
+   }
+  ]
+ },
+ "projects": {
+  "validated": 39,
+  "list": [
+   {
+    "name": "Leaffliction",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 100,
+    "xp": 15750,
+    "validated": "2026-10-08"
+   },
+   {
+    "name": "scop",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 125,
+    "xp": 11812,
+    "validated": "2026-10-08"
+   },
+   {
+    "name": "swifty-companion",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 110,
+    "xp": 4620,
+    "validated": "2026-10-06"
+   },
+   {
+    "name": "red-tetris",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 125,
+    "xp": 19688,
+    "validated": "2026-10-05"
+   },
+   {
+    "name": "ft_linear_regression",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 100,
+    "xp": 4200,
+    "validated": "2026-09-28"
+   },
+   {
+    "name": "ft_newton",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 105,
+    "xp": 25578,
+    "validated": "2026-09-23"
+   },
+   {
+    "name": "dslr",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 125,
+    "xp": 7500,
+    "validated": "2026-09-18"
+   },
+   {
+    "name": "lem_in",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 125,
+    "xp": 11812,
+    "validated": "2026-09-18"
+   },
+   {
+    "name": "Inception-of-Things",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 125,
+    "xp": 31812,
+    "validated": "2026-09-09"
+   },
+   {
+    "name": "Exam Rank 06",
+    "track": "common-core",
+    "group": "rank-06",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-05-28"
+   },
+   {
+    "name": "ft_transcendence",
+    "track": "common-core",
+    "group": "rank-06",
+    "mark": 125,
+    "xp": 30450,
+    "validated": "2026-05-18"
+   },
+   {
+    "name": "Exam Rank 05",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-04-25"
+   },
+   {
+    "name": "ft_resume",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 100,
+    "xp": 2100,
+    "validated": "2026-04-25"
+   },
+   {
+    "name": "ft_irc",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 125,
+    "xp": 27038,
+    "validated": "2026-03-30"
+   },
+   {
+    "name": "CPP Module 02",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-03-09"
+   },
+   {
+    "name": "Inception",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 100,
+    "xp": 15836,
+    "validated": "2026-03-06"
+   },
+   {
+    "name": "CPP Module 09",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 100,
+    "xp": 10042,
+    "validated": "2026-02-27"
+   },
+   {
+    "name": "CPP Module 06",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-02-26"
+   },
+   {
+    "name": "CPP Module 07",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-02-26"
+   },
+   {
+    "name": "CPP Module 08",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-02-26"
+   },
+   {
+    "name": "CPP Module 05",
+    "track": "common-core",
+    "group": "rank-05",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-02-17"
+   },
+   {
+    "name": "miniRT",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 116,
+    "xp": 6699,
+    "validated": "2026-01-22"
+   },
+   {
+    "name": "NetPractice",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 100,
+    "xp": 3160,
+    "validated": "2025-12-09"
+   },
+   {
+    "name": "pipex",
+    "track": "common-core",
+    "group": "rank-02",
+    "mark": 125,
+    "xp": 1428,
+    "validated": "2025-11-28"
+   },
+   {
+    "name": "CPP Module 04",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 100,
+    "xp": 9660,
+    "validated": "2025-11-25"
+   },
+   {
+    "name": "CPP Module 01",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2025-11-23"
+   },
+   {
+    "name": "CPP Module 03",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2025-11-23"
+   },
+   {
+    "name": "Exam Rank 04",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2025-11-20"
+   },
+   {
+    "name": "CPP Module 00",
+    "track": "common-core",
+    "group": "rank-04",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2025-11-19"
+   },
+   {
+    "name": "minishell",
+    "track": "common-core",
+    "group": "rank-03",
+    "mark": 101,
+    "xp": 2842,
+    "validated": "2025-11-14"
+   },
+   {
+    "name": "Philosophers",
+    "track": "common-core",
+    "group": "rank-03",
+    "mark": 100,
+    "xp": 3360,
+    "validated": "2025-07-02"
+   },
+   {
+    "name": "Exam Rank 03",
+    "track": "common-core",
+    "group": "rank-03",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2025-06-19"
+   },
+   {
+    "name": "fract-ol",
+    "track": "common-core",
+    "group": "rank-02",
+    "mark": 110,
+    "xp": 1100,
+    "validated": "2025-02-27"
+   },
+   {
+    "name": "Exam Rank 02",
+    "track": "common-core",
+    "group": "rank-02",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2025-01-23"
+   },
+   {
+    "name": "push_swap",
+    "track": "common-core",
+    "group": "rank-02",
+    "mark": 100,
+    "xp": 1855,
+    "validated": "2025-01-15"
+   },
+   {
+    "name": "Born2beroot",
+    "track": "common-core",
+    "group": "rank-01",
+    "mark": 120,
+    "xp": 692,
+    "validated": "2024-11-02"
+   },
+   {
+    "name": "get_next_line",
+    "track": "common-core",
+    "group": "rank-01",
+    "mark": 125,
+    "xp": 1102,
+    "validated": "2024-10-24"
+   },
+   {
+    "name": "ft_printf",
+    "track": "common-core",
+    "group": "rank-01",
+    "mark": 100,
+    "xp": 882,
+    "validated": "2024-10-24"
+   },
+   {
+    "name": "Libft",
+    "track": "common-core",
+    "group": "rank-00",
+    "mark": 125,
+    "xp": 578,
+    "validated": "2024-10-09"
+   },
+   {
+    "name": "C Piscine Final Exam",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 24,
+    "xp": 90,
+    "validated": "2024-07-26"
+   },
+   {
+    "name": "C Piscine C 04",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 70,
+    "xp": 70,
+    "validated": "2024-07-24"
+   },
+   {
+    "name": "C Piscine C 03",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 100,
+    "xp": 100,
+    "validated": "2024-07-23"
+   },
+   {
+    "name": "C Piscine C 02",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 75,
+    "xp": 75,
+    "validated": "2024-07-19"
+   },
+   {
+    "name": "C Piscine C 00",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 65,
+    "xp": 65,
+    "validated": "2024-07-15"
+   },
+   {
+    "name": "C Piscine C 01",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 85,
+    "xp": 85,
+    "validated": "2024-07-12"
+   },
+   {
+    "name": "C Piscine Exam 01",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 30,
+    "xp": 68,
+    "validated": "2024-07-12"
+   },
+   {
+    "name": "C Piscine Shell 00",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 60,
+    "xp": 60,
+    "validated": "2024-07-03"
+   },
+   {
+    "name": "C Piscine Shell 01",
+    "track": "piscine",
+    "group": "piscine",
+    "mark": 70,
+    "xp": 70,
+    "validated": "2024-07-03"
+   }
+  ],
+  "in_progress": [
+   {
+    "name": "Learn2Slither",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-05-28"
+   },
+   {
+    "name": "libasm",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-05-28"
+   },
+   {
+    "name": "gomoku",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-05-28"
+   },
+   {
+    "name": "music-room",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-05-28"
+   },
+   {
+    "name": "dr-quine",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-05-29"
+   },
+   {
+    "name": "ft_hangouts",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-09-18"
+   }
+  ]
+ },
+ "evaluations": {
+  "given": 185,
+  "given_outstanding": 28,
+  "received": 118,
+  "received_outstanding": 43,
+  "received_avg_mark": 103.3
+ }
+}

@@ -1,0 +1,1 @@
+<nav class="site-links"><a href="/about"{% if page == "about" %} aria-current="page"{% endif %}>{{ t["site.about"] }}</a><a href="/privacy"{% if page == "privacy" %} aria-current="page"{% endif %}>{{ t["site.privacy"] }}</a>{% if issues_url %}<a href="{{ issues_url }}" rel="noopener" target="_blank">{{ t["site.issues"] }}</a>{% endif %}{% include "_lang.html" %}</nav>

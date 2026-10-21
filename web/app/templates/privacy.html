@@ -1,0 +1,7 @@
+{% extends "_page.html" %}
+{% block content %}
+<h2>{{ t["privacy.what_title"] }}</h2><p>{{ t["privacy.what"] }}</p>
+<h2>{{ t["privacy.retention_title"] }}</h2><p>{{ t["privacy.retention"] }}</p><p>{{ t["privacy.cooldown"] }}</p>
+<h2>{{ t["privacy.cookies_title"] }}</h2><p>{{ t["privacy.cookies"] }}</p><p>{{ t["privacy.tokens"] }}</p>
+<h2>{{ t["privacy.contact_title"] }}</h2><p>{{ t["privacy.contact"].replace("{email}", email) }}</p>
+{% endblock %}

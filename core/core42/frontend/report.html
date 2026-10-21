@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{TITLE}}</title>
+{{HEAD}}
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" id="brand" href="#main"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><g class="seat-off"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="12.5" y="4" width="7" height="7" rx="1.5"/><rect x="21" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="12.5" width="7" height="7" rx="1.5"/><rect x="21" y="12.5" width="7" height="7" rx="1.5"/><rect x="4" y="21" width="7" height="7" rx="1.5"/><rect x="12.5" y="21" width="7" height="7" rx="1.5"/><rect x="21" y="21" width="7" height="7" rx="1.5"/></g><rect class="seat-on" x="12.5" y="12.5" width="7" height="7" rx="1.5"/></svg><span data-i18n="brand.name">ravazque.top</span></a>
+  <nav class="pages" id="pages" data-i18n-attr="aria-label:pages.label" aria-label="Pages" hidden></nav>
+  <div class="topbar-end">
+    <div class="sync" id="sync"></div>
+    <div class="settings-wrap">
+      <button type="button" class="gear" id="gearBtn" aria-expanded="false" aria-controls="settings" data-i18n-attr="aria-label:settings.label;title:settings.label" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <div class="settings" id="settings" role="group" data-i18n-attr="aria-label:settings.label" aria-label="Settings" hidden>
+        <p class="s-label" data-i18n="settings.accent">Accent colour</p>
+        <div class="theme" id="accentChoice" role="group" data-i18n-attr="aria-label:settings.accent" aria-label="Accent colour">
+          <button type="button" data-v="intra" data-i18n="settings.accent_intra">42 blue</button><button type="button" data-v="coalition" data-i18n="settings.accent_coalition">Coalition</button>
+        </div>
+        <p class="s-label" data-i18n="theme.label">Theme</p>
+        <div class="theme" id="theme" role="group" data-i18n-attr="aria-label:theme.label" aria-label="Theme">
+          <button type="button" data-v="auto" data-i18n="theme.auto">Auto</button><button type="button" data-v="light" data-i18n="theme.light">Light</button><button type="button" data-v="dark" data-i18n="theme.dark">Dark</button>
+        </div>
+        <div class="web-controls" id="settingsWeb"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<aside class="rail" data-i18n-attr="aria-label:rail.label" aria-label="Profile and period">
+  <div class="identity" id="identity"></div>
+  <div class="periods" id="periods" role="group" data-i18n-attr="aria-label:rail.period" aria-label="Period"></div>
+  <div class="figure" id="figure" aria-live="polite"></div>
+  <nav class="toc" id="toc" data-i18n-attr="aria-label:rail.sections" aria-label="Sections"></nav>
+</aside>
+
+<main id="main">
+<div class="boot" id="boot" hidden></div>
+
+<section id="summary" data-title-i18n="nav.summary" data-pages="report all-in-one">
+  <h2 data-i18n="summary.title">Summary</h2>
+  <p class="lede" id="summary-lede"></p>
+  <div class="lead" id="lead"></div>
+  <dl class="facts" id="facts"></dl>
+</section>
+
+<section id="home-kpis" data-title-i18n="nav.home_kpis" data-pages="web-home">
+  <h2 data-i18n="home.title">Overview</h2>
+  <div class="cols" data-grid><div class="block" data-panel="kpis"><div class="kpis" id="kpis"></div></div></div>
+</section>
+
+<section id="projects-table" data-title-i18n="nav.projects_table" data-pages="report all-in-one web-home">
+  <h2 data-i18n="projects_table.title">Projects</h2>
+  <p class="lede" data-i18n="projects_table.lede">Every project with its track, mark, attempts and the XP it gave. Open a row for each attempt: dates, team and who evaluated it.</p>
+  <div class="controls">
+    <div class="seg" id="trackFilter" role="group" data-i18n-attr="aria-label:projects_table.filter" aria-label="Track">
+      <button type="button" data-v="student" aria-pressed="true" data-i18n="track.student">Student</button><button type="button" data-v="piscine" aria-pressed="false" data-i18n="track.piscine">Piscine</button><button type="button" data-v="all" aria-pressed="false" data-i18n="track.all">All</button>
+    </div>
+    <label class="field"><span data-i18n="common.search">Search</span><input type="search" id="projSearch" data-i18n-attr="placeholder:projects_table.search" placeholder="Project name"></label>
+    <label class="field"><span data-i18n="projects_table.marks">Mark</span><select id="projMarks"><option value="all" data-i18n="projects_table.marks_all">Any mark</option><option value="bonus" data-i18n="projects_table.marks_bonus">With bonus (over 100)</option><option value="max" data-i18n="projects_table.marks_max">125 only</option><option value="failed" data-i18n="projects_table.marks_failed">Failed</option></select></label>
+    <label class="field"><span data-i18n="projects_table.year">Year</span><select id="projYear"><option value="all" data-i18n="projects_table.year_all">Every year</option></select></label>
+    <button type="button" class="btn secondary toggle" id="projGroup" aria-pressed="false" data-i18n="projects_table.group">Group by rank</button>
+    <button type="button" class="btn secondary" id="projCsv" data-i18n="projects_table.csv">Download CSV</button>
+    <span class="note" id="trackCount"></span>
+  </div>
+  <div class="cols" data-grid><div class="block" data-panel="projects-table">
+    <div class="table-wrap tall"><table id="tblTrack" data-i18n-attr="aria-label:projects_table.title" aria-label="Projects"></table></div>
+    <p class="note" data-i18n="projects_table.xp_note">XP = project XP × final mark / 100 when validated; a calculation, the intra may differ.</p>
+  </div></div>
+</section>
+
+<section id="seats" data-title-i18n="nav.seats" data-pages="report logtime all-in-one web-campus">
+  <h2 id="seats-title">Where you sat</h2>
+  <p class="lede" id="seats-lede"></p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="seat-plan"><div class="plan" id="planMine"></div><div class="scale" id="planMineScale"></div></div>
+    <div class="block" data-panel="hours-month">
+      <h3 id="monthlyTitle" data-i18n="seats.month_title">Hours per month</h3>
+      <div class="plot short"><canvas id="chMonthly" data-i18n-attr="aria-label:seats.month_aria" aria-label="Hours logged per month"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<section id="periods-compare" data-title-i18n="nav.periods" data-pages="logtime all-in-one web-campus">
+  <h2 data-i18n="periods.title">Piscine, student and all</h2>
+  <p class="lede" data-i18n="periods.lede">The same figures for each period. Piscine is everything before the 42cursus kickoff; Student starts at the kickoff. Choose a column to switch the whole page to that period.</p>
+  <div class="compare" id="compare"></div>
+</section>
+
+<section id="days" data-title-i18n="nav.days" data-pages="report logtime all-in-one web-campus">
+  <h2 data-i18n="days.title">Days and hours</h2>
+  <p class="lede" id="days-lede"></p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="calendar">
+      <h3 data-i18n="days.calendar_title">Every day</h3>
+      <div class="cal-scroll"><div id="calendar"></div></div>
+      <div class="scale" id="calendarScale"></div>
+    </div>
+    <div class="block" data-panel="heat-presence">
+      <h3 data-i18n="days.heat_title">Weekday × hour</h3><p class="note" data-i18n="days.heat_note">Total hours logged in each hour of the week, Madrid time.</p><div class="heat-wide" id="heatPresence"></div>
+    </div>
+  </div>
+</section>
+
+<section id="computers" data-title-i18n="nav.computers" data-pages="report logtime all-in-one web-campus">
+  <h2 data-i18n="computers.title">Computers</h2>
+  <p class="lede" id="computers-lede"></p>
+  <div class="cols" data-grid><div class="block" data-panel="table-seats"><div class="table-wrap"><table id="tblSeats" data-i18n-attr="aria-label:computers.table_aria" aria-label="Computers used"></table></div></div></div>
+</section>
+
+<section id="sessions" data-title-i18n="nav.sessions" data-pages="report logtime all-in-one web-campus">
+  <h2 data-i18n="sessions.title">Sessions</h2>
+  <p class="lede" data-i18n="sessions.lede">Every login session as the API records it, newest first. Sessions on two computers at once overlap; the totals above count that time once.</p>
+  <div class="controls">
+    <label class="field"><span data-i18n="common.search">Search</span><input type="search" id="sessionSearch" data-i18n-attr="placeholder:sessions.search_placeholder" placeholder="Date or computer, e.g. 2024-07 or c2r19"></label>
+    <span class="note" id="sessionCount"></span>
+  </div>
+  <div class="cols" data-grid><div class="block" data-panel="table-sessions"><div class="table-wrap"><table id="tblSessions" data-i18n-attr="aria-label:sessions.table_aria" aria-label="Login sessions"></table></div></div></div>
+</section>
+
+<section id="standing" data-title-i18n="nav.standing" data-pages="web-home">
+  <h2 data-i18n="standing.title">Coalitions and promo</h2>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="coalitions"><h3 data-i18n="standing.coalitions">Madrid coalitions</h3><ol class="standings" id="coalitionList"></ol></div>
+    <div class="block" data-panel="promo"><h3 data-i18n="standing.promo">Your promo</h3><p class="lede" id="promoLede"></p><div class="plot"><canvas id="chPromo" data-i18n-attr="aria-label:standing.promo" aria-label="Your promo"></canvas></div></div>
+  </div>
+</section>
+
+<section id="pace" data-title-i18n="nav.pace" data-pages="report all-in-one web-home">
+  <h2 data-i18n="pace.title">Pace</h2>
+  <dl class="facts" id="paceFacts"></dl>
+  <div class="cols" data-grid><div class="block" data-panel="pace-xp"><h3 data-i18n="pace.xp_title">XP per month</h3><div class="plot"><canvas id="chPace" data-i18n-attr="aria-label:pace.xp_title" aria-label="XP per month"></canvas></div></div></div>
+</section>
+
+<section id="exams" data-title-i18n="nav.exams" data-pages="report all-in-one web-home">
+  <h2 data-i18n="exams.title">Exams</h2>
+  <div class="cols" data-grid><div class="block" data-panel="exams"><div class="table-wrap"><table id="tblExams" data-i18n-attr="aria-label:exams.title" aria-label="Exams"></table></div></div></div>
+</section>
+
+<section id="teammates" data-title-i18n="nav.teammates" data-pages="report all-in-one web-home">
+  <h2 data-i18n="teammates.title">Teammates</h2>
+  <div class="cols" data-grid><div class="block" data-panel="teammates"><div class="table-wrap"><table id="tblTeammates" data-i18n-attr="aria-label:teammates.title" aria-label="Teammates"></table></div></div></div>
+</section>
+
+<section id="projects" data-title-i18n="nav.projects" data-pages="report all-in-one web-home">
+  <h2 data-i18n="projects.title">Projects and retries</h2>
+  <p class="lede" data-i18n="projects.lede">Every attempt (team) of every project on a shared time axis. Each bar runs from the team's creation to its closing or last evaluation. Hover or tap a bar for its mark, evaluations, Outstanding flags and correctors.</p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="timeline">
+      <h3 data-i18n="projects.timeline_title">Attempt timeline</h3>
+      <div class="legend" id="lg-timeline"></div>
+      <div class="plot" id="timeline-box"><canvas id="chTimeline" data-i18n-attr="aria-label:projects.timeline_aria" aria-label="Project attempts over time"></canvas></div>
+    </div>
+    <div class="block" data-panel="retries"><h3 data-i18n="projects.retries_title">Retries per project</h3><p class="note" data-i18n="projects.retries_note">Attempts minus one. Projects with no retries are left out.</p><div class="plot tall"><canvas id="chRetries" data-i18n-attr="aria-label:projects.retries_title" aria-label="Retries per project"></canvas></div><p class="note" id="retriesNote"></p></div>
+    <div class="block" data-panel="cum-retries"><h3 data-i18n="projects.cum_title">Cumulative retries</h3><p class="note" data-i18n="projects.cum_note">Every new attempt after the first one, over time.</p><div class="plot tall"><canvas id="chCumRetries" data-i18n-attr="aria-label:projects.cum_title" aria-label="Cumulative retries over time"></canvas></div></div>
+  </div>
+</section>
+
+<section id="received" data-title-i18n="nav.received" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="received.title">Evaluations received</h2>
+  <p class="lede" id="received-lede"></p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="recv-monthly"><h3 data-i18n="received.monthly_title">Received per month, by flag</h3><div class="legend" id="lg-flags-r"></div><div class="plot"><canvas id="chRecvMonthly" data-i18n-attr="aria-label:received.monthly_title" aria-label="Evaluations received per month"></canvas></div></div>
+    <div class="block" data-panel="marks"><h3 data-i18n="received.marks_title">Marks</h3><div class="legend" id="lg-role-marks"></div><div class="plot"><canvas id="chMarks" data-i18n-attr="aria-label:received.marks_title" aria-label="Distribution of final marks"></canvas></div></div>
+    <div class="block" data-panel="cum-evals"><h3 data-i18n="received.cum_title">Cumulative evaluations</h3><div class="legend" id="lg-role-cum"></div><div class="plot"><canvas id="chCumEvals" data-i18n-attr="aria-label:received.cum_title" aria-label="Cumulative evaluations"></canvas></div></div>
+    <div class="block" data-panel="cum-out"><h3 data-i18n="received.cum_out_title">Cumulative Outstanding flags</h3><div class="legend" id="lg-role-out"></div><div class="plot"><canvas id="chCumOut" data-i18n-attr="aria-label:received.cum_out_title" aria-label="Cumulative Outstanding flags"></canvas></div></div>
+  </div>
+</section>
+
+<section id="who" data-title-i18n="nav.who" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="who.title">Who evaluated you</h2>
+  <p class="lede" id="who-lede"></p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="correctors"><h3 data-i18n="who.top_title">Top 25 correctors</h3><div class="legend" id="lg-flags-who"></div><div class="plot" id="who-box"><canvas id="chCorrectors" data-i18n-attr="aria-label:who.top_title" aria-label="Correctors who evaluated you most"></canvas></div></div>
+    <div class="block" data-panel="table-people">
+      <h3 data-i18n="who.people_title">Everyone you crossed paths with</h3>
+      <p class="note" data-i18n="who.people_note">Correctors, people you evaluated and teammates. In "Ratings you / them", the first number is the overall rating you gave them as your corrector, the second what they gave you when you evaluated them.</p>
+      <div class="controls"><label class="field"><span data-i18n="common.search">Search</span><input type="search" id="peopleSearch" data-i18n-attr="placeholder:who.search_placeholder" placeholder="Login, name, project or seat"></label></div>
+      <div class="table-wrap"><table id="tblPeople" data-i18n-attr="aria-label:who.people_title" aria-label="People"></table></div>
+    </div>
+  </div>
+</section>
+
+<section id="correction-stats" data-title-i18n="nav.correction_stats" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="stats.title">Correction statistics</h2>
+  <p class="lede" data-i18n="stats.lede">How your evaluations go, in both directions, from the data already loaded.</p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="fail-rates"><div class="rates" id="rates"></div></div>
+    <div class="block" data-panel="by-group"><h3 data-i18n="stats.group_title">By the other person's rank</h3><p class="note" data-i18n="stats.group_note">Ranks as of today, not at the time of the evaluation.</p>
+      <div class="table-wrap"><table id="tblGroups" data-i18n-attr="aria-label:stats.group_title" aria-label="By rank"></table></div></div>
+    <div class="block" data-panel="by-hour"><h3 data-i18n="stats.hour_title">By hour of day</h3><p class="note" data-i18n="stats.hour_note">Evaluations per hour (Madrid time); hover a bar for the average mark.</p>
+      <div class="legend" id="lg-role-hour"></div><div class="plot"><canvas id="chByHour" data-i18n-attr="aria-label:stats.hour_title" aria-label="Evaluations by hour"></canvas></div></div>
+  </div>
+</section>
+
+<section id="connections" data-title-i18n="nav.connections" data-pages="web-corrections">
+  <h2 data-i18n="connections.title">Connections</h2>
+  <p class="lede" data-i18n="connections.lede">Everyone you evaluated or who evaluated you, sized by how many times, grouped by where they are in the 42cursus today. Choose a bubble to see those evaluations in the log.</p>
+  <div class="controls">
+    <div class="seg" id="graphMode" role="group" data-i18n-attr="aria-label:connections.mode_label" aria-label="Direction">
+      <button type="button" data-v="received" aria-pressed="true" data-i18n="connections.mode_received">Corrected me</button><button type="button" data-v="given" aria-pressed="false" data-i18n="connections.mode_given">I corrected</button><button type="button" data-v="mix" aria-pressed="false" data-i18n="connections.mode_mix">Both</button>
+    </div>
+  </div>
+  <div class="cols" data-grid><div class="block" data-panel="connections">
+    <div class="legend" id="lg-graph"></div>
+    <div class="plot graph-box" id="graphBox"><svg id="graph" class="graph"><g class="labels"></g><g class="links"></g><g class="nodes"></g></svg>
+      <p class="note graph-empty" id="graphEmpty" hidden data-i18n="connections.empty">Nobody yet in this period.</p></div>
+    <p class="note" data-i18n="stats.group_note">Ranks as of today, not at the time of the evaluation.</p>
+    <details class="graph-table"><summary data-i18n="connections.table">Table version</summary><div class="table-wrap"><table id="tblConnections" data-i18n-attr="aria-label:connections.title" aria-label="Connections"></table></div></details>
+  </div></div>
+</section>
+
+<section id="network" data-title-i18n="nav.network" data-pages="web-corrections">
+  <h2 data-i18n="network.title">Your circle</h2>
+  <p class="lede" data-i18n="network.lede">You and the 30 people you evaluated with most. A line means one of them evaluated the other; thicker lines, more evaluations.</p>
+  <div class="cols" data-grid><div class="block" data-panel="network"><div class="plot graph-box" id="netBox"><svg class="graph" id="netGraph" data-i18n-attr="aria-label:network.title" aria-label="Your circle"></svg></div></div></div>
+</section>
+
+<section id="depth" data-title-i18n="nav.depth" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="depth.title">Evaluations in depth</h2>
+  <dl class="facts" id="depthFacts"></dl>
+  <div class="cols" data-grid><div class="block" data-panel="depth-projects"><div class="table-wrap tall"><table id="tblDepth" data-i18n-attr="aria-label:depth.title" aria-label="Evaluations per project"></table></div></div></div>
+</section>
+
+<section id="when" data-title-i18n="nav.when" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="when.title">When</h2>
+  <p class="lede" id="when-lede"></p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="heat-recv"><h3 data-i18n="when.heat_recv_title">Received · weekday × hour</h3><div id="heatRecv"></div></div>
+    <div class="block" data-panel="heat-given"><h3 data-i18n="when.heat_given_title">Given · weekday × hour</h3><div id="heatGiven"></div></div>
+    <div class="block" data-panel="duration"><h3 data-i18n="when.duration_title">Duration</h3><div class="legend" id="lg-role-dur"></div><div class="plot"><canvas id="chDuration" data-i18n-attr="aria-label:when.duration_title" aria-label="Evaluation duration in minutes"></canvas></div>
+      <p class="note" data-i18n="when.duration_note">From the start of the slot until the corrector submits the form, so it can be longer than the evaluation.</p></div>
+    <div class="block" data-panel="lead"><h3 data-i18n="when.lead_title">Booking lead time</h3><div class="legend" id="lg-role-lead"></div><div class="plot"><canvas id="chLead" data-i18n-attr="aria-label:when.lead_title" aria-label="Hours between booking and evaluation"></canvas></div>
+      <p class="note" data-i18n="when.lead_note">Hours from booking the slot to the start of the evaluation.</p></div>
+  </div>
+</section>
+
+<section id="where" data-title-i18n="nav.where" data-pages="report all-in-one web-campus">
+  <h2 data-i18n="where.title">Where</h2>
+  <p class="lede" id="where-lede"></p>
+  <div class="controls" id="whereControls">
+    <div class="seg" id="whereRole" role="group" data-i18n-attr="aria-label:where.role_label" aria-label="Whose seat">
+      <button type="button" data-v="corrector" aria-pressed="true" data-i18n="where.role_corrector">Correctors evaluating you</button><button type="button" data-v="mine" aria-pressed="false" data-i18n="where.role_mine">You, during evaluations</button>
+    </div>
+  </div>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="where-plan">
+      <div class="plan" id="planWhere"></div>
+      <div class="scale" id="planWhereScale"></div>
+      <p class="note" data-i18n="where.inferred_note">Inferred: the API does not store where an evaluation happened, so this is the login session open at that time. Correctors who evaluate at your seat without logging in do not appear.</p>
+    </div>
+    <div class="block" data-panel="where-clusters"><h3 data-i18n="where.clusters_title">Cluster during evaluations</h3><div class="legend" id="lg-role-where"></div><div class="plot short"><canvas id="chWhere" data-i18n-attr="aria-label:where.clusters_title" aria-label="Cluster during evaluations"></canvas></div></div>
+  </div>
+</section>
+
+<section id="given" data-title-i18n="nav.given" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="given.title">Evaluations given</h2>
+  <p class="lede" id="given-lede"></p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="given-monthly"><h3 data-i18n="given.monthly_title">Given per month, by flag</h3><div class="legend" id="lg-flags-g"></div><div class="plot"><canvas id="chGivenMonthly" data-i18n-attr="aria-label:given.monthly_title" aria-label="Evaluations given per month"></canvas></div></div>
+    <div class="block" data-panel="given-projects"><h3 data-i18n="given.projects_title">Projects you evaluated most</h3><div class="plot"><canvas id="chGivenProjects" data-i18n-attr="aria-label:given.projects_title" aria-label="Projects you evaluated most"></canvas></div></div>
+  </div>
+</section>
+
+<section id="feedback" data-title-i18n="nav.feedback" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="feedback.title">Feedback</h2>
+  <p class="lede" data-i18n="feedback.lede">The 42 feedback form rates the corrector on four criteria (0–4) plus an overall rating (1–5).</p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="table-feedback"><h3 data-i18n="feedback.criteria_title">Ratings per criterion</h3><p class="note" data-i18n="feedback.criteria_note">Averages, and how many ratings were below the maximum.</p><div class="table-wrap"><table id="tblFeedback" data-i18n-attr="aria-label:feedback.criteria_title" aria-label="Ratings per criterion"></table></div></div>
+    <div class="block" data-panel="low-feedback"><h3 data-i18n="feedback.low_title">Ratings below the maximum, as evaluator</h3><p class="note" id="lowFeedbackNote"></p><ul class="list" id="lowFeedback"></ul></div>
+  </div>
+</section>
+
+<section id="points" data-title-i18n="nav.points" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="points.title">Correction points</h2>
+  <p class="lede" id="points-lede"></p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="points"><h3 data-i18n="points.balance_title">Balance over time</h3><div class="plot"><canvas id="chPoints" data-i18n-attr="aria-label:points.balance_title" aria-label="Correction point balance over time"></canvas></div></div>
+    <div class="block" data-panel="table-reasons"><h3 data-i18n="points.reasons_title">Movements by reason</h3><div class="table-wrap"><table id="tblReasons" data-i18n-attr="aria-label:points.reasons_title" aria-label="Correction point movements by reason"></table></div></div>
+  </div>
+</section>
+
+<section id="extras" data-title-i18n="nav.extras" data-pages="report all-in-one web-home">
+  <h2 data-i18n="extras.title">Skills and activity</h2>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="skills">
+      <div class="panel-head"><h3 data-i18n="extras.skills_title">Skills</h3>
+        <div class="seg small" id="skillCursus" role="group" data-i18n-attr="aria-label:skills.cursus" aria-label="Cursus"><button type="button" data-v="42cursus" aria-pressed="true" data-i18n="track.student">Student</button><button type="button" data-v="C Piscine" aria-pressed="false" data-i18n="track.piscine">Piscine</button></div>
+        <div class="seg small" id="skillView" role="group" data-i18n-attr="aria-label:skills.view" aria-label="View"><button type="button" data-v="radar" aria-pressed="true" data-i18n="skills.radar">Radar</button><button type="button" data-v="bars" aria-pressed="false" data-i18n="skills.bars">Bars</button></div>
+      </div>
+      <svg class="radar" id="skillRadar"></svg>
+      <ol class="radar-key" id="skillKey" hidden></ol>
+      <div class="plot tall" id="skillBars" hidden><canvas id="chSkills" data-i18n-attr="aria-label:extras.skills_title" aria-label="Skill levels"></canvas></div>
+    </div>
+    <div class="block" data-panel="achievements"><h3 data-i18n="extras.achievements_title">Achievements</h3><ul class="list" id="lstAchievements"></ul></div>
+    <div class="block" data-panel="events"><h3 data-i18n="extras.events_title">Events attended</h3><p class="note" id="eventKinds"></p><ul class="list" id="lstEvents"></ul></div>
+    <div class="block" data-panel="misc"><h3 data-i18n="extras.misc_title">Quests, titles and expertises</h3><ul class="list" id="lstMisc"></ul></div>
+  </div>
+</section>
+
+<section id="log" data-title-i18n="nav.log" data-pages="report all-in-one web-corrections">
+  <h2 data-i18n="log.title">Evaluation log</h2>
+  <p class="lede" data-i18n="log.lede">Every evaluation with date and time to the minute (Madrid time), duration, seats, mark and flag. Open the line under an evaluation to read its comment and feedback.</p>
+  <div class="controls">
+    <div class="seg" id="logRole" role="group" data-i18n-attr="aria-label:log.role_label" aria-label="Role"><button type="button" data-v="received" aria-pressed="true" data-i18n="log.received">Received</button><button type="button" data-v="given" aria-pressed="false" data-i18n="log.given">Given</button></div>
+    <label class="field"><span data-i18n="log.flag">Flag</span><select id="logFlag"><option value="" data-i18n="log.flag_all">All flags</option><option value="out" data-i18n="log.flag_out">Outstanding only</option><option value="bad" data-i18n="log.flag_bad">Negative flags</option><option value="ok" data-i18n="log.flag_ok">Ok only</option></select></label>
+    <label class="field"><span data-i18n="log.project">Project</span><select id="logProject"><option value="" data-i18n="log.project_all">All projects</option></select></label>
+    <label class="field"><span data-i18n="common.search">Search</span><input type="search" id="logSearch" data-i18n-attr="placeholder:log.search_placeholder" placeholder="Login, comment or seat"></label>
+    <span class="note" id="logCount"></span>
+  </div>
+  <div class="cols" data-grid><div class="block" data-panel="table-log"><div class="table-wrap tall"><table id="tblLog" data-i18n-attr="aria-label:log.title" aria-label="Evaluation log"></table></div></div></div>
+</section>
+
+<footer class="site-foot">
+  <div class="foot-campus" id="footCampus"></div>
+  <div class="foot-credit">
+    <p data-i18n="foot.made">Independent project by ravazque · not affiliated with 42</p>
+    <a class="icon-link" href="https://github.com/ravazque" rel="me noopener" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg><span>GitHub</span></a>
+    <a class="icon-link" href="https://www.linkedin.com/in/ra%C3%BAl-v%C3%A1zquez-p%C3%A9rez-1a9b89382" rel="me noopener" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg><span>LinkedIn</span></a>
+  </div>
+  {{FOOT_LINKS}}
+  <p class="foot-note" id="footer"></p>
+</footer>
+</main>
+<div id="tip" role="tooltip"></div>
+<div id="dialogs"></div>
+{{BODY_END}}
+</body>
+</html>

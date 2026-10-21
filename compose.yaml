@@ -1,0 +1,36 @@
+name: ravazque-top
+
+# Run through the root Makefile (make dev / make up). Every service reads the one root .env.
+x-app: &app
+  build: {context: ., dockerfile: web/Dockerfile}
+  env_file:
+    - path: .env
+      required: false  # make clean / down / logs work before .env exists; make dev creates it first
+  volumes: ["./core:/srv/core:ro"]
+  depends_on: [redis]
+  restart: unless-stopped
+
+services:
+  caddy:
+    image: caddy:2.8
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./web/Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - ./web/certs:/certs:ro
+      - caddy_data:/data
+    depends_on: [api]
+    restart: unless-stopped
+  api:
+    <<: *app
+  worker:
+    <<: *app
+    command: ["arq", "app.worker.WorkerSettings"]
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redis_data:/data"]
+    restart: unless-stopped
+
+volumes:
+  caddy_data: {}
+  redis_data: {}

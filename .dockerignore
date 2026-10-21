@@ -1,0 +1,9 @@
+# The images only need core/ and web/; .env, certs and local data stay out
+*
+!core
+!web
+web/certs
+web/preview
+web/Caddyfile.local
+**/__pycache__
+**/.pytest_cache

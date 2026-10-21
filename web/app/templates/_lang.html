@@ -1,0 +1,4 @@
+<form class="lang" method="post" action="/lang" aria-label="{{ t['site.language'] }}">
+  <input type="hidden" name="next" value="{{ next_path }}">
+  <button type="submit" name="lang" value="en" aria-pressed="{{ 'true' if lang == 'en' else 'false' }}">EN</button><button type="submit" name="lang" value="es" aria-pressed="{{ 'true' if lang == 'es' else 'false' }}">ES</button>
+</form>

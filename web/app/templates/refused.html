@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ t["refused.title"] }} · {{ t["site.name"] }}{% endblock %}
+{% block body %}
+<header class="site-head"><a class="brand" href="/">{% include "_mark.html" %}<span>{{ t["site.name"] }}</span></a>
+  {% include "_links.html" %}</header>
+<main class="site-main">
+  <h1>{{ t["refused.title"] }}</h1>
+  <p class="lede">{{ t["refused." ~ reason] }}</p>
+  <p class="note">{{ t["refused.nothing_stored"] }}</p>
+  <p><a class="btn secondary" href="/">{{ t["refused.back"] }}</a></p>
+</main>
+{% endblock %}

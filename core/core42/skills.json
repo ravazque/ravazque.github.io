@@ -1,0 +1,8 @@
+{
+ "_notes": "Every skill of each cursus in the order the intra draws its radar (alphabetical, clockwise, starting half a step right of the top). Skills the API returns that are not listed here are kept and drawn at the end.",
+ "42cursus": ["Adaptation & creativity", "Algorithms & AI", "Basics", "Company experience", "DB & Data", "Functional programming",
+              "Graphics", "Group & interpersonal", "Imperative programming", "Network & system administration",
+              "Object-oriented programming", "Organization", "Parallel computing", "Rigor", "Ruby", "Security", "Shell",
+              "Technology integration", "Unix", "Web"],
+ "C Piscine": ["Adaptation & creativity", "Algorithms & AI", "Group & interpersonal", "Imperative programming", "Rigor", "Unix"]
+}
