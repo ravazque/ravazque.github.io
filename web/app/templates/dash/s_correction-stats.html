@@ -1,0 +1,9 @@
+<section id="correction-stats">
+  <h2>{{ s.title }}</h2>
+  <p class="lede">{{ s.lede }}</p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="fail-rates"><div class="rates">{{ s.rates }}</div></div>
+    {% if s.groups %}<div class="block" data-panel="by-group"><h3>{{ t("stats.group_title") }}</h3><p class="note">{{ t("stats.group_note") }}</p><div class="table-wrap">{{ s.groups }}</div></div>{% endif %}
+    <div class="block" data-panel="by-hour"><h3>{{ t("stats.hour_title") }}</h3><p class="note">{{ t("stats.hour_note_ssr") }}</p>{{ s.roles }}{{ s.by_hour }}</div>
+  </div>
+</section>

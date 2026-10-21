@@ -12,10 +12,15 @@ snapshot published from the app.
 
 ## Features
 
-- **Home**: key numbers, projects table (filters, rank groups, CSV export), coalitions and promo, pace and blackhole,
-  exams, teammates, timeline, skills radar for the 42cursus and the C Piscine.
-- **Corrections**: bubble graph, your circle of evaluators, statistics, evaluations in depth, every evaluation.
-- **Campus**: logtime, seats, calendar, sessions.
+Five pages, rendered on the server; every choice (period, filters, views) lives in the URL:
+
+- **Home**: key numbers, pace and blackhole, skills (radar or bars, 42cursus or C Piscine), coalitions and promo,
+  achievements, events, quests and titles.
+- **Projects**: every project with filters, rank groups and CSV export, the attempt timeline, cumulative retries, exams.
+- **Evaluations**: received and given over time, marks, when (weekday × hour, duration, booking lead, per project),
+  correction statistics, feedback, correction points, the full evaluation log with search.
+- **People**: top correctors and everyone you crossed paths with, Connections as bubbles or as your circle, teammates.
+- **Campus**: seat plan with every computer, hours per month, calendar, weekday × hour, sessions, where evaluations happen.
 - **Publish** (optional, one account only): commits a whitelisted snapshot of that account's profile to a GitHub Pages
   repository.
 
@@ -23,8 +28,8 @@ snapshot published from the app.
 
 | Directory | Contents |
 |-----------|----------|
-| `web/` | FastAPI app, arq worker, Redis, Caddy (HTTPS), all in Docker Compose |
-| `core/` | `core42`: 42 API analysis, sign-in rules, rank groups and the shared frontend (HTML, CSS, JS, `ui.json`, i18n) |
+| `web/` | FastAPI app rendering every page with Jinja (htmx for partial updates, a small `dash.js` for tooltips and sorting), arq worker, Redis, Caddy (HTTPS), all in Docker Compose |
+| `core/` | `core42`: 42 API analysis, sign-in rules, rank groups and the shared frontend assets (CSS, `ui.json`, i18n, controls, accent, radar) |
 | `site/` | Static CV page with the published 42 snapshot, deployed by `.github/workflows/pages.yml` |
 
 ## Running it
@@ -62,7 +67,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | `make up` / `make down` | Start as built / stop (Redis data is kept) |
 | `make logs`, `make ps` | Follow logs / list services |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
-| `make preview` | Offline dashboard previews in `web/preview/` (`UID=<42 user id>` fetches real data once) |
+| `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 100 requests) |
 | `make snapshot` | Write `site/data/42.json` from the preview data |
 | `make site` | Stage `site/` into `site/_build` and serve it at http://localhost:8080 |
 | `make certs` | Create the HTTPS certificates |
@@ -88,7 +93,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 - *Delete my data* removes everything and cancels a pending extraction. The hourly limit survives as an anonymous HMAC
   so deleting cannot bypass it.
 - Sign-in callbacks are rate-limited per address; avatars are fetched only from the intra CDN; Caddy sends HSTS, a
-  frame-blocking CSP, `nosniff` and `same-origin` referrer headers.
+  strict CSP (`script-src 'self'`, no frames), `nosniff` and `same-origin` referrer headers.
 - The published snapshot (`web/app/publish.py`) is a field-by-field whitelist: never contact data, seats, logged hours,
   ids, tokens, photos or anything about other students.
 

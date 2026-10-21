@@ -1,0 +1,20 @@
+{% extends "dash/base.html" %}
+{% block body %}
+<main id="main" class="solo">
+  <div class="boot-panel">
+    <h2>{{ t(kind ~ ".title") }}</h2>
+    {% if result %}
+      {% if result.ok %}<p>{{ t("publish.done") }} · <a href="{{ result.url }}" target="_blank" rel="noopener">{{ t("publish.view") }}</a></p>
+      {% else %}<p>{{ t("publish.error_" ~ result.error) }}</p>{% endif %}
+      <p class="row-btns"><a class="btn secondary" href="/app">{{ t("brand.name") }}</a></p>
+    {% else %}
+      <p>{{ t(kind ~ ".confirm") }}</p>
+      <form class="row-btns" method="post" action="/app/{{ kind }}">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn primary" type="submit">{{ t(kind ~ ".yes") }}</button>
+        <a class="btn secondary" href="/app">{{ t(kind ~ ".no") }}</a>
+      </form>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

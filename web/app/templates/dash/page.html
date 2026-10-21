@@ -1,0 +1,37 @@
+{% extends "dash/base.html" %}
+{% import "dash/_macros.html" as m %}
+{% block body %}
+<aside class="rail" aria-label="{{ t('rail.label') }}">
+  <div class="identity">
+    <div class="avatar-lg"><span aria-hidden="true">{{ rail.initials }}</span>{% if rail.image %}<img src="{{ rail.image }}" alt="">{% endif %}</div>
+    <div><h1>{{ rail.name }}</h1><p>{{ rail.login }}{% if rail.campus %} · {{ rail.campus }}{% endif %}</p><p class="coal">{{ rail.coalition }}</p></div>
+  </div>
+  {% if rail.periods %}
+  <nav class="periods" aria-label="{{ t('rail.period') }}" hx-boost="true" hx-swap="innerHTML show:none">
+    {% for p in rail.periods %}<a href="{{ p.href }}" role="button" aria-pressed="{{ 'true' if p.on else 'false' }}"><b>{{ p.label }}</b><span>{{ p.time }}</span></a>{% endfor %}
+  </nav>
+  {% else %}
+  <div class="periods"><p class="only"><b>{{ t("rail.cursus_only") }}</b>{{ t("rail.cursus_only_note") }}</p></div>
+  {% endif %}
+  <div class="figure">
+    <p class="label">{{ rail.range }}</p>
+    <div class="big" aria-label="{{ rail.aria }}"><span>{{ rail.h }}<small>h</small></span> <span>{{ rail.m }}<small>m</small></span></div>
+    <div class="stats">{% for v, label in rail.stats %}<div><b>{{ v }}</b><span>{{ label }}</span></div>{% endfor %}</div>
+    <p class="now">{{ rail.now }}</p>
+  </div>
+  <nav class="toc" aria-label="{{ t('rail.sections') }}">{% for s in sections %}<a href="#{{ s.id }}">{{ s.nav }}</a>{% endfor %}</nav>
+</aside>
+
+<main id="main">
+{% for s in sections %}{% include "dash/s_" ~ s.id ~ ".html" %}
+{% endfor %}
+<footer class="site-foot">
+  <div class="foot-campus">{% if foot.campuses %}<h2 class="foot-title">{{ t("foot.campuses") }}</h2><ul class="campuses">
+    {% for c in foot.campuses %}<li><p><b>{{ c.name }}</b>{% if c.primary %} <span class="badge">{{ t("foot.current") }}</span>{% endif %}{% if c.city %} <span class="note">{{ c.city }}</span>{% endif %}</p>
+      <p>{{ c.line }}</p>{% if c.span %}<p class="note">{{ c.span }}</p>{% endif %}</li>{% endfor %}</ul>{% endif %}</div>
+  {% include "dash/_credit.html" %}
+  <nav class="foot-links"><a href="/about">{{ t("site.about") }}</a><a href="/privacy">{{ t("site.privacy") }}</a>{% if issues_url %}<a href="{{ issues_url }}" rel="noopener" target="_blank">{{ t("site.issues") }}</a>{% endif %}</nav>
+  <p class="foot-note">{{ foot.note }}</p>
+</footer>
+</main>
+{% endblock %}

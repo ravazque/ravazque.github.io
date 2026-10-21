@@ -32,8 +32,8 @@ test: .env ## Run every test: web + core (pytest in the image) and JS (local nod
 	  api sh -c "python -m pytest -q -p no:cacheprovider && python -m pytest -q -p no:cacheprovider -o asyncio_default_fixture_loop_scope=function /srv/core/tests"
 	@node --test web/tests/js/*.test.mjs core/tests/js/*.test.mjs site/tests/*.test.mjs
 
-preview: .env ## Build web/preview/{home,corrections,campus}.html offline (UID=<42 user id> fetches real data once)
-	@$(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py $(if $(UID),--fetch $(UID))
+preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 100 requests)
+	@$(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(UID)
 
 snapshot: .env ## Write site/data/42.json from web/preview/data.json (what the publish button would send)
 	@$(COMPOSE) run --rm --no-deps -v ./web:/srv/web -v ./site:/srv/site api python scripts/snapshot.py preview/data.json /srv/site/data/42.json
@@ -50,7 +50,7 @@ web/Caddyfile.local: web/Caddyfile.tmpl $(wildcard web/certs/localhost.pem)
 	@if [ -f web/certs/localhost.pem ]; then line='tls /certs/localhost.pem /certs/localhost-key.pem'; else line='tls internal'; fi; \
 	 sed "s|TLS_LINE|$$line|" web/Caddyfile.tmpl > $@
 
-clean: ## Stop the web and delete generated files (previews, site/_build, Caddyfile.local)
+clean: ## Stop the web and delete generated files (preview data, site/_build, Caddyfile.local)
 	@$(COMPOSE) down --remove-orphans
 	@rm -rf web/preview web/Caddyfile.local site/_build
 	@find web core -name __pycache__ -type d -prune -exec rm -rf {} +

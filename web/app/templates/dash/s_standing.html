@@ -1,0 +1,7 @@
+<section id="standing">
+  <h2>{{ s.title }}</h2>
+  <div class="cols" data-grid>
+    {% if s.coalitions %}<div class="block" data-panel="coalitions"><h3>{{ t("standing.coalitions") }}</h3><ol class="standings">{{ s.coalitions }}</ol></div>{% endif %}
+    <div class="block" data-panel="promo"><h3>{{ t("standing.promo") }}</h3><p class="lede">{{ s.promo_lede }}</p>{{ s.promo }}</div>
+  </div>
+</section>

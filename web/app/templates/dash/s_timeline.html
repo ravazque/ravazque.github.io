@@ -1,0 +1,8 @@
+<section id="timeline">
+  <h2>{{ s.title }}</h2>
+  <p class="lede">{{ s.lede }}</p>
+  <div class="cols" data-grid>
+    <div class="block" data-panel="timeline"><h3>{{ t("projects.timeline_title") }}</h3>{{ s.legend }}{{ s.timeline }}</div>
+    <div class="block" data-panel="cum-retries"><h3>{{ t("projects.cum_title") }}</h3><p class="note">{{ t("projects.cum_note") }}</p>{{ s.retries }}</div>
+  </div>
+</section>
