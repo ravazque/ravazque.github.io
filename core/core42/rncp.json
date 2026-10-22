@@ -1,0 +1,515 @@
+{
+ "_notes": "Requirements of the RNCP titles as the intra lists them for 42 Madrid (2026-10). Every requirement of an option must be met; one option is enough. \"projects\": validated projects whose name is in tags[tag]; \"xp\": XP of those validated projects (the site's own estimate, the intra may differ); \"group\": validated projects done in a team; \"events\": events attended; \"level\": 42cursus level.",
+ "tags": {
+  "suite": [
+   "Inception-of-Things",
+   "HumanGL",
+   "Bgp At Doors of Autonomous Systems is Simple",
+   "override",
+   "rt",
+   "pestilence",
+   "doom_nukem",
+   "Doom Nukem",
+   "doom-nukem",
+   "total-perspective-vortex",
+   "Pestilence",
+   "42sh",
+   "humangl",
+   "RT",
+   "Override",
+   "KFS-2",
+   "kfs-2"
+  ],
+  "work": [
+   "FR Apprentissage RNCP 7 - 2 ans",
+   "FR - Alternance - RNCP7 - 2 ans",
+   "Apprenticeship I",
+   "FR - Alternance - RNCP6 - 1 an",
+   "FR - Alternance - RNCP7 - 1 an",
+   "FR Apprentissage RNCP 7 - 1 an",
+   "Apprentissage 2 ans - 2ème année",
+   "FR - Alternance - RNCP6 - 2 ans",
+   "Work Experience II",
+   "Work Experience I",
+   "Apprentissage 1 an",
+   "Startup Experience"
+  ],
+  "web": [
+   "red-tetris",
+   "Django - 3 - Final",
+   "darkly",
+   "music-room",
+   "Tokenizer",
+   "TokenizeArt",
+   "camagru",
+   "[Deprecated] Piscine Ruby on Rails",
+   "h42n42",
+   "[DEPRECATED] Piscine PHP Symfony",
+   "hypertube",
+   "RoR - 3 - Final",
+   "matcha",
+   "[DEPRECATED] Piscine Python Django",
+   "Symfony - 3 - Final"
+  ],
+  "mobile": [
+   "swifty-companion",
+   "swifty-proteins",
+   "Peace_Break",
+   "[DEPRECATED] Piscine Swift iOS",
+   "ft_hangouts",
+   "music-room",
+   "Mobile - 5 - Manage data and display"
+  ],
+  "oop": [
+   "red-tetris",
+   "swifty-companion",
+   "camagru",
+   "hypertube",
+   "Django - 3 - Final",
+   "avaj-launcher",
+   "RetroEmu",
+   "bomberman",
+   "swifty-proteins",
+   "Mobile - 5 - Manage data and display",
+   "libftpp",
+   "Symfony - 3 - Final",
+   "h42n42",
+   "matcha",
+   "[DEPRECATED] Piscine Swift iOS",
+   "[DEPRECATED] Piscine Python Django",
+   "nibbler",
+   "[Deprecated] Piscine Ruby on Rails",
+   "swingy",
+   "Piscine Object - Module 05 - Practical work",
+   "Abstract_data",
+   "ft_hangouts",
+   "[DEPRECATED] Piscine PHP Symfony",
+   "fix-me",
+   "RoR - 3 - Final",
+   "darkly"
+  ],
+  "functional": [
+   "[DEPRECATED] Piscine OCaml",
+   "OCAML - Monoids and Monads - 3",
+   "ft_ality",
+   "ft_turing",
+   "h42n42"
+  ],
+  "functional_xp": [
+   "OCAML - Pattern Matching and Data Types - 0",
+   "OCAML - Imperative features - 1",
+   "h42n42",
+   "ft_ality",
+   "OCAML - Monoids and Monads - 3",
+   "ft_turing",
+   "OCAML - Object Oriented Programming - 2",
+   "OCAML - Object Oriented Programming - 1",
+   "OCAML - Recursion and higher-order functions - 0",
+   "OCAML - Basic syntax and semantics - 0",
+   "OCAML - Functor - 1",
+   "[DEPRECATED] Piscine OCaml",
+   "OCAML - OCaml’s modules language - 1"
+  ],
+  "imperative": [
+   "darkly",
+   "ft_ssl_md5",
+   "little-penguin-1",
+   "zappy",
+   "libasm",
+   "ft_select",
+   "ft_linux",
+   "rainfall",
+   "pestilence",
+   "famine",
+   "malloc",
+   "ft_shield",
+   "ft_script",
+   "lem-ipc",
+   "Old-LibftASM",
+   "kfs-1",
+   "kfs-2",
+   "strace",
+   "boot2root",
+   "taskmaster",
+   "[deprecated]gbmu",
+   "ft_malcolm",
+   "override",
+   "matt-daemon",
+   "woody-woodpacker",
+   "snow-crash",
+   "nm"
+  ],
+  "sysadmin": [
+   "Inception-of-Things",
+   "cloud-1",
+   "ft_nmap",
+   "ft_ping",
+   "taskmaster",
+   "Bgp At Doors of Autonomous Systems is Simple",
+   "ActiveDiscovery",
+   "AccessibleDirectory",
+   "Inception of context",
+   "ft_traceroute",
+   "ft_lgtm",
+   "AutomaticDirectory",
+   "Inception of wisdom",
+   "AdministrativeDirectory"
+  ],
+  "unix": [
+   "userspace_digressions",
+   "kfs-5",
+   "kfs-6",
+   "kfs-9",
+   "kfs-3",
+   "kfs-4",
+   "kfs-x",
+   "Filesystem",
+   "ft_linux",
+   "strace",
+   "process-and-memory",
+   "malloc",
+   "kfs-2",
+   "kfs-8",
+   "little-penguin-1",
+   "kfs-1",
+   "RetroEmu",
+   "ft_script",
+   "taskmaster",
+   "ft_select",
+   "libasm",
+   "zappy",
+   "lem-ipc",
+   "nm",
+   "drivers-and-interrupts",
+   "matt-daemon",
+   "[deprecated]gbmu"
+  ],
+  "security": [
+   "override",
+   "ActiveTechTales",
+   "famine",
+   "tinky-winkey",
+   "MicroForensX",
+   "ft_shield",
+   "darkly",
+   "ft_ssl_md5",
+   "UnleashTheBox",
+   "ActiveConnect",
+   "pestilence",
+   "ft_malcolm",
+   "boot2root",
+   "Cybersecurity - Vaccine - Web",
+   "woody-woodpacker",
+   "snow-crash",
+   "rainfall"
+  ],
+  "security_xp": [
+   "override",
+   "darkly",
+   "Cybersecurity - Inquisitor - Network",
+   "woody-woodpacker",
+   "ft_ssl_md5",
+   "rainfall",
+   "Cybersecurity - ft_onion - Web",
+   "boot2root",
+   "Cybersecurity - Stockholm - Malware",
+   "ActiveConnect",
+   "pestilence",
+   "famine",
+   "Cybersecurity - Vaccine - Web",
+   "MicroForensX",
+   "tinky-winkey",
+   "ft_malcolm",
+   "UnleashTheBox",
+   "Cybersecurity - ft_otp - OTP",
+   "Cybersecurity - Reverse me - Rev",
+   "Cybersecurity - arachnida - Web",
+   "ft_shield",
+   "ActiveTechTales",
+   "(Optional) Cybersecurity - Iron Dome - Malware",
+   "snow-crash"
+  ],
+  "web_db": [
+   "red-tetris",
+   "[Deprecated] Piscine Ruby on Rails",
+   "h42n42",
+   "Django - 3 - Final",
+   "TokenizeArt",
+   "[DEPRECATED] Piscine PHP Symfony",
+   "camagru",
+   "Symfony - 3 - Final",
+   "hypertube",
+   "darkly",
+   "RoR - 3 - Final",
+   "music-room",
+   "[DEPRECATED] Piscine Python Django",
+   "Tokenizer",
+   "matcha"
+  ],
+  "web_db_xp": [
+   "red-tetris",
+   "Django - 0 - Starting",
+   "Symfony - 3 - Sessions",
+   "Symfony - 0 - Initiation",
+   "RoR - 3 - Advanced",
+   "Django - 1 - Base Django",
+   "music-room",
+   "Tokenizer",
+   "RoR - 0 - Oob",
+   "Symfony - 1 - Base Symfony",
+   "darkly",
+   "Django - 3 - Sessions",
+   "RoR - 0 - Initiation",
+   "Symfony - 1 - Composer",
+   "Django - 3 - Advanced",
+   "Django - 3 - Final",
+   "Symfony - 3 - Final",
+   "TokenizeArt",
+   "RoR - 1 - Gems",
+   "Symfony - 2 - SQL",
+   "[Deprecated] Piscine Ruby on Rails",
+   "camagru",
+   "RoR - 0 - Starting",
+   "Django - 1 - Lib",
+   "[DEPRECATED] Piscine Python Django",
+   "[DEPRECATED] Piscine PHP Symfony",
+   "matcha",
+   "RoR - 1 - Base Rails",
+   "Symfony - 0 - Oob",
+   "RoR - 3 - Sessions",
+   "RoR - 3 - Final",
+   "Symfony - 0 - Starting",
+   "Django - 0 - Initiation",
+   "RoR - 2 - SQL",
+   "Django - 0 - Oob",
+   "hypertube",
+   "Symfony - 3 - Advanced",
+   "Django - 2 - SQL",
+   "h42n42"
+  ],
+  "ai": [
+   "Leaffliction",
+   "dslr",
+   "ft_linear_regression",
+   "Learn2Slither",
+   "krpsim",
+   "Vic-2-l",
+   "ready set boole",
+   "expert-system",
+   "matrix",
+   "gomoku",
+   "multilayer-perceptron",
+   "Data Science - 4",
+   "Python - 4 - Dod",
+   "total-perspective-vortex",
+   "[DEPRECATED] Python Module 04",
+   "[DEPRECATED] ML Module 04",
+   "Cow-Neck-TID"
+  ],
+  "ai_xp": [
+   "Leaffliction",
+   "dslr",
+   "ft_linear_regression",
+   "Python - 3 - OOP",
+   "gomoku",
+   "Data Science - 3",
+   "Vic-2-l",
+   "Python - 4 - Dod",
+   "multilayer-perceptron",
+   "[DEPRECATED] ML Module 03",
+   "Data Science - 4",
+   "[DEPRECATED] ML Module 02",
+   "[DEPRECATED] Python Module 00",
+   "ready set boole",
+   "Python - 0 - Starting",
+   "[DEPRECATED] Python Module 01",
+   "Python - 1 - Array",
+   "[DEPRECATED] Python Module 04",
+   "Data Science - 2",
+   "[DEPRECATED] Python Module 03",
+   "[DEPRECATED] ML Module 04",
+   "matrix",
+   "total-perspective-vortex",
+   "expert-system",
+   "[DEPRECATED] ML Module 01",
+   "krpsim",
+   "Data Science - 0",
+   "[DEPRECATED] Python Module 02",
+   "[DEPRECATED] ML Module 00",
+   "Cow-Neck-TID",
+   "Data Science - 1",
+   "Python - 2 - DataTable",
+   "Learn2Slither"
+  ]
+ },
+ "titles": {
+  "rncp6": [
+   {
+    "key": "web_mobile",
+    "needs": [
+     {
+      "projects": "suite",
+      "n": 1
+     },
+     {
+      "projects": "work",
+      "n": 2
+     },
+     {
+      "group": 2
+     },
+     {
+      "events": 10
+     },
+     {
+      "level": 17
+     },
+     {
+      "projects": "web",
+      "n": 2
+     },
+     {
+      "xp": "web",
+      "n": 15000
+     },
+     {
+      "projects": "mobile",
+      "n": 2
+     },
+     {
+      "xp": "mobile",
+      "n": 10000
+     }
+    ]
+   },
+   {
+    "key": "apps",
+    "needs": [
+     {
+      "projects": "suite",
+      "n": 1
+     },
+     {
+      "projects": "work",
+      "n": 2
+     },
+     {
+      "group": 2
+     },
+     {
+      "events": 10
+     },
+     {
+      "level": 17
+     },
+     {
+      "projects": "oop",
+      "n": 2
+     },
+     {
+      "xp": "oop",
+      "n": 10000
+     },
+     {
+      "projects": "functional",
+      "n": 2
+     },
+     {
+      "xp": "functional_xp",
+      "n": 10000
+     },
+     {
+      "projects": "imperative",
+      "n": 2
+     }
+    ]
+   }
+  ],
+  "rncp7": [
+   {
+    "key": "systems",
+    "needs": [
+     {
+      "projects": "suite",
+      "n": 1
+     },
+     {
+      "projects": "work",
+      "n": 2
+     },
+     {
+      "group": 2
+     },
+     {
+      "events": 15
+     },
+     {
+      "level": 21
+     },
+     {
+      "projects": "sysadmin",
+      "n": 3
+     },
+     {
+      "xp": "sysadmin",
+      "n": 50000
+     },
+     {
+      "projects": "unix",
+      "n": 2
+     },
+     {
+      "xp": "unix",
+      "n": 30000
+     },
+     {
+      "projects": "security",
+      "n": 3
+     },
+     {
+      "xp": "security_xp",
+      "n": 50000
+     }
+    ]
+   },
+   {
+    "key": "data_web",
+    "needs": [
+     {
+      "projects": "suite",
+      "n": 1
+     },
+     {
+      "projects": "work",
+      "n": 2
+     },
+     {
+      "group": 2
+     },
+     {
+      "events": 15
+     },
+     {
+      "level": 21
+     },
+     {
+      "projects": "web_db",
+      "n": 2
+     },
+     {
+      "xp": "web_db_xp",
+      "n": 50000
+     },
+     {
+      "projects": "ai",
+      "n": 3
+     },
+     {
+      "xp": "ai_xp",
+      "n": 70000
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -8,10 +8,12 @@ from app.extract import extract
 from app.store import Store
 from test_extract import UID, FakeApi
 
-PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus"}
+PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus",
+         "/app/astra": "astra"}
 SECTIONS = {"/app": ["home-kpis", "pace", "skills", "activity"], "/app/projects": ["projects-table", "timeline", "exams"],
             "/app/evaluations": ["over-time", "when", "correction-stats", "feedback", "points", "log"],
-            "/app/people": ["who", "connections", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"]}
+            "/app/people": ["who", "connections", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"],
+            "/app/astra": ["astra"]}
 INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>")
 
 

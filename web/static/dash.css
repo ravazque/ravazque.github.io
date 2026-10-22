@@ -100,3 +100,58 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .graph-wide .graph, .graph-narrow .graph { display: block; width: 100%; height: auto; }
 .graph a.bubble { cursor: pointer; }
 .graph a.bubble:focus-visible circle { stroke: var(--focus); stroke-width: var(--c-bubble-focus-width); }
+
+/* Astra Victoris */
+.astra-head { display: flex; align-items: center; gap: 14px; }
+.astra-head h2 { margin: 0; }
+.laurel { width: 34px; height: 48px; fill: var(--amber-data); flex: none; }
+.laurel .stem { fill: none; stroke: var(--amber-data); stroke-width: 2; stroke-linecap: round; }
+.laurel.flip { transform: scaleX(-1); }
+.astra-verdict { margin-top: 10px; font-size: 18px; }
+.astra-verdict b { font: 800 26px var(--type-font-display); color: var(--amber-ink); margin-right: 8px; }
+.astra-grid { display: grid; grid-template-columns: 1fr; gap: var(--c-section-grid-gap-y) var(--c-section-grid-gap-x); margin-top: 24px; }
+@media (min-width: 1280px) { .astra-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.goal { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 18px; align-items: start; }
+.goal-body h3 { margin: 4px 0 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.astra-hex { display: block; width: 112px; height: auto; color: var(--muted); }
+.astra-hex .hex-out { fill: var(--ink); }
+.astra-hex .hex-in { fill: color-mix(in oklab, var(--surface) 88%, var(--muted)); }
+.astra-hex .icon { fill: currentColor; stroke: currentColor; stroke-width: 0; }
+.astra-hex .icon .line { fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.astra-hex .icon .line.wide { stroke-width: 5; }
+.astra-hex .icon .line.thin { stroke-width: 1.6; stroke: var(--ink); }
+.astra-hex .icon .eye { fill: color-mix(in oklab, var(--surface) 88%, var(--muted)); }
+.astra-hex .icon .moon { opacity: .35; }
+.astra-hex .icon .brow { opacity: .85; }
+.astra-hex .icon .pupil { fill: var(--ink); }
+.goal.done .astra-hex { color: var(--amber-data); }
+.goal.done .astra-hex .hex-out { fill: var(--amber-data); }
+.goal.done .goal-state { background: var(--amber-data); color: var(--c-button-primary-fg); }
+.astra-override { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; }
+.astra-option { margin-top: 8px; }
+.astra-option summary { white-space: normal; overflow: visible; }
+.reqs { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.reqs li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; }
+.reqs .mark-ico { font-weight: 800; }
+.reqs .met .mark-ico { color: var(--good); }
+.reqs .unmet .mark-ico { color: var(--critical); }
+.reqs .sub { display: block; color: var(--muted); font-size: 13px; }
+.astra-bar { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(80px, 1fr) auto; align-items: center; gap: 10px; margin-top: 8px; }
+.astra-bar .track { height: 10px; border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
+.astra-bar .track i { display: block; height: 100%; background: var(--slate); }
+.astra-bar.met .track i { background: var(--good); }
+.astra-bar b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.astra-marks { display: grid; gap: 10px; margin-top: 10px; }
+.astra-marks .switch { text-align: left; }
+.counter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.counter > span:first-child { flex: 1 1 180px; }
+.counter .btn { min-height: 32px; width: 32px; padding: 0; }
+.counter output { min-width: 2ch; text-align: center; font: 700 18px var(--type-font-display); }
+.js .no-js-only { display: none; }
+@media (max-width: 600px) {
+  .goal { grid-template-columns: 64px minmax(0, 1fr); gap: 12px; }
+  .astra-hex { width: 64px; }
+  .astra-bar { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
+  .astra-bar .track { grid-column: 1 / -1; order: 3; }
+  .counter > span:first-child { flex-basis: 100%; }
+}

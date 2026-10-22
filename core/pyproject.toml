@@ -13,4 +13,4 @@ requires-python = ">=3.11"
 packages = ["core42"]
 
 [tool.setuptools.package-data]
-core42 = ["frontend/*", "frontend/**/*", "tracks.json"]
+core42 = ["frontend/*", "frontend/**/*", "tracks.json", "rncp.json", "skills.json"]

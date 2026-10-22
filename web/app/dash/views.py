@@ -9,10 +9,12 @@ from urllib.parse import urlencode
 
 from markupsafe import Markup, escape
 
+from . import astra as av
 from . import charts as ch
 from . import graphs as gr
 
-PAGES = {"home": "/app", "projects": "/app/projects", "evaluations": "/app/evaluations", "people": "/app/people", "campus": "/app/campus"}
+PAGES = {"home": "/app", "projects": "/app/projects", "evaluations": "/app/evaluations", "people": "/app/people", "campus": "/app/campus",
+         "astra": "/app/astra"}
 PROJECT_GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "piscine"]
 KINDS = ["nice", "rigorous", "interested", "punctuality"]
 SAFE_COLOR = re.compile(r"^#[0-9a-fA-F]{3,8}$")
@@ -750,4 +752,37 @@ def campus(pg: Page) -> list[dict]:
     return sections
 
 
-BUILDERS = {"home": home, "projects": projects, "evaluations": evaluations, "people": people, "campus": campus}
+# ---------- Astra Victoris ----------
+
+def astra(pg: Page) -> list[dict]:
+    f = pg.f
+    v = av.view(f, pg.data)
+    gk = v["gatekeeper"]
+
+    def bar(have, need, label, fmt=lambda x: f.num(x)):
+        return {"label": label, "have": fmt(have), "need": fmt(need), "pct": min(100, round(100 * have / need)) if need else 0, "met": have >= need}
+
+    goals = []
+    for g in av.GOALS:
+        goal = {"key": g, "name": f(f"astra.goal.{g}.name"), "rule": f(f"astra.goal.{g}.rule"), "hex": av.hexagon(g, f(f"astra.goal.{g}.name"))}
+        if g in ("grandmaster", "architect"):
+            goal.update(auto=v[g]["met"], options=v[g]["options"])
+        elif g == "gatekeeper":
+            goal.update(auto=gk["met"], bars=[
+                bar(gk["outer"], 50, f("astra.gk.outer")),
+                bar(gk["total"], 150, f("astra.gk.total")),
+                bar(gk["hours"], 2000, f("astra.gk.hours"), lambda x: f.nb(x, "h", 0))],
+                avg=f("astra.gk.avg", avg=f.num(gk["avg"], 2)) if gk["avg"] is not None else "")
+        else:
+            goal["auto"] = None
+            goal["counters"] = {"kraken": [("babel", f("astra.kraken.babel"), 5), ("manguito", f("astra.kraken.manguito"), 3)],
+                                "headhunter": [("alumni", f("astra.hh.events"), 4)]}.get(g, [])
+            goal["switches"] = {"headhunter": [("referral", f("astra.hh.referral"))],
+                                "titan": [("tool", f("astra.titan.tool")), ("scorer", f("astra.titan.scorer"))]}.get(g, [])
+        goals.append(goal)
+    auto_done = sum(1 for g in goals if g["auto"])
+    return [{"id": "astra", "title": f("astra.title"), "nav": f("astra.title"), "lede": f("astra.lede"), "goals": goals,
+             "count": f("astra.count", n=auto_done), "laurel": av.laurel(), "laurel_flip": av.laurel(flip=True)}]
+
+
+BUILDERS = {"home": home, "projects": projects, "evaluations": evaluations, "people": people, "campus": campus, "astra": astra}
