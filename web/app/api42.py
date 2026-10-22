@@ -20,19 +20,19 @@ class Api42Error(Exception):
 
 
 class Api42:
-    def __init__(self, settings, redis, http: httpx.AsyncClient, limiter, sleep=asyncio.sleep):
-        self.settings, self.redis, self.http, self.limiter, self.sleep = settings, redis, http, limiter, sleep
+    def __init__(self, settings, memory, http: httpx.AsyncClient, limiter, sleep=asyncio.sleep):
+        self.settings, self.memory, self.http, self.limiter, self.sleep = settings, memory, http, limiter, sleep
         self.requests = 0  # API calls made through this client (the worker logs it per extraction)
 
     async def app_token(self, refresh: bool = False) -> str:
-        if not refresh and (cached := await self.redis.get(TOKEN_KEY)):
+        if not refresh and (cached := await self.memory.get(TOKEN_KEY)):
             return cached.decode()
         r = await self.http.post(f"{API}/oauth/token", data={
             "grant_type": "client_credentials", "client_id": self.settings.ft_uid, "client_secret": self.settings.ft_secret}, timeout=30)
         if r.status_code != 200:
             raise Api42Error(r.status_code, "/oauth/token")
         body = r.json()
-        await self.redis.set(TOKEN_KEY, body["access_token"], ex=max(int(body.get("expires_in", 7200)) - 60, 60))
+        await self.memory.set(TOKEN_KEY, body["access_token"], ex=max(int(body.get("expires_in", 7200)) - 60, 60))
         return body["access_token"]
 
     async def _get(self, path: str, params: dict | None = None, user_token: str | None = None) -> httpx.Response:

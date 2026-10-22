@@ -34,7 +34,7 @@ def safe_next(target: str) -> str:
 
 @router.get("/")
 async def landing(request: Request, error: str = ""):
-    if await SessionStore(request.app.state.redis, request.app.state.settings).get(request.cookies.get(COOKIE)):
+    if await SessionStore(request.app.state.memory, request.app.state.settings).get(request.cookies.get(COOKIE)):
         return RedirectResponse("/app", status_code=303)
     return render(request, "landing.html", error=error if error in ("signin", "consent") else "")
 

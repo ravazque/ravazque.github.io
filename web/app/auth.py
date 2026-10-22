@@ -45,9 +45,9 @@ async def callback(request: Request, code: str = "", state: str = ""):
         return PlainTextResponse("Invalid sign-in state. Please start again.", status_code=400)
     app, s = request.app, request.app.state.settings
     api = app.state.api
-    key = CALLBACK_KEY.format(Store(app.state.redis, s)._digest(request.client.host if request.client else ""))
-    if (attempts := await app.state.redis.incr(key)) == 1:
-        await app.state.redis.expire(key, CALLBACK_WINDOW_S)
+    key = CALLBACK_KEY.format(Store(app.state.memory, s)._digest(request.client.host if request.client else ""))
+    if (attempts := await app.state.memory.incr(key)) == 1:
+        await app.state.memory.expire(key, CALLBACK_WINDOW_S)
     if attempts > CALLBACKS_PER_WINDOW:
         return PlainTextResponse("Too many sign-in attempts. Try again in a few minutes.", status_code=429)
     try:
@@ -65,9 +65,9 @@ async def callback(request: Request, code: str = "", state: str = ""):
     except (Api42Error, httpx.HTTPError):  # the accent falls back to the default; sign-in goes on
         coalition = None
     image = ((me.get("image") or {}).get("versions") or {}).get("medium") or (me.get("image") or {}).get("link")
-    sid = await SessionStore(app.state.redis, s).create({"id": me["id"], "login": me["login"], "name": me.get("displayname"),
+    sid = await SessionStore(app.state.memory, s).create({"id": me["id"], "login": me["login"], "name": me.get("displayname"),
                                                          "image": image, "coalition_color": (coalition or {}).get("color")})
-    store = Store(app.state.redis, s)
+    store = Store(app.state.memory, s)
     await store.clear_refusal(me["id"])
     await consent.record(store, me["id"])
     await app.state.on_signed_in(app, me["id"], me)
@@ -81,7 +81,7 @@ async def callback(request: Request, code: str = "", state: str = ""):
 async def logout(request: Request, user: dict = Depends(current_user)):
     if not await csrf_ok(request, user):
         return PlainTextResponse("Invalid request token.", status_code=403)
-    await SessionStore(request.app.state.redis, request.app.state.settings).delete(request.state.sid)
+    await SessionStore(request.app.state.memory, request.app.state.settings).delete(request.state.sid)
     response = RedirectResponse("/", status_code=303)
     _clear(response, COOKIE, request.app.state.settings)
     return response

@@ -44,7 +44,7 @@ async def test_lang_rejects_open_redirects_and_unknown_languages(client):
 
 async def test_privacy_mentions_retention_cookie_cooldown_and_contact(client):
     r = await client.get("/privacy", headers={"Accept-Language": "en"})
-    for s in ("30 days", "__Host-session", "owner@example.invalid", "60 minutes", "rank group"):
+    for s in ("IndexedDB", "never written to disk", "__Host-session", "owner@example.invalid", "60 minutes", "rank group"):
         assert s in r.text
 
 

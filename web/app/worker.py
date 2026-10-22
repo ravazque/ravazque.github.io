@@ -1,20 +1,13 @@
-"""arq worker: runs extractions one at a time through the shared rate limiter."""
+"""The extraction job run by jobs.Jobs inside the web process."""
 import logging
 import time
 from datetime import datetime, timezone
 
-import httpx
-from arq.connections import RedisSettings
-
 from .api42 import Api42, Api42Error
 from .extract import AccessRefused, extract
-from .limiter import RateLimiter
-from .redis import make_redis
-from .settings import Settings
-from .store import Store
 
 log = logging.getLogger("ravazque.worker")
-log.setLevel(logging.INFO)  # arq configures only its own logger: without this the per-extraction request count is dropped
+log.setLevel(logging.INFO)  # without a level the per-extraction request count is dropped
 if not logging.getLogger().handlers:
     _handler = logging.StreamHandler()
     _handler.setFormatter(logging.Formatter("%(asctime)s: %(message)s", "%H:%M:%S"))
@@ -59,27 +52,3 @@ async def extract_job(ctx, uid: int):
         if await store.deleted(uid):
             await store.forget_status(uid)
         await store.unlock(uid)
-
-
-async def startup(ctx):
-    settings = Settings.from_env().check()
-    redis = make_redis(settings.redis_url)
-    ctx["http"] = httpx.AsyncClient()
-    ctx["store"] = Store(redis, settings)
-    ctx["api"] = Api42(settings, redis, ctx["http"], RateLimiter(redis))
-
-
-async def shutdown(ctx):
-    await ctx["http"].aclose()
-
-
-class WorkerSettings:
-    functions = [extract_job]
-    on_startup = startup
-    on_shutdown = shutdown
-    max_jobs = 1
-    job_timeout = 900
-    # arq refuses a job whose id still has a stored result (kept 1 h by default): with extract:{uid} as the id,
-    # a retry or the next hourly refresh would be silently dropped. Results are never read, so keep none.
-    keep_result = 0
-    redis_settings = RedisSettings.from_dsn(Settings.from_env().redis_url)

@@ -28,7 +28,7 @@ Five pages, rendered on the server; every choice (period, filters, views) lives 
 
 | Directory | Contents |
 |-----------|----------|
-| `web/` | FastAPI app rendering every page with Jinja (htmx for partial updates, a small `dash.js` for tooltips and sorting), arq worker, Redis, Caddy (HTTPS), all in Docker Compose |
+| `web/` | FastAPI app rendering every page with Jinja (htmx for partial updates, a small `dash.js` for tooltips and sorting), an in-process job queue, Caddy (HTTPS), in Docker Compose. No database |
 | `core/` | `core42`: 42 API analysis, sign-in rules, rank groups and the shared frontend assets (CSS, `ui.json`, i18n, controls, accent, radar) |
 | `site/` | Static CV page with the published 42 snapshot, deployed by `.github/workflows/pages.yml` |
 
@@ -58,7 +58,6 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | `OPTOUT_LOGINS` | no | Comma-separated logins of students who asked to be excluded: shown as "Hidden" everywhere |
 | `ISSUES_URL` | no | "Report an issue" link on every page, e.g. `https://github.com/<owner>/<repo>/issues/new/choose` |
 | `BASE_URL` | no | Public address, default `https://localhost` |
-| `REDIS_URL` | no | Default `redis://redis:6379/0` |
 | `OWNER_LOGIN`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_BRANCH` | no | Publishing; the button stays hidden unless `OWNER_LOGIN` and `GITHUB_TOKEN` are set |
 
 ### Commands
@@ -67,7 +66,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 |---------|--------|
 | `make` | List the commands |
 | `make dev` | Build and start at https://localhost with API live reload |
-| `make up` / `make down` | Start as built / stop (Redis data is kept) |
+| `make up` / `make down` | Start as built / stop (memory is cleared; browsers keep their reports) |
 | `make logs`, `make ps` | Follow logs / list services |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
 | `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 100 requests) |
@@ -81,20 +80,26 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 - **Access**: students, transcenders and alumni whose primary campus is 42 Madrid. Staff, pisciners, blackholed and
   frozen accounts get a refusal page with the reason. Access is re-checked on every extraction.
 - **42 API budget**: 2 requests/s and 1200/h per application, shared by every user. One extraction per user per hour
-  (about 100 requests, 2–3 minutes), run by the worker with a progress bar. When the hourly budget runs low, the job
+  (about 100 requests, 2–3 minutes), run inside the web process, one at a time, with a progress bar. When the hourly budget runs low, the job
   waits for the next hour. Every extraction logs its request count.
 - **Extras and their cost**: teammates, exams, pace, evaluations in depth and campus history reuse downloaded data
   (0 requests); feedback details ~5, promo 2–3, coalitions 1, the network of the 30 closest contacts 30.
 
 ## Privacy and security
 
-- Sessions are server-side in Redis; the browser holds only a random id in a `__Host-` cookie (`Secure`, `HttpOnly`,
-  `SameSite=Lax`). State-changing requests carry a CSRF token.
+- **No database.** Sessions, report copies, cooldowns and rate limits live in the web process's memory (one process,
+  `web/app/memory.py`) and vanish on restart. The browser holds only a random id in a `__Host-` cookie (`Secure`,
+  `HttpOnly`, `SameSite=Lax`); state-changing requests carry a CSRF token.
 - The user's 42 token is used once to identify them and then discarded. API tokens never reach the browser.
-- Stored per user: the report and status for 30 days after the last visit, the session for 7 days (sliding). About
-  other students only login, name and rank group. Received evaluations keep only the user's own feedback.
-- *Delete my data* removes everything and cancels a pending extraction. The hourly limit survives as an anonymous HMAC
-  so deleting cannot bypass it.
+- **The report lives in the user's browser** (IndexedDB). The server keeps a copy in memory for an hour after its last
+  use to render pages; when it is gone, the page hands the browser's copy back, accepted only with the server's own
+  HMAC signature for that user, so nobody can upload a forged or someone else's report. Signing out removes the
+  browser's copy. About other students only login, name and rank group; received evaluations keep only the user's own
+  feedback.
+- The only file written is the consent log (`CONSENT_LOG`, in the `consent` volume): a keyed hash of the 42 id, the
+  policy version and the date, pruned after two years.
+- *Delete my data* removes the server's copy, cancels a pending extraction and sends `Clear-Site-Data: "storage"`. The
+  hourly limit survives as an anonymous HMAC so deleting cannot bypass it.
 - Sign-in callbacks are rate-limited per address; avatars are fetched only from the intra CDN; Caddy sends HSTS, a
   strict CSP (`script-src 'self'`, no frames), `nosniff` and `same-origin` referrer headers.
 - The published snapshot (`web/app/publish.py`) is a field-by-field whitelist: never contact data, seats, logged hours,

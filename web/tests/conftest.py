@@ -1,4 +1,3 @@
-import fakeredis
 import httpx
 import pytest
 
@@ -8,34 +7,38 @@ from app.settings import Settings
 
 @pytest.fixture
 def settings():
-    return Settings(base_url="https://localhost", ft_uid="UID", ft_secret="SECRET", session_secret="s" * 32, redis_url="redis://unused",
+    return Settings(base_url="https://localhost", ft_uid="UID", ft_secret="SECRET", session_secret="s" * 32,
                     contact_email="owner@example.invalid", controller_name="Owner Example (owner)",
                     issues_url="https://github.com/example/logbook/issues/new/choose")
 
 
 @pytest.fixture
-async def redis():
-    r = fakeredis.aioredis.FakeRedis()
-    yield r
-    await r.aclose()
+def memory():
+    from app.memory import Memory
+    return Memory()
 
 
-class FakeArq:
+class FakeJobs:
+    """Records what would run; nothing runs."""
+
     def __init__(self):
-        self.enqueued, self.kwargs = [], []
+        self.enqueued, self.kwargs, self.cancelled = [], [], []
 
     async def enqueue_job(self, name, *args, **kw):
         self.enqueued.append(name); self.kwargs.append(kw)
 
-
-@pytest.fixture
-def arq_pool():
-    return FakeArq()
+    def cancel(self, job_id):
+        self.cancelled.append(job_id)
 
 
 @pytest.fixture
-async def app(settings, redis, arq_pool):
-    return create_app(settings, redis, arq=arq_pool)
+def jobs():
+    return FakeJobs()
+
+
+@pytest.fixture
+async def app(settings, memory, jobs):
+    return create_app(settings, memory, jobs=jobs)
 
 
 @pytest.fixture
@@ -66,13 +69,13 @@ class SignedIn:
 
 
 @pytest.fixture
-async def signed_in(client, redis, settings):
+async def signed_in(client, memory, settings):
     from app.sessions import COOKIE, SessionStore
-    sid = await SessionStore(redis, settings).create({"id": 7, "login": "ana", "name": "Ana", "coalition_color": "#3E7BC8",
+    sid = await SessionStore(memory, settings).create({"id": 7, "login": "ana", "name": "Ana", "coalition_color": "#3E7BC8",
                                                       "image": "https://cdn.intra.42.fr/users/a/medium_ana.jpg"})
     client.cookies.set(COOKIE, sid)
-    csrf = (await SessionStore(redis, settings).get(sid))["csrf"]
+    csrf = (await SessionStore(memory, settings).get(sid))["csrf"]
     from app import consent
     from app.store import Store
-    await consent.record(Store(redis, settings), 7)
+    await consent.record(Store(memory, settings), 7)
     return SignedIn(client, 7, csrf, "#3E7BC8")

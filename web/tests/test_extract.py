@@ -98,8 +98,8 @@ async def test_new_student_with_no_history_extracts():
 
 
 @pytest.fixture
-def ctx(redis, settings):
-    return {"store": Store(redis, settings)}
+def ctx(memory, settings):
+    return {"store": Store(memory, settings)}
 
 
 async def test_success_saves_report_and_starts_cooldown(ctx):

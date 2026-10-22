@@ -165,6 +165,58 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     if (window.enhanceSelect) $$("select", root).forEach((s) => enhanceSelect(s));
     $$(".cal-scroll", root).forEach((c) => { c.scrollLeft = c.scrollWidth; });  // narrow screens open on the latest months
   }
+  // the report's original lives in this browser (IndexedDB); the server keeps a signed copy for an hour
+  const csrf = (() => { try { return JSON.parse(document.body.getAttribute("hx-headers"))["X-CSRF-Token"]; } catch (e) { return ""; } })();
+  const login = document.body.dataset.login;
+  function db() {
+    return new Promise((ok, ko) => {
+      const r = indexedDB.open("logbook", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("reports");
+      r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error);
+    });
+  }
+  async function idb(mode, op) {
+    const d = await db();
+    return new Promise((ok, ko) => {
+      const req = op(d.transaction("reports", mode).objectStore("reports"));
+      req.onsuccess = () => ok(req.result); req.onerror = () => ko(req.error);
+    });
+  }
+  const forget = () => idb("readwrite", (s) => s.delete(login)).catch(() => {});
+
+  async function keepCopy() {
+    const sig = document.body.dataset.report;
+    if (!sig || !login) return;
+    const mine = await idb("readonly", (s) => s.get(login)).catch(() => null);
+    if (mine?.sig === sig) return;
+    const r = await fetch("/app/report.json", {credentials: "same-origin"});
+    if (!r.ok) return;
+    const copy = {sig: r.headers.get("X-Report-Sig"), body: await r.arrayBuffer()};
+    await idb("readwrite", (s) => s.put(copy, login)).catch(() => {});
+  }
+  async function restore(panel) {
+    const mine = await idb("readonly", (s) => s.get(login)).catch(() => null);
+    if (mine) {
+      const r = await fetch("/app/report", {method: "POST", credentials: "same-origin", body: mine.body,
+        headers: {"X-CSRF-Token": csrf, "X-Report-Sig": mine.sig, "Content-Type": "application/json"}});
+      if (r.ok) { location.reload(); return; }
+      await forget();
+    }
+    location.replace(panel.dataset.fresh);
+  }
+  // signing out or deleting also removes this browser's copy
+  document.addEventListener("submit", (ev) => {
+    const form = ev.target;
+    if (!/\/(auth\/logout|app\/delete)$/.test(form.action) || form.dataset.cleared) return;
+    ev.preventDefault();
+    forget().finally(() => { form.dataset.cleared = "1"; form.submit(); });
+  });
+
+  const restoring = document.querySelector("[data-restore]");
+  if (restoring && window.indexedDB) restore(restoring);
+  else if (restoring) location.replace(restoring.dataset.fresh);
+  else if (window.indexedDB) keepCopy();
+
   settle();
   watchToc();
   addEventListener("resize", () => hintScroll(), {passive: true});

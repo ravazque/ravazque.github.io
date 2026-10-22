@@ -11,9 +11,9 @@ async def no_sleep(_):
 
 
 @pytest.fixture
-async def api(settings, redis):
+async def api(settings, memory):
     async with httpx.AsyncClient() as http:
-        yield Api42(settings, redis, http, RateLimiter(redis, sleep=no_sleep), sleep=no_sleep)
+        yield Api42(settings, memory, http, RateLimiter(memory, sleep=no_sleep), sleep=no_sleep)
 
 
 def token_route():
@@ -33,16 +33,16 @@ async def test_get_all_paginates_and_reuses_token(api):
 
 
 @respx.mock
-async def test_token_cached_in_redis(api, redis):
+async def test_token_cached_in_redis(api, memory):
     token_route()
     respx.get(f"{API}/v2/me").respond(json={"id": 1})
     await api.get("/v2/me")
-    assert await redis.get("api42:token") == b"T"
-    assert 0 < await redis.ttl("api42:token") <= 7140
+    assert await memory.get("api42:token") == b"T"
+    assert 0 < await memory.ttl("api42:token") <= 7140
 
 
 @respx.mock
-async def test_401_reauthenticates_once(api, redis):
+async def test_401_reauthenticates_once(api, memory):
     tok = respx.post(f"{API}/oauth/token").mock(side_effect=[
         httpx.Response(200, json={"access_token": "OLD", "expires_in": 7200}),
         httpx.Response(200, json={"access_token": "NEW", "expires_in": 7200})])
@@ -61,11 +61,11 @@ async def test_5xx_storm_raises_after_retries(api):
 
 
 @respx.mock
-async def test_records_rate_limit_headers(api, redis):
+async def test_records_rate_limit_headers(api, memory):
     token_route()
     respx.get(f"{API}/v2/me").respond(json={}, headers={"x-hourly-ratelimit-remaining": "12"})
     await api.get("/v2/me")
-    assert int(await redis.get("rl:hourly")) == 12
+    assert int(await memory.get("rl:hourly")) == 12
 
 
 @respx.mock
