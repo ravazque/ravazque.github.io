@@ -39,6 +39,9 @@ def test_one_full_option_is_enough_for_a_title():
 def test_gatekeeper_needs_one_evaluation_path_and_the_hours():
     def data(given, hours):
         return {"periods": {"student": {"given": given}, "all": {"logtime": {"total_hours": hours}}}}
+
+    def official(given, ours, intra):
+        return {"periods": {"student": {"given": given}, "all": {"logtime": {"total_hours": ours, "official_hours": intra}}}}
     outer = [{"project": "x", "slug": "ft_ping", "fb_rating": 5}] * 50
     common = [{"project": "libft", "slug": "libft", "fb_rating": 4}] * 150
     assert astra.gatekeeper(data(outer, 2000))["met"]
@@ -46,6 +49,7 @@ def test_gatekeeper_needs_one_evaluation_path_and_the_hours():
     low = astra.gatekeeper(data(common, 2500))
     assert low["outer"] == 0 and not low["evals_met"]
     assert astra.gatekeeper(data([{**e, "fb_rating": 5} for e in common], 2500))["met"]
+    assert not astra.gatekeeper(official(outer, 2010, 1990))["met"]  # the intra's own figure decides
 
 
 def test_every_goal_has_its_emblem():

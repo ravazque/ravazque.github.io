@@ -4,7 +4,8 @@
 <aside class="rail" aria-label="{{ t('rail.label') }}">
   <div class="identity">
     <div class="avatar-lg"><span aria-hidden="true">{{ rail.initials }}</span>{% if rail.image %}<img src="{{ rail.image }}" alt="">{% endif %}</div>
-    <div><h1>{{ rail.name }}</h1><p>{{ rail.login }}{% if rail.campus %} · {{ rail.campus }}{% endif %}</p><p class="coal">{{ rail.coalition }}</p></div>
+    <div><h1>{{ rail.name }}</h1><p>{{ rail.login }}{% if rail.campus %} · {{ rail.campus }}{% endif %}</p><p class="coal">{{ rail.coalition }}</p>
+      {% if rail.groups %}<p class="groups">{% for g in rail.groups %}<span class="badge">{{ g }}</span>{% endfor %}</p>{% endif %}</div>
   </div>
   {% if rail.periods %}
   <nav class="periods" aria-label="{{ t('rail.period') }}" hx-boost="true" hx-swap="innerHTML show:none">
@@ -17,6 +18,7 @@
     <p class="label">{{ rail.range }}</p>
     <div class="big" aria-label="{{ rail.aria }}"><span>{{ rail.h }}<small>h</small></span> <span>{{ rail.m }}<small>m</small></span></div>
     <div class="stats">{% for v, label in rail.stats %}<div><b>{{ v }}</b><span>{{ label }}</span></div>{% endfor %}</div>
+    {% if rail.official %}<p class="now" title="{{ t('rail.official_note') }}">{{ rail.official }}</p>{% endif %}
     <p class="now">{{ rail.now }}</p>
   </div>
   <nav class="toc" aria-label="{{ t('rail.sections') }}">{% for s in sections %}<a href="#{{ s.id }}">{{ s.nav }}</a>{% endfor %}</nav>

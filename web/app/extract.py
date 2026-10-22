@@ -41,8 +41,8 @@ async def _batched(api, path, key, ids):
 
 
 async def extract(api, uid: int, progress) -> dict:
-    # user, the lists, achievements, coalitions, people, projects, ranks, feedback, promo + coalitions, network, analysis
-    steps = len(USER_LISTS) + 10
+    # user, the lists, intra hours + groups, achievements, coalitions, people, projects, ranks, feedback, promo + coalitions, network, analysis
+    steps = len(USER_LISTS) + 11
     done = 0
 
     async def step():
@@ -58,6 +58,10 @@ async def extract(api, uid: int, progress) -> dict:
     for name, endpoint in USER_LISTS.items():
         d[name] = await api.get_all(f"/v2/users/{uid}/{endpoint}")
         await step()
+    # the intra's own daily logtime since the account began (1 request), and the profile's groups (names only)
+    d["locations_stats"] = await api.get(f"/v2/users/{uid}/locations_stats", begin_at=(d["user"].get("created_at") or "2013-01-01")[:10])
+    d["groups"] = [{"name": g.get("name")} for g in await api.get_all(f"/v2/users/{uid}/groups")]
+    await step()
     d["achievements_users"] = await api.get_all("/v2/achievements_users", **{"filter[user_id]": uid})
     known = {a["id"] for a in d["user"].get("achievements", [])}
     missing = sorted({a["achievement_id"] for a in d["achievements_users"]} - known)

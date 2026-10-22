@@ -184,6 +184,8 @@ class Page:
             "stats": [(f.num(L["days_present"]), f("rail.days", count=L["days_present"])), (f.num(L["sessions"]), f("rail.sessions", count=L["sessions"])),
                       (f.num(len(L["seats"])), f("rail.computers", count=len(L["seats"])))],
             "now": f.html("rail.now_at", seat=Markup(f"<b>{escape(P['location'])}</b>")) if P.get("location") else f("rail.not_logged"),
+            "official": f("rail.official", hm=f.hm(L["official_hours"] * 3600)) if L.get("official_hours") is not None else "",
+            "groups": P.get("groups") or [],
         }
 
     def footer(self):
@@ -814,7 +816,7 @@ def astra(pg: Page) -> list[dict]:
             goal.update(auto=gk["met"], bars=[
                 bar(gk["outer"], 50, f("astra.gk.outer")),
                 bar(gk["total"], 150, f("astra.gk.total")),
-                bar(gk["hours"], 2000, f("astra.gk.hours"), lambda x: f.nb(x, "h", 0))],
+                bar(gk["hours"], 2000, f("astra.gk.hours_intra" if gk["official"] else "astra.gk.hours"), lambda x: f.nb(x, "h", 0))],
                 avg=f("astra.gk.avg", avg=f.num(gk["avg"], 2)) if gk["avg"] is not None else "")
         else:
             goal["auto"] = None
