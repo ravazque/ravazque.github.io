@@ -34,6 +34,11 @@ class Fmt:
             out = out.replace(f"\x01{i}\x02", str(escape(val)))
         return Markup(out)
 
+    @staticmethod
+    def markup(text: str) -> Markup:
+        """Trusted markup built in a template from these texts."""
+        return Markup(text)
+
     def plural(self, n, key: str) -> str:
         return self(key, count=n, n=self.num(n))
 

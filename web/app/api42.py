@@ -1,5 +1,6 @@
 """42 API v2 client: the app's client-credentials token, the shared rate limiter, retries, pagination."""
 import asyncio
+import re
 
 import httpx
 
@@ -11,8 +12,10 @@ RETRIES = 4
 
 
 class Api42Error(Exception):
+    """status 0: no answer (timeouts, connection errors). The message never carries ids."""
+
     def __init__(self, status: int, path: str):
-        super().__init__(f"42 API {status} on {path}")
+        super().__init__(f"42 API {status} on {re.sub(r'/\d+', '/:id', path)}")
         self.status, self.path = status, path
 
 
@@ -38,7 +41,13 @@ class Api42:
         for attempt in range(RETRIES + 1):
             await self.limiter.acquire()
             self.requests += 1
-            r = await self.http.get(API + path, params=params, headers={"Authorization": f"Bearer {token}"}, timeout=60)
+            try:
+                r = await self.http.get(API + path, params=params, headers={"Authorization": f"Bearer {token}"}, timeout=60)
+            except httpx.TransportError:  # a slow or dropped answer is retried like a server error
+                if attempt == RETRIES:
+                    raise Api42Error(0, path) from None
+                await self.sleep(2 ** attempt)
+                continue
             await self.limiter.record(r.headers)
             if r.status_code == 401 and user_token is None and not reauthed:
                 token, reauthed = await self.app_token(refresh=True), True

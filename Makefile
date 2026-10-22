@@ -62,5 +62,5 @@ re: fclean dev ## fclean + dev
 
 .env:
 	@cp .env.example .env && chmod 600 .env
-	@echo "Created .env from .env.example: fill FT_UID, FT_SECRET, SESSION_SECRET and CONTACT_EMAIL, then run make again"
+	@echo "Created .env from .env.example: fill FT_UID, FT_SECRET, SESSION_SECRET, CONTROLLER_NAME and CONTACT_EMAIL, then run make again"
 	@exit 1

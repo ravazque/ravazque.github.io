@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
+from . import consent
 from .dash.fmt import Fmt
 from .dash.views import BUILDERS, PAGES, Page, projects_csv
 from .i18n import pick_lang
@@ -82,11 +83,14 @@ async def dashboard(request: Request, key: str, user: dict):
         return RedirectResponse(f"/app/refused?reason={status['message'] or 'campus'}", status_code=303)
     f = Fmt(pick_lang(request))
     ctx = {**base_ctx(request, user, status, f), "key": key}
+    if not await consent.is_current(store, user["id"]):
+        return templates.TemplateResponse(request, "dash/consent.html", {**ctx, "title": f("privacy.title"), "version": consent.VERSION,
+                                                                         "error": request.query_params.get("error") == "consent"}, headers=NO_STORE)
     data = await store.load_report(user["id"])
     if data is None:
         status = await _kick(request, store, user["id"], status)
         return templates.TemplateResponse(request, "dash/boot.html", {**ctx, "boot": _boot_ctx(f, status), "title": f("boot.title")}, headers=NO_STORE)
-    page = Page(f, data, key, dict(request.query_params))
+    page = Page(f, data, key, dict(request.query_params), request.app.state.settings.optout_logins)
     sections = BUILDERS[key](page)
     return templates.TemplateResponse(request, "dash/page.html", {
         **ctx, "key": key, "page": page, "sections": sections, "rail": page.rail(), "foot": page.footer(), "title": f(f"pages.{key}")}, headers=NO_STORE)
@@ -150,7 +154,7 @@ async def csv_export(request: Request, user: dict = Depends(current_user)):
     data = await _store(request).load_report(user["id"])
     if data is None:
         return Response(status_code=404)
-    page = Page(Fmt(pick_lang(request)), data, "projects", dict(request.query_params))
+    page = Page(Fmt(pick_lang(request)), data, "projects", dict(request.query_params), request.app.state.settings.optout_logins)
     return Response(projects_csv(page), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="projects-{page.q("track", "student", ("student", "piscine", "all"))}.csv"', **NO_STORE})
 
@@ -191,3 +195,21 @@ async def publish(request: Request, user: dict = Depends(current_user)):
         return Response(status_code=403)
     code, payload = await run_publish(request, user)
     return await _confirm(request, user, "publish", {"ok": code == 200, **payload})
+
+
+@router.get("/app/consent")
+async def consent_page(request: Request, user: dict = Depends(current_user)):
+    return await dashboard(request, "home", user)
+
+
+@router.post("/app/consent")
+async def accept(request: Request, user: dict = Depends(current_user)):
+    """Accepting the current policy while signed in (after it changed)."""
+    if not await csrf_ok(request, user):
+        return Response(status_code=403)
+    form = await request.form()
+    target = safe_next(form.get("next", "/app"))
+    if form.get("accept") != "1":
+        return RedirectResponse("/app/consent?error=consent", status_code=303)
+    await consent.record(_store(request), user["id"])
+    return RedirectResponse(target, status_code=303)

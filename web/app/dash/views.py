@@ -112,10 +112,27 @@ def facts(rows) -> Markup:
 
 # ---------- context shared by every page ----------
 
+def hide(value, logins: frozenset, label: str, own: str):
+    """A copy of the report where every opted-out student is a nameless, photoless label (the viewer is never hidden)."""
+    if isinstance(value, dict):
+        out = {k: hide(v, logins, label, own) for k, v in value.items()}
+        if str(value.get("login", "")).lower() in logins and value.get("login") != own:
+            out.update(login=label, **{k: None for k in ("name", "image", "displayname") if k in value})
+        return out
+    if isinstance(value, list):
+        return [hide(v, logins, label, own) for v in value]
+    if isinstance(value, str) and value.lower() in logins and value != own:
+        return label
+    return value
+
+
 class Page:
     """One request's view of the report: the period, the formatter and the query parameters."""
 
-    def __init__(self, f, data, key, params):
+    def __init__(self, f, data, key, params, optout=frozenset()):
+        own = next(iter(data["periods"].values()))["profile"]["login"]
+        if optout - {own.lower()}:
+            data = hide(data, optout, f("common.hidden"), own)
         self.f, self.data, self.key, self.params = f, data, key, params
         periods = list(data["periods"])
         p = params.get("period")

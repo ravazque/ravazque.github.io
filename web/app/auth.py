@@ -9,6 +9,7 @@ from fastapi.responses import PlainTextResponse, RedirectResponse
 
 from core42.profile import access, main_coalition
 
+from . import consent
 from .api42 import API, Api42Error
 from .sessions import COOKIE, SessionStore, csrf_ok, current_user, set_session_cookie
 from .store import Store
@@ -68,7 +69,7 @@ async def callback(request: Request, code: str = "", state: str = ""):
                                                          "image": image, "coalition_color": (coalition or {}).get("color")})
     store = Store(app.state.redis, s)
     await store.clear_refusal(me["id"])
-    await store.set_status(me["id"], privacy_accepted=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    await consent.record(store, me["id"])
     await app.state.on_signed_in(app, me["id"], me)
     response = RedirectResponse("/app", status_code=303)
     _clear(response, STATE_COOKIE, s)

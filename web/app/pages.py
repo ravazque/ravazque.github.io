@@ -6,6 +6,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from . import consent
 from .dash.views import PAGES
 from .i18n import LANGS, pick_lang, strings
 from .sessions import COOKIE, SessionStore
@@ -45,7 +46,8 @@ async def about(request: Request):
 
 @router.get("/privacy")
 async def privacy(request: Request):
-    return render(request, "privacy.html", page="privacy", heading=strings(pick_lang(request))["privacy.title"])
+    return render(request, "privacy.html", page="privacy", heading=strings(pick_lang(request))["privacy.title"],
+                  controller=request.app.state.settings.controller_name, version=consent.VERSION, updated=consent.UPDATED)
 
 
 @router.post("/lang")

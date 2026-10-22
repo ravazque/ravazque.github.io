@@ -9,7 +9,7 @@ from app.settings import Settings
 @pytest.fixture
 def settings():
     return Settings(base_url="https://localhost", ft_uid="UID", ft_secret="SECRET", session_secret="s" * 32, redis_url="redis://unused",
-                    contact_email="owner@example.invalid",
+                    contact_email="owner@example.invalid", controller_name="Owner Example (owner)",
                     issues_url="https://github.com/example/logbook/issues/new/choose")
 
 
@@ -72,4 +72,7 @@ async def signed_in(client, redis, settings):
                                                       "image": "https://cdn.intra.42.fr/users/a/medium_ana.jpg"})
     client.cookies.set(COOKIE, sid)
     csrf = (await SessionStore(redis, settings).get(sid))["csrf"]
+    from app import consent
+    from app.store import Store
+    await consent.record(Store(redis, settings), 7)
     return SignedIn(client, 7, csrf, "#3E7BC8")

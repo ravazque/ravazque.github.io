@@ -16,17 +16,21 @@ class Settings:
     secure_cookies: bool = True
     contact_email: str = ""        # shown on the About and Privacy pages
     issues_url: str = ""           # "Report an issue" link; hidden when empty
+    controller_name: str = ""      # the data controller named by the privacy policy
+    optout_logins: frozenset = frozenset()  # students who asked to be left out of every report
     owner_login: str = ""          # the one login that may publish to the GitHub Pages site
     github_token: str = ""         # fine-grained, this repository only, Contents: read and write
     github_repo: str = ""
     github_branch: str = "main"
 
     def check(self) -> "Settings":
-        """Refuse to run with a missing or short SESSION_SECRET (it keys the HMACs) or without a contact address."""
+        """Refuse to run with a missing or short SESSION_SECRET (it keys the HMACs) or without a contact and a controller."""
         if len(self.session_secret) < 32:
             raise ValueError("SESSION_SECRET must be at least 32 characters (openssl rand -hex 32)")
         if not self.contact_email:
             raise ValueError("CONTACT_EMAIL must be set: the privacy page names who to contact")
+        if not self.controller_name:
+            raise ValueError("CONTROLLER_NAME must be set: the privacy page names the data controller")
         return self
 
     @classmethod
@@ -40,6 +44,8 @@ class Settings:
             redis_url=env.get("REDIS_URL", cls.redis_url),
             contact_email=env.get("CONTACT_EMAIL", ""),
             issues_url=env.get("ISSUES_URL", ""),
+            controller_name=env.get("CONTROLLER_NAME", ""),
+            optout_logins=frozenset(x.strip().lower() for x in env.get("OPTOUT_LOGINS", "").split(",") if x.strip()),
             owner_login=env.get("OWNER_LOGIN", ""),
             github_token=env.get("GITHUB_TOKEN", ""),
             github_repo=env.get("GITHUB_REPO", ""),

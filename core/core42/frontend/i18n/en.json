@@ -14,18 +14,9 @@
  "rail.cursus_only_note": "The C Piscine is left out of this page.",
  "rail.logged_in": "Logged in · {range}",
  "rail.figure_aria": "{h} hours {m} minutes",
- "rail.days": {
-  "one": "day",
-  "other": "days"
- },
- "rail.sessions": {
-  "one": "session",
-  "other": "sessions"
- },
- "rail.computers": {
-  "one": "computer",
-  "other": "computers"
- },
+ "rail.days": {"one": "day", "other": "days"},
+ "rail.sessions": {"one": "session", "other": "sessions"},
+ "rail.computers": {"one": "computer", "other": "computers"},
  "rail.now_at": "Logged in now at {seat}",
  "rail.not_logged": "Not logged in right now",
  "rail.no_sessions": "no sessions",
@@ -58,34 +49,13 @@
  "unit.min": "{n} min",
  "unit.evaluations": "evaluations",
  "unit.evals": "evals",
- "count.computers": {
-  "one": "{n} computer",
-  "other": "{n} computers"
- },
- "count.clusters": {
-  "one": "{n} cluster",
-  "other": "{n} clusters"
- },
- "count.sessions": {
-  "one": "{n} session",
-  "other": "{n} sessions"
- },
- "count.days": {
-  "one": "{n} day",
-  "other": "{n} days"
- },
- "count.evaluations": {
-  "one": "{n} evaluation",
-  "other": "{n} evaluations"
- },
- "count.ratings": {
-  "one": "{n} rating",
-  "other": "{n} ratings"
- },
- "count.retries": {
-  "one": "{n} retry",
-  "other": "{n} retries"
- },
+ "count.computers": {"one": "{n} computer", "other": "{n} computers"},
+ "count.clusters": {"one": "{n} cluster", "other": "{n} clusters"},
+ "count.sessions": {"one": "{n} session", "other": "{n} sessions"},
+ "count.days": {"one": "{n} day", "other": "{n} days"},
+ "count.evaluations": {"one": "{n} evaluation", "other": "{n} evaluations"},
+ "count.ratings": {"one": "{n} rating", "other": "{n} ratings"},
+ "count.retries": {"one": "{n} retry", "other": "{n} retries"},
  "scale.none": "none",
  "scale.less": "less",
  "scale.more": "more, up to {max} {unit}",
@@ -229,10 +199,7 @@
  "projects.cum_note": "Every new attempt after the first one, over time.",
  "projects.all_title": "All projects",
  "projects.all_note": "Marks per attempt in order; green means validated, red failed, \"pending\" not marked yet. Hover a mark for its date, team and Moulinette (automatic) mark.",
- "projects.retried_once": {
-  "one": "Plus {n} project retried once: {list}.",
-  "other": "Plus {n} projects retried once: {list}."
- },
+ "projects.retried_once": {"one": "Plus {n} project retried once: {list}.", "other": "Plus {n} projects retried once: {list}."},
  "projects.attempt": "attempt {n}",
  "projects.attempt_title": "Attempt {n}",
  "projects.with": "with {list}",
@@ -351,15 +318,9 @@
  "log.search_placeholder": "Login, comment or seat",
  "log.corrector_comment": "Corrector comment",
  "log.feedback_by": "Feedback by {login} · {rating}/5",
- "log.comment_and_feedback": {
-  "one": "Comment and {n} feedback",
-  "other": "Comment and {n} feedbacks"
- },
+ "log.comment_and_feedback": {"one": "Comment and {n} feedback", "other": "Comment and {n} feedbacks"},
  "log.comment_only": "Comment",
- "log.feedback_only": {
-  "one": "{n} feedback",
-  "other": "{n} feedbacks"
- },
+ "log.feedback_only": {"one": "{n} feedback", "other": "{n} feedbacks"},
  "log.booked_ahead": "booked {h} h ahead",
  "log.not_logged": "not logged",
  "log.you_seat": "you: {seat}",
@@ -396,16 +357,6 @@
  "about.p4": "Some figures are inferences and the page says so: where you sat during an evaluation comes from your login sessions, and the XP of each project is a calculation.",
  "about.contact": "Made by ravazque. Contact: {email}.",
  "privacy.title": "Privacy",
- "privacy.what_title": "What is stored",
- "privacy.what": "The analysed result of your own 42 data (projects, evaluations, logtime, seats, feedback and the rest of the report) and the status of your last refresh. Other people appear only as their login, name and rank group, as they appear in your own evaluations; their photos are never loaded.",
- "privacy.retention_title": "For how long",
- "privacy.retention": "Your data is deleted automatically 30 days after your last visit. You can delete it at any time with \"Delete my data\"; it is removed at once.",
- "privacy.cooldown": "After you delete it, one key made from a keyed hash of your 42 id stays for at most 60 minutes, so the hourly refresh limit still applies. It holds nothing else.",
- "privacy.cookies_title": "Cookies",
- "privacy.cookies": "One session cookie (__Host-session) keeps you signed in for up to 7 days of inactivity. A short-lived cookie protects the sign-in, and another remembers your language. No tracking, no analytics, no third parties.",
- "privacy.tokens": "Your 42 sign-in only confirms who you are: your 42 access token is not stored.",
- "privacy.contact_title": "Contact",
- "privacy.contact": "Questions or deletion requests: {email}.",
  "pages.projects": "Projects",
  "pages.evaluations": "Evaluations",
  "pages.people": "People",
@@ -433,14 +384,8 @@
  "status.failed": "The 42 API did not answer. Try again in a moment.",
  "status.budget": "The 42 API budget for this hour is spent: it runs at the next full hour.",
  "refresh.button": "Refresh",
- "refresh.wait": {
-  "one": "available in {count} min",
-  "other": "available in {count} min"
- },
- "refresh.wait_s": {
-  "one": "available in {count} s",
-  "other": "available in {count} s"
- },
+ "refresh.wait": {"one": "available in {count} min", "other": "available in {count} min"},
+ "refresh.wait_s": {"one": "available in {count} s", "other": "available in {count} s"},
  "refresh.last": "Updated {when}",
  "refresh.running": "Refreshing · {pct}",
  "delete.button": "Delete my data",
@@ -469,10 +414,7 @@
  "projects_table.title": "Projects",
  "projects_table.lede": "Every project with its track, mark, attempts and the XP it gave. Open a row for each attempt: dates, team and who evaluated it.",
  "projects_table.filter": "Track",
- "projects_table.count": {
-  "one": "{n} project",
-  "other": "{n} projects"
- },
+ "projects_table.count": {"one": "{n} project", "other": "{n} projects"},
  "track.student": "Student",
  "track.common-core": "Common Core",
  "track.outer-core": "Outer Core",
@@ -482,10 +424,7 @@
  "col.attempts": "Attempts",
  "projects_table.xp_base": "base {xp}",
  "projects_table.xp_note": "XP = project XP × final mark / 100 when validated; a calculation, the intra may differ.",
- "projects_table.detail": {
-  "one": "{n} attempt · team and correctors",
-  "other": "{n} attempts · team and correctors"
- },
+ "projects_table.detail": {"one": "{n} attempt · team and correctors", "other": "{n} attempts · team and correctors"},
  "projects_table.team": "team: {list}",
  "projects_table.solo": "solo",
  "projects_table.no_evals": "no evaluations yet",
@@ -602,18 +541,12 @@
  "pace.title": "Pace",
  "pace.xp_title": "XP per month",
  "pace.since": "In the 42cursus for",
- "pace.months": {
-  "one": "{n} month",
-  "other": "{n} months"
- },
+ "pace.months": {"one": "{n} month", "other": "{n} months"},
  "pace.xp_month": "XP per month on average",
  "pace.validated": "Projects validated",
  "pace.blackhole": "Blackhole",
  "pace.no_blackhole": "none ahead",
- "pace.days_left": {
-  "one": "{n} day left",
-  "other": "{n} days left"
- },
+ "pace.days_left": {"one": "{n} day left", "other": "{n} days left"},
  "pace.xp": "XP",
  "pace.cumulative": "Total XP",
  "exams.title": "Exams",
@@ -634,8 +567,42 @@
  "depth.streak": "Longest Outstanding streak received",
  "session.changed": "Your session changed in another tab. Reload the page.",
  "boot.refused": "Your profile no longer has access.",
- "network.tip": {
-  "one": "{n} evaluation in the circle",
-  "other": "{n} evaluations in the circle"
- }
+ "network.tip": {"one": "{n} evaluation in the circle", "other": "{n} evaluations in the circle"},
+ "common.hidden": "Hidden",
+ "consent.title": "The privacy policy has changed",
+ "consent.lede": "Version {version} of the privacy policy is now in force. Read it and accept it to keep using the site.",
+ "consent.continue": "Continue",
+ "policy.sections": ["controller", "contact", "who", "purpose", "from_api", "generated", "basis", "terms", "retention", "security", "third", "rights", "exclusion", "cookies", "changes"],
+ "policy.controller.title": "Data controller",
+ "policy.controller.body": ["{controller}, a 42 Madrid student, is the data controller for this site. It is an independent personal project, not affiliated with or endorsed by 42, built on the 42 API under its terms of use."],
+ "policy.contact.title": "Contact",
+ "policy.contact.body": ["To exercise your rights, withdraw your consent, ask to be excluded or ask anything about privacy, write to {email}."],
+ "policy.who.title": "Who can use the site",
+ "policy.who.list": ["Students, transcenders and alumni whose primary campus is 42 Madrid.", "Signing in requires your 42 account and accepting this policy.", "Staff, pisciners, and blackholed or frozen accounts have no access; access is checked again at every refresh."],
+ "policy.purpose.title": "Purpose",
+ "policy.purpose.body": ["To show you your own 42 history: logged time and seats, projects and attempts, exams, pace, evaluations given and received, the people you crossed paths with, your promo and the coalitions.", "Data is never sold, never used for advertising or profiling, no decisions about you are made with it, and there are no usage analytics."],
+ "policy.from_api.title": "Data obtained from the 42 API",
+ "policy.from_api.list": ["About you: login, name, photo, campus and coalition; cursus, level, skills, projects, marks, exams, Common Core and blackhole dates, achievements, titles and quests; login sessions and the computers you used; events; evaluations given and received with their dates, marks, flags, comments and your own feedback; correction points and wallet.", "About other students: only their login, name and rank group, as they appear in your own evaluations and teams. Their photos are never loaded. Promo and coalition figures are counts without names.", "Only data the intra already shows to members of the 42 Network is used."],
+ "policy.generated.title": "Data generated by the site",
+ "policy.generated.list": ["Session: a random id in the __Host-session cookie; on the server, your login, name, photo link, coalition colour and a request token.", "Your analysed report and the status of your last refresh.", "Record of your acceptance of this policy: a keyed hash of your 42 id, the accepted version and the date.", "Hourly refresh limit: a keyed hash of your 42 id for at most 60 minutes.", "Sign-in attempts: a keyed hash of your IP address for 10 minutes, against abuse of the shared API budget."],
+ "policy.basis.title": "Legal basis",
+ "policy.basis.list": ["Consent (Art. 6.1.a GDPR) for your own data and the data the site generates: you give it by ticking the box and signing in, and it is recorded.", "Legitimate interest (Art. 6.1.f GDPR) for showing the login, name and rank group of the students in your own evaluations and teams, which the intra already shows to the 42 Network. They can object at any time (see Exclusion)."],
+ "policy.terms.title": "Terms of use",
+ "policy.terms.list": ["The data comes from the 42 Network and must stay within it: do not share, publish or redistribute other students' data.", "Bulk extraction, automated access and attempts to bypass access controls or limits are forbidden.", "Your session is personal: do not share it.", "Misuse may lead to loss of access.", "The service is provided as is. Data can be up to an hour behind: the intra is always the official source."],
+ "policy.retention.title": "Retention",
+ "policy.retention.list": ["Session: 7 days, renewed while you use it.", "Report and refresh status: 30 days after your last visit, or at once with \"Delete my data\".", "Acceptance record: 2 years after your last sign-in.", "Refresh limit: 60 minutes. Sign-in attempts: 10 minutes.", "Language cookie: 1 year. Theme and accent: in your browser until you clear them."],
+ "policy.security.title": "Security",
+ "policy.security.list": ["Encrypted connection only (HTTPS with HSTS) and a strict content security policy.", "Your 42 access token is used once to identify you and never stored; tokens never reach the browser.", "HttpOnly, Secure, SameSite session cookie; every action that changes something carries a request token.", "Database and services not exposed to the internet, running without privileges.", "No third-party cookies, trackers or scripts.", "In case of a security breach, the people affected and, where required, the authority will be notified."],
+ "policy.third.title": "Third parties",
+ "policy.third.body": ["No data is shared with anyone. The server only talks to the 42 API (api.intra.42.fr) and its image CDN (cdn.intra.42.fr); your browser never contacts 42 or any other service through this site."],
+ "policy.rights.title": "Your rights",
+ "policy.rights.list": ["Access: see which of your data is stored (all of it is on your dashboard).", "Rectification: data comes from the intra, so it is corrected there.", "Erasure: \"Delete my data\" removes your report and status at once; to delete the source data, contact 42.", "Restriction of and objection to processing, and portability of your data.", "Withdraw your consent at any time by deleting your data and signing out; this does not affect earlier processing."],
+ "policy.rights.body": ["Requests are answered within one month. You can also lodge a complaint with the Spanish data protection authority (AEPD, www.aepd.es)."],
+ "policy.exclusion.title": "Exclusion",
+ "policy.exclusion.body": ["If you appear in someone else's report and want to be excluded, write to {email} with your login: you will be shown as \"Hidden\" in every report, with no name or photo."],
+ "policy.cookies.title": "Cookies and local storage",
+ "policy.cookies.list": ["__Host-session: keeps you signed in.", "__Host-oauth_state: protects the sign-in with 42, 10 minutes.", "lang: remembers your language.", "localStorage: theme and accent colour, only in your browser."],
+ "policy.changes.title": "Changes to this policy",
+ "policy.changes.body": ["If this policy changes materially, you will be asked to accept the new version before you go on using the site."],
+ "policy.version": "Version {version} · Last updated: {updated}"
 }
