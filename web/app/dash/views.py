@@ -631,6 +631,22 @@ def log_section(pg: Page) -> dict:
 
 # ---------- People ----------
 
+def circle_links(net, me, given, received) -> dict:
+    """The circle's links with the student's own side rebuilt from their evaluations: the contacts' lists only see
+    "contact → me", so both directions with the student come from given (me → them) and received (them → me)."""
+    known = {n["login"] for n in net.get("nodes") or []} - {me}
+    links = {(l["source"], l["target"]): l["count"] for l in net.get("links") or [] if me not in (l["source"], l["target"])}
+    for e in given:
+        for c in e.get("correcteds") or []:
+            if c.get("login") in known:
+                links[(me, c["login"])] = links.get((me, c["login"]), 0) + 1
+    for e in received:
+        login = (e.get("corrector") or {}).get("login")
+        if login in known:
+            links[(login, me)] = links.get((login, me), 0) + 1
+    return {**net, "links": [{"source": s_, "target": t, "count": n} for (s_, t), n in links.items()]}
+
+
 def people(pg: Page) -> list[dict]:
     f, D = pg.f, pg.D
     S = D["summary"]
@@ -672,36 +688,40 @@ def people(pg: Page) -> list[dict]:
             {"k": "projects_on_me", "t": f("col.details"), "cls": "details", "hide": True, "sv": lambda p: len(p["projects_on_me"]), "f": details},
         ], rows, label=f("who.people_title"), sort=("evaluated_me", -1), sticky=True)}]
 
-    view = pg.q("view", "bubbles", ("bubbles", "ring"))
     mode = pg.q("mode", "received", ("received", "given", "mix"))
     conn = (pg.data.get("connections") or {}).get(pg.period) or []
-    net = pg.data.get("network") or {}
     href = lambda login: pg.url("evaluations", q=login, log="received") + "#log"  # noqa: E731
-    if view == "bubbles":
-        height = max(260, min(520, 160 + 12 * len(conn)))  # few people, a short panel
-        wide, narrow = gr.bubbles(f, conn, mode, width=960, height=height, href=href), gr.bubbles(f, conn, mode, width=420, height=height, href=href)
-        legend = ch.legend([(f("connections.legend_received"), ch.S1), (f("connections.legend_given"), ch.S2)])
-    else:
-        has = bool(net.get("links"))
-        wide = gr.ring(f, net, width=720, height=640, compact=False) if has else ""
-        narrow = gr.ring(f, net, width=400, height=400, compact=True) if has else ""
-        legend = ""
+    height = max(260, min(520, 160 + 12 * len(conn)))  # few people, a short panel
     order = {g: i for i, g in enumerate(gr.GROUPS)}
     sections.append({
-        "id": "connections", "title": f("connections.title"), "nav": f("nav.connections"),
-        "lede": f("connections.lede") if view == "bubbles" else f("network.lede"), "view": view,
-        "switches": [pg.seg("view", [("bubbles", f("connections.view_bubbles")), ("ring", f("network.title"))], view, label=f("connections.view_label"), target="connections")]
-        + ([pg.seg("mode", [("received", f("connections.mode_received")), ("given", f("connections.mode_given")), ("mix", f("connections.mode_mix"))],
-                   mode, label=f("connections.mode_label"), target="connections")] if view == "bubbles" else []),
-        "legend": legend, "wide": Markup(wide), "narrow": Markup(narrow),
-        "empty": f("connections.empty") if view == "bubbles" else f("network.empty"),
+        "id": "connections", "title": f("connections.title"), "nav": f("nav.connections"), "lede": f("connections.lede"),
+        "switches": [pg.seg("mode", [("received", f("connections.mode_received")), ("given", f("connections.mode_given")), ("mix", f("connections.mode_mix"))],
+                            mode, label=f("connections.mode_label"), target="connections")],
+        "legend": ch.legend([(f("connections.legend_received"), ch.S1), (f("connections.legend_given"), ch.S2)]),
+        "wide": Markup(gr.bubbles(f, conn, mode, width=960, height=height, href=href)),
+        "narrow": Markup(gr.bubbles(f, conn, mode, width=420, height=height, href=href)),
+        "empty": f("connections.empty"),
         "table": table(f, [
             {"k": "login", "t": f("col.login"), "nw": True},
             {"k": "name", "t": f("col.name"), "cls": "name", "hide": True, "f": lambda p: escape(p.get("name") or "")},
             {"k": "group", "t": f("col.group"), "nw": True, "sv": lambda p: order.get(p["group"], 99), "f": lambda p: escape(f(f"groups.{p['group']}"))},
             {"k": "received", "t": f("col.received"), "num": True}, {"k": "given", "t": f("col.given"), "num": True},
             {"k": "last", "t": f("col.last"), "nw": True, "hide": True},
-        ], conn, label=f("connections.title"), sort=("received", -1)) if view == "bubbles" else ""})
+        ], conn, label=f("connections.title"), sort=("received", -1))})
+
+    every = pg.data["periods"]["all"]
+    net = pg.data.get("network") or {}
+    if net.get("nodes"):
+        net = circle_links(net, every["profile"]["login"], every["given"], every["received"])
+    has = bool(net.get("links"))
+    sections.append({"id": "circle", "title": f("network.title"), "nav": f("nav.network"), "lede": f("network.lede"),
+                     "legend": Markup('<div class="legend">' + "".join(
+                         f'<span><svg class="arrow-key {kind}" viewBox="0 0 30 10" aria-hidden="true"><line x1="{4 if kind == "both" else 1}" y1="5" x2="25" y2="5"/>'
+                         + ('<path d="M1 5 L8 1.5 L8 8.5 Z"/>' if kind == "both" else "") + f'<path d="M29 5 L22 1.5 L22 8.5 Z"/></svg>{escape(label)}</span>'
+                         for kind, label in (("one", f("network.one_way")), ("both", f("network.both")))) + "</div>"),
+                     "wide": Markup(gr.ring(f, net, width=720, height=640, compact=False, uid="w")) if has else "",
+                     "narrow": Markup(gr.ring(f, net, width=400, height=400, compact=True, uid="n")) if has else "",
+                     "empty": f("network.empty")})
 
     tm = (D.get("insights") or {}).get("teammates") or []
     sections.append({"id": "teammates", "title": f("teammates.title"), "nav": f("nav.teammates"), "table": table(f, [

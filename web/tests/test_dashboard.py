@@ -12,7 +12,7 @@ PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evalu
          "/app/astra": "astra"}
 SECTIONS = {"/app": ["home-kpis", "rhythm", "pace", "skills", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
             "/app/evaluations": ["community", "over-time", "when", "correction-stats", "feedback", "points", "log"],
-            "/app/people": ["who", "connections", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"],
+            "/app/people": ["who", "connections", "circle", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"],
             "/app/astra": ["astra"]}
 INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>")
 
@@ -95,9 +95,9 @@ async def test_the_log_search_and_a_bubble_link_meet(signed_in, report):
 
 
 async def test_switches_are_links_that_swap_only_their_section(signed_in, report):
-    r = await signed_in.get("/app/people?view=ring")
+    r = await signed_in.get("/app/people?mode=mix")
     assert 'hx-target="#connections"' in r.text and 'aria-pressed="true">' in r.text
-    assert (await signed_in.get("/app/people?view=nonsense")).status_code == 200
+    assert (await signed_in.get("/app/people?mode=nonsense")).status_code == 200
 
 
 async def test_with_nothing_stored_the_boot_screen_starts_the_extraction(signed_in, jobs):
@@ -231,3 +231,29 @@ async def test_the_portfolio_lists_validated_projects_without_other_people(signe
     assert r.text.count("\n") == 1 + len(validated)
     for p in report["periods"]["all"]["people"]:
         assert p["login"] not in r.text
+
+
+def test_the_circle_draws_one_way_and_two_way_arrows():
+    net = {"nodes": [{"login": "me", "group": "me"}, {"login": "a", "group": "rank-01"}, {"login": "b", "group": "rank-02"}],
+           "links": [{"source": "a", "target": "b", "count": 2}, {"source": "b", "target": "a", "count": 1}, {"source": "a", "target": "me", "count": 1}]}
+    svg = graphs.ring(Fmt("en"), net, width=400, height=400, compact=False, uid="t")
+    both = re.search(r'<path[^>]*data-a="a" data-b="b"[^>]*>', svg).group(0)
+    one = re.search(r'<path[^>]*data-a="a" data-b="me"[^>]*>', svg).group(0)
+    assert 'marker-start="url(#arr-t)"' in both and 'marker-end="url(#arr-t)"' in both and "both" in both
+    assert 'marker-end="url(#arr-t)"' in one and "marker-start" not in one
+    assert svg.count('<marker id="arr-t"') == 1
+
+
+def test_the_user_s_own_evaluations_draw_their_links():
+    from app.dash.views import circle_links
+    net = {"nodes": [{"login": "me", "group": "me"}, {"login": "a", "group": "x"}, {"login": "b", "group": "x"}],
+           "links": [{"source": "a", "target": "me", "count": 9}, {"source": "a", "target": "b", "count": 1}]}
+    given = [{"correcteds": [{"login": "a"}]}, {"correcteds": [{"login": "a"}, {"login": "zz"}]}]
+    received = [{"corrector": {"login": "a"}}, {"corrector": {"login": "b"}}]
+    links = {(l["source"], l["target"]): l["count"] for l in circle_links(net, "me", given, received)["links"]}
+    assert links == {("a", "b"): 1, ("me", "a"): 2, ("a", "me"): 1, ("b", "me"): 1}
+
+
+async def test_the_circle_has_its_own_section(signed_in, report):
+    text = (await signed_in.get("/app/people")).text
+    assert '<section id="circle"' in text and 'href="#circle"' in text
