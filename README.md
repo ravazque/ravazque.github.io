@@ -1,6 +1,6 @@
 # site · ravazque.github.io
 
-A one-page CV plus a 42 snapshot, in the same visual world as ravazque.top.
+A one-page CV plus a 42 snapshot, in the same visual world as ravazque.info.
 
 | File | What it is |
 |------|------------|
