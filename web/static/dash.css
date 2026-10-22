@@ -157,3 +157,12 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .astra-coal { margin-top: 8px; font-weight: 600; }
 .identity .groups { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+/* the circle: one-way and two-way chords with arrowheads */
+.net .net-links path.one { stroke: var(--control); }
+.net .net-links path.both { stroke: var(--amber-data); stroke-opacity: .55; }
+.net .arrowhead { fill: var(--muted); }
+.focused .net-links path.hl { stroke-opacity: .95; }
+.arrow-key { width: 30px; height: 10px; }
+.arrow-key line { stroke: var(--control); stroke-width: 2; }
+.arrow-key.both line { stroke: var(--amber-data); }
+.arrow-key path { fill: var(--muted); }

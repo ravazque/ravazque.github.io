@@ -231,16 +231,25 @@ def _net_class(g):
     return "me" if g == "me" else "outer" if g == "outer-core" else "alumni" if g == "alumni" else "rank" if (g or "").startswith("rank-") else "none"
 
 
-def ring(f, net, *, width, height, compact) -> str:
-    """Your circle: you in the centre, contacts on a ring ordered by group, chords where one evaluated the other."""
+def _trim(x1, y1, cx, cy, by):
+    """A point `by` units from (x1, y1) towards the curve's control point: where an arrowhead meets a node's edge."""
+    dx, dy = cx - x1, cy - y1
+    d = math.hypot(dx, dy) or 1
+    return x1 + dx * by / d, y1 + dy * by / d
+
+
+def ring(f, net, *, width, height, compact, uid="c") -> str:
+    """Your circle: you in the centre, contacts on a ring ordered by group. An arrow goes from the corrector to the one
+    evaluated; a chord with arrows at both ends means they evaluated each other."""
     pairs = {}
     for l in net.get("links") or []:
-        key = tuple(sorted((l["source"], l["target"])))
-        pairs[key] = pairs.get(key, 0) + l["count"]
+        a, b = sorted((l["source"], l["target"]))
+        p = pairs.setdefault((a, b), {"ab": 0, "ba": 0})
+        p["ab" if l["source"] == a else "ba"] += l["count"]
     degree = {}
-    for (a, b), c in pairs.items():
-        degree[a] = degree.get(a, 0) + c
-        degree[b] = degree.get(b, 0) + c
+    for (a, b), p in pairs.items():
+        degree[a] = degree.get(a, 0) + p["ab"] + p["ba"]
+        degree[b] = degree.get(b, 0) + p["ab"] + p["ba"]
     k = .6 if compact else 1
     radius = lambda n: (16 if n["group"] == "me" else 6 + min(10, math.sqrt(degree.get(n["login"], 0)) * 1.4)) * k  # noqa: E731
     me = [n for n in net.get("nodes") or [] if n["group"] == "me"]
@@ -252,13 +261,21 @@ def ring(f, net, *, width, height, compact) -> str:
     for i, n in enumerate(others):
         a = -math.pi / 2 + 2 * math.pi * i / len(others)
         at[n["login"]] = {**n, "a": a, "x": cx + R * math.cos(a), "y": cy + R * math.sin(a), "r": radius(n)}
+    marker = f"arr-{uid}"
     chords = []
     for (a, b), c in pairs.items():
-        if a in at and b in at:
-            p, q = at[a], at[b]
-            mx, my = (p["x"] + q["x"]) / 4 + cx / 2, (p["y"] + q["y"]) / 4 + cy / 2
-            chords.append(f'<path data-a="{escape(a)}" data-b="{escape(b)}" stroke-width="{min(6, 1 + c / 2):.1f}"'
-                          f' d="M{p["x"]:.1f},{p["y"]:.1f} Q{mx:.1f},{my:.1f} {q["x"]:.1f},{q["y"]:.1f}"/>')
+        if a not in at or b not in at:
+            continue
+        p, q = at[a], at[b]
+        mx, my = (p["x"] + q["x"]) / 4 + cx / 2, (p["y"] + q["y"]) / 4 + cy / 2
+        x1, y1 = _trim(p["x"], p["y"], mx, my, p["r"] + 2)
+        x2, y2 = _trim(q["x"], q["y"], mx, my, q["r"] + 2)
+        both = c["ab"] and c["ba"]
+        # the path runs a → b: marker-end points at b (a evaluated b), marker-start back at a (b evaluated a)
+        ends = (f' marker-end="url(#{marker})"' if c["ab"] else "") + (f' marker-start="url(#{marker})"' if c["ba"] else "")
+        tip = " · ".join(x for x in [f"{a} → {b} ×{c['ab']}" if c["ab"] else "", f"{b} → {a} ×{c['ba']}" if c["ba"] else ""] if x)
+        chords.append(f'<path class="{"both" if both else "one"}" data-a="{escape(a)}" data-b="{escape(b)}"{ends} data-tip="{escape(tip)}"'
+                      f' stroke-width="{min(5, 1 + (c["ab"] + c["ba"]) / 3):.1f}" d="M{x1:.1f},{y1:.1f} Q{mx:.1f},{my:.1f} {x2:.1f},{y2:.1f}"/>')
     marks = []
     for n in at.values():
         d = degree.get(n["login"], 0)
@@ -273,5 +290,8 @@ def ring(f, net, *, width, height, compact) -> str:
         marks.append(f'<g class="net-node {_net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"'
                      f' aria-label="{escape(tip)}" data-tip="{escape(tip)}" transform="translate({n["x"]:.1f},{n["y"]:.1f})">'
                      f'<circle r="{n["r"]:.1f}"/>{text}</g>')
-    return (f'<svg class="graph net" viewBox="0 0 {width} {height}"{roving(f, f("network.title"))}>'
+    defs = (f'<defs><marker id="{marker}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse"'
+            f' markerWidth="{7 if compact else 9}" markerHeight="{7 if compact else 9}" orient="auto-start-reverse">'
+            f'<path d="M0,1 L10,5 L0,9 Z" class="arrowhead"/></marker></defs>')
+    return (f'<svg class="graph net" viewBox="0 0 {width} {height}"{roving(f, f("network.title"))}>{defs}'
             f'<g class="net-links">{"".join(chords)}</g><g class="net-nodes">{"".join(marks)}</g></svg>')

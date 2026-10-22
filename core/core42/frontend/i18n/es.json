@@ -556,7 +556,7 @@
  "teammates.title": "Compañeros",
  "teammates.none": "No hay proyectos en equipo en este periodo.",
  "network.title": "Tu círculo",
- "network.lede": "Tú y las 30 personas con las que más evaluaciones has cruzado. Una línea indica que una evaluó a la otra; cuanto más gruesa, más evaluaciones.",
+ "network.lede": "Tú en el centro y las 30 personas con las que más has evaluado. La flecha va del corrector al evaluado; una línea con flecha en los dos extremos significa que se han evaluado mutuamente. Cuanto más gruesa, más evaluaciones.",
  "network.empty": "Aún no hay evaluaciones suficientes para dibujar tu círculo.",
  "depth.title": "Evaluaciones a fondo",
  "depth.minutes": "{avg} min de media · mediana {median} min",
@@ -712,5 +712,7 @@
  "rhythm.s_mostly": "de tus horas, sobre todo por la {part}",
  "rail.official": "Intra: {hm}",
  "rail.official_note": "El logtime de la propia intra. La cifra de arriba une las sesiones solapadas a su manera, así que pueden diferir un poco.",
- "astra.gk.hours_intra": "Horas en el cluster (intra)"
+ "astra.gk.hours_intra": "Horas en el cluster (intra)",
+ "network.one_way": "En un sentido: corrector → evaluado",
+ "network.both": "En los dos sentidos"
 }
