@@ -1,4 +1,5 @@
 """The dashboard: five pages rendered on the server, the boot screen, the sync bar and the account actions."""
+import hmac
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
@@ -12,7 +13,7 @@ from .pages import safe_next, templates
 from .publish import can_publish
 from .routes_api import run_publish
 from .sessions import COOKIE, SessionStore, csrf_ok, current_user
-from .store import Store, enqueue_extraction
+from .store import Store, delete_everything, enqueue_extraction
 
 router = APIRouter()
 BUSY = ("queued", "running")
@@ -20,7 +21,7 @@ NO_STORE = {"Cache-Control": "no-store"}
 
 
 def _store(request: Request) -> Store:
-    return Store(request.app.state.redis, request.app.state.settings)
+    return Store(request.app.state.memory, request.app.state.settings)
 
 
 def _ms(iso: str | None) -> float | None:
@@ -59,13 +60,14 @@ def base_ctx(request: Request, user: dict, status: dict, f: Fmt) -> dict:
     s = request.app.state.settings
     return {"lang": f.lang, "t": f, "csrf": user["csrf"], "sync": sync_ctx(f, status), "publish": publish_ctx(request, f, user, status),
             "coalition_color": user.get("coalition_color") or "", "accent": user.get("coalition_color") or "", "issues_url": s.issues_url,
-            "here": request.url.path + (f"?{request.url.query}" if request.url.query else ""), "pages": list(PAGES), "page": None, "key": ""}
+            "here": request.url.path + (f"?{request.url.query}" if request.url.query else ""), "pages": list(PAGES), "page": None, "key": "",
+            "login": user["login"], "report_sig": ""}
 
 
 async def _kick(request: Request, store: Store, uid, status: dict) -> dict:
     """Nothing stored, nothing queued and the hour is over: start the extraction from here."""
     if status["state"] == "none" and status["next_refresh_in"] <= 0:
-        return await enqueue_extraction(store, request.app.state.arq, uid, request.app.state.limiter)
+        return await enqueue_extraction(store, request.app.state.jobs, uid, request.app.state.limiter)
     return status
 
 
@@ -87,10 +89,14 @@ async def dashboard(request: Request, key: str, user: dict):
         return templates.TemplateResponse(request, "dash/consent.html", {**ctx, "title": f("privacy.title"), "version": consent.VERSION,
                                                                          "error": request.query_params.get("error") == "consent"}, headers=NO_STORE)
     data = await store.load_report(user["id"])
+    if data is None and status["state"] not in BUSY and request.query_params.get("fresh") != "1":
+        # the server's copy is gone (an hour unused, or a restart): the browser hands its own back, or asks for a fresh one
+        return templates.TemplateResponse(request, "dash/restore.html", {**ctx, "title": f("boot.title")}, headers=NO_STORE)
     if data is None:
         status = await _kick(request, store, user["id"], status)
         return templates.TemplateResponse(request, "dash/boot.html", {**ctx, "boot": _boot_ctx(f, status), "title": f("boot.title")}, headers=NO_STORE)
-    page = Page(f, data, key, dict(request.query_params), request.app.state.settings.optout_logins)
+    page = Page(f, data, key, {k: v for k, v in request.query_params.items() if k != "fresh"}, request.app.state.settings.optout_logins)
+    ctx["report_sig"] = (await store.raw_report(user["id"]) or (b"", ""))[1]
     sections = BUILDERS[key](page)
     return templates.TemplateResponse(request, "dash/page.html", {
         **ctx, "key": key, "page": page, "sections": sections, "rail": page.rail(), "foot": page.footer(), "title": f(f"pages.{key}")}, headers=NO_STORE)
@@ -142,11 +148,37 @@ async def refresh(request: Request, user: dict = Depends(current_user)):
     if not await csrf_ok(request, user):
         return Response(status_code=403)
     store = _store(request)
-    status = await enqueue_extraction(store, request.app.state.arq, user["id"], request.app.state.limiter)
+    status = await enqueue_extraction(store, request.app.state.jobs, user["id"], request.app.state.limiter)
     if request.headers.get("hx-request"):
         f = Fmt(pick_lang(request))
         return templates.TemplateResponse(request, "dash/_sync.html", base_ctx(request, user, status, f), headers=NO_STORE)
     return RedirectResponse(safe_next((await request.form()).get("next", "/app")), status_code=303)
+
+
+@router.get("/app/report.json")
+async def report_copy(request: Request, user: dict = Depends(current_user)):
+    """The report for the browser to keep, with the signature it must show to hand it back."""
+    found = await _store(request).raw_report(user["id"])
+    if found is None:
+        return Response(status_code=404)
+    return Response(found[0], media_type="application/json", headers={"X-Report-Sig": found[1], **NO_STORE})
+
+
+MAX_REPORT = 16 * 1024 * 1024
+
+
+@router.post("/app/report")
+async def report_back(request: Request, user: dict = Depends(current_user)):
+    """The browser returns its copy; only the exact bytes this server signed for this user are taken."""
+    if not await csrf_ok(request, user):
+        return Response(status_code=403)
+    raw = await request.body()
+    store = _store(request)
+    sig = request.headers.get("x-report-sig", "")
+    if not raw or len(raw) > MAX_REPORT or not hmac.compare_digest(sig, store.sign(user["id"], raw)):
+        return Response(status_code=400)
+    await store.save_raw(user["id"], raw)
+    return Response(status_code=204)
 
 
 @router.get("/app/projects.csv")
@@ -175,9 +207,9 @@ async def delete_confirm(request: Request, user: dict = Depends(current_user)):
 async def delete(request: Request, user: dict = Depends(current_user)):
     if not await csrf_ok(request, user):
         return Response(status_code=403)
-    await _store(request).delete_user(user["id"])
-    await SessionStore(request.app.state.redis, request.app.state.settings).delete(request.state.sid)
-    response = RedirectResponse("/", status_code=303)
+    await delete_everything(_store(request), request.app.state.jobs, user["id"])
+    await SessionStore(request.app.state.memory, request.app.state.settings).delete(request.state.sid)
+    response = RedirectResponse("/", status_code=303, headers={"Clear-Site-Data": '"storage"'})  # the browser's copy goes too
     response.delete_cookie(COOKIE, path="/", secure=request.app.state.settings.secure_cookies, httponly=True, samesite="lax")
     return response
 

@@ -1,13 +1,13 @@
+"""The in-process job queue: one extraction at a time, a retry after a failure runs again, deleting cancels a queued
+job, a running one saves nothing after "Delete my data", and a timeout never leaves the status on "running"."""
+import asyncio
 import logging
-"""Real arq over fakeredis: the job id dedupe must never swallow a retry or a refresh after a job has finished."""
-import fakeredis
-import pytest
-from arq.connections import ArqRedis
-from arq.worker import Worker, func
 
+from app.jobs import Jobs
 from app.limiter import RateLimiter
-from app.store import Store, enqueue_extraction
-from app.worker import WorkerSettings, extract_job
+from app.memory import Memory
+from app.store import JOB_ID, Store, delete_everything, enqueue_extraction
+from app.worker import extract_job
 
 
 class BrokenApi:
@@ -19,71 +19,57 @@ class BrokenApi:
         return fail
 
 
-@pytest.fixture(autouse=True)
-def no_redis_info(monkeypatch):
-    async def quiet(*_a, **_kw):
-        return None
-    monkeypatch.setattr("arq.worker.log_redis_info", quiet)  # fakeredis has no INFO; arq only logs it
+def setup(settings, timeout=900):
+    memory = Memory()
+    store = Store(memory, settings)
+    jobs = Jobs(lambda uid: extract_job({"store": store, "api": BrokenApi()}, uid), timeout=timeout)
+    return memory, store, jobs, RateLimiter(memory)
 
 
-@pytest.fixture
-async def pool():
-    fake = fakeredis.aioredis.FakeRedis()
-    arq = ArqRedis(connection_pool=fake.connection_pool)
-    yield arq
-    await fake.aclose()
-
-
-async def run_worker(pool, store):
-    worker = Worker(functions=[func(extract_job, name="extract_job")], redis_pool=pool, burst=True, poll_delay=0.01,
-                    keep_result=getattr(WorkerSettings, "keep_result", 3600), max_jobs=1, handle_signals=False,
-                    ctx={"store": store, "api": BrokenApi()})
-    await worker.main()
-    await worker.close()
-
-
-async def test_retry_after_a_failed_extraction_enqueues_a_new_job(pool, settings):
-    store, limiter = Store(pool, settings), RateLimiter(pool)
-    await enqueue_extraction(store, pool, 7, limiter)
-    await run_worker(pool, store)
+async def test_retry_after_a_failed_extraction_enqueues_a_new_job(settings):
+    _, store, jobs, limiter = setup(settings)
+    await enqueue_extraction(store, jobs, 7, limiter)
+    await jobs.drain()
     assert (await store.status(7))["state"] == "failed"
-
-    status = await enqueue_extraction(store, pool, 7, limiter)
-    assert status["state"] == "queued"
-    assert len(await pool.queued_jobs()) == 1
-    await run_worker(pool, store)
+    status = await enqueue_extraction(store, jobs, 7, limiter)
+    assert status["state"] == "queued" and jobs.queued() == [JOB_ID.format(7)]
+    await jobs.drain()
     assert (await store.status(7))["state"] == "failed"  # the retry really ran
 
 
-async def test_deleting_cancels_a_queued_extraction(pool, settings):
-    store, limiter = Store(pool, settings), RateLimiter(pool)
-    await enqueue_extraction(store, pool, 7, limiter)
-    assert len(await pool.queued_jobs()) == 1
-    await store.delete_user(7)
-    assert await pool.queued_jobs() == []
-    await run_worker(pool, store)
+async def test_the_same_extraction_is_never_queued_twice(settings):
+    _, store, jobs, limiter = setup(settings)
+    await enqueue_extraction(store, jobs, 7, limiter)
+    assert await jobs.enqueue_job("extract_job", 7, _job_id=JOB_ID.format(7)) is None
+    assert jobs.queued() == [JOB_ID.format(7)]
+
+
+async def test_deleting_cancels_a_queued_extraction(settings):
+    _, store, jobs, limiter = setup(settings)
+    await enqueue_extraction(store, jobs, 7, limiter)
+    await delete_everything(store, jobs, 7)
+    assert jobs.queued() == []
+    await jobs.drain()
     assert (await store.status(7))["state"] == "none"
 
 
-async def test_a_running_extraction_does_not_bring_deleted_data_back(pool, settings, monkeypatch):
-    store, limiter = Store(pool, settings), RateLimiter(pool)
+async def test_a_running_extraction_does_not_bring_deleted_data_back(settings, monkeypatch):
+    memory, store, jobs, limiter = setup(settings)
 
     async def extract_then_user_deletes(_api, uid, progress):
         await progress(0.5)
-        await store.delete_user(uid)  # the user clicks "Delete my data" while the job runs
+        await delete_everything(store, jobs, uid)  # the user clicks "Delete my data" while the job runs
         await progress(0.9)
         return {"page": "web"}
     monkeypatch.setattr("app.worker.extract", extract_then_user_deletes)
-    await enqueue_extraction(store, pool, 7, limiter)
-    await run_worker(pool, store)
-    assert await store.load_report(7) is None
-    assert await pool.exists("user:7:status") == 0
+    await enqueue_extraction(store, jobs, 7, limiter)
+    await jobs.drain()
+    assert await store.load_report(7) is None and await memory.exists("user:7:status") == 0
 
-    # signing in again later starts a fresh extraction that does save
-    await pool.delete(*[k async for k in pool.scan_iter("cooldown:*")])
+    await memory.delete(*[k.decode() async for k in memory.scan_iter("cooldown:*")])
     monkeypatch.setattr("app.worker.extract", lambda *_a, **_kw: _report())
-    await enqueue_extraction(store, pool, 7, limiter)
-    await run_worker(pool, store)
+    await enqueue_extraction(store, jobs, 7, limiter)
+    await jobs.drain()
     assert await store.load_report(7) == {"page": "web"}
 
 
@@ -91,18 +77,24 @@ async def _report():
     return {"page": "web"}
 
 
-async def test_a_timed_out_extraction_does_not_stay_running(pool, settings, monkeypatch):
-    import asyncio
-    store, limiter = Store(pool, settings), RateLimiter(pool)
+async def test_a_timed_out_extraction_does_not_stay_running(settings, monkeypatch):
+    _, store, jobs, limiter = setup(settings, timeout=0.2)
 
     async def too_slow(*_a, **_kw):
         await asyncio.sleep(5)
     monkeypatch.setattr("app.worker.extract", too_slow)
-    await enqueue_extraction(store, pool, 7, limiter)
-    worker = Worker(functions=[func(extract_job, name="extract_job", timeout=0.2)], redis_pool=pool, burst=True, poll_delay=0.01,
-                    keep_result=0, max_jobs=1, handle_signals=False, ctx={"store": store, "api": BrokenApi()})
-    await worker.main()
-    await worker.close()
+    await enqueue_extraction(store, jobs, 7, limiter)
+    await jobs.drain()
+    assert (await store.status(7))["state"] == "failed"
+
+
+async def test_a_deferred_job_waits_for_its_time(settings):
+    _, store, jobs, _ = setup(settings)
+    await jobs.enqueue_job("extract_job", 7, _job_id=JOB_ID.format(7), _defer_by=0.2)
+    assert jobs.queued() == [JOB_ID.format(7)]
+    await asyncio.sleep(0.05)
+    assert (await store.status(7))["state"] == "none"
+    await jobs.drain()
     assert (await store.status(7))["state"] == "failed"
 
 

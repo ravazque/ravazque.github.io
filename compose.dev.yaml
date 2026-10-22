@@ -1,11 +1,6 @@
-# make dev: the source is mounted over the image and the API reloads on every save.
-# The worker does not reload: run make dev again after changing app/extract.py or app/worker.py.
-x-src: &src ["./core:/srv/core:ro", "./web/app:/srv/web/app:ro", "./web/static:/srv/web/static:ro"]
-
+# make dev: the source is mounted over the image and the API reloads on every save (memory starts empty each time).
 services:
   api:
-    volumes: *src
+    volumes: ["./core:/srv/core:ro", "./web/app:/srv/web/app:ro", "./web/static:/srv/web/static:ro", "consent:/data"]
     command: ["uvicorn", "app.main:build", "--factory", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers",
               "--forwarded-allow-ips=*", "--reload", "--reload-dir", "/srv/web/app", "--reload-dir", "/srv/core/core42"]
-  worker:
-    volumes: *src

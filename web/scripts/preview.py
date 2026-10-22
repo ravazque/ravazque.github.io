@@ -20,12 +20,12 @@ async def fetch(uid: int):
     from app.api42 import Api42
     from app.extract import extract
     from app.limiter import RateLimiter
-    from app.redis import make_redis
+    from app.memory import Memory
     from app.settings import Settings
     settings = Settings.from_env()
-    redis = make_redis(settings.redis_url)
+    memory = Memory()
     async with httpx.AsyncClient() as http:
-        api = Api42(settings, redis, http, RateLimiter(redis))
+        api = Api42(settings, memory, http, RateLimiter(memory))
         async def progress(f):
             print(f"\r  {round(100 * f)}%", end="", flush=True)
         data = await extract(api, uid, progress)

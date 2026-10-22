@@ -20,9 +20,9 @@ async def _noop(_):
 
 
 @pytest.fixture
-async def report(redis, settings):
+async def report(memory, settings):
     data = await extract(FakeApi(), UID, _noop)
-    store = Store(redis, settings)
+    store = Store(memory, settings)
     await store.save_report(7, data)
     await store.set_status(7, state="done", progress=1, last="2026-10-21T10:00:00+00:00")
     return data
@@ -98,10 +98,10 @@ async def test_switches_are_links_that_swap_only_their_section(signed_in, report
     assert (await signed_in.get("/app/people?view=nonsense")).status_code == 200
 
 
-async def test_with_nothing_stored_the_boot_screen_starts_the_extraction(signed_in, arq_pool):
-    r = await signed_in.get("/app")
+async def test_with_nothing_stored_the_boot_screen_starts_the_extraction(signed_in, jobs):
+    r = await signed_in.get("/app?fresh=1")
     assert r.status_code == 200 and 'id="boot"' in r.text and 'hx-get="/app/boot"' in r.text
-    assert arq_pool.enqueued == ["extract_job"]
+    assert jobs.enqueued == ["extract_job"]
 
 
 async def test_the_boot_poll_reloads_once_the_report_exists(signed_in, report):
@@ -120,13 +120,13 @@ async def test_refresh_needs_the_csrf_token(signed_in, report):
     assert r.status_code == 303 and r.headers["location"] == "/"
 
 
-async def test_delete_asks_first_and_then_removes_everything(signed_in, report, redis, settings):
+async def test_delete_asks_first_and_then_removes_everything(signed_in, report, memory, settings):
     page = await signed_in.get("/app/delete")
     assert 'action="/app/delete"' in page.text
     assert (await signed_in.post("/app/delete")).status_code == 403
     r = await signed_in.post("/app/delete", data={"csrf": signed_in.csrf["X-CSRF-Token"]})
     assert r.status_code == 303 and r.headers["location"] == "/"
-    assert await Store(redis, settings).load_report(7) is None
+    assert await Store(memory, settings).load_report(7) is None
 
 
 async def test_publishing_is_only_offered_to_the_owner(signed_in, report):
@@ -186,10 +186,10 @@ async def test_no_markup_is_shown_as_text(signed_in, report, path):
         assert leaked not in text
 
 
-async def test_an_outdated_acceptance_asks_for_the_new_policy_first(signed_in, report, redis):
+async def test_an_outdated_acceptance_asks_for_the_new_policy_first(signed_in, report, memory):
     from app import consent
-    for k in await redis.keys("consent:*"):
-        await redis.delete(k)
+    for k in await memory.keys("consent:*"):
+        await memory.delete(k)
     page = await signed_in.get("/app/people?view=ring")
     assert 'action="/app/consent"' in page.text and 'name="accept"' in page.text and '<section id="who"' not in page.text
     token = signed_in.csrf["X-CSRF-Token"]

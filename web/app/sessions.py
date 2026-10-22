@@ -10,28 +10,28 @@ KEY = "sess:{}"
 
 
 class SessionStore:
-    def __init__(self, redis, settings):
-        self.redis, self.settings = redis, settings
+    def __init__(self, memory, settings):
+        self.memory, self.settings = memory, settings
 
     async def create(self, user: dict) -> str:
         sid = secrets.token_urlsafe(32)
         data = {"id": user["id"], "login": user["login"], "name": user.get("name"), "image": user.get("image"),
                 "coalition_color": user.get("coalition_color"), "csrf": secrets.token_urlsafe(32)}
-        await self.redis.set(KEY.format(sid), json.dumps(data), ex=self.settings.session_s)
+        await self.memory.set(KEY.format(sid), json.dumps(data), ex=self.settings.session_s)
         return sid
 
     async def get(self, sid: str | None) -> dict | None:
         if not sid:
             return None
-        raw = await self.redis.get(KEY.format(sid))
+        raw = await self.memory.get(KEY.format(sid))
         if raw is None:
             return None
-        await self.redis.expire(KEY.format(sid), self.settings.session_s)  # sliding
+        await self.memory.expire(KEY.format(sid), self.settings.session_s)  # sliding
         return json.loads(raw)
 
     async def delete(self, sid: str | None):
         if sid:
-            await self.redis.delete(KEY.format(sid))
+            await self.memory.delete(KEY.format(sid))
 
 
 class NoSession(Exception):
@@ -39,7 +39,7 @@ class NoSession(Exception):
 
 
 async def current_user(request: Request) -> dict:
-    store = SessionStore(request.app.state.redis, request.app.state.settings)
+    store = SessionStore(request.app.state.memory, request.app.state.settings)
     user = await store.get(request.cookies.get(COOKIE))
     if user is None:
         raise NoSession()

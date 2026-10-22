@@ -6,8 +6,8 @@ from app.store import Store
 
 
 @pytest.fixture
-def store(redis, settings):
-    return Store(redis, settings)
+def store(memory, settings):
+    return Store(memory, settings)
 
 
 async def test_api_without_session_is_401_json(client):
@@ -16,9 +16,9 @@ async def test_api_without_session_is_401_json(client):
         assert r.status_code == 401 and r.json() == {"error": "session"}
 
 
-async def test_expired_session_is_401_json(signed_in, redis):
-    for key in await redis.keys("sess:*"):
-        await redis.delete(key)
+async def test_expired_session_is_401_json(signed_in, memory):
+    for key in await memory.keys("sess:*"):
+        await memory.delete(key)
     r = await signed_in.get("/api/me/status")
     assert r.status_code == 401 and r.json() == {"error": "session"}
 
@@ -41,11 +41,11 @@ async def test_refresh_requires_csrf(signed_in):
     assert (await signed_in.post("/api/me/refresh", headers={"X-CSRF-Token": "wrong"})).status_code == 403
 
 
-async def test_refresh_enqueues_once(signed_in, arq_pool):
+async def test_refresh_enqueues_once(signed_in, jobs):
     r = await signed_in.post("/api/me/refresh", headers=signed_in.csrf)
     assert r.status_code == 202 and r.json()["state"] == "queued"
     r = await signed_in.post("/api/me/refresh", headers=signed_in.csrf)
-    assert r.status_code == 202 and arq_pool.enqueued == ["extract_job"]
+    assert r.status_code == 202 and jobs.enqueued == ["extract_job"]
 
 
 async def test_refresh_in_cooldown_is_429_with_wait(signed_in, store):

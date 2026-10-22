@@ -1,15 +1,8 @@
 name: ravazque-top
 
 # Run through the root Makefile (make dev / make up). Every service reads the one root .env.
-x-app: &app
-  build: {context: ., dockerfile: web/Dockerfile}
-  env_file:
-    - path: .env
-      required: false  # make clean / down / logs work before .env exists; make dev creates it first
-  volumes: ["./core:/srv/core:ro"]
-  depends_on: [redis]
-  restart: unless-stopped
-
+# No database: sessions, report copies and limits live in the api's memory; the only file it writes is the
+# consent log in the consent volume.
 services:
   caddy:
     image: caddy:2.11
@@ -21,16 +14,15 @@ services:
     depends_on: [api]
     restart: unless-stopped
   api:
-    <<: *app
-  worker:
-    <<: *app
-    command: ["arq", "app.worker.WorkerSettings"]
-  redis:
-    image: redis:8.10-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes: ["redis_data:/data"]
+    build: {context: ., dockerfile: web/Dockerfile}
+    env_file:
+      - path: .env
+        required: false  # make clean / down / logs work before .env exists; make dev creates it first
+    environment:
+      CONSENT_LOG: /data/consent.log
+    volumes: ["./core:/srv/core:ro", "consent:/data"]
     restart: unless-stopped
 
 volumes:
   caddy_data: {}
-  redis_data: {}
+  consent: {}

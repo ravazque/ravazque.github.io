@@ -17,7 +17,7 @@ up: .env web/Caddyfile.local ## Start the web as built, without live reload
 build: .env ## Build the images
 	@$(COMPOSE) build
 
-down: ## Stop the web (sessions and reports stay in the Redis volume)
+down: ## Stop the web (sessions and server copies of reports are in memory: they go; browsers keep theirs)
 	@$(COMPOSE) down
 
 logs: ## Follow the logs
@@ -55,7 +55,7 @@ clean: ## Stop the web and delete generated files (preview data, site/_build, Ca
 	@rm -rf web/preview web/Caddyfile.local site/_build
 	@find web core -name __pycache__ -type d -prune -exec rm -rf {} +
 
-fclean: clean ## clean + delete the images and volumes (all sessions and reports); keeps web/certs
+fclean: clean ## clean + delete the images and volumes (the consent log too); keeps web/certs
 	@$(COMPOSE) down --volumes --rmi local --remove-orphans
 
 re: fclean dev ## fclean + dev

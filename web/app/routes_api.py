@@ -7,13 +7,13 @@ from fastapi.responses import JSONResponse, Response
 from .api42 import Api42Error
 from .publish import PublishError, can_publish, is_fresh, publish_snapshot, snapshot
 from .sessions import COOKIE, SessionStore, csrf_ok, current_user
-from .store import Store, enqueue_extraction
+from .store import Store, delete_everything, enqueue_extraction
 
 router = APIRouter()
 
 
 def _store(request: Request) -> Store:
-    return Store(request.app.state.redis, request.app.state.settings)
+    return Store(request.app.state.memory, request.app.state.settings)
 
 
 @router.get("/api/me/report")
@@ -32,7 +32,7 @@ async def refresh(request: Request, user: dict = Depends(current_user)):
     if not await csrf_ok(request, user):
         return JSONResponse({"error": "csrf"}, status_code=403)
     store = _store(request)
-    s = await enqueue_extraction(store, request.app.state.arq, user["id"], request.app.state.limiter)
+    s = await enqueue_extraction(store, request.app.state.jobs, user["id"], request.app.state.limiter)
     if s["state"] not in ("queued", "running") and s["next_refresh_in"] > 0:
         return JSONResponse(s, status_code=429)
     return JSONResponse(s, status_code=202)
@@ -42,8 +42,8 @@ async def refresh(request: Request, user: dict = Depends(current_user)):
 async def delete(request: Request, user: dict = Depends(current_user)):
     if not await csrf_ok(request, user):
         return JSONResponse({"error": "csrf"}, status_code=403)
-    await _store(request).delete_user(user["id"])
-    await SessionStore(request.app.state.redis, request.app.state.settings).delete(request.state.sid)
+    await delete_everything(_store(request), request.app.state.jobs, user["id"])
+    await SessionStore(request.app.state.memory, request.app.state.settings).delete(request.state.sid)
     response = Response(status_code=204)
     response.delete_cookie(COOKIE, path="/", secure=True, httponly=True, samesite="lax")
     return response
@@ -61,15 +61,15 @@ async def run_publish(request: Request, user: dict) -> tuple[int, dict]:
     data = await store.load_report(user["id"])
     if data is None or not is_fresh(last, datetime.now(timezone.utc), settings.cooldown_s):
         return 409, {"error": "stale"}
-    redis = request.app.state.redis
-    if not await redis.set("lock:publish", 1, nx=True, ex=60):
+    memory = request.app.state.memory
+    if not await memory.set("lock:publish", 1, nx=True, ex=60):
         return 409, {"error": "busy"}
     try:
         url = await publish_snapshot(request.app.state.http, settings, snapshot(data, last))
     except PublishError:
         return 502, {"error": "github"}
     finally:
-        await redis.delete("lock:publish")
+        await memory.delete("lock:publish")
     published = datetime.now(timezone.utc).isoformat(timespec="seconds")
     await store.set_status(user["id"], published=published)
     return 200, {"url": url, "published": published}

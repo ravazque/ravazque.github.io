@@ -137,16 +137,16 @@ def owner_settings(settings):
 
 
 @pytest.fixture
-async def owner(owner_settings, redis, arq_pool):
+async def owner(owner_settings, memory, jobs):
     from app.main import create_app
     from app.sessions import COOKIE, SessionStore
-    app = create_app(owner_settings, redis, arq=arq_pool)
-    sid = await SessionStore(redis, owner_settings).create({"id": 7, "login": "ana", "name": "Ana", "coalition_color": "#3E7BC8"})
-    csrf = (await SessionStore(redis, owner_settings).get(sid))["csrf"]
+    app = create_app(owner_settings, memory, jobs=jobs)
+    sid = await SessionStore(memory, owner_settings).create({"id": 7, "login": "ana", "name": "Ana", "coalition_color": "#3E7BC8"})
+    csrf = (await SessionStore(memory, owner_settings).get(sid))["csrf"]
     client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://localhost")
     client.cookies.set(COOKIE, sid)
     client.headers["X-CSRF-Token"] = csrf
-    yield client, Store(redis, owner_settings)
+    yield client, Store(memory, owner_settings)
     await client.aclose()
 
 
@@ -163,7 +163,7 @@ async def test_publish_route_is_only_for_the_owner(signed_in):
     assert r.status_code == 403 and r.json() == {"error": "owner"}
 
 
-async def test_publish_route_is_off_without_a_token(owner, owner_settings, redis, arq_pool):
+async def test_publish_route_is_off_without_a_token(owner, owner_settings, memory, jobs):
     client, store = owner
     from dataclasses import replace
     client._transport.app.state.settings = replace(owner_settings, github_token="")

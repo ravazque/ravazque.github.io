@@ -1,11 +1,9 @@
-"""App factory: routes are mounted here; state (settings, redis, clients) lives on app.state."""
+"""App factory: routes are mounted here; state (settings, memory, clients, jobs) lives on app.state."""
+import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from contextlib import asynccontextmanager
-
 import httpx
-from arq import create_pool
-from arq.connections import RedisSettings
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -13,13 +11,15 @@ from fastapi.staticfiles import StaticFiles
 from core42 import FRONTEND_DIR
 from core42.ui import UI_FILE, css_from_ui, load_ui
 
-from . import auth, pages, routes_api, routes_dash
+from . import auth, consent, pages, routes_api, routes_dash
 from .api42 import Api42
+from .jobs import Jobs
 from .limiter import RateLimiter
-from .redis import make_redis
+from .memory import Memory
 from .sessions import NoSession, no_session_handler
 from .settings import Settings
-from .store import first_extraction
+from .store import Store, first_extraction
+from .worker import extract_job
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
@@ -37,21 +37,30 @@ class UiCss:
         return self.css
 
 
-def create_app(settings: Settings, redis, http: httpx.AsyncClient | None = None, arq=None) -> FastAPI:
+def create_app(settings: Settings, memory: Memory, http: httpx.AsyncClient | None = None, jobs=None) -> FastAPI:
     http = http or httpx.AsyncClient()
 
+    async def sweep():
+        while True:
+            await asyncio.sleep(60)
+            memory.sweep()
+
     @asynccontextmanager
-    async def lifespan(app_):
-        if app_.state.arq is None:
-            app_.state.arq = await create_pool(RedisSettings.from_dsn(settings.redis_url))
+    async def lifespan(_app):
+        await consent.load(memory, settings)
+        sweeper = asyncio.create_task(sweep())
         yield
+        sweeper.cancel()
+        if isinstance(app.state.jobs, Jobs):
+            await app.state.jobs.stop()
         await http.aclose()
 
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
-    app.state.settings, app.state.redis, app.state.http = settings, redis, http
-    app.state.limiter = RateLimiter(redis)
-    app.state.api = Api42(settings, redis, http, app.state.limiter)
-    app.state.arq = arq
+    app.state.settings, app.state.memory, app.state.http = settings, memory, http
+    app.state.limiter = RateLimiter(memory)
+    app.state.api = Api42(settings, memory, http, app.state.limiter)
+    ctx = {"store": Store(memory, settings), "api": app.state.api}
+    app.state.jobs = jobs or Jobs(lambda uid: extract_job(ctx, uid))
     app.state.on_signed_in = first_extraction
     app.add_exception_handler(NoSession, no_session_handler)
     app.include_router(auth.router)
@@ -62,7 +71,7 @@ def create_app(settings: Settings, redis, http: httpx.AsyncClient | None = None,
 
     @app.get("/healthz")
     async def healthz():
-        await redis.ping()
+        await memory.ping()
         return JSONResponse({"ok": True})
 
     @app.get("/ui.css")
@@ -77,4 +86,4 @@ def create_app(settings: Settings, redis, http: httpx.AsyncClient | None = None,
 def build() -> FastAPI:
     """Entry point for uvicorn --factory."""
     settings = Settings.from_env().check()
-    return create_app(settings, make_redis(settings.redis_url))
+    return create_app(settings, Memory())
