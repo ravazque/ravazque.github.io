@@ -709,5 +709,8 @@
  "col.team": "Team size",
  "standing.mine": "Your coalition",
  "col.days_to_validate": "Days to validate",
- "rhythm.s_mostly": "of your hours, mostly in the {part}"
+ "rhythm.s_mostly": "of your hours, mostly in the {part}",
+ "rail.official": "Intra: {hm}",
+ "rail.official_note": "The intra's own logtime. The figure above merges overlapping sessions its own way, so the two can differ a little.",
+ "astra.gk.hours_intra": "Hours in the cluster (intra)"
 }

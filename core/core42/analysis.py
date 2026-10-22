@@ -169,6 +169,8 @@ def for_period(d, period):
         "evals_received": [e for e in d["evals_received"] if eval_kept(e)],
         "evals_given": [e for e in d["evals_given"] if eval_kept(e)],
         "locations": [s for s in d["locations"] if keep(after(s["begin_at"]))],
+        **({"locations_stats": {day: v for day, v in d["locations_stats"].items() if keep(day >= start.date().isoformat())}}
+           if d.get("locations_stats") is not None else {}),  # older reports have none: keep it absent, not empty
         "correction_points": [c for c in d["correction_points"] if keep(after(c["created_at"]))],
         "events_users": [e for e in d["events_users"] if keep(after((e.get("event") or {}).get("begin_at")))],
         "quests_users": [q for q in d["quests_users"]
@@ -176,6 +178,17 @@ def for_period(d, period):
         **{name: [x for x in d[name] if keep(after(x["created_at"]))]
            for name in ("achievements_users", "titles_users", "expertises_users")},
     }
+
+
+def official_hours(stats: dict | None) -> float | None:
+    """The intra's own total from /locations_stats ("HH:MM:SS.ffffff" per day); None when it was not fetched."""
+    if stats is None:
+        return None
+    total = 0.0
+    for v in stats.values():
+        h, m, sec = str(v).split(":")
+        total += int(h) * 3600 + int(m) * 60 + float(sec)
+    return round(total / 3600, 1)
 
 
 SEAT = re.compile(r"c(\d+)r(\d+)s(\d+)$")
@@ -457,6 +470,7 @@ class Report:
             "clusters": {c: round(s / 3600, 1) for c, s in clusters.most_common()},
             "total_seconds": round(sum(daily.values())),
             "total_hours": round(sum(daily.values()) / 3600, 1),
+            "official_hours": official_hours(self.d.get("locations_stats")),
             "days_present": len(daily),
             "first_day": days[0] if days else None,
             "last_day": days[-1] if days else None,
@@ -591,6 +605,7 @@ class Report:
             "image": ((u.get("image") or {}).get("versions") or {}).get("medium"),
             "campus": [c["name"] for c in u["campus"]],
             "location": u.get("location"), "wallet": u["wallet"], "correction_point": u["correction_point"],
+            "groups": [g["name"] for g in self.d.get("groups") or [] if g.get("name")],
             "coalition": {"name": coal["name"], "color": coal["color"], "score": cu["score"], "rank": cu["rank"],
                           "master": coal.get("user_id") == u["id"]}
             if coal and cu else None,

@@ -156,3 +156,4 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .catalogue .mark-ico { display: inline-block; width: 1.4em; font-weight: 800; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .astra-coal { margin-top: 8px; font-weight: 600; }
+.identity .groups { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }

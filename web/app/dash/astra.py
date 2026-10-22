@@ -86,9 +86,10 @@ def gatekeeper(data) -> dict:
         return slug not in COMMON_CORE if slug else not ({name, name.replace(" ", "_"), name.replace(" ", "-")} & COMMON_CORE)
     rated = [e["fb_rating"] for e in given if e.get("fb_rating") is not None]
     avg = sum(rated) / len(rated) if rated else None
-    hours = periods["all"]["logtime"]["total_hours"]
+    logtime = periods["all"]["logtime"]
+    hours = logtime["official_hours"] if logtime.get("official_hours") is not None else logtime["total_hours"]  # the intra's figure counts
     evals_ok = sum(map(outer, given)) >= 50 or (len(given) >= 150 and (avg or 0) >= 4.5)
-    return {"outer": sum(map(outer, given)), "total": len(given), "avg": avg, "hours": hours,
+    return {"outer": sum(map(outer, given)), "total": len(given), "avg": avg, "hours": hours, "official": logtime.get("official_hours") is not None,
             "evals_met": evals_ok, "hours_met": hours >= 2000, "met": evals_ok and hours >= 2000}
 
 

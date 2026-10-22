@@ -31,7 +31,8 @@ class FakeApi:
         if m := re.match(rf"^/v2/users/{UID}/(.+)$", path):
             key = {"scale_teams/as_corrected": "evals_received", "scale_teams/as_corrector": "evals_given",
                    "correction_point_historics": "correction_points"}.get(m.group(1), m.group(1))
-            return d[key]
+            extra = {"locations_stats": {"2026-10-01": "02:30:00"}, "groups": [{"id": 1, "name": "Peer tutor"}]}
+            return d[key] if key in d else extra[key]
         if path == "/v2/achievements_users":
             return d["achievements_users"]
         if m := re.match(r"^/v2/achievements/(\d+)$", path):
@@ -188,3 +189,11 @@ async def test_feedback_details_reach_the_evaluations():
     assert ev["feedbacks"] and ev["feedbacks"][0]["nice"] == 4 and ev["feedbacks"][0]["comment"] == "Kind and precise."
     assert "image" not in json.dumps(ev["feedbacks"])
     assert [f["by"] for f in ev["feedbacks"]] == ["ravazque"]  # a teammate's feedback on the corrector is not ours to keep
+
+
+async def test_the_intra_s_hours_and_the_groups_cost_two_requests():
+    api = FakeApi()
+    data = await extract(api, UID, noop)
+    assert f"/v2/users/{UID}/locations_stats" in api.calls and f"/v2/users/{UID}/groups" in api.calls
+    every = data["periods"]["all"]
+    assert every["logtime"]["official_hours"] == 2.5 and every["profile"]["groups"] == ["Peer tutor"]

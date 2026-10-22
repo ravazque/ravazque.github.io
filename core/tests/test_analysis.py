@@ -127,6 +127,15 @@ class ReportBuild(unittest.TestCase):
         coal = Report(d, now=NOW).build()["profile"]["coalition"]
         self.assertEqual((coal["master"], coal["rank"], coal["score"]), (True, 2, 300))
 
+    def test_the_intra_s_own_hours_and_the_profile_groups(self):
+        d = dataset()
+        d["locations_stats"] = {"2026-09-01": "01:30:00.5", "2026-09-02": "24:00:00"}
+        d["groups"] = [{"name": "Peer tutor"}]
+        r = Report(d, now=NOW).build()
+        self.assertEqual(r["logtime"]["official_hours"], 25.5)
+        self.assertEqual(r["profile"]["groups"], ["Peer tutor"])
+        self.assertIsNone(Report(dataset(), now=NOW).build()["logtime"]["official_hours"])
+
     def test_evaluations_carry_the_project_slug(self):
         self.assertTrue(all(e["slug"] == "libft" for e in self.r["received"] + self.r["given"]))
 
@@ -189,6 +198,7 @@ class PiscineFilter(unittest.TestCase):
                                    {"achievement_id": 2, "created_at": "2024-10-05T15:58:00Z"}]
         d["quests_users"] = [{"quest": {"name": "Common Core", "cursus_id": 21}, "created_at": "2024-08-27T12:20:00Z"},
                              {"quest": {"name": "Piscine quest", "cursus_id": 9}, "created_at": "2024-07-10T12:20:00Z"}]
+        d["locations_stats"] = {"2024-07-03": "05:00:00", "2026-09-01": "02:00:00"}
         self.full = d
         self.d = for_period(d, "student")
 
@@ -202,6 +212,14 @@ class PiscineFilter(unittest.TestCase):
         self.assertEqual([e["id"] for e in self.d["evals_given"]], [200])
         self.assertEqual(len(self.d["locations"]), 2)
         self.assertEqual([c["reason"] for c in self.d["correction_points"]], ["Reset kickoff"])
+
+    def test_a_report_without_the_intra_s_hours_does_not_show_zero(self):
+        d = dict(self.full); d.pop("locations_stats")
+        self.assertIsNone(Report(for_period(d, "student"), now=NOW).build()["logtime"]["official_hours"])
+
+    def test_the_intra_s_daily_hours_follow_the_period(self):
+        self.assertEqual(list(self.d["locations_stats"]), ["2026-09-01"])
+        self.assertEqual(list(for_period(self.full, "piscine")["locations_stats"]), ["2024-07-03"])
 
     def test_achievements_before_cursus_dropped_cursus_quests_kept(self):
         self.assertEqual([a["achievement_id"] for a in self.d["achievements_users"]], [2])

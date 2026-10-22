@@ -709,5 +709,8 @@
  "col.team": "Tamaño del equipo",
  "standing.mine": "Tu coalición",
  "col.days_to_validate": "Días hasta validar",
- "rhythm.s_mostly": "de tus horas, sobre todo por la {part}"
+ "rhythm.s_mostly": "de tus horas, sobre todo por la {part}",
+ "rail.official": "Intra: {hm}",
+ "rail.official_note": "El logtime de la propia intra. La cifra de arriba une las sesiones solapadas a su manera, así que pueden diferir un poco.",
+ "astra.gk.hours_intra": "Horas en el cluster (intra)"
 }
