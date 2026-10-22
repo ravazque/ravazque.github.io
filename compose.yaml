@@ -1,4 +1,4 @@
-name: ravazque-top
+name: ravazque-info
 
 # Run through the root Makefile (make dev / make up). Every service reads the one root .env.
 # No database: sessions, report copies and limits live in the api's memory; the only file it writes is the

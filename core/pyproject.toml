@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "core42"
 version = "0.1.0"
 license = "AGPL-3.0-or-later"
-description = "42 API analysis, profile rules and the shared report frontend of ravazque.top"
+description = "42 API analysis, profile rules and the shared report frontend of ravazque.info"
 requires-python = ">=3.11"
 
 [tool.setuptools]

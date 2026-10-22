@@ -591,7 +591,8 @@ class Report:
             "image": ((u.get("image") or {}).get("versions") or {}).get("medium"),
             "campus": [c["name"] for c in u["campus"]],
             "location": u.get("location"), "wallet": u["wallet"], "correction_point": u["correction_point"],
-            "coalition": {"name": coal["name"], "color": coal["color"], "score": cu["score"], "rank": cu["rank"]}
+            "coalition": {"name": coal["name"], "color": coal["color"], "score": cu["score"], "rank": cu["rank"],
+                          "master": coal.get("user_id") == u["id"]}
             if coal and cu else None,
         }
 

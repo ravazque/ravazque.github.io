@@ -3,6 +3,7 @@ report; The Kraken, The Headhunter and The Titan, and any RNCP override, are mar
 their browser (dash.js), so nothing about them reaches the server."""
 import json
 import math
+import re
 from pathlib import Path
 
 from markupsafe import Markup, escape
@@ -24,17 +25,37 @@ def _validated(projects, tag):
     return [p for p in projects if p.get("validated") and p["name"].strip().lower() in TAGS[tag]]
 
 
+def catalogue(tag, projects) -> list[dict]:
+    """Every project of a tag once (the intra lists spelling variants), with the student's state in it."""
+    same = lambda n: re.sub(r"[\s_-]+", "", n.lower())  # noqa: E731  "Doom Nukem", "doom-nukem" and "doom_nukem" are one entry
+    mine = {}
+    for p in projects:
+        if p.get("validated") or same(p["name"]) not in mine:
+            mine[same(p["name"])] = p
+    seen, out = set(), []
+    for name in RNCP["tags"][tag]:
+        key = same(name)
+        if key in seen:
+            continue
+        seen.add(key)
+        p = mine.get(key)
+        state = "validated" if p and p.get("validated") else "started" if p else "none"
+        out.append({"name": name, "state": state, "xp": p.get("xp_earned") if p and p.get("validated") else None})
+    return sorted(out, key=lambda x: ({"validated": 0, "started": 1, "none": 2}[x["state"]], x["name"].lower()))
+
+
 def requirement(f, need, projects, extras) -> dict:
     """One line of an RNCP option: what it asks, what the student has, met or not, and the projects behind it."""
     if "projects" in need:
         done = _validated(projects, need["projects"])
         return {"label": f("astra.req.projects", n=need["n"], tag=f(f"astra.tag.{need['projects']}")), "have": len(done), "need": need["n"],
-                "met": len(done) >= need["n"], "list": [p["name"] for p in done], "unit": ""}
+                "met": len(done) >= need["n"], "list": [p["name"] for p in done], "unit": "", "all": catalogue(need["projects"], projects)}
     if "xp" in need:
         done = _validated(projects, need["xp"])
         xp = sum(p.get("xp_earned") or 0 for p in done)
         return {"label": f("astra.req.xp", n=f.num(need["n"]), tag=f(f"astra.tag.{need['xp'].removesuffix('_xp')}")), "have": xp, "need": need["n"],
-                "met": xp >= need["n"], "list": [f"{p['name']} ≈ {f.num(p.get('xp_earned'))}" for p in done], "unit": "xp"}
+                "met": xp >= need["n"], "list": [f"{p['name']} ≈ {f.num(p.get('xp_earned'))}" for p in done], "unit": "xp",
+                "all": catalogue(need["xp"], projects)}
     if "group" in need:
         done = [p for p in projects if p.get("validated") and any(a.get("validated") and a.get("members") for a in p.get("attempts", []))]
         return {"label": f("astra.req.group", n=need["group"]), "have": len(done), "need": need["group"], "met": len(done) >= need["group"],
@@ -71,57 +92,25 @@ def gatekeeper(data) -> dict:
             "evals_met": evals_ok, "hours_met": hours >= 2000, "met": evals_ok and hours >= 2000}
 
 
+def coalition(data) -> dict | None:
+    """Today's standing in the student's coalition; the API keeps no history of past masters or tournament winners."""
+    c = data["periods"]["all"]["profile"].get("coalition")
+    if not c:
+        return None
+    return {"name": c["name"], "rank": c.get("rank"), "score": c.get("score"), "master": bool(c.get("master")),
+            "met": bool(c.get("master")) or c.get("rank") == 1}
+
+
 def view(f, data) -> dict:
     every = data["periods"]["all"]
     projects, extras = every["projects"], every["extras"]
-    return {"grandmaster": rncp(f, "rncp7", projects, extras), "architect": rncp(f, "rncp6", projects, extras), "gatekeeper": gatekeeper(data)}
-
-
-# ---------- drawing: a flat-topped hexagon around each goal's silhouette (100 × 100 units) ----------
-
-ICONS = {
-    "grandmaster": (  # a dragon, bat wings spread
-        '<path d="M46 48 L26 17 L4 30 Q12 34 12 45 Q19 40 24 49 Q30 44 34 55 Q40 50 46 57 Z"/>'
-        '<path d="M54 48 L74 17 L96 30 Q88 34 88 45 Q81 40 76 49 Q70 44 66 55 Q60 50 54 57 Z"/>'
-        '<path d="M45 47 C44 38 46 31 50 27 C54 31 56 38 55 47 Z"/><path d="M43 26 L50 13 L57 26 L50 31 Z"/>'
-        '<path class="line" d="M46 17 L41 8 M54 17 L59 8"/><ellipse cx="50" cy="59" rx="8" ry="14"/>'
-        '<path class="line wide" d="M50 71 C42 80 60 84 52 95"/>'),
-    "architect": (  # a spider
-        '<circle cx="50" cy="37" r="7"/><ellipse cx="50" cy="58" rx="11" ry="15"/>'
-        + "".join(f'<path class="line" d="M{x1} {y1} L{x2} {y2} L{x3} {y3}"/><path class="line" d="M{100 - x1} {y1} L{100 - x2} {y2} L{100 - x3} {y3}"/>'
-                  for x1, y1, x2, y2, x3, y3 in [(44, 44, 30, 26, 22, 36), (42, 49, 22, 40, 12, 50), (42, 55, 22, 58, 14, 72), (44, 61, 32, 72, 28, 88)])),
-    "kraken": (  # an octopus
-        '<path d="M28 50 C28 18 72 18 72 50 C72 59 63 63 50 63 C37 63 28 59 28 50 Z"/>'
-        '<circle cx="41" cy="45" r="4" class="eye"/><circle cx="59" cy="45" r="4" class="eye"/>'
-        + "".join(f'<path class="line wide" d="M{x} 60 C{x + dx} 72 {x + 2 * dx} 74 {x + dx} 86 C{x + dx // 2} 92 {x + dx * 2} 94 {x + dx * 2} 88"/>'
-                  for x, dx in [(36, -7), (43, -3), (57, 3), (64, 7)])),
-    "gatekeeper": (  # a wolf howling at the moon
-        '<circle cx="72" cy="24" r="15" class="moon"/>'
-        '<path d="M28 16 L41 25 L46 12 L50 27 C56 33 58 42 60 52 C68 60 71 78 70 92 L42 92 L44 72 C38 62 36 50 37 40 C33 34 30 28 26 22 Z"/>'
-        '<path d="M64 88 C76 93 85 85 83 74 C81 82 73 85 67 81 Z"/>'),
-    "headhunter": (  # an eagle in flight
-        '<path d="M50 46 C40 38 26 31 5 34 L14 40 L7 45 L18 48 L11 53 L24 55 L19 60 L34 59 C41 57 46 53 50 53 Z"/>'
-        '<path d="M50 46 C60 38 74 31 95 34 L86 40 L93 45 L82 48 L89 53 L76 55 L81 60 L66 59 C59 57 54 53 50 53 Z"/>'
-        '<ellipse cx="50" cy="54" rx="6" ry="11"/><circle cx="50" cy="38" r="6"/><path d="M48 41 L50 47 L52 41 Z" class="eye"/>'
-        '<path d="M44 63 L50 82 L56 63 Z"/>'),
-    "titan": (  # a gorilla
-        '<path d="M16 93 C14 70 24 56 38 52 L62 52 C76 56 86 70 84 93 Z"/>'
-        '<path d="M20 60 C9 66 5 80 8 94 L20 94 C19 82 23 72 28 65 Z"/><path d="M80 60 C91 66 95 80 92 94 L80 94 C81 82 77 72 72 65 Z"/>'
-        '<path d="M30 52 C28 36 37 28 50 27 C63 28 72 36 70 52 C68 62 60 67 50 67 C40 67 32 62 30 52 Z"/>'
-        '<path d="M37 49 C39 43 61 43 63 49 C65 57 58 64 50 64 C42 64 35 57 37 49 Z" class="eye"/>'
-        '<path d="M34 46 C41 38 59 38 66 46 L63 50 C57 44 43 44 37 50 Z" class="brow"/>'
-        '<circle cx="44" cy="50" r="2.1" class="pupil"/><circle cx="56" cy="50" r="2.1" class="pupil"/>'
-        '<ellipse cx="47" cy="56" rx="1.7" ry="1.1" class="pupil"/><ellipse cx="53" cy="56" rx="1.7" ry="1.1" class="pupil"/>'
-        '<path d="M44 60 Q50 62.5 56 60" class="line thin"/>'),
-}
+    return {"grandmaster": rncp(f, "rncp7", projects, extras), "architect": rncp(f, "rncp6", projects, extras), "gatekeeper": gatekeeper(data),
+            "titan": coalition(data)}
 
 
 def hexagon(goal: str, label: str) -> Markup:
-    outer = "30,2 90,2 118,52 90,102 30,102 2,52"
-    inner = "34,9 86,9 110,52 86,95 34,95 10,52"
-    return Markup(f'<svg class="astra-hex" viewBox="0 0 120 104" role="img" aria-label="{escape(label)}">'
-                  f'<polygon class="hex-out" points="{outer}"/><polygon class="hex-in" points="{inner}"/>'
-                  f'<g class="icon" transform="translate(21 13) scale(0.78)">{ICONS[goal]}</g></svg>')
+    """The goal's emblem (web/static/astra), shown in colour once achieved."""
+    return Markup(f'<img class="astra-hex" src="/static/astra/the-{goal}.svg" width="200" height="174" alt="{escape(label)}">')
 
 
 def laurel(flip=False) -> Markup:

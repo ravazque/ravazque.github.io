@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 from markupsafe import Markup, escape
 
 from . import astra as av
+from . import extra as ex
 from . import charts as ch
 from . import graphs as gr
 
@@ -224,6 +225,19 @@ def home(pg: Page) -> list[dict]:
     sections = [{"id": "home-kpis", "title": f("home.title"), "nav": f("nav.home_kpis"),
                  "kpis": [(k, v, [s for s in subs if s]) for k, v, subs in kpis]}]
 
+    weeks, span = ex.active_weeks(L["days"], L["hours"])
+    split = ex.day_split(L["heat"])
+    to_validate = [p["days_to_validate"] for p in D["projects"] if p.get("validated") and p.get("days_to_validate") is not None]
+    median = sorted(to_validate)[len(to_validate) // 2] if to_validate else None
+    sections.append({"id": "rhythm", "title": f("rhythm.title"), "nav": f("rhythm.title"), "lede": f("rhythm.lede"), "kpis": [
+        (f("rhythm.k_streak"), f.num(ex.streak(L["days"], L["hours"])), [f("rhythm.s_streak")]),
+        (f("rhythm.k_weeks"), f.num(weeks), [f("rhythm.s_weeks", total=f.num(span))]),
+        (f("rhythm.k_time"), f"{max(split.values())}%",
+         [f("rhythm.s_mostly", part=f("rhythm." + max(split, key=split.get))), f("rhythm.s_time", m=split["morning"], a=split["afternoon"], n=split["night"])]),
+        (f("rhythm.k_validate"), f.num(median, 1) if median is not None else "–",
+         [f("rhythm.s_validate", n=len(to_validate)), f("rhythm.s_resilience", n=ex.resilience(D["projects"]))]),
+    ]})
+
     pc = (D.get("insights") or {}).get("pace")
     if pc:
         months = pc["months"]
@@ -259,7 +273,11 @@ def home(pg: Page) -> list[dict]:
             f'background:{safe_color(c.get("color"))}"></b></span><span class="num">{f.num(c["score"])}</span></li>' for c in C))
         hist = promo["histogram"] if promo else []
         mine = math.floor(promo["mine"]) if promo else None
-        sections.append({"id": "standing", "title": f("standing.title"), "nav": f("nav.standing"), "coalitions": coal,
+        mine_c = av.coalition(pg.data)
+        coal_line = " · ".join(x for x in [mine_c["name"], f("astra.coal.rank", n=mine_c["rank"]) if mine_c["rank"] else "",
+                                         f("astra.coal.score", n=f.num(mine_c["score"])) if mine_c["score"] is not None else "",
+                                         f("astra.coal.master") if mine_c["master"] else ""] if x) if mine_c else ""
+        sections.append({"id": "standing", "title": f("standing.title"), "nav": f("nav.standing"), "coalitions": coal, "mine": coal_line,
                          "promo_lede": f("standing.promo_lede", rank=f.num(promo["rank"]), size=f.num(promo["size"]), pct=f.num(promo["percentile"], 1),
                                          median=f.num(promo["median"], 2)) if promo else f("standing.no_promo"),
                          "promo": ch.vbars(f, [str(h["level"]) for h in hist],
@@ -314,6 +332,16 @@ def mark_chip(f, a) -> str:
 
 def group_label(f, g):
     return f("track.piscine") if g == "piscine" else f(f"groups.{g}")
+
+
+def portfolio_csv(pg: Page) -> str:
+    f = pg.f
+    out = io.StringIO()
+    w = csv.writer(out, lineterminator="\n")
+    w.writerow([f("col.project"), f("col.track"), f("col.areas"), f("col.started"), f("col.marked"), f("col.final"), f("col.attempts"),
+                f("col.xp"), f("col.team"), f("col.days_to_validate")])
+    w.writerows(ex.portfolio_rows(pg.data["periods"].get("all", pg.D)["projects"]))
+    return out.getvalue()
 
 
 def projects_csv(pg: Page) -> str:
@@ -374,6 +402,14 @@ def projects(pg: Page) -> list[dict]:
                  "count": f.plural(len(rows), "projects_table.count"), "table": tbl,
                  "csv": pg.url(None).replace(PAGES["projects"], "/app/projects.csv", 1)}]
 
+    areas = ex.domains(pg.data["periods"].get("all", D)["projects"])
+    sections.append({"id": "domains", "title": f("domains.title"), "nav": f("domains.title"), "lede": f("domains.lede"),
+                     "chart": ch.hbars(f, [(lambda t: t[:1].upper() + t[1:])(f(f"astra.tag.{a['key']}")) for a in areas], [(f("col.xp"), [a["xp"] for a in areas], ch.S1)],
+                                       label=f("domains.title"), tips=[f"{f(f'astra.tag.{a['key']}')} · ≈ {f.num(a['xp'])} XP · {', '.join(a['projects'])}" for a in areas],
+                                       end=lambda i, v: f"≈ {f.num(v)}", extra=lambda i: f.plural(len(areas[i]["projects"]), "domains.projects"),
+                                       empty_text=f("domains.none")),
+                     "portfolio": pg.url(None).replace(PAGES["projects"], "/app/portfolio.csv", 1)})
+
     tl_rows = []
     for p in D["projects"]:
         spans = []
@@ -396,7 +432,7 @@ def projects(pg: Page) -> list[dict]:
                      "timeline": ch.timeline(f, tl_rows, label=f("projects.timeline_aria"), empty_text=f("empty.period")),
                      "retries": ch.lines(f, [(f("col.retries"), retries, ch.S1)], label=f("projects.cum_title"), empty_text=f("empty.period"))})
 
-    ex = (D.get("insights") or {}).get("exams") or []
+    exams_done = (D.get("insights") or {}).get("exams") or []
     sections.append({"id": "exams", "title": f("exams.title"), "nav": f("nav.exams"), "table": table(f, [
         {"k": "name", "t": f("col.exam"), "nw": True},
         {"k": "passed", "t": f("col.status"), "nw": True, "sv": lambda e: 1 if e.get("passed") else 0,
@@ -406,7 +442,7 @@ def projects(pg: Page) -> list[dict]:
         {"k": "tries", "t": f("col.tries"), "sv": lambda e: len(e["tries"]), "f": lambda e: '<span class="marks">' + "".join(
             f'<span class="mark {"pass" if x.get("passed") else "fail"}" title="{escape(f.day(x.get("date")))}">{escape(x["mark"] if x.get("mark") is not None else "–")}</span>'
             for x in e["tries"]) + "</span>"},
-    ], ex, label=f("exams.title"), sort=("name", 1), empty=f("exams.none"))})
+    ], exams_done, label=f("exams.title"), sort=("name", 1), empty=f("exams.none"))})
     return sections
 
 
@@ -426,7 +462,14 @@ def evaluations(pg: Page) -> list[dict]:
             ("100", lambda x: x == 100), ("101–124", lambda x: 100 < x < 125), ("125", lambda x: x >= 125)]
     count = lambda evs: [sum(1 for e in evs if e.get("mark") is not None and ok(e["mark"])) for _, ok in bins]  # noqa: E731
     roles = [(f("role.received"), ch.S1), (f("role.given"), ch.S2)]
-    sections = [{"id": "over-time", "title": f("over_time.title"), "nav": f("over_time.title"), "lede": lede,
+    cm = ex.community(D["given"], D["received"])
+    sections = [{"id": "community", "title": f("community.title"), "nav": f("community.title"), "lede": f("community.lede"), "kpis": [
+        (f("community.k_hours"), f.nb(cm["hours"], "h"), [f("community.s_hours", n=f.num(len(D["given"])))]),
+        (f("community.k_people"), f.num(cm["people"]), [f("community.s_people")]),
+        (f("community.k_correctors"), f.num(cm["correctors"]), [f("community.s_correctors")]),
+        (f("community.k_rating"), f.num(cm["rating"], 2) if cm["rating"] is not None else "–", [f("community.s_rating", n=f.num(cm["rated"]))]),
+    ]}]
+    sections += [{"id": "over-time", "title": f("over_time.title"), "nav": f("over_time.title"), "lede": lede,
                  "switch": pg.seg("role", [("received", f("role.received")), ("given", f("role.given"))], role, label=f("log.role_label"), target="over-time"),
                  "monthly_title": f("received.monthly_title" if role == "received" else "given.monthly_title"),
                  "flags": ch.legend([(f("flag.ok"), base), (f("flag.outstanding"), ch.GOOD), (f("flag.negative"), ch.BAD)]),
@@ -775,6 +818,12 @@ def astra(pg: Page) -> list[dict]:
                 avg=f("astra.gk.avg", avg=f.num(gk["avg"], 2)) if gk["avg"] is not None else "")
         else:
             goal["auto"] = None
+            if g == "titan" and v["titan"]:
+                c = v["titan"]
+                goal["auto"] = c["met"]
+                goal["coalition"] = " · ".join(x for x in [c["name"], f("astra.coal.rank", n=c["rank"]) if c["rank"] else "",
+                                                          f("astra.coal.score", n=f.num(c["score"])) if c["score"] is not None else "",
+                                                          f("astra.coal.master") if c["master"] else ""] if x)
             goal["counters"] = {"kraken": [("babel", f("astra.kraken.babel"), 5), ("manguito", f("astra.kraken.manguito"), 3)],
                                 "headhunter": [("alumni", f("astra.hh.events"), 4)]}.get(g, [])
             goal["switches"] = {"headhunter": [("referral", f("astra.hh.referral"))],

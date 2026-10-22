@@ -48,7 +48,31 @@ def test_gatekeeper_needs_one_evaluation_path_and_the_hours():
     assert astra.gatekeeper(data([{**e, "fb_rating": 5} for e in common], 2500))["met"]
 
 
-def test_every_goal_has_its_drawing():
+def test_every_goal_has_its_emblem():
+    from pathlib import Path
+    static = Path(__file__).resolve().parent.parent / "static" / "astra"
     for g in astra.GOALS:
-        svg = str(astra.hexagon(g, g))
-        assert svg.startswith("<svg") and 'class="hex-out"' in svg and "<path" in svg + "<circle"
+        assert f'src="/static/astra/the-{g}.svg"' in str(astra.hexagon(g, g)) and (static / f"the-{g}.svg").exists()
+
+
+def test_the_catalogue_lists_every_project_once_with_the_students_state():
+    projects = [project("red-tetris"), {**project("camagru", validated=False)}]
+    names = astra.catalogue("web", projects)
+    keys = [n["name"].lower() for n in names]
+    assert len(keys) == len(set(keys))
+    assert names[0] == {"name": "red-tetris", "state": "validated", "xp": 1000}
+    assert next(n for n in names if n["name"] == "camagru")["state"] == "started"
+    assert all(n["state"] == "none" for n in names[2:])
+
+
+def test_titan_counts_today_s_master_or_first_of_the_coalition():
+    def data(**c):
+        return {"periods": {"all": {"profile": {"coalition": {"name": "Z", "score": 10, "rank": 3, "master": False, **c}}}}}
+    assert not astra.coalition(data())["met"]
+    assert astra.coalition(data(rank=1))["met"] and astra.coalition(data(master=True))["met"]
+    assert astra.coalition({"periods": {"all": {"profile": {"coalition": None}}}}) is None
+
+
+def test_spelling_variants_are_one_entry():
+    names = [n["name"].lower().replace(" ", "").replace("-", "").replace("_", "") for n in astra.catalogue("suite", [])]
+    assert len(names) == len(set(names)) and names.count("doomnukem") == 1
