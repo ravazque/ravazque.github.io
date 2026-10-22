@@ -1,0 +1,59 @@
+<section id="astra" class="astra" data-astra>
+  <header class="astra-head">
+    {{ s.laurel }}<h2>{{ s.title }}</h2>{{ s.laurel_flip }}
+  </header>
+  <p class="lede">{{ s.lede }}</p>
+  <p class="astra-verdict" aria-live="polite"><b data-astra-count>{{ s.count }}</b> <span data-astra-missing></span></p>
+  <template data-astra-texts data-count="{{ t('astra.count') }}" data-all="{{ t('astra.all') }}" data-missing="{{ t('astra.missing') }}"
+    data-done="{{ t('astra.state.done') }}" data-todo="{{ t('astra.state.todo') }}"></template>
+  <div class="astra-grid">
+  {% for g in s.goals %}
+    <article class="goal" data-goal="{{ g.key }}" data-name="{{ g.name }}"{% if g.auto is not none %} data-auto="{{ 1 if g.auto else 0 }}"{% endif %}>
+      <div class="goal-hex">{{ g.hex }}</div>
+      <div class="goal-body">
+        <h3>{{ g.name }} <span class="badge goal-state" data-state>{% if g.auto is none %}{{ t("astra.state.mark") }}{% elif g.auto %}{{ t("astra.state.done") }}{% else %}{{ t("astra.state.todo") }}{% endif %}</span></h3>
+        <p class="note">{{ g.rule }}</p>
+
+        {% if g.options %}
+        <div class="astra-override" data-override="{{ g.key }}">
+          <span class="s-label">{{ t("astra.override") }}</span>
+          <div class="seg small" role="group" aria-label="{{ t('astra.override') }}">
+            <button type="button" data-v="auto" aria-pressed="true">{{ t("astra.override.auto") }}</button><button type="button" data-v="yes" aria-pressed="false">{{ t("astra.override.yes") }}</button><button type="button" data-v="no" aria-pressed="false">{{ t("astra.override.no") }}</button>
+          </div>
+        </div>
+        {% for o in g.options %}
+        <details class="astra-option"{% if o.met %} open{% endif %}>
+          <summary>{{ o.name }} <span class="note">· {{ t("astra.option.progress", done=o.done, total=o.reqs|length) }}</span></summary>
+          <ul class="reqs">
+            {% for r in o.reqs %}<li class="{{ 'met' if r.met else 'unmet' }}"><span class="mark-ico" aria-hidden="true">{{ '✓' if r.met else '✗' }}</span>
+              <span>{{ r.label }} <span class="note">· {{ t.num(r.have, 2 if r.unit == 'level' else 0) }}{% if r.unit == 'xp' %} ≈{% endif %}</span>
+              {% if r.list %}<span class="sub">{{ r.list|join(", ") }}</span>{% endif %}</span></li>{% endfor %}
+          </ul>
+        </details>
+        {% endfor %}
+        <p class="note">{{ t("astra.xp_note") }}</p>
+        {% endif %}
+
+        {% if g.bars %}
+        <p class="note">{{ t("astra.gk.either") }}</p>
+        {% for b in g.bars %}<div class="astra-bar{{ ' met' if b.met else '' }}"><span>{{ b.label }}</span><span class="track"><i style="width:{{ b.pct }}%"></i></span><b>{{ b.have }} / {{ b.need }}</b></div>{% endfor %}
+        {% if g.avg %}<p class="note">{{ g.avg }}</p>{% endif %}
+        {% endif %}
+
+        {% if g.counters or g.switches %}
+        <div class="astra-marks" data-marks="{{ g.key }}">
+          {% for key, label, max in g.counters %}
+          <div class="counter" data-key="{{ key }}" data-max="{{ max }}"><span>{{ label }}</span>
+            <button type="button" class="btn secondary" data-step="-1" aria-label="{{ t('astra.less') }}" disabled>−</button><output>0</output><span class="note">/ {{ max }}</span><button type="button" class="btn secondary" data-step="1" aria-label="{{ t('astra.more') }}" disabled>+</button></div>
+          {% endfor %}
+          {% for key, label in g.switches %}
+          <button type="button" class="switch" data-key="{{ key }}" aria-checked="false" disabled><span class="track"><span class="knob"></span></span><span>{{ label }}</span></button>
+          {% endfor %}
+          <p class="note no-js-only">{{ t("astra.nojs") }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+  </div>
+</section>

@@ -249,6 +249,7 @@ class Report:
             "role": role,
             "project": self.project_name(team.get("project_id")),
             "project_id": team.get("project_id"),
+            "slug": (self.projects.get(team.get("project_id")) or {}).get("slug"),
             "team_id": team.get("id"),
             "team": team.get("name"),
             "corrector": self.person(e.get("corrector")),

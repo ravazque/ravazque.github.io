@@ -217,6 +217,66 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
   else if (restoring) location.replace(restoring.dataset.fresh);
   else if (window.indexedDB) keepCopy();
 
+  // Astra Victoris: the goals the data cannot tell are marked here and kept only in this browser
+  function astra() {
+    const root = document.querySelector("[data-astra]");
+    if (!root || root.dataset.wired) return;
+    root.dataset.wired = "1";
+    const key = `astra:${login}`;
+    let marks = {};
+    try { marks = JSON.parse(store.get(key) || "{}") || {}; } catch (e) { marks = {}; }
+    const save = () => store.set(key, JSON.stringify(marks));
+    const texts = root.querySelector("[data-astra-texts]").dataset;
+    const fill = (text, vars) => text.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
+    const rules = {
+      kraken: () => (marks.babel || 0) >= 5 || (marks.manguito || 0) >= 3,
+      headhunter: () => !!marks.referral || (marks.alumni || 0) >= 4,
+      titan: () => !!marks.tool || !!marks.scorer,
+    };
+    function done(goal) {
+      const g = goal.dataset.goal, mark = marks[`override:${g}`];
+      if (mark === "yes") return true;
+      if (mark === "no") return false;
+      return rules[g] ? rules[g]() : goal.dataset.auto === "1";
+    }
+    function render() {
+      const goals = [...root.querySelectorAll("[data-goal]")];
+      const missing = [];
+      goals.forEach((goal) => {
+        const ok = done(goal);
+        goal.classList.toggle("done", ok);
+        goal.querySelector("[data-state]").textContent = ok ? texts.done : texts.todo;
+        if (!ok) missing.push(goal.dataset.name);
+      });
+      root.querySelector("[data-astra-count]").textContent = fill(texts.count, {n: goals.length - missing.length});
+      root.querySelector("[data-astra-missing]").textContent = missing.length ? fill(texts.missing, {list: missing.join(", ")}) : texts.all;
+    }
+    root.querySelectorAll("[data-override]").forEach((box) => {
+      const k = `override:${box.dataset.override}`;
+      const buttons = box.querySelectorAll("button");
+      const show = () => buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (marks[k] || "auto"))));
+      buttons.forEach((b) => b.addEventListener("click", () => { if (b.dataset.v === "auto") delete marks[k]; else marks[k] = b.dataset.v; save(); show(); render(); }));
+      show();
+    });
+    root.querySelectorAll(".counter").forEach((c) => {
+      const k = c.dataset.key, max = Number(c.dataset.max), out = c.querySelector("output");
+      const show = () => { out.textContent = marks[k] || 0; };
+      c.querySelectorAll("button").forEach((b) => {
+        b.disabled = false;
+        b.addEventListener("click", () => { marks[k] = Math.max(0, Math.min(max, (marks[k] || 0) + Number(b.dataset.step))); save(); show(); render(); });
+      });
+      show();
+    });
+    root.querySelectorAll(".switch[data-key]").forEach((sw) => {
+      sw.disabled = false;
+      sw.setAttribute("aria-checked", String(!!marks[sw.dataset.key]));
+      if (window.makeSwitch) makeSwitch(sw, (on) => { if (on) marks[sw.dataset.key] = true; else delete marks[sw.dataset.key]; save(); render(); });
+    });
+    render();
+  }
+  astra();
+  document.body.addEventListener("htmx:afterSettle", astra);
+
   settle();
   watchToc();
   addEventListener("resize", () => hintScroll(), {passive: true});

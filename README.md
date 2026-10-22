@@ -21,6 +21,9 @@ Five pages, rendered on the server; every choice (period, filters, views) lives 
   correction statistics, feedback, correction points, the full evaluation log with search.
 - **People**: top correctors and everyone you crossed paths with, Connections as bubbles or as your circle, teammates.
 - **Campus**: seat plan with every computer, hours per month, calendar, weekday × hour, sessions, where evaluations happen.
+- **Astra Victoris**: the six goals of 42 Madrid's distinction in hexagons. RNCP 6 and 7 are checked against
+  `core/core42/rncp.json` (both options, with the projects behind each requirement) and The Gatekeeper against the
+  evaluations and hours; the goals the API cannot tell are marked by the student and kept only in the browser.
 - **Publish** (optional, one account only): commits a whitelisted snapshot of that account's profile to a GitHub Pages
   repository.
 
@@ -116,6 +119,7 @@ Report vulnerabilities privately through GitHub Security Advisories on this repo
   served as `/ui.css` and reloaded on change. `"@name"` references another token.
 - `core/core42/frontend/i18n/{en,es}.json`: every text; both files must have the same keys (enforced by a test).
 - `core/core42/skills.json`, `core/core42/tracks.json`: skill order per cursus and Common Core rank of each project.
+- `core/core42/rncp.json`: RNCP 6 and 7 requirements and the projects behind each tag, as the intra lists them.
 - Accent: 42 blue `#00BABC` by default, coalition colour on request, contrast-adjusted for both themes.
 
 ## Publishing to GitHub Pages

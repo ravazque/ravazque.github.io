@@ -100,7 +100,7 @@ def dataset():
         "corrector_sessions": {"100": [{"host": "c2r5s5", "begin_at": "2026-09-02T07:50:00Z", "end_at": None}],
                                "101": []},
         "feedbacks": {},
-        "projects": [{"id": 1, "name": "libft", "difficulty": 462, "exam": False}],
+        "projects": [{"id": 1, "name": "libft", "slug": "libft", "difficulty": 462, "exam": False}],
         "people": [{"id": 2, "login": "alice", "displayname": "Alice"}],
         "correction_points": [{"reason": "Creation", "sum": 5, "total": 5, "created_at": "2024-07-01T08:00:00Z"}],
         "events_users": [], "coalitions_users": [], "coalitions": [], "quests_users": [],
@@ -119,6 +119,9 @@ class ReportBuild(unittest.TestCase):
         self.assertEqual((p["retries"], p["failed_attempts"], p["evals"], p["outstanding"]), (1, 1, 2, 1))
         self.assertEqual(p["attempts"][1]["members"], ["mate"])
         self.assertEqual(p["attempts"][1]["moulinette"][0]["mark"], 100)
+
+    def test_evaluations_carry_the_project_slug(self):
+        self.assertTrue(all(e["slug"] == "libft" for e in self.r["received"] + self.r["given"]))
 
     def test_evaluation_where_when(self):
         e = self.r["received"][0]
