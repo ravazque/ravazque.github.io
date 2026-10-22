@@ -73,8 +73,9 @@ def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, li
         + (f'<figcaption class="ch-title">{escape(xtitle)}</figcaption>' if xtitle else "") + "</figure>")
 
 
-def hbars(f, labels, series, *, label, end=None, tips=None, empty_text="") -> Markup:
-    """Horizontal stacked bars, one row per label, the total at the bar's end. series: [(name, values, colour)]."""
+def hbars(f, labels, series, *, label, end=None, extra=None, tips=None, empty_text="") -> Markup:
+    """Horizontal stacked bars, one row per label, the total at the bar's end. series: [(name, values, colour)].
+    extra(i) adds a secondary note after the total, dropped on narrow panels (the tooltip keeps it)."""
     if not labels:
         return empty(empty_text)
     totals = [sum(vals[i] or 0 for _, vals, _ in series) for i in range(len(labels))]
@@ -85,7 +86,8 @@ def hbars(f, labels, series, *, label, end=None, tips=None, empty_text="") -> Ma
         tip = tips[i] if tips else " · ".join([lab] + [f"{name} {f.num(vals[i] or 0, 2)}" for name, vals, _ in series if vals[i]])
         segs = "".join(f'<i style="width:{_pct(vals[i] or 0, top)};background:{c}"></i>' for _, vals, c in series if vals[i])
         rows.append(f'<div class="hb-row" data-tip="{escape(tip)}"><span class="hb-label">{escape(lab)}</span>'
-                    f'<span class="hb-track">{segs}<b>{escape(end(i, totals[i]))}</b></span></div>')
+                    f'<span class="hb-track">{segs}<b>{escape(end(i, totals[i]))}'
+                    f'{f"<span class=hb-extra> · {escape(x)}</span>" if extra and (x := extra(i)) else ""}</b></span></div>')
     summary = f"{label}: " + ", ".join(f"{lab} {end(i, totals[i])}" for i, lab in enumerate(labels))
     return Markup(f'<figure class="hchart" role="img" aria-label="{escape(summary)}">{"".join(rows)}</figure>')
 

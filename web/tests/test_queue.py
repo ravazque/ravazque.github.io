@@ -1,3 +1,4 @@
+import logging
 """Real arq over fakeredis: the job id dedupe must never swallow a retry or a refresh after a job has finished."""
 import fakeredis
 import pytest
@@ -103,3 +104,8 @@ async def test_a_timed_out_extraction_does_not_stay_running(pool, settings, monk
     await worker.main()
     await worker.close()
     assert (await store.status(7))["state"] == "failed"
+
+
+def test_the_worker_logs_at_info_level():
+    from app.worker import log
+    assert log.isEnabledFor(logging.INFO)

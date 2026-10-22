@@ -611,7 +611,8 @@ def people(pg: Page) -> list[dict]:
         "chart": ch.hbars(f, [p["login"] for p in top], [(f("flag.other"), [p["evaluated_me"] - p["outstanding_to_me"] for p in top], ch.S1),
                                                          (f("flag.outstanding"), [p["outstanding_to_me"] for p in top], ch.GOOD)],
                           label=f("who.top_title"), tips=[tip(p) for p in top], empty_text=f("empty.period"),
-                          end=lambda i, v: f"{v} · {top[i]['outstanding_to_me']} {f('flag.outstanding')}" if top[i]["outstanding_to_me"] else str(v)),
+                          end=lambda i, v: str(v),
+                          extra=lambda i: f"{top[i]['outstanding_to_me']} {f('flag.outstanding')}" if top[i]["outstanding_to_me"] else ""),
         "q": pg.q("q", "")[:80],
         "table": table(f, [
             {"k": "login", "t": f("col.login"), "nw": True, "f": lambda p: f'{avatar(p)}{escape(p["login"])}{" " + badge(f("who.staff")) if p.get("staff") else ""}'},
