@@ -1,0 +1,17 @@
+{% extends "dash/base.html" %}
+{% block body %}
+<main id="main" class="solo">
+  <div class="boot-panel">
+    <h2>{{ t("consent.title") }}</h2>
+    <p>{{ t("consent.lede", version=version) }}</p>
+    {% if error %}<p class="error" role="alert">{{ t("site.error_consent") }}</p>{% endif %}
+    <form class="signin" method="post" action="/app/consent">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="next" value="{{ '/app' if here.startswith('/app/consent') else here }}">
+      <label class="consent"><input type="checkbox" name="accept" value="1" required>
+        <span>{{ t.html("site.accept", privacy=t.markup('<a href="/privacy" target="_blank">' ~ t("site.accept_link") ~ '</a>')) }}</span></label>
+      <p class="row-btns"><button class="btn primary" type="submit">{{ t("consent.continue") }}</button></p>
+    </form>
+    <form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link-btn" type="submit">{{ t("signout.button") }}</button></form>
+  </div>
+</main>
+{% endblock %}

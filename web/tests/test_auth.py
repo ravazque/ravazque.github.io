@@ -9,11 +9,16 @@ async def test_login_needs_the_privacy_policy_accepted(client):
     assert "__Host-oauth_state" not in r.headers.get("set-cookie", "")
 
 
-async def test_signing_in_records_when_the_policy_was_accepted(client, mock42, redis, settings):
+async def test_signing_in_records_the_accepted_policy_version_without_the_id(client, mock42, redis, settings):
+    from app import consent
     from app.store import Store
     mock42.as_profile("student")
     await signed_callback(client)
-    assert (await Store(redis, settings).status(192183)).get("privacy_accepted")
+    store = Store(redis, settings)
+    assert await consent.is_current(store, 192183)
+    keys = [k.decode() for k in await redis.keys("consent:*")]
+    assert len(keys) == 1 and "192183" not in keys[0]
+    assert 2 * 365 * 86400 - 60 < await redis.ttl(keys[0]) <= 2 * 365 * 86400
 
 
 async def test_login_sets_state_and_redirects(client):

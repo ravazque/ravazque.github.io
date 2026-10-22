@@ -85,3 +85,20 @@ async def test_every_api_request_is_counted(api):
         httpx.Response(200, json=[{}] * 50, headers={"X-Total": "150"})])
     await api.get_all("/v2/users/1/locations")
     assert api.requests == 2
+
+
+@respx.mock
+async def test_a_slow_answer_is_retried_like_a_server_error(api):
+    token_route()
+    route = respx.get(f"{API}/v2/users/1/scale_teams").mock(side_effect=[httpx.ReadTimeout("slow"), httpx.Response(200, json=[{"id": 9}])])
+    assert await api.get("/v2/users/1/scale_teams") == [{"id": 9}]
+    assert route.call_count == 2
+
+
+@respx.mock
+async def test_a_network_that_never_answers_ends_in_an_api_error_without_ids(api):
+    token_route()
+    respx.get(f"{API}/v2/users/192183/scale_teams").mock(side_effect=httpx.ConnectTimeout("down"))
+    with pytest.raises(Api42Error) as err:
+        await api.get("/v2/users/192183/scale_teams")
+    assert err.value.status == 0 and "192183" not in str(err.value) and "/v2/users/:id/scale_teams" in str(err.value)

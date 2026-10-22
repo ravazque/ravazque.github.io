@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import httpx
 from arq.connections import RedisSettings
 
-from .api42 import Api42
+from .api42 import Api42, Api42Error
 from .extract import AccessRefused, extract
 from .limiter import RateLimiter
 from .redis import make_redis
@@ -44,7 +44,8 @@ async def extract_job(ctx, uid: int):
         await store.start_cooldown(uid, started_at=started)
         await store.set_status(uid, state="refused", message=refused.args[0])
     except Exception as exc:  # any failure keeps the old report and does not spend the hour
-        log.warning("extraction failed for user %s: %s", uid, type(exc).__name__)
+        log.warning("extraction failed for user %s after %s API requests: %s", uid, _requests(ctx["api"]) - before,
+                    exc if isinstance(exc, Api42Error) else type(exc).__name__)
         await store.set_status(uid, state="failed", message="status.failed")
     finally:
         # a job timeout cancels the coroutine (not an Exception): never leave the status on "running"

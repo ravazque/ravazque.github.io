@@ -15,7 +15,10 @@ async def test_sign_in_survives_a_network_error_at_the_token_exchange(client, mo
     assert r.status_code == 303 and r.headers["location"] == "/?error=signin"
 
 
-async def test_sign_in_survives_a_failing_coalitions_call(client, mock42, redis, settings):
+async def test_sign_in_survives_a_failing_coalitions_call(app, client, mock42, redis, settings):
+    async def no_sleep(_):
+        pass
+    app.state.api.sleep = no_sleep  # the timeout is retried like a server error before giving up
     mock42.as_profile("student")
     mock42.router.get(f"{API}/v2/users/192183/coalitions").mock(side_effect=httpx.ReadTimeout("slow"))
     r = await signed_callback(client)
@@ -49,13 +52,15 @@ async def test_avatar_downloads_go_through_the_shared_rate_limiter(signed_in, mo
 def test_the_session_secret_must_be_set_and_long():
     for bad in ("", "short"):
         with pytest.raises(ValueError):
-            Settings(session_secret=bad, contact_email="a@example.invalid").check()
-    Settings(session_secret="s" * 32, contact_email="a@example.invalid").check()
+            Settings(session_secret=bad, contact_email="a@example.invalid", controller_name="A").check()
+    Settings(session_secret="s" * 32, contact_email="a@example.invalid", controller_name="A").check()
 
 
-def test_the_contact_email_must_be_set():
+def test_the_contact_and_the_controller_must_be_set():
     with pytest.raises(ValueError):
-        Settings(session_secret="s" * 32).check()
+        Settings(session_secret="s" * 32, controller_name="A").check()
+    with pytest.raises(ValueError):
+        Settings(session_secret="s" * 32, contact_email="a@example.invalid").check()
 
 
 def test_the_app_does_not_start_without_a_session_secret(monkeypatch):

@@ -39,7 +39,8 @@ the site preview.
 
 1. **Register a 42 application** at https://profile.intra.42.fr/oauth/applications:
    redirect URI `https://localhost/auth/callback`, website `https://localhost`, scope `public`.
-2. **Configure**: `make` copies `.env.example` to `.env` on the first run. Fill the required values (see below).
+2. **Configure**: `make` copies `.env.example` to `.env` on the first run. Fill the required values (see below) and adapt the
+   privacy policy texts (`policy.*` in the i18n files) to your deployment.
 3. **Certificates**: `make certs` creates `web/certs/`. With `mkcert` they are trusted at once; with `openssl`, import
    `web/certs/ca.pem` as a trusted authority. Without certificates Caddy uses its internal CA.
 4. **Start**: `make dev` and open https://localhost.
@@ -52,7 +53,9 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 |----------|----------|---------|
 | `FT_UID`, `FT_SECRET` | yes | 42 application credentials |
 | `SESSION_SECRET` | yes | ≥ 32 characters (`openssl rand -hex 32`); keys session HMACs |
-| `CONTACT_EMAIL` | yes | Contact shown on the About and Privacy pages |
+| `CONTROLLER_NAME` | yes | Data controller named by the privacy policy |
+| `CONTACT_EMAIL` | yes | Contact for privacy requests, shown on the About and Privacy pages |
+| `OPTOUT_LOGINS` | no | Comma-separated logins of students who asked to be excluded: shown as "Hidden" everywhere |
 | `ISSUES_URL` | no | "Report an issue" link on every page, e.g. `https://github.com/<owner>/<repo>/issues/new/choose` |
 | `BASE_URL` | no | Public address, default `https://localhost` |
 | `REDIS_URL` | no | Default `redis://redis:6379/0` |
@@ -96,6 +99,9 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
   strict CSP (`script-src 'self'`, no frames), `nosniff` and `same-origin` referrer headers.
 - The published snapshot (`web/app/publish.py`) is a field-by-field whitelist: never contact data, seats, logged hours,
   ids, tokens, photos or anything about other students.
+
+Signing in requires accepting the privacy policy; the acceptance is recorded as a keyed hash of the 42 id, the policy
+version and the date for two years, and a new version asks everyone to accept it again (`web/app/consent.py`).
 
 Report vulnerabilities privately through GitHub Security Advisories on this repository, not in public issues.
 

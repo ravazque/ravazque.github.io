@@ -184,3 +184,39 @@ async def test_no_markup_is_shown_as_text(signed_in, report, path):
     text = (await signed_in.get(path)).text
     for leaked in ("&lt;span", "&lt;i ", "&lt;b&gt;", "&lt;a ", "&lt;svg", "&lt;br"):
         assert leaked not in text
+
+
+async def test_an_outdated_acceptance_asks_for_the_new_policy_first(signed_in, report, redis):
+    from app import consent
+    for k in await redis.keys("consent:*"):
+        await redis.delete(k)
+    page = await signed_in.get("/app/people?view=ring")
+    assert 'action="/app/consent"' in page.text and 'name="accept"' in page.text and '<section id="who"' not in page.text
+    token = signed_in.csrf["X-CSRF-Token"]
+    assert (await signed_in.post("/app/consent", data={"next": "/app"})).status_code == 403
+    still = await signed_in.post("/app/consent", data={"csrf": token, "next": "/app"})
+    assert still.status_code == 303 and still.headers["location"].startswith("/app/consent")
+    r = await signed_in.post("/app/consent", data={"csrf": token, "accept": "1", "next": "/app/people?view=ring"})
+    assert r.status_code == 303 and r.headers["location"] == "/app/people?view=ring"
+    assert '<section id="who"' in (await signed_in.get("/app/people")).text
+    assert consent.VERSION >= 1
+
+
+async def test_opted_out_students_never_appear(app, signed_in, report):
+    from dataclasses import replace
+    hidden = report["periods"][report["default_period"]]["people"][0]["login"]
+    app.state.settings = replace(app.state.settings, optout_logins=frozenset({hidden}))
+    for path in PAGES:
+        text = (await signed_in.get(path)).text
+        assert hidden not in text, path
+    assert "Hidden" in (await signed_in.get("/app/people")).text
+
+
+async def test_the_privacy_policy_names_the_controller_version_and_rights(client):
+    from app import consent
+    text = (await client.get("/privacy", headers={"Accept-Language": "en"})).text
+    for s in ("Owner Example (owner)", "owner@example.invalid", "AEPD", "Art. 6.1.a", "Art. 6.1.f", f"Version {consent.VERSION}",
+              "want to be excluded", "not affiliated with or endorsed by 42", "2 years after your last sign-in"):
+        assert s in text, s
+    es = (await client.get("/privacy", headers={"Accept-Language": "es"})).text
+    assert "AEPD" in es and f"Versión {consent.VERSION}" in es
