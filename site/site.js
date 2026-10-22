@@ -17,7 +17,7 @@ const STRINGS = {
     "groups.rank-00": "Rank 00", "groups.rank-01": "Rank 01", "groups.rank-02": "Rank 02", "groups.rank-03": "Rank 03",
     "groups.rank-04": "Rank 04", "groups.rank-05": "Rank 05", "groups.rank-06": "Rank 06", "groups.outer-core": "Outer Core",
     "groups.piscine": "C Piscine", "track.common-core": "Common Core", "track.outer-core": "Outer Core", "track.piscine": "C Piscine",
-    since: "since {when}", updated: "42 data as of {when}, published from ravazque.top.", unavailable: "The 42 snapshot could not be loaded right now.",
+    since: "since {when}", updated: "42 data as of {when}, published from ravazque.info.", unavailable: "The 42 snapshot could not be loaded right now.",
     language: "Language", theme: "Theme", light: "Light", dark: "Dark", skills_label: "Skills of the {cursus}",
   },
   es: {
@@ -34,7 +34,7 @@ const STRINGS = {
     "groups.rank-00": "Rank 00", "groups.rank-01": "Rank 01", "groups.rank-02": "Rank 02", "groups.rank-03": "Rank 03",
     "groups.rank-04": "Rank 04", "groups.rank-05": "Rank 05", "groups.rank-06": "Rank 06", "groups.outer-core": "Outer Core",
     "groups.piscine": "Piscina C", "track.common-core": "Common Core", "track.outer-core": "Outer Core", "track.piscine": "Piscina C",
-    since: "desde {when}", updated: "Datos de 42 a {when}, publicados desde ravazque.top.", unavailable: "Ahora mismo no se pudo cargar la foto de 42.",
+    since: "desde {when}", updated: "Datos de 42 a {when}, publicados desde ravazque.info.", unavailable: "Ahora mismo no se pudo cargar la foto de 42.",
     language: "Idioma", theme: "Tema", light: "Claro", dark: "Oscuro", skills_label: "Skills del {cursus}",
   },
 };

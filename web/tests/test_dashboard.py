@@ -10,8 +10,8 @@ from test_extract import UID, FakeApi
 
 PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus",
          "/app/astra": "astra"}
-SECTIONS = {"/app": ["home-kpis", "pace", "skills", "activity"], "/app/projects": ["projects-table", "timeline", "exams"],
-            "/app/evaluations": ["over-time", "when", "correction-stats", "feedback", "points", "log"],
+SECTIONS = {"/app": ["home-kpis", "rhythm", "pace", "skills", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
+            "/app/evaluations": ["community", "over-time", "when", "correction-stats", "feedback", "points", "log"],
             "/app/people": ["who", "connections", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"],
             "/app/astra": ["astra"]}
 INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>")
@@ -222,3 +222,12 @@ async def test_the_privacy_policy_names_the_controller_version_and_rights(client
         assert s in text, s
     es = (await client.get("/privacy", headers={"Accept-Language": "es"})).text
     assert "AEPD" in es and f"Versión {consent.VERSION}" in es
+
+
+async def test_the_portfolio_lists_validated_projects_without_other_people(signed_in, report):
+    r = await signed_in.get("/app/portfolio.csv")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv") and "portfolio-ana.csv" in r.headers["content-disposition"]
+    validated = [p for p in report["periods"]["all"]["projects"] if p.get("validated")]
+    assert r.text.count("\n") == 1 + len(validated)
+    for p in report["periods"]["all"]["people"]:
+        assert p["login"] not in r.text

@@ -14,7 +14,8 @@ FAMILIES = {"period": ["piscine", "student", "all"], "track": ["student", "pisci
             "delete": ["title", "confirm", "yes", "no"],
             "publish": ["title", "confirm", "yes", "no", "done", "view"],
             "publish.error": ["stale", "busy", "github", "owner", "publish-off"],
-            "pages": ["home", "projects", "evaluations", "people", "campus", "astra"]}
+            "pages": ["home", "projects", "evaluations", "people", "campus", "astra"],
+            "rhythm": ["morning", "afternoon", "night"], "astra.state": ["validated", "started", "none", "done", "todo", "mark"]}
 GOALS = ["grandmaster", "architect", "kraken", "gatekeeper", "headhunter", "titan"]
 
 

@@ -9,7 +9,7 @@ if command -v mkcert >/dev/null 2>&1; then
   exit 0
 fi
 if [ ! -f ca.pem ]; then
-  openssl req -x509 -newkey rsa:2048 -nodes -days 825 -subj "/CN=ravazque.top local CA" -keyout ca-key.pem -out ca.pem 2>/dev/null
+  openssl req -x509 -newkey rsa:2048 -nodes -days 825 -subj "/CN=ravazque.info local CA" -keyout ca-key.pem -out ca.pem 2>/dev/null
 fi
 openssl req -newkey rsa:2048 -nodes -subj "/CN=localhost" -keyout localhost-key.pem -out localhost.csr 2>/dev/null
 printf 'subjectAltName=DNS:localhost,IP:127.0.0.1,IP:::1\nextendedKeyUsage=serverAuth\n' > san.ext

@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from . import consent
 from .dash.fmt import Fmt
-from .dash.views import BUILDERS, PAGES, Page, projects_csv
+from .dash.views import BUILDERS, PAGES, Page, portfolio_csv, projects_csv
 from .i18n import pick_lang
 from .pages import safe_next, templates
 from .publish import can_publish
@@ -189,6 +189,16 @@ async def csv_export(request: Request, user: dict = Depends(current_user)):
     page = Page(Fmt(pick_lang(request)), data, "projects", dict(request.query_params), request.app.state.settings.optout_logins)
     return Response(projects_csv(page), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="projects-{page.q("track", "student", ("student", "piscine", "all"))}.csv"', **NO_STORE})
+
+
+@router.get("/app/portfolio.csv")
+async def portfolio_export(request: Request, user: dict = Depends(current_user)):
+    data = await _store(request).load_report(user["id"])
+    if data is None:
+        return Response(status_code=404)
+    page = Page(Fmt(pick_lang(request)), data, "projects", {}, request.app.state.settings.optout_logins)
+    return Response(portfolio_csv(page), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="portfolio-{user["login"]}.csv"', **NO_STORE})
 
 
 async def _confirm(request: Request, user: dict, kind: str, result: dict | None = None):

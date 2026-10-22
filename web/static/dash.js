@@ -41,6 +41,13 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     showTip(el.dataset.tip, r.left, r.bottom + 8);
   });
   document.addEventListener("focusout", () => { tip.style.display = "none"; });
+  // touch screens have no hover: a tap shows the cell's details, a tap elsewhere hides them
+  document.addEventListener("pointerdown", (ev) => {
+    if (ev.pointerType === "mouse") return;
+    const el = ev.target.closest?.("[data-tip]");
+    if (el) showTip(el.dataset.tip, Math.max(8, ev.clientX - 40), ev.clientY + 18);
+    else tip.style.display = "none";
+  });
 
   document.addEventListener("click", (ev) => {
     const btn = ev.target.closest("th button");
@@ -231,13 +238,13 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     const rules = {
       kraken: () => (marks.babel || 0) >= 5 || (marks.manguito || 0) >= 3,
       headhunter: () => !!marks.referral || (marks.alumni || 0) >= 4,
-      titan: () => !!marks.tool || !!marks.scorer,
+      titan: (goal) => goal.dataset.auto === "1" || !!marks.tool || !!marks.scorer,
     };
     function done(goal) {
       const g = goal.dataset.goal, mark = marks[`override:${g}`];
       if (mark === "yes") return true;
       if (mark === "no") return false;
-      return rules[g] ? rules[g]() : goal.dataset.auto === "1";
+      return rules[g] ? rules[g](goal) : goal.dataset.auto === "1";
     }
     function render() {
       const goals = [...root.querySelectorAll("[data-goal]")];

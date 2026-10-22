@@ -4,7 +4,7 @@ COMPOSE_DEV := $(COMPOSE) -f compose.yaml -f compose.dev.yaml
 .PHONY: help dev up build down logs ps test preview snapshot site certs clean fclean re
 
 help: ## Show this help
-	@echo "ravazque.top — https://localhost"
+	@echo "ravazque.info — https://localhost"
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-8s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 dev: .env web/Caddyfile.local ## Build and start the web at https://localhost, reloading on every save

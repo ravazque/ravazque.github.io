@@ -120,6 +120,13 @@ class ReportBuild(unittest.TestCase):
         self.assertEqual(p["attempts"][1]["members"], ["mate"])
         self.assertEqual(p["attempts"][1]["moulinette"][0]["mark"], 100)
 
+    def test_the_coalition_says_whether_the_user_is_its_master(self):
+        d = dataset()
+        d["coalitions"] = [{"id": 5, "name": "Zefiria", "color": "#E39F0B", "user_id": 1}]
+        d["coalitions_users"] = [{"coalition_id": 5, "score": 300, "rank": 2}]
+        coal = Report(d, now=NOW).build()["profile"]["coalition"]
+        self.assertEqual((coal["master"], coal["rank"], coal["score"]), (True, 2, 300))
+
     def test_evaluations_carry_the_project_slug(self):
         self.assertTrue(all(e["slug"] == "libft" for e in self.r["received"] + self.r["given"]))
 

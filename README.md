@@ -1,4 +1,4 @@
-# ravazque.top
+# ravazque.info
 
 A self-hosted web app with statistics for **42 Madrid** students, built on the 42 API. Sign in with your 42 account
 and see your own history in one place: logged hours and seats, every project and retry, exams, pace, every evaluation

@@ -27,7 +27,11 @@
           <ul class="reqs">
             {% for r in o.reqs %}<li class="{{ 'met' if r.met else 'unmet' }}"><span class="mark-ico" aria-hidden="true">{{ '✓' if r.met else '✗' }}</span>
               <span>{{ r.label }} <span class="note">· {{ t.num(r.have, 2 if r.unit == 'level' else 0) }}{% if r.unit == 'xp' %} ≈{% endif %}</span>
-              {% if r.list %}<span class="sub">{{ r.list|join(", ") }}</span>{% endif %}</span></li>{% endfor %}
+              {% if r.list %}<span class="sub">{{ r.list|join(", ") }}</span>{% endif %}
+              {% if r.all %}<details class="req-more"><summary>{{ t("astra.more") }}</summary>
+                <p class="note">{{ t("astra.more_title", n=r.all|length) }}</p>
+                <ul class="catalogue">{% for c in r.all %}<li class="{{ c.state }}"><span class="mark-ico" aria-hidden="true">{{ {"validated": "✓", "started": "◐", "none": "·"}[c.state] }}</span>{{ c.name }}{% if c.xp %} <span class="note">≈ {{ t.num(c.xp) }} XP</span>{% endif %}<span class="visually-hidden"> · {{ t("astra.state." ~ c.state) }}</span></li>{% endfor %}</ul>
+              </details>{% endif %}</span></li>{% endfor %}
           </ul>
         </details>
         {% endfor %}
@@ -40,6 +44,7 @@
         {% if g.avg %}<p class="note">{{ g.avg }}</p>{% endif %}
         {% endif %}
 
+        {% if g.coalition %}<p class="astra-coal">{{ g.coalition }}</p><p class="note">{{ t("astra.coal.note") }}</p>{% endif %}
         {% if g.counters or g.switches %}
         <div class="astra-marks" data-marks="{{ g.key }}">
           {% for key, label, max in g.counters %}
