@@ -32,7 +32,7 @@ test: .env ## Run every test: web + core (pytest in the image) and JS (local nod
 	  api sh -c "python -m pytest -q -p no:cacheprovider && python -m pytest -q -p no:cacheprovider -o asyncio_default_fixture_loop_scope=function /srv/core/tests"
 	@node --test web/tests/js/*.test.mjs core/tests/js/*.test.mjs site/tests/*.test.mjs
 
-preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 100 requests)
+preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 135 requests)
 	@$(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(UID)
 
 snapshot: .env ## Write site/data/42.json from web/preview/data.json (what the publish button would send)
