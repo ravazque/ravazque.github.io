@@ -1,6 +1,10 @@
-# make dev: the source is mounted over the image and the API reloads on every save (memory starts empty each time).
+# make dev: the source is mounted over the image and the API reloads on every save. The last report saved by
+# make build (web/preview/data.json) is served at once and "Dev · <login>" on the landing signs in as its owner.
 services:
   api:
-    volumes: ["./core:/srv/core:ro", "./web/app:/srv/web/app:ro", "./web/static:/srv/web/static:ro", "consent:/data"]
+    environment:
+      DEV_REPORT: /srv/web/preview/data.json
+    volumes: ["./core:/srv/core:ro", "./web/app:/srv/web/app:ro", "./web/static:/srv/web/static:ro", "./web/preview:/srv/web/preview:ro",
+              "consent:/data"]
     command: ["uvicorn", "app.main:build", "--factory", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers",
               "--forwarded-allow-ips=*", "--reload", "--reload-dir", "/srv/web/app", "--reload-dir", "/srv/core/core42"]

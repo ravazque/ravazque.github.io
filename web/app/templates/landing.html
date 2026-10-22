@@ -12,6 +12,7 @@
         <span>{{ t["site.accept"].replace("{privacy}", '<a href="/privacy">' ~ t["site.accept_link"] ~ '</a>') | safe }}</span></label>
       <button class="btn primary" type="submit">{{ t["site.signin"] }}</button>
     </form>
+    {% if dev %}<p><a class="btn secondary" href="/dev/login">Dev · {{ dev }}</a></p>{% endif %}
     <p class="note">{{ t["site.only_madrid"] }} {{ t["site.independent"] }}</p>
     {% include "_links.html" %}
   </section>

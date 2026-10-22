@@ -7,15 +7,21 @@ help: ## Show this help
 	@echo "ravazque.info — https://localhost"
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-8s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-dev: .env web/Caddyfile.local ## Build and start the web at https://localhost, reloading on every save
+DEV_UID = $(shell sed -n 's/^DEV_UID=\([0-9][0-9]*\)$$/\1/p' .env 2>/dev/null)
+
+dev: .env web/Caddyfile.local ## Start at https://localhost with the last saved report, no sign-in or wait; reloads on save
+	@mkdir -p web/preview
 	@$(COMPOSE_DEV) up -d --build
-	@echo "Up at https://localhost — 'make logs' to follow, 'make down' to stop"
+	@if [ -f web/preview/data.json ]; then echo "Up at https://localhost — 'Dev · …' on the landing enters with the saved report"; \
+	  else echo "Up at https://localhost — no saved report yet: run 'make build' (needs DEV_UID in .env)"; fi
 
 up: .env web/Caddyfile.local ## Start the web as built, without live reload
 	@$(COMPOSE) up -d --build
 
-build: .env ## Build the images
+build: .env ## Build the images and refresh the saved report of DEV_UID (a real extraction, ~135 requests, ~3 min)
 	@$(COMPOSE) build
+	@if [ -n "$(DEV_UID)" ]; then mkdir -p web/preview && $(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(DEV_UID); \
+	  else echo "DEV_UID is not set in .env: images built, saved report not refreshed"; fi
 
 down: ## Stop the web (sessions and server copies of reports are in memory: they go; browsers keep theirs)
 	@$(COMPOSE) down

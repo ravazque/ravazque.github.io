@@ -1,5 +1,6 @@
 """App factory: routes are mounted here; state (settings, memory, clients, jobs) lives on app.state."""
 import asyncio
+from dataclasses import replace
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from core42 import FRONTEND_DIR
 from core42.ui import UI_FILE, css_from_ui, load_ui
 
-from . import auth, consent, pages, routes_api, routes_dash
+from . import auth, consent, dev, pages, routes_api, routes_dash
 from .api42 import Api42
 from .jobs import Jobs
 from .limiter import RateLimiter
@@ -48,6 +49,8 @@ def create_app(settings: Settings, memory: Memory, http: httpx.AsyncClient | Non
     @asynccontextmanager
     async def lifespan(_app):
         await consent.load(memory, settings)
+        if settings.dev_report:
+            await dev.seed(app)
         sweeper = asyncio.create_task(sweep())
         yield
         sweeper.cancel()
@@ -67,6 +70,8 @@ def create_app(settings: Settings, memory: Memory, http: httpx.AsyncClient | Non
     app.include_router(pages.router)
     app.include_router(routes_api.router)
     app.include_router(routes_dash.router)
+    if settings.dev_report:
+        app.include_router(dev.router)
     ui_css = UiCss()
 
     @app.get("/healthz")
@@ -86,4 +91,6 @@ def create_app(settings: Settings, memory: Memory, http: httpx.AsyncClient | Non
 def build() -> FastAPI:
     """Entry point for uvicorn --factory."""
     settings = Settings.from_env().check()
+    if settings.dev_report:  # the saved report stays for the whole session instead of an hour
+        settings = replace(settings, cache_s=365 * 86400)
     return create_app(settings, Memory())

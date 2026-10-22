@@ -18,6 +18,8 @@ class Settings:
     controller_name: str = ""      # the data controller named by the privacy policy
     optout_logins: frozenset = frozenset()  # students who asked to be left out of every report
     consent_log: str = ""          # where acceptances of the privacy policy are kept (the only file the app writes)
+    dev_report: str = ""           # make dev only: a saved report served at once, with /dev/login as its owner
+    dev_uid: int = 0
     owner_login: str = ""          # the one login that may publish to the GitHub Pages site
     github_token: str = ""         # fine-grained, this repository only, Contents: read and write
     github_repo: str = ""
@@ -31,6 +33,8 @@ class Settings:
             raise ValueError("CONTACT_EMAIL must be set: the privacy page names who to contact")
         if not self.controller_name:
             raise ValueError("CONTROLLER_NAME must be set: the privacy page names the data controller")
+        if self.dev_report and not self.base_url.startswith("https://localhost"):
+            raise ValueError("DEV_REPORT signs anyone in without 42: it only runs on https://localhost")
         return self
 
     @classmethod
@@ -45,6 +49,8 @@ class Settings:
             issues_url=env.get("ISSUES_URL", ""),
             controller_name=env.get("CONTROLLER_NAME", ""),
             consent_log=env.get("CONSENT_LOG", ""),
+            dev_report=env.get("DEV_REPORT", ""),
+            dev_uid=int(env.get("DEV_UID") or 0),
             optout_logins=frozenset(x.strip().lower() for x in env.get("OPTOUT_LOGINS", "").split(",") if x.strip()),
             owner_login=env.get("OWNER_LOGIN", ""),
             github_token=env.get("GITHUB_TOKEN", ""),
