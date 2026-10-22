@@ -61,6 +61,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | `OPTOUT_LOGINS` | no | Comma-separated logins of students who asked to be excluded: shown as "Hidden" everywhere |
 | `ISSUES_URL` | no | "Report an issue" link on every page, e.g. `https://github.com/<owner>/<repo>/issues/new/choose` |
 | `BASE_URL` | no | Public address, default `https://localhost` |
+| `DEV_UID` | no | Local only: whose report `make build` saves and `make dev` serves (refused outside `https://localhost`) |
 | `OWNER_LOGIN`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_BRANCH` | no | Publishing; the button stays hidden unless `OWNER_LOGIN` and `GITHUB_TOKEN` are set |
 
 ### Commands
@@ -68,7 +69,8 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | Command | Action |
 |---------|--------|
 | `make` | List the commands |
-| `make dev` | Build and start at https://localhost with API live reload |
+| `make dev` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42); live reload |
+| `make build` | Build the images and refresh the saved report of `DEV_UID` (a real extraction, ~135 requests, ~3 min) |
 | `make up` / `make down` | Start as built / stop (memory is cleared; browsers keep their reports) |
 | `make logs`, `make ps` | Follow logs / list services |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
