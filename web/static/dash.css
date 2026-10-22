@@ -73,7 +73,8 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .ch-months { position: relative; display: block; height: 1.6em; margin-left: var(--c-chart-axis-width); }
 .ch-months span { position: absolute; top: 6px; transform: translateX(-50%); white-space: nowrap; }
 .chart-empty { margin-top: 12px; }
-.hchart { display: grid; gap: 4px; }
+.hchart { display: grid; gap: 4px; container-type: inline-size; }
+@container (max-width: 480px) { .hb-extra { display: none; } }
 .hb-row { display: grid; grid-template-columns: var(--c-chart-row-label-width) minmax(0, 1fr); align-items: center; gap: 10px; min-height: var(--c-chart-row-height); }
 .hb-label { color: var(--text-2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hb-track { display: flex; align-items: center; min-width: 0; }

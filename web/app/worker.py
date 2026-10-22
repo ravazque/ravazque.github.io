@@ -14,6 +14,11 @@ from .settings import Settings
 from .store import Store
 
 log = logging.getLogger("ravazque.worker")
+log.setLevel(logging.INFO)  # arq configures only its own logger: without this the per-extraction request count is dropped
+if not logging.getLogger().handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s: %(message)s", "%H:%M:%S"))
+    log.addHandler(_handler)
 
 
 def _requests(api) -> int:
