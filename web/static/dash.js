@@ -165,7 +165,23 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
   const PHOTO = ".avatar img, .avatar-lg img";
   document.addEventListener("error", (ev) => { if (ev.target.matches?.(PHOTO)) ev.target.remove(); }, true);
 
+  // without this script every mark shows the browser's own tooltip (title / <title>); with it, the styled one only
+  function ownTooltips(root = document) {
+    $$("[data-tip][title]", root).forEach((el) => el.removeAttribute("title"));
+    $$("svg [data-tip] > title", root).forEach((el) => el.remove());
+  }
+
+  // charts draw in the first time they scroll into view
+  const reveal = window.IntersectionObserver && new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (e.isIntersecting) { e.target.classList.add("in"); reveal.unobserve(e.target); }
+  }), {rootMargin: "0px 0px -10% 0px"});
+  function drawIn(root = document) {
+    $$(".vchart, .hchart, .lchart", root).forEach((c) => reveal ? reveal.observe(c) : c.classList.add("in"));
+  }
+
   function settle(root = document) {
+    drawIn(root);
+    ownTooltips(root);
     $$(PHOTO, root).forEach((img) => { if (img.complete && !img.naturalWidth) img.remove(); });
     roving(root);
     hintScroll(root);
@@ -259,12 +275,45 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
       root.querySelector("[data-astra-missing]").textContent = missing.length ? fill(texts.missing, {list: missing.join(", ")}) : texts.all;
     }
     root.querySelectorAll("[data-override]").forEach((box) => {
-      const k = `override:${box.dataset.override}`;
+      const g = box.dataset.override, k = `override:${g}`, ackKey = `ack:${g}`;
+      const goal = box.closest("[data-goal]"), ack = box.querySelector(".astra-ack"), tick = ack.querySelector("input");
       const buttons = box.querySelectorAll("button");
-      const show = () => buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (marks[k] || "auto"))));
-      buttons.forEach((b) => b.addEventListener("click", () => { if (b.dataset.v === "auto") delete marks[k]; else marks[k] = b.dataset.v; save(); show(); render(); }));
+      const show = () => {
+        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (marks[k] || "auto"))));
+        ack.hidden = !(marks[k] === "yes" || ack.dataset.asking) || goal.dataset.auto === "1";
+        tick.checked = !!marks[ackKey];
+      };
+      buttons.forEach((b) => b.addEventListener("click", () => {
+        delete ack.dataset.asking;
+        if (b.dataset.v === "auto") delete marks[k];
+        // claiming a title the data does not show needs the acknowledgement first
+        else if (b.dataset.v === "yes" && goal.dataset.auto !== "1" && !marks[ackKey]) { ack.dataset.asking = "1"; show(); tick.focus(); return; }
+        else marks[k] = b.dataset.v;
+        save(); show(); render();
+      }));
+      tick.addEventListener("change", () => {
+        if (tick.checked) { marks[ackKey] = true; marks[k] = "yes"; delete ack.dataset.asking; }
+        else { delete marks[ackKey]; if (marks[k] === "yes") delete marks[k]; }
+        save(); show(); render();
+      });
       show();
     });
+
+    // an option's requirements open in a panel over the page; without this script they unfold in place
+    const dialog = root.querySelector(".astra-dialog");
+    if (dialog?.showModal) {
+      root.querySelectorAll(".astra-option > summary").forEach((sum) => sum.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        const opt = sum.parentElement;
+        dialog.querySelector("h3").textContent = opt.dataset.title;
+        const body = dialog.querySelector(".astra-dialog-body");
+        body.replaceChildren(...[...opt.children].filter((c) => c.tagName !== "SUMMARY").map((c) => c.cloneNode(true)));
+        dialog.className = `astra-dialog ${opt.classList.contains("met") ? "met" : "unmet"}`;
+        dialog.showModal();
+      }));
+      dialog.querySelector("[data-close]").addEventListener("click", () => dialog.close());
+      dialog.addEventListener("click", (ev) => { if (ev.target === dialog) dialog.close(); });
+    }
     root.querySelectorAll(".counter").forEach((c) => {
       const k = c.dataset.key, max = Number(c.dataset.max), out = c.querySelector("output");
       const show = () => { out.textContent = marks[k] || 0; };

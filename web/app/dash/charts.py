@@ -55,13 +55,13 @@ def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, li
                          + ([f"{line[0]} {fmt(line[1][i])}"] if line else []))
         bars = "".join(f'<i style="height:{_pct(vals[i] or 0, top)};background:{c}"></i>' for _, vals, c in series)
         cap = (f'<b class="peak">{escape(peak.format(v=fmt(totals[i]), label=lab))}</b>' if peak and i == best else "")
-        cols.append(f'<div class="ch-col{" stack" if stacked else ""}" data-tip="{escape(tip)}">{cap}{bars}</div>')
+        cols.append(f'<div class="ch-col{" stack" if stacked else ""}" data-tip="{escape(tip)}" title="{escape(tip)}">{cap}{bars}</div>')
     overlay = ""
     if line:
         ltop = nice_max(max(line[1]) or 1)
         pts = " ".join(f"{(i + .5) * 1000 / len(labels):.1f},{300 - 300 * v / ltop:.1f}" for i, v in enumerate(line[1]))
         overlay = (f'<svg class="ch-line" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">'
-                   f'<polyline points="{pts}" style="stroke:{line[2]}"/></svg>'
+                   f'<polyline points="{pts}" pathLength="1" style="stroke:{line[2]}"/></svg>'
                    + '<div class="ch-y right" aria-hidden="true">' + "".join(
                        f'<span style="bottom:{_pct(ltop * k / 4, ltop)}">{escape(f.num(ltop * k / 4, 2))}</span>' for k in range(5)) + "</div>")
     xs = "".join(f'<span>{escape(lab) if i % every == 0 else ""}</span>' for i, lab in enumerate(labels))
@@ -85,7 +85,7 @@ def hbars(f, labels, series, *, label, end=None, extra=None, tips=None, empty_te
     for i, lab in enumerate(labels):
         tip = tips[i] if tips else " · ".join([lab] + [f"{name} {f.num(vals[i] or 0, 2)}" for name, vals, _ in series if vals[i]])
         segs = "".join(f'<i style="width:{_pct(vals[i] or 0, top)};background:{c}"></i>' for _, vals, c in series if vals[i])
-        rows.append(f'<div class="hb-row" data-tip="{escape(tip)}"><span class="hb-label">{escape(lab)}</span>'
+        rows.append(f'<div class="hb-row" data-tip="{escape(tip)}" title="{escape(tip)}"><span class="hb-label">{escape(lab)}</span>'
                     f'<span class="hb-track">{segs}<b>{escape(end(i, totals[i]))}'
                     f'{f"<span class=hb-extra> · {escape(x)}</span>" if extra and (x := extra(i)) else ""}</b></span></div>')
     summary = f"{label}: " + ", ".join(f"{lab} {end(i, totals[i])}" for i, lab in enumerate(labels))
@@ -114,7 +114,7 @@ def lines(f, series, *, label, step=True, empty_text="") -> Markup:
             d.append(f"{'L' if d else 'M'}{X(p['x']):.1f},{Y(p['y']):.1f}")
             prev = p["y"]
         d.append(f"L{X(hi):.1f},{Y(prev):.1f}")
-        paths.append(f'<path d="{" ".join(d)}" style="stroke:{c}"/>')
+        paths.append(f'<path d="{" ".join(d)}" pathLength="1" style="stroke:{c}"/>')
     # hover slices: the value of every series at the end of each slice
     n = 40
     slices = []
@@ -124,7 +124,7 @@ def lines(f, series, *, label, step=True, empty_text="") -> Markup:
         for name, ps, _ in series:
             before = [p["y"] for p in ps if p["x"] <= at]
             vals.append(f"{name} {f.num(before[-1] if before else 0, 1)}")
-        slices.append(f'<i data-tip="{escape(f.stamp(at).split(",")[0] + " · " + " · ".join(vals))}"></i>')
+        slices.append(f'<i data-tip="{escape(f.stamp(at).split(",")[0] + " · " + " · ".join(vals))}" title="{escape(f.stamp(at).split(",")[0] + " · " + " · ".join(vals))}"></i>')
     months = []
     span = hi - lo
     step_ms = max(1, round(span / 864e5 / 30 / 8)) * 30 * 864e5
@@ -151,7 +151,7 @@ def timeline(f, rows, *, label, empty_text="") -> Markup:
     body = []
     for name, ss in rows:
         bars = "".join(f'<i style="left:{100 * (a - lo) / span:.2f}%;width:max(4px,{100 * (max(a, b) - a) / span:.2f}%);'
-                       f'background:{c}" data-tip="{escape(tip)}"></i>' for a, b, c, tip in ss)
+                       f'background:{c}" data-tip="{escape(tip)}" title="{escape(tip)}"></i>' for a, b, c, tip in ss)
         body.append(f'<div class="tl-row"><span class="tl-label" title="{escape(name)}">{escape(name)}</span><span class="tl-track">{bars}</span></div>')
     months, step_ms = [], max(1, round(span / 864e5 / 30 / 8)) * 30 * 864e5
     t = lo + step_ms / 2

@@ -714,5 +714,7 @@
  "rail.official_note": "El logtime de la propia intra. La cifra de arriba une las sesiones solapadas a su manera, así que pueden diferir un poco.",
  "astra.gk.hours_intra": "Horas en el cluster (intra)",
  "network.one_way": "En un sentido: corrector → evaluado",
- "network.both": "En los dos sentidos"
+ "network.both": "En los dos sentidos",
+ "astra.ack": "Soy consciente de que no cumplo los requisitos actuales, y tengo la certificación.",
+ "astra.close": "Cerrar"
 }

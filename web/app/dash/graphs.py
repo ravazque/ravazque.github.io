@@ -46,7 +46,7 @@ def seat_plan(f, layout, values, *, unit, detail, to_unit=lambda v: v, anchor=Fa
                 seen.add(host)
                 label = detail(host, v) + (f' · {f("plan.most_used_short")}' if host == top_host else "")
                 cells.append(f'<span class="seat on{" top" if host == top_host else ""}"{f" id=seat-{host}" if anchor else ""} data-cell'
-                             f' role="img" style="--v:{ramp(v, top):.3f}" aria-label="{escape(label)}" data-tip="{escape(label)}"></span>')
+                             f' role="img" style="--v:{ramp(v, top):.3f}" aria-label="{escape(label)}" data-tip="{escape(label)}" title="{escape(label)}"></span>')
             rows.append(f'<div class="row" style="--seats:{shape["seats"]}"><span class="rn" aria-hidden="true">r{r}</span>{"".join(cells)}</div>')
         out.append(f'<figure class="cluster"><figcaption><b>{c}</b><span>{f.num(to_unit(total), 1)} {escape(unit)}</span></figcaption>{"".join(rows)}</figure>')
     other = [(h, v) for h, v in values.items() if h not in seen]
@@ -70,7 +70,7 @@ def heat(f, grid, colors, unit) -> Markup:
                 cells.append('<span class="c"></span>')
                 continue
             label = f"{f.weekdays[w]} {h:02d}:00 · {f.num(v, 1)} {unit}"
-            cells.append(f'<span class="c" data-cell role="img" aria-label="{escape(label)}" data-tip="{escape(label)}"'
+            cells.append(f'<span class="c" data-cell role="img" aria-label="{escape(label)}" data-tip="{escape(label)}" title="{escape(label)}"'
                          f' style="background:{mix(colors, ramp(v, top))}"></span>')
     sc = scale(f, top, unit, colors) if top else escape(f("empty.period"))
     return Markup(f'<div class="heat"{roving(f, f("heat.label"))}>{"".join(cells)}</div><div class="scale">{sc}</div>')
@@ -95,8 +95,8 @@ def calendar(f, days, hours) -> tuple[Markup, Markup]:
         for d, v in items:
             c, r = pos(d)
             label = f'{f.day(d, weekday=True)} · {f"{f.num(v, 1)} h" if v else f("calendar.not_logged")}'
-            cells.append(f'<span class="d on" data-cell role="img" style="grid-area:{r}/{c};--v:{ramp(v, top):.3f}" aria-label="{escape(label)}" data-tip="{escape(label)}"></span>'
-                         if v else f'<span class="d" style="grid-area:{r}/{c}" data-tip="{escape(label)}"></span>')
+            cells.append(f'<span class="d on" data-cell role="img" style="grid-area:{r}/{c};--v:{ramp(v, top):.3f}" aria-label="{escape(label)}" data-tip="{escape(label)}" title="{escape(label)}"></span>'
+                         if v else f'<span class="d" style="grid-area:{r}/{c}" data-tip="{escape(label)}" title="{escape(label)}"></span>')
         cols = n_of(items[-1][0]) // 7 - skip + 1
         out.append(f'<div class="cal-year"><b>{y}</b><div class="cal-grid{" crop" if crop else ""}" style="--cols:{max(cols, 5)}">{months}{"".join(cells)}</div></div>')
     body = "".join(out) or f'<p class="note">{escape(f("empty.sessions"))}</p>'
@@ -136,7 +136,7 @@ def _radar_svg(f, items, label, compact) -> str:
     rings = "".join(f'<circle class="ring" cx="{cx}" cy="{cy}" r="{r * k / 4}"/>' for k in (1, 2, 3, 4))
     spokes = "".join(f'<line class="spoke" x1="{cx}" y1="{cy}" x2="{pt(i, top)[0]:.1f}" y2="{pt(i, top)[1]:.1f}"/>' for i in range(n))
     shape = " ".join(f"{pt(i, s['level'])[0]:.1f},{pt(i, s['level'])[1]:.1f}" for i, s in enumerate(items))
-    dots = "".join(f'<circle class="dot" cx="{pt(i, s["level"])[0]:.1f}" cy="{pt(i, s["level"])[1]:.1f}" r="3.5" data-tip="{escape(s["name"])} · {f.num(s["level"], 2)}"/>'
+    dots = "".join(f'<circle class="dot" cx="{pt(i, s["level"])[0]:.1f}" cy="{pt(i, s["level"])[1]:.1f}" r="3.5" data-tip="{escape(s["name"])} · {f.num(s["level"], 2)}"><title>{escape(s["name"])} · {f.num(s["level"], 2)}</title></circle>'
                    for i, s in enumerate(items) if s["level"])
     labels = "".join(f'<text class="label{" num" if compact else ""}" x="{p["x"]:.1f}" y="{p["top"] + lh - 3:.1f}" text-anchor="{p["anchor"]}">'
                      + "".join(f'<tspan x="{p["x"]:.1f}" dy="{lh if k else 0}">{escape(line)}</tspan>' for k, line in enumerate(p["ls"])) + "</text>"
@@ -221,10 +221,17 @@ def bubbles(f, people, mode, *, width, height, href) -> str:
         tip = " · ".join(x for x in parts if x)
         initials = "".join(w[0] for w in str(p.get("name") or p["login"]).replace(".", " ").replace("_", " ").replace("-", " ").split() if w)[:2].upper()
         marks.append(f'<a href="{escape(href(p["login"]))}" class="bubble {n["dir"]}" data-cell aria-label="{escape(tip)}" data-tip="{escape(tip)}"'
-                     f' transform="translate({n["x"]:.1f},{n["y"]:.1f})"><circle r="{n["r"]:.1f}"/>'
+                     f' transform="translate({n["x"]:.1f},{n["y"]:.1f})" style="--lvl:{level(n["group"]):.2f}"><title>{escape(tip)}</title>'
+                     f'<circle class="halo" r="{n["r"] + 5:.1f}"/><circle class="core" r="{n["r"]:.1f}"/>'
                      + (f'<text text-anchor="middle" dy="0.35em">{escape(initials)}</text>' if n["r"] >= 15 else "") + "</a>")
     return (f'<svg class="graph" viewBox="0 0 {width} {h}" style="aspect-ratio:{width}/{h}"{roving(f, f("connections.title"))}>'
             f'<g class="labels">{labels}</g><g class="links">{links}</g><g class="nodes">{"".join(marks)}</g></svg>')
+
+
+def level(group) -> float:
+    """0 (no 42cursus, Rank 00) … 1 (Alumni): how far along the 42cursus someone is, for the halo."""
+    order = ["no-cursus", "rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni"]
+    return order.index(group) / (len(order) - 1) if group in order else 0
 
 
 def _net_class(g):
@@ -262,7 +269,7 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
         a = -math.pi / 2 + 2 * math.pi * i / len(others)
         at[n["login"]] = {**n, "a": a, "x": cx + R * math.cos(a), "y": cy + R * math.sin(a), "r": radius(n)}
     marker = f"arr-{uid}"
-    chords = []
+    chords, arrows = [], []
     for (a, b), c in pairs.items():
         if a not in at or b not in at:
             continue
@@ -274,8 +281,11 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
         # the path runs a → b: marker-end points at b (a evaluated b), marker-start back at a (b evaluated a)
         ends = (f' marker-end="url(#{marker})"' if c["ab"] else "") + (f' marker-start="url(#{marker})"' if c["ba"] else "")
         tip = " · ".join(x for x in [f"{a} → {b} ×{c['ab']}" if c["ab"] else "", f"{b} → {a} ×{c['ba']}" if c["ba"] else ""] if x)
-        chords.append(f'<path class="{"both" if both else "one"}" data-a="{escape(a)}" data-b="{escape(b)}"{ends} data-tip="{escape(tip)}"'
-                      f' stroke-width="{min(5, 1 + (c["ab"] + c["ba"]) / 3):.1f}" d="M{x1:.1f},{y1:.1f} Q{mx:.1f},{my:.1f} {x2:.1f},{y2:.1f}"/>')
+        d = f"M{x1:.1f},{y1:.1f} Q{mx:.1f},{my:.1f} {x2:.1f},{y2:.1f}"
+        chords.append(f'<path class="{"both" if both else "one"}" data-a="{escape(a)}" data-b="{escape(b)}" data-tip="{escape(tip)}"'
+                      f' stroke-width="{min(5, 1 + (c["ab"] + c["ba"]) / 3):.1f}" d="{d}"><title>{escape(tip)}</title></path>')
+        # the arrowheads live on a twin path, shown only for the person in focus
+        arrows.append(f'<path data-a="{escape(a)}" data-b="{escape(b)}"{ends} d="{d}"/>')
     marks = []
     for n in at.values():
         d = degree.get(n["login"], 0)
@@ -288,10 +298,12 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
             text = (f'<text x="{(n["r"] + 6) * math.cos(n["a"]):.1f}" y="{(n["r"] + 6) * math.sin(n["a"]) + 4:.1f}"'
                     f' text-anchor="{anchor}">{escape(n["login"])}</text>')
         marks.append(f'<g class="net-node {_net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"'
-                     f' aria-label="{escape(tip)}" data-tip="{escape(tip)}" transform="translate({n["x"]:.1f},{n["y"]:.1f})">'
-                     f'<circle r="{n["r"]:.1f}"/>{text}</g>')
+                     f' aria-label="{escape(tip)}" data-tip="{escape(tip)}" transform="translate({n["x"]:.1f},{n["y"]:.1f})"'
+                     f' style="--lvl:{level(n["group"]):.2f}"><title>{escape(tip)}</title><circle class="halo" r="{n["r"] + (4 if compact else 6):.1f}"/>'
+                     f'<circle class="core" r="{n["r"]:.1f}"/>{text}</g>')
     defs = (f'<defs><marker id="{marker}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse"'
-            f' markerWidth="{7 if compact else 9}" markerHeight="{7 if compact else 9}" orient="auto-start-reverse">'
+            f' markerWidth="{5 if compact else 6}" markerHeight="{5 if compact else 6}" orient="auto-start-reverse">'
             f'<path d="M0,1 L10,5 L0,9 Z" class="arrowhead"/></marker></defs>')
     return (f'<svg class="graph net" viewBox="0 0 {width} {height}"{roving(f, f("network.title"))}>{defs}'
-            f'<g class="net-links">{"".join(chords)}</g><g class="net-nodes">{"".join(marks)}</g></svg>')
+            f'<g class="net-links">{"".join(chords)}</g><g class="net-arrows">{"".join(arrows)}</g>'
+            f'<g class="net-nodes">{"".join(marks)}</g></svg>')

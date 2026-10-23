@@ -166,3 +166,67 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .arrow-key line { stroke: var(--control); stroke-width: 2; }
 .arrow-key.both line { stroke: var(--amber-data); }
 .arrow-key path { fill: var(--muted); }
+.net .net-arrows path { fill: none; stroke: none; pointer-events: none; display: none; }
+.net .net-arrows path.hl { display: inline; }
+
+/* halo by how far along the 42cursus someone is (--lvl 0…1): slate for the start, the accent for Outer Core and Alumni */
+html body .graph .halo, html body .graph .bubble .halo, html body .net .net-node .halo {
+  fill: color-mix(in oklab, var(--amber-data) calc(var(--lvl, 0) * 100%), var(--slate)); opacity: calc(.12 + var(--lvl, 0) * .3);
+  stroke: none; pointer-events: none; }
+html body .net .net-node.me .halo { fill: var(--amber-data); opacity: .35; }
+.graph .bubble.received .core, .graph .bubble.given .core { transition: transform var(--motion-fast) ease-out; }
+
+/* nodes and bubbles grow under the pointer or focus; the person's chords take the accent */
+.net-node .core, .net-node .halo, .graph .bubble .core, .graph .bubble .halo { transform-box: fill-box; transform-origin: center; transition: transform var(--motion-fast) ease-out; }
+.net-node:hover .core, .net-node:focus-visible .core, .graph .bubble:hover .core, .graph .bubble:focus-visible .core { transform: scale(1.2); }
+.net-node:hover .halo, .net-node:focus-visible .halo, .graph .bubble:hover .halo { transform: scale(1.35); }
+.focused .net-links path.hl { stroke: var(--amber-data); }
+
+/* lively controls: a small lift and the accent border under the pointer */
+.btn, .seg > a, .seg > label, .seg button, .periods > a, .toggle-check span, .counter .btn { transition: transform var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out, background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
+.btn:hover:not(:disabled):not([aria-disabled="true"]), .periods > a:hover, .toggle-check:hover span { transform: translateY(-1px); box-shadow: 0 3px 10px color-mix(in oklab, var(--ink) 14%, transparent); }
+.seg > a:hover, .seg > label:hover, .seg button:hover { background: color-mix(in oklab, var(--amber-data) 10%, transparent); }
+.block { transition: border-color var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
+.block:hover { border-color: color-mix(in oklab, var(--amber-data) 45%, var(--rule)); }
+.goal { transition: transform var(--motion-fast) ease-out; }
+.goal:hover .astra-hex { transform: scale(1.04); }
+.astra-hex { transition: transform var(--motion-fast) ease-out, filter var(--motion-fast) ease-out, opacity var(--motion-fast) ease-out; }
+.net .net-node.me .halo { animation: pulse 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pulse { 50% { transform: scale(1.18); opacity: .18; } }
+
+/* charts draw themselves the first time they scroll into view (dash.js adds .in); without it they are simply there */
+.js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: scale(0); }
+.vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease); }
+.hchart .hb-track i { transform-origin: left; transition: transform .6s var(--motion-ease); }
+.js .lchart:not(.in) .ch-lines path, .js .vchart:not(.in) .ch-line polyline { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.lchart .ch-lines path, .vchart .ch-line polyline { stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset 1.1s var(--motion-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: none; }
+  .js .lchart:not(.in) .ch-lines path, .js .vchart:not(.in) .ch-line polyline { stroke-dashoffset: 0; }
+  .net .net-node.me .halo { animation: none; }
+  .btn:hover, .periods > a:hover, .toggle-check:hover span { transform: none; }
+}
+
+/* Astra: options as status rows, their requirements in a panel over the page */
+.astra-option > summary { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; cursor: pointer; }
+.astra-option > summary::before { display: none; }
+.opt-dot { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-weight: 800; font-size: 13px; color: #fff; flex: none; }
+.astra-option.met .opt-dot { background: var(--good); }
+.astra-option.unmet .opt-dot { background: var(--critical); }
+.astra-option > summary:hover { color: var(--ink); }
+.astra-ack { margin-top: 4px; }
+.reqs > li { padding: 8px 10px; border-radius: var(--radius-m); border-left: 4px solid var(--critical); background: color-mix(in oklab, var(--critical) 7%, transparent); }
+.reqs > li.met { border-left-color: var(--good); background: color-mix(in oklab, var(--good) 8%, transparent); }
+.req-bar { display: block; height: 5px; margin-top: 6px; border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
+.req-bar i { display: block; height: 100%; width: var(--done); background: var(--critical); }
+.reqs > li.met .req-bar i { background: var(--good); }
+.astra-dialog { width: min(94vw, 820px); max-width: min(94vw, 820px); max-height: 86vh; padding: 0; overflow: hidden; border: 0; border-top: 6px solid var(--critical); }
+.astra-dialog.met { border-top-color: var(--good); }
+.astra-dialog::backdrop { background: color-mix(in oklab, var(--ink) 55%, transparent); backdrop-filter: blur(2px); }
+.astra-dialog[open] { display: flex; flex-direction: column; animation: rise .18s var(--motion-ease); }
+.astra-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--rule); }
+.astra-dialog header h3 { margin: 0; font: 700 20px var(--type-font-display); }
+.astra-dialog-body { padding: 16px 20px 20px; overflow: auto; }
+@keyframes rise { from { transform: translateY(12px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .astra-dialog[open] { animation: none; } }
+.net.focused .net-links path:not(.hl) { stroke-opacity: .05; }
