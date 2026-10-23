@@ -174,7 +174,7 @@ def test_charts_escape_labels_and_summarise_for_screen_readers():
 def test_bubbles_never_overlap():
     people = [{"login": f"p{i}", "group": "rank-0" + str(i % 3), "received": 1 + i % 7, "given": i % 4} for i in range(40)]
     svg = graphs.bubbles(Fmt("en"), people, "mix", width=960, height=520, href=lambda login: "#")
-    circles = [(float(x), float(y), float(r)) for x, y, r in re.findall(r'translate\(([\d.]+),([\d.]+)\)"><circle r="([\d.]+)"', svg)]
+    circles = [(float(x), float(y), float(r)) for x, y, r in re.findall(r'translate\(([\d.]+),([\d.]+)\)"[^>]*>(?:<title>[^<]*</title>)?<circle class="halo" r="[\d.]+"/><circle class="core" r="([\d.]+)"', svg)]
     assert len(circles) == sum(1 for p in people for d in ("received", "given") if p[d])
     for i, (x, y, r) in enumerate(circles):
         for x2, y2, r2 in circles[i + 1:]:
@@ -237,9 +237,11 @@ def test_the_circle_draws_one_way_and_two_way_arrows():
     net = {"nodes": [{"login": "me", "group": "me"}, {"login": "a", "group": "rank-01"}, {"login": "b", "group": "rank-02"}],
            "links": [{"source": "a", "target": "b", "count": 2}, {"source": "b", "target": "a", "count": 1}, {"source": "a", "target": "me", "count": 1}]}
     svg = graphs.ring(Fmt("en"), net, width=400, height=400, compact=False, uid="t")
-    both = re.search(r'<path[^>]*data-a="a" data-b="b"[^>]*>', svg).group(0)
-    one = re.search(r'<path[^>]*data-a="a" data-b="me"[^>]*>', svg).group(0)
-    assert 'marker-start="url(#arr-t)"' in both and 'marker-end="url(#arr-t)"' in both and "both" in both
+    arrows = svg.split('<g class="net-arrows">')[1].split("</g>")[0]
+    both = re.search(r'<path[^>]*data-a="a" data-b="b"[^>]*>', arrows).group(0)
+    one = re.search(r'<path[^>]*data-a="a" data-b="me"[^>]*>', arrows).group(0)
+    assert "marker" not in svg.split('<g class="net-links">')[1].split("</g>")[0]  # the visible chords carry no arrowheads
+    assert 'marker-start="url(#arr-t)"' in both and 'marker-end="url(#arr-t)"' in both
     assert 'marker-end="url(#arr-t)"' in one and "marker-start" not in one
     assert svg.count('<marker id="arr-t"') == 1
 
@@ -257,3 +259,14 @@ def test_the_user_s_own_evaluations_draw_their_links():
 async def test_the_circle_has_its_own_section(signed_in, report):
     text = (await signed_in.get("/app/people")).text
     assert '<section id="circle"' in text and 'href="#circle"' in text
+
+
+@pytest.mark.parametrize("path", PAGES)
+async def test_every_tooltip_also_works_without_javascript(signed_in, report, path):
+    text = (await signed_in.get(path)).text
+    tags = list(re.finditer(r'<(\w+)\b[^>]*\bdata-tip="[^"]*"[^>]*>', text))
+    for m in tags:
+        if m.group(1) in ("circle", "a", "g", "path"):
+            assert text[m.end():m.end() + 7] == "<title>", m.group(0)[:80]
+        else:
+            assert ' title="' in m.group(0), m.group(0)[:80]

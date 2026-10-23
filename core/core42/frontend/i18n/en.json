@@ -714,5 +714,7 @@
  "rail.official_note": "The intra's own logtime. The figure above merges overlapping sessions its own way, so the two can differ a little.",
  "astra.gk.hours_intra": "Hours in the cluster (intra)",
  "network.one_way": "One way: corrector → evaluated",
- "network.both": "Both ways"
+ "network.both": "Both ways",
+ "astra.ack": "I know I don't meet the current requirements, and I have the certification.",
+ "astra.close": "Close"
 }

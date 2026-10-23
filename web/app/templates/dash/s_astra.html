@@ -20,13 +20,15 @@
           <div class="seg small" role="group" aria-label="{{ t('astra.override') }}">
             <button type="button" data-v="auto" aria-pressed="true">{{ t("astra.override.auto") }}</button><button type="button" data-v="yes" aria-pressed="false">{{ t("astra.override.yes") }}</button><button type="button" data-v="no" aria-pressed="false">{{ t("astra.override.no") }}</button>
           </div>
+          <label class="consent astra-ack" hidden><input type="checkbox" data-ack><span>{{ t("astra.ack") }}</span></label>
         </div>
         {% for o in g.options %}
-        <details class="astra-option"{% if o.met %} open{% endif %}>
-          <summary>{{ o.name }} <span class="note">· {{ t("astra.option.progress", done=o.done, total=o.reqs|length) }}</span></summary>
+        <details class="astra-option {{ 'met' if o.met else 'unmet' }}" data-title="{{ g.name }} · {{ o.name }}">
+          <summary><span class="opt-dot" aria-hidden="true">{{ '✓' if o.met else '✗' }}</span>{{ o.name }} <span class="note">· {{ t("astra.option.progress", done=o.done, total=o.reqs|length) }}</span></summary>
           <ul class="reqs">
-            {% for r in o.reqs %}<li class="{{ 'met' if r.met else 'unmet' }}"><span class="mark-ico" aria-hidden="true">{{ '✓' if r.met else '✗' }}</span>
-              <span>{{ r.label }} <span class="note">· {{ t.num(r.have, 2 if r.unit == 'level' else 0) }}{% if r.unit == 'xp' %} ≈{% endif %}</span>
+            {% for r in o.reqs %}<li class="{{ 'met' if r.met else 'unmet' }}" style="--done:{{ [100, (100 * r.have / r.need)|round|int]|min if r.need else 0 }}%"><span class="mark-ico" aria-hidden="true">{{ '✓' if r.met else '✗' }}</span>
+              <span>{{ r.label }} <span class="note">· {{ t.num(r.have, 2 if r.unit == 'level' else 0) }}{% if r.unit == 'xp' %} ≈{% endif %} / {{ t.num(r.need) }}</span>
+              <span class="req-bar" aria-hidden="true"><i></i></span>
               {% if r.list %}<span class="sub">{{ r.list|join(", ") }}</span>{% endif %}
               {% if r.all %}<details class="req-more"><summary>{{ t("astra.more") }}</summary>
                 <p class="note">{{ t("astra.more_title", n=r.all|length) }}</p>
@@ -61,4 +63,8 @@
     </article>
   {% endfor %}
   </div>
+  <dialog class="astra-dialog" aria-labelledby="astra-dialog-title">
+    <header><h3 id="astra-dialog-title"></h3><button type="button" class="btn secondary" data-close>{{ t("astra.close") }}</button></header>
+    <div class="astra-dialog-body"></div>
+  </dialog>
 </section>
