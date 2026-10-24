@@ -18,7 +18,7 @@ const STRINGS = {
     "groups.rank-04": "Rank 04", "groups.rank-05": "Rank 05", "groups.rank-06": "Rank 06", "groups.outer-core": "Outer Core",
     "groups.piscine": "C Piscine", "track.common-core": "Common Core", "track.outer-core": "Outer Core", "track.piscine": "C Piscine",
     since: "since {when}", updated: "42 data as of {when}, published from ravazque.info.", unavailable: "The 42 snapshot could not be loaded right now.",
-    language: "Language", theme: "Theme", light: "Light", dark: "Dark", skills_label: "Skills of the {cursus}",
+    language: "Language", theme: "Theme", auto: "Auto", light: "Light", dark: "Dark", skills_label: "Skills of the {cursus}",
   },
   es: {
     about: "Sobre mí", now: "Ahora mismo", in_progress: "En curso en 42", experience: "Experiencia", highlights: "Proyectos destacados",
@@ -35,7 +35,7 @@ const STRINGS = {
     "groups.rank-04": "Rank 04", "groups.rank-05": "Rank 05", "groups.rank-06": "Rank 06", "groups.outer-core": "Outer Core",
     "groups.piscine": "Piscina C", "track.common-core": "Common Core", "track.outer-core": "Outer Core", "track.piscine": "Piscina C",
     since: "desde {when}", updated: "Datos de 42 a {when}, publicados desde ravazque.info.", unavailable: "Ahora mismo no se pudo cargar la foto de 42.",
-    language: "Idioma", theme: "Tema", light: "Claro", dark: "Oscuro", skills_label: "Skills del {cursus}",
+    language: "Idioma", theme: "Tema", auto: "Auto", light: "Claro", dark: "Oscuro", skills_label: "Skills del {cursus}",
   },
 };
 const LOCALES = {en: "en-GB", es: "es-ES"};
@@ -222,14 +222,17 @@ if (typeof window !== "undefined" && document.getElementById("cursus")) {
       syncToggles();
     }
 
-    const effectiveTheme = () => document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const effectiveTheme = () => document.documentElement.dataset.theme || "auto";
     function syncToggles() {
       $$("#langToggle button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === lang)));
       $$("#themeToggle button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === effectiveTheme())));
     }
     const onSeg = (id, fn) => { $(id).onclick = (ev) => { const b = ev.target.closest("button"); if (b) fn(b.dataset.v); }; };
     onSeg("#langToggle", (v) => { lang = v; store.set("lang", v); render(); });
-    onSeg("#themeToggle", (v) => { document.documentElement.dataset.theme = v; store.set("theme", v); syncToggles(); });
+    onSeg("#themeToggle", (v) => {
+      if (v === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
+      store.set("theme", v === "auto" ? "" : v); syncToggles();
+    });
     onSeg("#skillSet", (v) => { skillSet = v; renderSkills(makeT(lang)); });
     onSeg("#skillView", (v) => { skillView = v; renderSkills(makeT(lang)); });
     onSeg("#projTrack", (v) => {

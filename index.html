@@ -14,14 +14,18 @@
 <script>try { const theme = localStorage.getItem("theme"); if (theme) document.documentElement.dataset.theme = theme; } catch (e) {}</script>
 </head>
 <body>
-<header class="rail">
-  <h1 class="name" id="name">Raúl Vázquez Pérez</h1>
-  <p class="headline" id="headline">Data Engineer &amp; Software Developer</p>
-  <p class="login">ravazque<span id="title"></span></p>
-  <nav class="links" id="links" aria-label="Links"></nav>
-  <div class="controls-rail">
-    <div class="seg-rail" role="group" aria-label="Language" id="langToggle"><button type="button" data-v="en">EN</button><button type="button" data-v="es">ES</button></div>
-    <div class="seg-rail" role="group" aria-label="Theme" id="themeToggle"><button type="button" data-v="light" data-t="light">Light</button><button type="button" data-v="dark" data-t="dark">Dark</button></div>
+<header class="cv-head">
+  <div class="cv-band">
+    <p class="login">ravazque<span id="title"></span></p>
+    <nav class="links" id="links" aria-label="Links"></nav>
+    <div class="controls-band">
+      <div class="seg-band" role="group" aria-label="Language" id="langToggle"><button type="button" data-v="en">EN</button><button type="button" data-v="es">ES</button></div>
+      <div class="seg-band" role="group" aria-label="Theme" id="themeToggle"><button type="button" data-v="auto" data-t="auto">Auto</button><button type="button" data-v="light" data-t="light">Light</button><button type="button" data-v="dark" data-t="dark">Dark</button></div>
+    </div>
+  </div>
+  <div class="cv-hero">
+    <h1 class="name" id="name">Raúl Vázquez Pérez</h1>
+    <p class="headline" id="headline">Data Engineer &amp; Software Developer</p>
   </div>
 </header>
 
