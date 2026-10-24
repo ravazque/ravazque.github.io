@@ -51,6 +51,8 @@ class FakeApi:
             return d.get("blocs", [])
         if m := re.match(r"^/v2/users/(\d+)/scale_teams/as_corrector$", path):
             return d.get("contact_evals", {}).get(int(m.group(1)), [])
+        if re.match(r"^/v2/coalitions_users/\d+/scores$", path):
+            return d.get("coalition_scores", [])
         if path == "/v2/quests_users":
             return d["quests_batch"]
         raise AssertionError(f"unexpected path {path}")
@@ -197,3 +199,18 @@ async def test_the_intra_s_hours_and_the_groups_cost_two_requests():
     assert f"/v2/users/{UID}/locations_stats" in api.calls and f"/v2/users/{UID}/groups" in api.calls
     every = data["periods"]["all"]
     assert every["logtime"]["official_hours"] == 2.5 and every["profile"]["groups"] == ["Peer tutor"]
+
+
+async def test_the_coalition_points_cost_one_paged_list_and_feed_the_bonus():
+    api = FakeApi()
+    data = await extract(api, UID, noop)
+    cu = FIXTURE["coalitions_users"][0]["id"]
+    assert api.calls.count(f"/v2/coalitions_users/{cu}/scores") == 1
+    every = data["periods"]["all"]
+    assert every["coalition_points"]["total"] == 6900 and every["logtime_bonus"]["last"] == {"50": "2026-10-04T22:24:23.257Z", "80": "2026-10-07T08:24:17.882Z"}
+
+
+async def test_without_a_coalition_there_are_no_coalition_points():
+    api = FakeApi({**FIXTURE, "coalitions_users": [], "coalitions": []})
+    data = await extract(api, UID, noop)
+    assert not any("/scores" in c for c in api.calls) and data["periods"]["all"]["coalition_points"]["count"] == 0

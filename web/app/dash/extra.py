@@ -1,7 +1,11 @@
 """Profile figures beyond the raw history: contribution to others, technical domains, rhythm, and the portfolio."""
+import json
 from datetime import date
+from pathlib import Path
 
-from .astra import RNCP
+import core42
+
+RNCP = json.loads((Path(core42.__file__).parent / "rncp.json").read_text())
 
 # technical areas from the RNCP tags: a project counts once per area
 AREAS = {"web": ["web", "web_db", "web_db_xp"], "mobile": ["mobile"], "ai": ["ai", "ai_xp"], "sysadmin": ["sysadmin"],

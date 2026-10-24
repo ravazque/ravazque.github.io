@@ -4,13 +4,13 @@
 main.solo { display: grid; place-items: center; min-height: 70vh; }
 .boot-panel { width: 100%; max-width: var(--c-boot-max-width); display: grid; gap: 14px; }
 .boot-panel .bar { height: var(--c-boot-bar-height); border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
-.boot-panel .bar i { display: block; height: 100%; background: var(--amber-data); transition: width var(--motion-settle) var(--motion-ease); }
+.boot-panel .bar i { display: block; height: 100%; background: var(--accent-data); transition: width var(--motion-settle) var(--motion-ease); }
 .controls-after { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; }
 section { scroll-margin-top: 80px; }
 
 /* switches: links (aria-pressed) and radios behave like the segmented buttons */
-.seg > a, .seg > label { display: inline-flex; align-items: center; min-height: var(--c-segmented-height); padding: 6px var(--c-segmented-padding-x);
-  font: 700 var(--c-segmented-font-size) var(--type-font-display); text-transform: uppercase; letter-spacing: .05em;
+.seg > a, .seg > label { display: inline-flex; align-items: center; justify-content: center; min-height: var(--c-segmented-height); padding: 6px var(--c-segmented-padding-x);
+  font: 700 var(--c-segmented-font-size) var(--type-font-display); white-space: nowrap;
   color: var(--c-segmented-fg); text-decoration: none; cursor: pointer; position: relative; }
 .seg > a:hover, .seg > label:hover { color: var(--c-segmented-fg-hover); }
 .seg > a[aria-pressed="true"], .seg > label:has(input:checked) { background: var(--c-segmented-bg-active); color: var(--c-segmented-fg-active); }
@@ -20,26 +20,16 @@ section { scroll-margin-top: 80px; }
 .toggle-check input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .toggle-check span { display: inline-flex; align-items: center; min-height: var(--c-button-height); padding: 0 var(--c-button-padding-x);
   border-radius: var(--c-button-radius); border: var(--c-button-border-width) solid var(--c-button-secondary-border);
-  font: 700 var(--c-button-font-size) var(--type-font-display); text-transform: uppercase; letter-spacing: .05em; color: var(--c-button-secondary-fg); }
+  font: 700 var(--c-button-font-size) var(--type-font-display); color: var(--c-button-secondary-fg); }
 .toggle-check:has(input:checked) span { background: var(--ink); color: var(--ground); border-color: var(--ink); }
 .toggle-check:has(input:focus-visible) span { outline: 2px solid var(--focus); outline-offset: 2px; }
 .panel-head h2 { margin-right: auto; }
 
-/* rail periods and settings as links and a disclosure */
-.periods > a { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-  min-height: var(--c-period-switch-height); padding: var(--c-period-switch-padding-y) var(--c-period-switch-padding-x);
-  border: var(--c-period-switch-border-width) solid var(--c-period-switch-border); border-radius: var(--c-period-switch-radius);
-  background: var(--c-period-switch-bg); color: var(--c-period-switch-fg); text-decoration: none;
-  font: 700 var(--c-period-switch-font-size) var(--type-font-display); text-transform: uppercase; letter-spacing: .06em; }
-.periods > a span { font: 600 var(--c-period-switch-value-size) var(--type-font-text); text-transform: none; letter-spacing: 0; color: var(--rail-muted); font-variant-numeric: tabular-nums; }
-.periods > a:hover { border-color: var(--c-period-switch-border-hover); }
-.periods > a[aria-pressed="true"] { background: var(--c-period-switch-bg-active); border-color: var(--c-period-switch-bg-active); color: var(--c-period-switch-fg-active); }
-.periods > a[aria-pressed="true"] span { color: var(--c-period-switch-fg-active); }
+/* settings as a disclosure */
 details.settings-wrap > summary { list-style: none; cursor: pointer; }
 details.settings-wrap > summary::-webkit-details-marker { display: none; }
 details.settings-wrap > summary::marker { content: ""; }
 details.settings-wrap > summary::before { content: none; }  /* report.css draws a disclosure marker on every summary */
-details.settings-wrap[open] > summary { background: var(--rail-2); }
 details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .settings form.theme { margin: 0; }
 .settings .publish .btn { width: 100%; }
@@ -82,7 +72,7 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .hb-track i { height: calc(var(--c-chart-row-height) - 8px); flex: none; border-radius: 1px; }
 .hb-track i + i { margin-left: 2px; }
 .hb-track i:first-child { border-radius: 2px 0 0 2px; }
-.hb-track b { margin-left: 6px; font-weight: 600; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hb-track b { margin-left: 6px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
 .hb-row:hover .hb-label { color: var(--ink); }
 .timeline { display: grid; gap: 2px; }
 .tl-row, .tl-axis { display: grid; grid-template-columns: var(--c-chart-timeline-label-width) minmax(0, 1fr); gap: 10px; align-items: center; }
@@ -103,94 +93,38 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .graph a.bubble { cursor: pointer; }
 .graph a.bubble:focus-visible circle { stroke: var(--focus); stroke-width: var(--c-bubble-focus-width); }
 
-/* Astra Victoris */
-.astra-head { display: flex; align-items: center; gap: 14px; }
-.astra-head h2 { margin: 0; }
-.laurel { width: 34px; height: 48px; fill: var(--amber-data); flex: none; }
-.laurel .stem { fill: none; stroke: var(--amber-data); stroke-width: 2; stroke-linecap: round; }
-.laurel.flip { transform: scaleX(-1); }
-.astra-verdict { margin-top: 10px; font-size: 18px; }
-.astra-verdict b { font: 800 26px var(--type-font-display); color: var(--amber-ink); margin-right: 8px; }
-.astra-grid { display: grid; grid-template-columns: 1fr; gap: var(--c-section-grid-gap-y) var(--c-section-grid-gap-x); margin-top: 24px; }
-@media (min-width: 1280px) { .astra-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.goal { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 18px; align-items: start; }
-.goal-body h3 { margin: 4px 0 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.astra-hex { display: block; width: 112px; height: auto; filter: grayscale(1); opacity: .5; transition: filter var(--motion-fast) ease-out, opacity var(--motion-fast) ease-out; }
-.goal.done .astra-hex { filter: none; opacity: 1; }
-.goal.done .goal-state { background: var(--amber-data); color: var(--c-button-primary-fg); }
-.astra-override { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; }
-.astra-option { margin-top: 8px; }
-.astra-option summary { white-space: normal; overflow: visible; }
-.reqs { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
-.reqs > li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; }
-.reqs .mark-ico { font-weight: 800; }
-.reqs > .met > .mark-ico { color: var(--good); }
-.reqs > .unmet > .mark-ico { color: var(--critical); }
-.reqs .sub { display: block; color: var(--muted); font-size: 13px; }
-.astra-bar { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(80px, 1fr) auto; align-items: center; gap: 10px; margin-top: 8px; }
-.astra-bar .track { height: 10px; border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
-.astra-bar .track i { display: block; height: 100%; background: var(--slate); }
-.astra-bar.met .track i { background: var(--good); }
-.astra-bar b { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.astra-marks { display: grid; gap: 10px; margin-top: 10px; }
-.astra-marks .switch { text-align: left; }
-.counter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.counter > span:first-child { flex: 1 1 180px; }
-.counter .btn { min-height: 32px; width: 32px; padding: 0; }
-.counter output { min-width: 2ch; text-align: center; font: 700 18px var(--type-font-display); }
-.js .no-js-only { display: none; }
-@media (max-width: 600px) {
-  .goal { grid-template-columns: 64px minmax(0, 1fr); gap: 12px; }
-  .astra-hex { width: 64px; }
-  .astra-bar { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
-  .astra-bar .track { grid-column: 1 / -1; order: 3; }
-  .counter > span:first-child { flex-basis: 100%; }
-}
-.req-more { margin-top: 4px; }
-.req-more summary { white-space: normal; font-size: 14px; }
-.catalogue { list-style: none; margin: 6px 0 0; padding: 0; columns: 2 220px; column-gap: 20px; font-size: 14px; }
-.catalogue li { break-inside: avoid; padding: 2px 0; color: var(--text-2); }
-.catalogue li.none { color: var(--muted); }
-.catalogue li.validated .mark-ico { color: var(--good); }
-.catalogue li.started .mark-ico { color: var(--amber-ink); }
-.catalogue .mark-ico { display: inline-block; width: 1.4em; font-weight: 800; }
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.astra-coal { margin-top: 8px; font-weight: 600; }
 .identity .groups { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 /* the circle: one-way and two-way chords with arrowheads */
 .net .net-links path.one { stroke: var(--control); }
-.net .net-links path.both { stroke: var(--amber-data); stroke-opacity: .55; }
+.net .net-links path.both { stroke: var(--accent-data); stroke-opacity: .55; }
 .net .arrowhead { fill: var(--muted); }
 .focused .net-links path.hl { stroke-opacity: .95; }
 .arrow-key { width: 30px; height: 10px; }
 .arrow-key line { stroke: var(--control); stroke-width: 2; }
-.arrow-key.both line { stroke: var(--amber-data); }
+.arrow-key.both line { stroke: var(--accent-data); }
 .arrow-key path { fill: var(--muted); }
 .net .net-arrows path { fill: none; stroke: none; pointer-events: none; display: none; }
 .net .net-arrows path.hl { display: inline; }
 
 /* halo by how far along the 42cursus someone is (--lvl 0…1): slate for the start, the accent for Outer Core and Alumni */
 html body .graph .halo, html body .graph .bubble .halo, html body .net .net-node .halo {
-  fill: color-mix(in oklab, var(--amber-data) calc(var(--lvl, 0) * 100%), var(--slate)); opacity: calc(.12 + var(--lvl, 0) * .3);
+  fill: color-mix(in oklab, var(--accent-data) calc(var(--lvl, 0) * 100%), var(--slate)); opacity: calc(.12 + var(--lvl, 0) * .3);
   stroke: none; pointer-events: none; }
-html body .net .net-node.me .halo { fill: var(--amber-data); opacity: .35; }
+html body .net .net-node.me .halo { fill: var(--accent-data); opacity: .35; }
 .graph .bubble.received .core, .graph .bubble.given .core { transition: transform var(--motion-fast) ease-out; }
 
 /* nodes and bubbles grow under the pointer or focus; the person's chords take the accent */
 .net-node .core, .net-node .halo, .graph .bubble .core, .graph .bubble .halo { transform-box: fill-box; transform-origin: center; transition: transform var(--motion-fast) ease-out; }
 .net-node:hover .core, .net-node:focus-visible .core, .graph .bubble:hover .core, .graph .bubble:focus-visible .core { transform: scale(1.2); }
 .net-node:hover .halo, .net-node:focus-visible .halo, .graph .bubble:hover .halo { transform: scale(1.35); }
-.focused .net-links path.hl { stroke: var(--amber-data); }
+.focused .net-links path.hl { stroke: var(--accent-data); }
 
 /* lively controls: a small lift and the accent border under the pointer */
-.btn, .seg > a, .seg > label, .seg button, .periods > a, .toggle-check span, .counter .btn { transition: transform var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out, background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
-.btn:hover:not(:disabled):not([aria-disabled="true"]), .periods > a:hover, .toggle-check:hover span { transform: translateY(-1px); box-shadow: 0 3px 10px color-mix(in oklab, var(--ink) 14%, transparent); }
-.seg > a:hover, .seg > label:hover, .seg button:hover { background: color-mix(in oklab, var(--amber-data) 10%, transparent); }
+.btn, .seg > a, .seg > label, .seg button, .periods > a, .toggle-check span { transition: transform var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out, background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
+.btn:hover:not(:disabled):not([aria-disabled="true"]), .periods > a:hover, .toggle-check:hover span { transform: translateY(-1px); }
+.seg > a:hover, .seg > label:hover, .seg button:hover { background: color-mix(in oklab, var(--accent-data) 10%, transparent); }
 .block { transition: border-color var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
-.block:hover { border-color: color-mix(in oklab, var(--amber-data) 45%, var(--rule)); }
-.goal { transition: transform var(--motion-fast) ease-out; }
-.goal:hover .astra-hex { transform: scale(1.04); }
-.astra-hex { transition: transform var(--motion-fast) ease-out, filter var(--motion-fast) ease-out, opacity var(--motion-fast) ease-out; }
+.block:hover { border-color: color-mix(in oklab, var(--accent-data) 45%, var(--rule)); }
 .net .net-node.me .halo { animation: pulse 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes pulse { 50% { transform: scale(1.18); opacity: .18; } }
 
@@ -207,26 +141,55 @@ html body .net .net-node.me .halo { fill: var(--amber-data); opacity: .35; }
   .btn:hover, .periods > a:hover, .toggle-check:hover span { transform: none; }
 }
 
-/* Astra: options as status rows, their requirements in a panel over the page */
-.astra-option > summary { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; cursor: pointer; }
-.astra-option > summary::before { display: none; }
-.opt-dot { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-weight: 800; font-size: 13px; color: #fff; flex: none; }
-.astra-option.met .opt-dot { background: var(--good); }
-.astra-option.unmet .opt-dot { background: var(--critical); }
-.astra-option > summary:hover { color: var(--ink); }
-.astra-ack { margin-top: 4px; }
-.reqs > li { padding: 8px 10px; border-radius: var(--radius-m); border-left: 4px solid var(--critical); background: color-mix(in oklab, var(--critical) 7%, transparent); }
-.reqs > li.met { border-left-color: var(--good); background: color-mix(in oklab, var(--good) 8%, transparent); }
-.req-bar { display: block; height: 5px; margin-top: 6px; border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
-.req-bar i { display: block; height: 100%; width: var(--done); background: var(--critical); }
-.reqs > li.met .req-bar i { background: var(--good); }
-.astra-dialog { width: min(94vw, 820px); max-width: min(94vw, 820px); max-height: 86vh; padding: 0; overflow: hidden; border: 0; border-top: 6px solid var(--critical); }
-.astra-dialog.met { border-top-color: var(--good); }
-.astra-dialog::backdrop { background: color-mix(in oklab, var(--ink) 55%, transparent); backdrop-filter: blur(2px); }
-.astra-dialog[open] { display: flex; flex-direction: column; animation: rise .18s var(--motion-ease); }
-.astra-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--rule); }
-.astra-dialog header h3 { margin: 0; font: 700 20px var(--type-font-display); }
-.astra-dialog-body { padding: 16px 20px 20px; overflow: auto; }
-@keyframes rise { from { transform: translateY(12px); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .astra-dialog[open] { animation: none; } }
 .net.focused .net-links path:not(.hl) { stroke-opacity: .05; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Home: six equal modules on the Swiss grid ---------- */
+.modules-wrap { padding-top: 8px; }
+.modules { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; }
+.module { min-width: 0; display: flex; flex-direction: column; padding: 0 0 20px; container-type: inline-size; }
+.module .tab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 20px 0 0; padding-top: 10px;
+  border-top: 2px solid var(--rule-strong); font: 700 16px var(--type-font-display); }
+.module .tab span { color: var(--text-2); font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.module .figure { font: 800 min(var(--c-kpi-size), 17cqi)/1 var(--type-font-display); letter-spacing: -.04em; margin: 14px 0 8px; white-space: nowrap; }
+.module .figure small { font-size: .4em; font-weight: 700; letter-spacing: 0; word-spacing: .08em; color: var(--text-2); }
+.module .line { color: var(--text-2); font-size: 17px; line-height: 1.45; }
+.module .trend { display: block; width: 100%; height: 36px; margin-top: auto; padding-top: 12px; box-sizing: content-box; overflow: visible; }
+.module .trend polyline { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.module .trend rect { fill: var(--ink); }
+.module .trend rect.now { fill: var(--accent-data); }
+/* the live module: the accent marks what can still be earned */
+.module.live .tab { border-top-color: var(--accent); border-top-width: 6px; padding-top: 6px; }
+.meter { position: relative; display: block; height: 12px; margin: 4px 0 12px; background: var(--seat-empty); }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--accent-data); }
+.meter em { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
+.chip-live { align-self: flex-start; background: var(--accent); color: var(--on-accent); font: 700 16px/1.3 var(--type-font-display); padding: 7px 12px; margin-bottom: 10px; }
+/* the signature move: each trend wipes in from the left, after the figure starts counting */
+.module .trend, .meter i { transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
+.js .module:not(.in) .trend, .js .module:not(.in) .meter i { clip-path: inset(0 100% 0 0); }
+@media (prefers-reduced-motion: reduce) { .js .module:not(.in) .trend, .js .module:not(.in) .meter i { clip-path: none; } }
+@media (min-width: 640px) { .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 599.98px) {
+  .page-head .periods { justify-self: stretch; display: flex; }
+  .page-head .periods > a { flex: 1; padding: 6px 8px; }
+}
+
+/* a section's switches share its title rule; a panel of figures keeps only the figures' own rules */
+section > .panel-head { border-bottom: var(--c-section-h2-rule) solid var(--rule-strong); padding-bottom: 12px; margin-bottom: var(--c-section-h2-gap); }
+section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+[data-panel]:has(> .kpis, > .rates) { border-top: 0; padding-top: 0; }
+.toc + section { padding-top: 40px; }
+.toc + .modules-wrap { padding-top: 0; }
+.line-end { display: none; position: absolute; right: 0; transform: translateY(-120%); padding: 1px 4px; background: var(--ground); color: var(--ink); font: 700 12px var(--type-font-display); white-space: nowrap; }
+[data-panel="skills"] { border-top: 0; padding-top: 0; }
+@media (max-width: 959.98px) { .toc { -webkit-mask-image: linear-gradient(to right, var(--mask) 82%, transparent); mask-image: linear-gradient(to right, var(--mask) 82%, transparent); } }
+.vchart { container-type: inline-size; }
+@container (max-width: 520px) {
+  .has-line .ch-plot, .has-line .ch-x { margin-right: 0; }
+  .ch-y.right { display: none; }
+  .ch-x span.alt { visibility: hidden; }
+  .ch-x span:last-child { text-align: right; }
+  .line-end { display: block; }
+}

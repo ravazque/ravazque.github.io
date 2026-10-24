@@ -99,7 +99,7 @@ async def dashboard(request: Request, key: str, user: dict):
     ctx["report_sig"] = (await store.raw_report(user["id"]) or (b"", ""))[1]
     sections = BUILDERS[key](page)
     return templates.TemplateResponse(request, "dash/page.html", {
-        **ctx, "key": key, "page": page, "sections": sections, "rail": page.rail(), "foot": page.footer(), "title": f(f"pages.{key}")}, headers=NO_STORE)
+        **ctx, "key": key, "page": page, "sections": sections, "head": page.head(), "foot": page.footer(), "title": f(f"pages.{key}")}, headers=NO_STORE)
 
 
 def _route(key: str):

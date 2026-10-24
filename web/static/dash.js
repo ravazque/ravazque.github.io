@@ -126,7 +126,7 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     store.set("accent", b.dataset.v); applyAccentChoice(b.dataset.v);
   });
 
-  // the section in view lights up in the rail's index
+  // the section in view lights up in the section index
   let tocIO;
   function watchToc() {
     tocIO?.disconnect();
@@ -171,12 +171,27 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     $$("svg [data-tip] > title", root).forEach((el) => el.remove());
   }
 
-  // charts draw in the first time they scroll into view
+  // charts draw in, and module figures count up, the first time they scroll into view
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (v, d) => new Intl.NumberFormat(document.documentElement.lang === "es" ? "es-ES" : "en-GB",
+    {minimumFractionDigits: d, maximumFractionDigits: d}).format(v);
+  function countUp(el) {
+    const to = Number(el.dataset.count), d = Number(el.dataset.dec || 0), t0 = performance.now(), ms = 900;
+    if (still || !isFinite(to)) return;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(2, -10 * k);  // exponential ease-out
+      el.textContent = fmt(k < 1 ? to * e : to, d);
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
   const reveal = window.IntersectionObserver && new IntersectionObserver((entries) => entries.forEach((e) => {
-    if (e.isIntersecting) { e.target.classList.add("in"); reveal.unobserve(e.target); }
+    if (!e.isIntersecting) return;
+    e.target.classList.add("in"); reveal.unobserve(e.target);
+    $$("[data-count]", e.target).forEach(countUp);
   }), {rootMargin: "0px 0px -10% 0px"});
   function drawIn(root = document) {
-    $$(".vchart, .hchart, .lchart", root).forEach((c) => reveal ? reveal.observe(c) : c.classList.add("in"));
+    $$(".vchart, .hchart, .lchart, .module", root).forEach((c) => reveal ? reveal.observe(c) : c.classList.add("in"));
   }
 
   function settle(root = document) {
@@ -239,99 +254,6 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
   if (restoring && window.indexedDB) restore(restoring);
   else if (restoring) location.replace(restoring.dataset.fresh);
   else if (window.indexedDB) keepCopy();
-
-  // Astra Victoris: the goals the data cannot tell are marked here and kept only in this browser
-  function astra() {
-    const root = document.querySelector("[data-astra]");
-    if (!root || root.dataset.wired) return;
-    root.dataset.wired = "1";
-    const key = `astra:${login}`;
-    let marks = {};
-    try { marks = JSON.parse(store.get(key) || "{}") || {}; } catch (e) { marks = {}; }
-    const save = () => store.set(key, JSON.stringify(marks));
-    const texts = root.querySelector("[data-astra-texts]").dataset;
-    const fill = (text, vars) => text.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
-    const rules = {
-      kraken: () => (marks.babel || 0) >= 5 || (marks.manguito || 0) >= 3,
-      headhunter: () => !!marks.referral || (marks.alumni || 0) >= 4,
-      titan: (goal) => goal.dataset.auto === "1" || !!marks.tool || !!marks.scorer,
-    };
-    function done(goal) {
-      const g = goal.dataset.goal, mark = marks[`override:${g}`];
-      if (mark === "yes") return true;
-      if (mark === "no") return false;
-      return rules[g] ? rules[g](goal) : goal.dataset.auto === "1";
-    }
-    function render() {
-      const goals = [...root.querySelectorAll("[data-goal]")];
-      const missing = [];
-      goals.forEach((goal) => {
-        const ok = done(goal);
-        goal.classList.toggle("done", ok);
-        goal.querySelector("[data-state]").textContent = ok ? texts.done : texts.todo;
-        if (!ok) missing.push(goal.dataset.name);
-      });
-      root.querySelector("[data-astra-count]").textContent = fill(texts.count, {n: goals.length - missing.length});
-      root.querySelector("[data-astra-missing]").textContent = missing.length ? fill(texts.missing, {list: missing.join(", ")}) : texts.all;
-    }
-    root.querySelectorAll("[data-override]").forEach((box) => {
-      const g = box.dataset.override, k = `override:${g}`, ackKey = `ack:${g}`;
-      const goal = box.closest("[data-goal]"), ack = box.querySelector(".astra-ack"), tick = ack.querySelector("input");
-      const buttons = box.querySelectorAll("button");
-      const show = () => {
-        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (marks[k] || "auto"))));
-        ack.hidden = !(marks[k] === "yes" || ack.dataset.asking) || goal.dataset.auto === "1";
-        tick.checked = !!marks[ackKey];
-      };
-      buttons.forEach((b) => b.addEventListener("click", () => {
-        delete ack.dataset.asking;
-        if (b.dataset.v === "auto") delete marks[k];
-        // claiming a title the data does not show needs the acknowledgement first
-        else if (b.dataset.v === "yes" && goal.dataset.auto !== "1" && !marks[ackKey]) { ack.dataset.asking = "1"; show(); tick.focus(); return; }
-        else marks[k] = b.dataset.v;
-        save(); show(); render();
-      }));
-      tick.addEventListener("change", () => {
-        if (tick.checked) { marks[ackKey] = true; marks[k] = "yes"; delete ack.dataset.asking; }
-        else { delete marks[ackKey]; if (marks[k] === "yes") delete marks[k]; }
-        save(); show(); render();
-      });
-      show();
-    });
-
-    // an option's requirements open in a panel over the page; without this script they unfold in place
-    const dialog = root.querySelector(".astra-dialog");
-    if (dialog?.showModal) {
-      root.querySelectorAll(".astra-option > summary").forEach((sum) => sum.addEventListener("click", (ev) => {
-        ev.preventDefault();
-        const opt = sum.parentElement;
-        dialog.querySelector("h3").textContent = opt.dataset.title;
-        const body = dialog.querySelector(".astra-dialog-body");
-        body.replaceChildren(...[...opt.children].filter((c) => c.tagName !== "SUMMARY").map((c) => c.cloneNode(true)));
-        dialog.className = `astra-dialog ${opt.classList.contains("met") ? "met" : "unmet"}`;
-        dialog.showModal();
-      }));
-      dialog.querySelector("[data-close]").addEventListener("click", () => dialog.close());
-      dialog.addEventListener("click", (ev) => { if (ev.target === dialog) dialog.close(); });
-    }
-    root.querySelectorAll(".counter").forEach((c) => {
-      const k = c.dataset.key, max = Number(c.dataset.max), out = c.querySelector("output");
-      const show = () => { out.textContent = marks[k] || 0; };
-      c.querySelectorAll("button").forEach((b) => {
-        b.disabled = false;
-        b.addEventListener("click", () => { marks[k] = Math.max(0, Math.min(max, (marks[k] || 0) + Number(b.dataset.step))); save(); show(); render(); });
-      });
-      show();
-    });
-    root.querySelectorAll(".switch[data-key]").forEach((sw) => {
-      sw.disabled = false;
-      sw.setAttribute("aria-checked", String(!!marks[sw.dataset.key]));
-      if (window.makeSwitch) makeSwitch(sw, (on) => { if (on) marks[sw.dataset.key] = true; else delete marks[sw.dataset.key]; save(); render(); });
-    });
-    render();
-  }
-  astra();
-  document.body.addEventListener("htmx:afterSettle", astra);
 
   settle();
   watchToc();

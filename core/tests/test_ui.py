@@ -27,18 +27,6 @@ def test_grouped_tokens_are_prefixed():
     assert "--space-main-x: 48px" in css and '--type-display: "Barlow", sans-serif' in css
 
 
-def test_rail_side_right_moves_the_rail():
-    css = css_from_ui({"breakpoints": {"mobile": 0, "desktop": 960}, "tokens": {}, "components": {"rail": {"side": "right"}}, "panels": {}})
-    # report.css loads after the generated CSS, so these rules must out-rank its plain `body` / `.toc` selectors
-    assert "html body { grid-template-columns: minmax(0, 1fr) var(--c-rail-width); }" in css
-    assert "html body .rail { order: 2; }" in css
-
-
-def test_mobile_nav_top_outranks_report_css():
-    css = css_from_ui({"breakpoints": {"mobile": 0, "desktop": 960}, "tokens": {}, "components": {"mobile-nav": {"position": "top"}}, "panels": {}})
-    assert "html body .toc {" in css and "html body { padding-bottom: 0;" in css
-
-
 def test_invalid_values_are_reported():
     errs = validate_ui({"breakpoints": {"mobile": 0}, "tokens": {}, "components": {"button": {"primary": {"height": "tall", "bg": "@nope"}}},
                         "panels": {"x": {"mobile": {"span": 13}}, "y": {"huge": {"span": 2}}}})

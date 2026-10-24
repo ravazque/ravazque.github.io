@@ -5,7 +5,7 @@ from datetime import date
 from markupsafe import Markup, escape
 
 GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "no-cursus"]
-AMBER = ("var(--ramp-hi)", "var(--ramp-lo)")
+ACCENT = ("var(--ramp-hi)", "var(--ramp-lo)")
 SLATE = ("var(--slate)", "var(--slate-lo)")
 
 
@@ -17,7 +17,7 @@ def mix(colors, v) -> str:
     return f"color-mix(in oklab, {colors[0]} {v * 100:.1f}%, {colors[1]})"
 
 
-def scale(f, top, unit, colors=AMBER) -> Markup:
+def scale(f, top, unit, colors=ACCENT) -> Markup:
     return Markup(f'<span class="grp"><i style="background:var(--seat-empty)"></i>{escape(f("scale.none"))}</span>'
                   f'<span class="grp">{escape(f("scale.less"))}' + "".join(f'<i style="background:{mix(colors, s)}"></i>' for s in (0, .25, .5, .75, 1))
                   + f'{escape(f("scale.more", max=f.num(top, 1), unit=unit))}</span>')

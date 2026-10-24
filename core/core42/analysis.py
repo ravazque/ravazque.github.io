@@ -171,6 +171,8 @@ def for_period(d, period):
         "locations": [s for s in d["locations"] if keep(after(s["begin_at"]))],
         **({"locations_stats": {day: v for day, v in d["locations_stats"].items() if keep(day >= start.date().isoformat())}}
            if d.get("locations_stats") is not None else {}),  # older reports have none: keep it absent, not empty
+        **({"coalition_scores": [x for x in d["coalition_scores"] if keep(after(x["created_at"]))]}
+           if d.get("coalition_scores") is not None else {}),
         "correction_points": [c for c in d["correction_points"] if keep(after(c["created_at"]))],
         "events_users": [e for e in d["events_users"] if keep(after((e.get("event") or {}).get("begin_at")))],
         "quests_users": [q for q in d["quests_users"]
@@ -665,9 +667,12 @@ class Report:
 
 
 def analyze(d, period="student", now=None):
-    from core42.insights import add_insights, skill_sets  # insights builds on this module's helpers
+    from core42.insights import add_insights, bonus_window, coalition_points, skill_sets  # insights builds on this module's helpers
     data = for_period(d, period)
     report = Report(data, now)
     out = add_insights({**report.build(), "period": {"key": period, "label": PERIODS[period]}}, data, report.now)
     out["extras"]["skills_by_cursus"] = skill_sets(d["user"]["cursus_users"])  # skills are not split by period
+    if d.get("coalition_scores") is not None:
+        out["coalition_points"] = coalition_points(data["coalition_scores"])
+        out["logtime_bonus"] = bonus_window(d["locations"], d["coalition_scores"], report.now)  # about now: never split
     return out

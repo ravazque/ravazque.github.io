@@ -6,8 +6,8 @@
 const INTRA = "#00babc";  // the intra's turquoise blue: the default accent
 const FALLBACK = INTRA;
 const BG = {  // ui.json's defaults, used when the page's tokens cannot be read (tests, no CSS)
-  light: {surface: "#ffffff", ground: "#f4f5f7", rail: "#1e2430", ink: "#1e2430"},
-  dark: {surface: "#1a1f28", ground: "#12161d", rail: "#0b0e13"},
+  light: {surface: "#f7f8f8", ground: "#f7f8f8", ink: "#111417"},
+  dark: {surface: "#0f1214", ground: "#0f1214"},
 };
 const TEXT = 4.5, MARKS = 3;
 
@@ -41,9 +41,6 @@ function mixUntil(rgb, toward, ok) {
 const away = (backgrounds) => backgrounds.reduce((a, b) => a + luminance(parse(b)), 0) / backgrounds.length > 0.18 ? "black" : "white";
 const reach = (rgb, backgrounds, ratio) => mixUntil(rgb, away(backgrounds), (c) => backgrounds.every((bg) => contrast(c, bg) >= ratio));
 
-// The text that reads on a fill: dark ink when it does, otherwise white (the better of the two if neither reaches 4.5)
-const textOn = (fill, ink) => contrast(ink, fill) >= TEXT || contrast(ink, fill) > contrast("#ffffff", fill) ? ink : "#ffffff";
-
 // Text on a filled accent: dark ink when it reads, otherwise white; darken the fill if neither does
 function onFill(rgb, ink) {
   const fill = toHex(rgb);
@@ -52,45 +49,36 @@ function onFill(rgb, ink) {
   return {fill: mixUntil(rgb, "black", (c) => contrast(c, "#ffffff") >= TEXT), on: "#ffffff"};
 }
 
-// A fill on the rail (active period or page): 3:1 against the rail, with text on it that reaches 4.5
-const railFill = (rgb, rail, ink) => mixUntil(rgb, away([rail]), (c) => contrast(c, rail) >= MARKS &&
-  Math.max(contrast(ink, c), contrast("#ffffff", c)) >= TEXT);
-
 function accentTokens(hex, bg = BG) {
   const rgb = parse(hex) || parse(FALLBACK);
   const L = {...BG.light, ...(bg.light || {})}, Dk = {...BG.dark, ...(bg.dark || {})};
   const {fill, on} = onFill(rgb, L.ink);
   const lightData = reach(rgb, [L.surface, L.ground], MARKS);
   const darkData = reach(rgb, [Dk.surface, Dk.ground], MARKS);
-  const lightRail = railFill(rgb, L.rail, L.ink), darkRail = railFill(rgb, Dk.rail, L.ink);
   return {
     light: {
-      "--amber": fill, "--on-amber": on,
-      "--amber-data": lightData, "--ramp-hi": lightData,
-      "--amber-ink": reach(rgb, [L.surface, L.ground], TEXT),
+      "--accent": fill, "--on-accent": on,
+      "--accent-data": lightData, "--ramp-hi": lightData,
+      "--accent-ink": reach(rgb, [L.surface, L.ground], TEXT),
       "--ramp-lo": toHex(mixRgb([255, 255, 255], rgb, 0.22)),
-      "--amber-rail": reach(rgb, [L.rail], TEXT),
-      "--rail-accent": lightRail, "--on-rail-accent": textOn(lightRail, L.ink),
     },
     dark: {
-      "--amber": fill, "--on-amber": on,
-      "--amber-data": darkData, "--ramp-hi": darkData,
-      "--amber-ink": reach(rgb, [Dk.surface, Dk.ground], TEXT),
+      "--accent": fill, "--on-accent": on,
+      "--accent-data": darkData, "--ramp-hi": darkData,
+      "--accent-ink": reach(rgb, [Dk.surface, Dk.ground], TEXT),
       "--ramp-lo": toHex(mixRgb(parse(Dk.ground), rgb, 0.3)),
-      "--amber-rail": reach(rgb, [Dk.rail], TEXT),
-      "--rail-accent": darkRail, "--on-rail-accent": textOn(darkRail, L.ink),
     },
   };
 }
 
-// The page's own ground, surface and rail in both themes, read from ui.css (switching data-theme for a moment:
+// The page's own ground and surface in both themes, read from ui.css (switching data-theme for a moment:
 // a style recalculation, no paint). Missing or unreadable values fall back to BG.
 function pageBackgrounds(doc) {
   const root = doc.documentElement, saved = root.dataset.theme, out = {};
   for (const theme of ["light", "dark"]) {
     root.dataset.theme = theme;
     const cs = doc.defaultView.getComputedStyle(root);
-    out[theme] = Object.fromEntries(["surface", "ground", "rail"].map((k) => [k, cs.getPropertyValue(`--${k}`).trim()]).filter(([, v]) => parse(v)));
+    out[theme] = Object.fromEntries(["surface", "ground"].map((k) => [k, cs.getPropertyValue(`--${k}`).trim()]).filter(([, v]) => parse(v)));
   }
   if (saved) root.dataset.theme = saved; else delete root.dataset.theme;
   return out;

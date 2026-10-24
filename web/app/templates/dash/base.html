@@ -44,7 +44,7 @@
           <p class="s-label">{{ t("settings.account") }}</p>
           {% if publish %}
           <div class="publish">
-            <a class="btn on-rail" href="/app/publish"{% if not publish.ready %} aria-disabled="true"{% endif %}>{{ t("publish.button") }}</a>
+            <a class="btn primary" href="/app/publish"{% if not publish.ready %} aria-disabled="true"{% endif %}>{{ t("publish.button") }}</a>
             {% if publish.note %}<p class="wait">{{ publish.note }}</p>{% endif %}
           </div>
           {% endif %}

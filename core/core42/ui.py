@@ -101,17 +101,6 @@ def css_from_ui(config: dict) -> str:
         out.append(f'@media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ color-scheme: dark; {_decls(dark.items())} }} }}')
         out.append(f':root[data-theme="dark"] {{ color-scheme: dark; {_decls(dark.items())} }}')
 
-    # positions are words, not values: they switch layout rules on. report.css loads after this CSS,
-    # so the selectors start with "html body" to out-rank its plain ones.
-    desktop = breakpoints.get("desktop", 960)
-    if components.get("rail", {}).get("side") == "right":
-        out.append(f"@media (min-width: {desktop}px) {{ html body {{ grid-template-columns: minmax(0, 1fr) var(--c-rail-width); }}"
-                   f" html body .rail {{ order: 2; }} }}")
-    if components.get("mobile-nav", {}).get("position") == "top":
-        out.append(f"@media (max-width: {desktop - 0.02}px) {{ html body .toc {{ top: 0; bottom: auto; border-top: 0;"
-                   f" border-bottom: var(--c-mobile-nav-border-width) solid var(--rail-rule); }}"
-                   f" html body {{ padding-bottom: 0; padding-top: var(--c-mobile-nav-height); }} }}")
-
     rules = {}
     for panel, per in config.get("panels", {}).items():
         if not panel.startswith("_"):

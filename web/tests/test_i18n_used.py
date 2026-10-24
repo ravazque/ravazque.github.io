@@ -14,9 +14,8 @@ FAMILIES = {"period": ["piscine", "student", "all"], "track": ["student", "pisci
             "delete": ["title", "confirm", "yes", "no"],
             "publish": ["title", "confirm", "yes", "no", "done", "view"],
             "publish.error": ["stale", "busy", "github", "owner", "publish-off"],
-            "pages": ["home", "projects", "evaluations", "people", "campus", "astra"],
-            "rhythm": ["morning", "afternoon", "night"], "astra.state": ["validated", "started", "none", "done", "todo", "mark"]}
-GOALS = ["grandmaster", "architect", "kraken", "gatekeeper", "headhunter", "titan"]
+            "pages": ["home", "projects", "evaluations", "people", "campus"],
+            "rhythm": ["morning", "afternoon", "night"]}
 
 
 def used_keys() -> set[str]:
@@ -26,10 +25,8 @@ def used_keys() -> set[str]:
     for html in (APP / "templates").rglob("*.html"):
         used |= {a or b for a, b in TEMPLATE.findall(html.read_text())} - {""}
     used = {k for k in used if not k.endswith((".", "_"))}  # prefixes of the families below
-    from app.dash.astra import RNCP
-    used |= {f"astra.goal.{g}.{part}" for g in GOALS for part in ("name", "rule")}
-    used |= {f"astra.option.{o['key']}" for options in RNCP["titles"].values() for o in options}
-    used |= {f"astra.tag.{t.removesuffix('_xp')}" for t in RNCP["tags"]}
+    from app.dash.extra import AREAS
+    used |= {f"domains.tag.{a}" for a in AREAS}
     for prefix, values in FAMILIES.items():
         used |= {f"{prefix}.{v}" if prefix not in ("projects_table.marks", "log.flag", "publish.error") else f"{prefix}_{v}" for v in values}
     return used

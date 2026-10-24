@@ -8065,5 +8065,67 @@
    },
    "validated_at": "2025-01-01T00:00:00Z"
   }
+ ],
+ "coalition_scores": [
+  {
+   "id": 900001,
+   "coalition_id": 401,
+   "scoreable_id": 900101,
+   "scoreable_type": "ScaleTeam",
+   "coalitions_user_id": 146330,
+   "calculation_id": 1,
+   "value": 250,
+   "reason": "You evaluated someone. Well done!",
+   "created_at": "2026-09-29T15:49:00.000Z",
+   "updated_at": "2026-09-29T15:49:00.000Z"
+  },
+  {
+   "id": 900002,
+   "coalition_id": 401,
+   "scoreable_id": 900102,
+   "scoreable_type": "Location",
+   "coalitions_user_id": 146330,
+   "calculation_id": 7,
+   "value": 500,
+   "reason": "You have been logged more than 50 hours this week. Excellent work!",
+   "created_at": "2026-10-04T22:24:23.257Z",
+   "updated_at": "2026-10-04T22:24:23.257Z"
+  },
+  {
+   "id": 900003,
+   "coalition_id": 401,
+   "scoreable_id": 900103,
+   "scoreable_type": "Location",
+   "coalitions_user_id": 146330,
+   "calculation_id": 20,
+   "value": 1000,
+   "reason": "You have been logged more than 80 hours this week. Excellent work!",
+   "created_at": "2026-10-07T08:24:17.882Z",
+   "updated_at": "2026-10-07T08:24:17.882Z"
+  },
+  {
+   "id": 900004,
+   "coalition_id": 401,
+   "scoreable_id": 900104,
+   "scoreable_type": "ProjectsUser",
+   "coalitions_user_id": 146330,
+   "calculation_id": 3,
+   "value": 3150,
+   "reason": "You validated a project. Congratulations!",
+   "created_at": "2026-10-08T07:52:00.000Z",
+   "updated_at": "2026-10-08T07:52:00.000Z"
+  },
+  {
+   "id": 900005,
+   "coalition_id": 401,
+   "scoreable_id": 900105,
+   "scoreable_type": "Team",
+   "coalitions_user_id": 146330,
+   "calculation_id": 4,
+   "value": 2000,
+   "reason": "You validated an Exam. Congratulations!",
+   "created_at": "2026-10-12T17:43:00.000Z",
+   "updated_at": "2026-10-12T17:43:00.000Z"
+  }
  ]
 }

@@ -4,7 +4,7 @@ import math
 
 from markupsafe import Markup, escape
 
-S1, S2 = "var(--amber-data)", "var(--slate)"
+S1, S2 = "var(--accent-data)", "var(--slate)"
 GOOD, BAD, NEUTRAL = "var(--good)", "var(--critical)", "var(--neutral)"
 
 
@@ -30,10 +30,15 @@ def empty(text: str) -> Markup:
     return Markup(f'<p class="note chart-empty">{escape(text)}</p>')
 
 
+def _tick(f, v, d) -> str:
+    """An axis tick: thousands as "k" from 10,000 up, so six-digit scales fit a phone's axis."""
+    return f"{f.num(v / 1000, 1)}k" if abs(v) >= 10000 else f.num(v, d)
+
+
 def _yaxis(f, top) -> str:
     d = 0 if (top / 4) % 1 == 0 else 1 if (top / 4 * 10) % 1 == 0 else 2  # quarter ticks keep their decimals
     return '<div class="ch-y" aria-hidden="true">' + "".join(
-        f'<span style="bottom:{_pct(top * k / 4, top)}">{escape(f.num(top * k / 4, d))}</span>' for k in range(5)) + "</div>"
+        f'<span style="bottom:{_pct(top * k / 4, top)}">{escape(_tick(f, top * k / 4, d))}</span>' for k in range(5)) + "</div>"
 
 
 def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, line=None, fmt=None, every=None,
@@ -63,8 +68,12 @@ def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, li
         overlay = (f'<svg class="ch-line" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">'
                    f'<polyline points="{pts}" pathLength="1" style="stroke:{line[2]}"/></svg>'
                    + '<div class="ch-y right" aria-hidden="true">' + "".join(
-                       f'<span style="bottom:{_pct(ltop * k / 4, ltop)}">{escape(f.num(ltop * k / 4, 2))}</span>' for k in range(5)) + "</div>")
-    xs = "".join(f'<span>{escape(lab) if i % every == 0 else ""}</span>' for i, lab in enumerate(labels))
+                       f'<span style="bottom:{_pct(ltop * k / 4, ltop)}">{escape(_tick(f, ltop * k / 4, 2))}</span>' for k in range(5)) + "</div>"
+                   # without the right axis (narrow charts) the line still says where it ends
+                   + f'<b class="line-end" style="bottom:{_pct(line[1][-1] or 0, ltop)}">{escape(line[0])} {escape(fmt(line[1][-1] or 0))}</b>')
+    # every second shown label is marked so narrow charts can drop it
+    xs = "".join(f'<span{" class=\"alt\"" if (i // every) % 2 else ""}>{escape(lab)}</span>' if i % every == 0 else "<span></span>"
+                 for i, lab in enumerate(labels))
     summary = f"{label}: " + ", ".join(f"{lab} {fmt(totals[i])}" for i, lab in enumerate(labels) if totals[i])
     return Markup(
         f'<figure class="vchart{" has-line" if line else ""}" role="img" aria-label="{escape(summary)}">'
@@ -160,3 +169,20 @@ def timeline(f, rows, *, label, empty_text="") -> Markup:
         t += step_ms
     return Markup(f'<figure class="timeline" role="img" aria-label="{escape(label)}">{"".join(body)}'
                   f'<div class="tl-axis" aria-hidden="true"><span></span><span class="ch-months">{"".join(months)}</span></div></figure>')
+
+
+def trend(values, *, bars=False, last=False) -> Markup:
+    """A module's recent history under its figure: a hairline or thin columns, the newest one in the accent when last.
+    Decorative next to the figure it follows (aria-hidden); empty when there is nothing to draw."""
+    vals = [v or 0 for v in values][-24:]
+    if len(vals) < 2 or not any(vals):
+        return Markup("")
+    top, n = max(vals) or 1, len(vals)
+    if bars:
+        w = 100 / n
+        marks = "".join(f'<rect x="{i * w + w * .18:.2f}" y="{40 - 38 * v / top:.2f}" width="{w * .64:.2f}" height="{38 * v / top:.2f}"'
+                        f'{" class=\"now\"" if last and i == n - 1 else ""}/>' for i, v in enumerate(vals))
+    else:
+        pts = " ".join(f"{100 * i / (n - 1):.2f},{40 - 38 * v / top:.2f}" for i, v in enumerate(vals))
+        marks = f'<polyline points="{pts}" pathLength="1"/>'
+    return Markup(f'<svg class="trend{" bars" if bars else ""}" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true" focusable="false">{marks}</svg>')

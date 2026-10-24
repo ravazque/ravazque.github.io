@@ -11,5 +11,5 @@ async def test_static_and_shared_frontend_served(client):
 
 async def test_ui_css_generated_from_ui_json(client):
     r = await client.get("/ui.css")
-    assert r.headers["content-type"].startswith("text/css") and "--c-button-height: 44px" in r.text
+    assert r.headers["content-type"].startswith("text/css") and "--c-button-height: 48px" in r.text
     assert r.headers["cache-control"] == "no-cache"

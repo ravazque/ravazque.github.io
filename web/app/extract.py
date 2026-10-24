@@ -29,6 +29,7 @@ USER_LISTS = {
     "expertises_users": "expertises_users",
 }
 PROJECT_FIELDS = ("id", "name", "slug", "difficulty", "exam", "parent")
+SCORE_FIELDS = ("value", "scoreable_type", "calculation_id", "created_at")
 BATCH = 100
 NETWORK_SIZE = 30  # closest contacts whose given evaluations are read for the network (1 request each)
 
@@ -72,6 +73,9 @@ async def extract(api, uid: int, progress) -> dict:
     d["coalitions"] = sorted(coalitions, key=lambda c: rank.get(c.get("slug"), len(rank)))
     order = {c["id"]: i for i, c in enumerate(d["coalitions"])}
     d["coalitions_users"] = sorted(d["coalitions_users"], key=lambda cu: order.get(cu.get("coalition_id"), len(order)))
+    # the points given to the main coalition (paged, ~1 request per 100) feed the logtime bonus and the points by source
+    cu = (d["coalitions_users"] or [None])[0]
+    d["coalition_scores"] = [{k: s.get(k) for k in SCORE_FIELDS} for s in await api.get_all(f"/v2/coalitions_users/{cu['id']}/scores")] if cu else []
     await step()
     # other people: only id, login and name are kept (no photo, staff flag or cursus data)
     drop_hidden_evaluations(d)

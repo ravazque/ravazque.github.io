@@ -5,17 +5,19 @@ import io
 import json
 import math
 import re
+from datetime import datetime, timezone
 from urllib.parse import urlencode
 
+from core42.analysis import ts
+from core42.insights import logtime_bonus
 from markupsafe import Markup, escape
 
-from . import astra as av
 from . import extra as ex
 from . import charts as ch
 from . import graphs as gr
+from .fmt import TZ
 
-PAGES = {"home": "/app", "projects": "/app/projects", "evaluations": "/app/evaluations", "people": "/app/people", "campus": "/app/campus",
-         "astra": "/app/astra"}
+PAGES = {"home": "/app", "projects": "/app/projects", "evaluations": "/app/evaluations", "people": "/app/people", "campus": "/app/campus"}
 PROJECT_GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "piscine"]
 KINDS = ["nice", "rigorous", "interested", "punctuality"]
 SAFE_COLOR = re.compile(r"^#[0-9a-fA-F]{3,8}$")
@@ -163,28 +165,20 @@ class Page:
         return Markup(f'<div class="seg" role="group" aria-label="{escape(label)}" hx-boost="true" hx-target="#{target}"'
                       f' hx-select="#{target}" hx-swap="outerHTML show:none">{links}</div>')
 
-    # rail
-    def rail(self):
+    # page head: the page's name, who this is, the period switch
+    def head(self):
         f, D, P = self.f, self.D, self.D["profile"]
-        L = D["logtime"]
         campus = P.get("campus_current") or (P["campus"][-1] if isinstance(P.get("campus"), list) and P["campus"] else P.get("campus") or "")
         stage = f(f"groups.{r}") if (r := my_rank(D["extras"])) else f("home.no_cursus")
         coal = P.get("coalition")
         coal_html = (Markup(f'<i style="background:{safe_color(coal.get("color"))}"></i>{escape(coal["name"])} · ') if coal else Markup()) + stage
-        h, m = divmod(int(L["total_seconds"]) // 60, 60)
-        rng = lambda p: (f"{f.day(self.data['periods'][p]['logtime']['first_day'])} → {f.day(self.data['periods'][p]['logtime']['last_day'])}"  # noqa: E731
-                         if self.data["periods"][p]["logtime"].get("first_day") else f("rail.no_sessions"))
         return {
-            "name": P.get("name") or P["login"], "login": P["login"], "campus": campus, "coalition": Markup(coal_html),
-            "initials": initials(P.get("name")), "image": P.get("image"),
-            "periods": [{"key": p, "label": f(f"period.{p}"), "time": f.hm(self.data["periods"][p]["logtime"]["total_seconds"]),
-                         "href": self.url(period=p), "on": p == self.period} for p in self.periods] if len(self.periods) > 1 else [],
-            "range": f("rail.logged_in", range=rng(self.period)), "h": h, "m": f"{m:02d}",
-            "aria": f("rail.figure_aria", h=h, m=f"{m:02d}"),
-            "stats": [(f.num(L["days_present"]), f("rail.days", count=L["days_present"])), (f.num(L["sessions"]), f("rail.sessions", count=L["sessions"])),
-                      (f.num(len(L["seats"])), f("rail.computers", count=len(L["seats"])))],
+            "title": f(f"pages.{self.key}"), "name": P.get("name") or P["login"], "login": P["login"], "campus": campus,
+            "coalition": Markup(coal_html), "initials": initials(P.get("name")), "image": P.get("image"),
+            "periods": [{"key": p, "label": f(f"period.{p}"), "href": self.url(period=p), "on": p == self.period}
+                        for p in self.periods] if len(self.periods) > 1 else [],
             "now": f.html("rail.now_at", seat=Markup(f"<b>{escape(P['location'])}</b>")) if P.get("location") else f("rail.not_logged"),
-            "official": f("rail.official", hm=f.hm(L["official_hours"] * 3600)) if L.get("official_hours") is not None else "",
+            "generated": f("head.generated", when=D.get("generated", "")),
             "groups": P.get("groups") or [],
         }
 
@@ -204,28 +198,57 @@ class Page:
 def home(pg: Page) -> list[dict]:
     f, D = pg.f, pg.D
     S, L, X = D["summary"], D["logtime"], D["extras"]
-    top = L["seats"][0] if L["seats"] else None
     level = next((c for c in X["cursus"] if c["name"] == "42cursus"), X["cursus"][0] if X["cursus"] else None)
     rank = my_rank(X)
     xp = sum(p.get("xp_earned") or 0 for p in D["projects"])
     finished = [p for p in D["projects"] if p.get("mark") is not None]
     failed = (D.get("stats") or {}).get("failed_given")
     clusters = " · ".join(f"{c} {f.nb(h, 'h', 0)}" for c, h in L["clusters"].items())
-    kpis = [
-        (f("home.k_projects"), Markup(f"{S['validated']}<small> / {S['projects']}</small>"),
-         [f("home.attempts", attempts=S["attempts"], retries=S["retries"]),
-          f("home.avg_mark", mark=f.num(sum(p["mark"] for p in finished) / len(finished), 1)) if finished else ""]),
-        (f("home.k_level"), Markup(f"{f.num(level['level'], 2)}<small> {escape(f('home.level'))}</small>") if level else "–",
-         [f("home.rank", rank=f(f"groups.{rank}")) if rank else f("home.no_cursus"), f("home.xp", xp=f.num(xp))]),
-        (f("home.k_evals"), f.num(S["received"]),
-         [f("home.given", n=S["given"]), f("home.out", received=S["received_outstanding"], given=S["given_outstanding"]),
-          f("home.failed", pct=f"{f.num(failed['pct'], 1)}%") if failed and failed.get("pct") is not None else ""]),
-        (f("home.k_seat"), top["host"] if top else "–",
-         [f("home.seat_hours", hours=f.nb(top["hours"], "h")) if top else "", f("home.days", days=f.plural(L["days_present"], "count.days")),
-          f("home.clusters", list=clusters) if clusters else ""]),
+    pc = (D.get("insights") or {}).get("pace") or {}
+    months = pc.get("months") or []
+    per_month = {}
+    for e in D["received"] + D["given"]:
+        k = datetime.fromtimestamp(e["begin_ms"] / 1000, timezone.utc).astimezone(TZ).strftime("%Y-%m")
+        per_month[k] = per_month.get(k, 0) + 1
+    coal = D["profile"].get("coalition")
+    cp = D.get("coalition_points")
+    promo = pg.data.get("promo")
+
+    def num(v, d=0, unit=""):  # the figure, with what the browser counts up to
+        return Markup(f'<span data-count="{v}" data-dec="{d}">{escape(f.num(v, d))}</span>{f"<small>{escape(unit)}</small>" if unit else ""}')
+
+    modules = [
+        {"key": "level", "label": f("home.k_level"), "aside": f("home.cursus") if level else "",
+         "value": num(level["level"], 2) if level else "–",
+         "lines": [f("home.rank", rank=f(f"groups.{rank}")) if rank else f("home.no_cursus"),
+                   f("home.promo", rank=f.num(promo["rank"]), size=f.num(promo["size"])) if promo else f("home.xp", xp=f.num(xp))],
+         "trend": ch.trend([m["cumulative"] for m in months])},
+        {"key": "projects", "label": f("home.k_projects"), "aside": f("home.validated"),
+         "value": num(S["validated"], 0, f" / {f.num(S['projects'])}"),
+         "lines": [f("home.attempts", attempts=S["attempts"], retries=S["retries"]),
+                   f("home.avg_mark", mark=f.num(sum(p["mark"] for p in finished) / len(finished), 1)) if finished else ""],
+         "trend": ch.trend([m["validated"] for m in months], bars=True, last=True)},
+        {"key": "evals", "label": f("home.k_evals"), "aside": f("home.received_given"),
+         "value": num(S["received"], 0, f" · {f.num(S['given'])}"),
+         "lines": [f("home.out", received=S["received_outstanding"], given=S["given_outstanding"]),
+                   f("home.failed", pct=f"{f.num(failed['pct'], 1)}%") if failed and failed.get("pct") is not None else ""],
+         "trend": ch.trend([per_month[k] for k in sorted(per_month)])},
+        {"key": "coalition", "label": f("home.k_coalition"), "aside": coal["name"] if coal else "",
+         "value": Markup(f'{escape(f("home.nth", n=coal["rank"]))}' + (f'<small> · {escape(f("home.master"))}</small>' if coal.get("master") else ""))
+         if coal and coal.get("rank") else "–",
+         "lines": [f("home.season", n=f.num(coal["score"])) if coal and coal.get("score") is not None else f("home.no_coalition"),
+                   f("home.points_total", n=f.num(cp["total"])) if cp else ""],
+         "trend": ch.trend([m["logtime"] + m["other"] for m in cp["months"]], bars=True, last=True) if cp else Markup("")},
+        bonus_module(pg),
+        {"key": "pace", "label": f("home.k_pace"), "aside": f("home.since_kickoff"),
+         "value": num(pc["xp_per_month"], 0, " " + f("home.xp_month_unit")) if pc.get("xp_per_month") is not None else "–",
+         "lines": [f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left"),
+                   f("home.days", days=f.plural(L["days_present"], "count.days"))],
+         "trend": ch.trend([m["xp"] for m in months], bars=True, last=True)},
     ]
-    sections = [{"id": "home-kpis", "title": f("home.title"), "nav": f("nav.home_kpis"),
-                 "kpis": [(k, v, [s for s in subs if s]) for k, v, subs in kpis]}]
+    for m in modules:
+        m["lines"] = [x for x in m["lines"] if x]
+    sections = [{"id": "home-kpis", "title": f("home.title"), "nav": f("nav.home_kpis"), "modules": modules}]
 
     weeks, span = ex.active_weeks(L["days"], L["hours"])
     split = ex.day_split(L["heat"])
@@ -275,10 +298,10 @@ def home(pg: Page) -> list[dict]:
             f'background:{safe_color(c.get("color"))}"></b></span><span class="num">{f.num(c["score"])}</span></li>' for c in C))
         hist = promo["histogram"] if promo else []
         mine = math.floor(promo["mine"]) if promo else None
-        mine_c = av.coalition(pg.data)
-        coal_line = " · ".join(x for x in [mine_c["name"], f("astra.coal.rank", n=mine_c["rank"]) if mine_c["rank"] else "",
-                                         f("astra.coal.score", n=f.num(mine_c["score"])) if mine_c["score"] is not None else "",
-                                         f("astra.coal.master") if mine_c["master"] else ""] if x) if mine_c else ""
+        mine_c = pg.data["periods"]["all"]["profile"].get("coalition")
+        coal_line = " · ".join(x for x in [mine_c["name"], f("standing.coal_rank", n=mine_c["rank"]) if mine_c.get("rank") else "",
+                                         f("standing.coal_score", n=f.num(mine_c["score"])) if mine_c.get("score") is not None else "",
+                                         f("standing.coal_master") if mine_c.get("master") else ""] if x) if mine_c else ""
         sections.append({"id": "standing", "title": f("standing.title"), "nav": f("nav.standing"), "coalitions": coal, "mine": coal_line,
                          "promo_lede": f("standing.promo_lede", rank=f.num(promo["rank"]), size=f.num(promo["size"]), pct=f.num(promo["percentile"], 1),
                                          median=f.num(promo["median"], 2)) if promo else f("standing.no_promo"),
@@ -286,6 +309,9 @@ def home(pg: Page) -> list[dict]:
                                            [(f("standing.students"), [h["count"] if h["level"] != mine else 0 for h in hist], ch.S2),
                                             (f("standing.yours"), [h["count"] if h["level"] == mine else 0 for h in hist], ch.S1)],
                                            label=f("standing.promo"), stacked=True, xtitle=f("standing.level_axis"), fmt=f.num) if promo else ""})
+
+    if (cp := coalition_points(pg)):
+        sections.append(cp)
 
     none = Markup(f'<li class="note">{escape(f("empty.period"))}</li>')
     ev_kind = lambda k: f(f"event.{k}") if f(f"event.{k}") != f"event.{k}" else str(k).replace("_", " ")  # noqa: E731
@@ -302,6 +328,75 @@ def home(pg: Page) -> list[dict]:
                      "achievements": Markup(ach) or none, "events": Markup(evs) or none, "misc": Markup("".join(misc)) or none,
                      "event_kinds": " · ".join(f"{ev_kind(k)}: {v}" for k, v in X["event_kinds"].items())})
     return sections
+
+
+def bonus_module(pg: Page, now=None) -> dict:
+    """Home's live module: the rolling week against 50 h and 80 h, and the next bonus within reach (inferred rule)."""
+    f, W = pg.f, pg.D.get("logtime_bonus")
+    if not W or pg.period == "piscine":
+        return {"key": "bonus", "label": f("home.k_bonus"), "aside": f("coal.k_window"), "value": "–", "lines": [f("home.no_bonus")], "trend": Markup("")}
+    t50, t80 = logtime_bonus(W, now or datetime.now(timezone.utc))
+    when = lambda iso: f.stamp(ts(iso).timestamp() * 1000)  # noqa: E731
+    nxt = next((t for t in (t50, t80) if t["state"] != "cooldown" and t["window_h"] < t["hours"]), None) or next((t for t in (t50, t80) if t["state"] == "ready"), None)
+    if nxt and nxt["state"] == "ready":
+        chip = f("home.bonus_due", hours=nxt["hours"], points=f.num(nxt["points"]))
+    elif nxt:
+        chip = f("home.bonus_short", hours=nxt["hours"], n=f.num(nxt["need_h"], 1), time=when(nxt["until"]))
+    else:
+        chip = f("home.bonus_wait")
+    pct = lambda h: min(100, 100 * t80["window_h"] / h)  # noqa: E731
+    meter = Markup(f'<span class="meter" role="img" aria-label="{escape(f("coal.s_meter", have=f.num(t80["window_h"], 1), need=80))}">'
+                   f'<i style="width:{pct(80):.1f}%"></i><em style="left:62.5%"></em></span>')
+    rest = [t for t in (t50, t80) if t is not nxt]
+    return {"key": "bonus", "label": f("home.k_bonus"), "aside": f("coal.k_window"), "live": True,
+            "value": Markup(f'<span data-count="{t80["window_h"]}" data-dec="1">{escape(f.num(t80["window_h"], 1))}</span><small> h</small>'),
+            "meter": meter, "chip": chip,
+            "lines": [f("home.bonus_from", hours=t["hours"], time=when(t["from"])) if t["state"] == "cooldown" else
+                      f("home.bonus_ready", hours=t["hours"]) if t["state"] == "ready" else
+                      f("home.bonus_rest", hours=t["hours"], n=f.num(t["need_h"], 1)) for t in rest], "trend": Markup("")}
+
+
+def coalition_points(pg: Page, now=None) -> dict | None:
+    """The logtime bonus right now (inferred rule, see core42.insights) and the points given to the coalition."""
+    f, D = pg.f, pg.D
+    P = D.get("coalition_points")
+    if P is None:  # older reports
+        return None
+    when = lambda iso: f.stamp(ts(iso).timestamp() * 1000)  # noqa: E731
+    kpis, note = [], ""
+    W = D.get("logtime_bonus")
+    if W and pg.period != "piscine":
+        now = now or datetime.now(timezone.utc)
+        tiers = logtime_bonus(W, now)
+        sessions = W["sessions"]
+        kpis.append((f("coal.k_window"), Markup(f"{f.num(tiers[0]['window_h'], 1)}<small> h</small>"),
+                     [f("coal.s_open", since=when(sessions[-1][0])) if W["open"] and sessions else f("coal.s_closed"), f("coal.s_as_of", time=when(W["at"]))]))
+        for t in tiers:
+            pct = min(100, 100 * t["window_h"] / t["hours"])
+            meter = Markup(f'<span class="hbar" aria-hidden="true"><i style="width:{pct:.1f}%"></i></span>') + f("coal.s_meter", have=f.num(t["window_h"], 1), need=t["hours"])
+            head = {"ready": f("coal.v_ready"), "cooldown": f("coal.v_cooldown"), "short": Markup(f'{f.num(t["need_h"], 1)}<small> {escape(f("coal.v_short"))}</small>')}[t["state"]]
+            until = (f("coal.s_next_logout") if t["state"] == "ready" and W["open"] else
+                     f("coal.s_until" if W["open"] else "coal.s_login_until", time=when(t["until"])) if t["until"] and t["until"] != t["from"] else "")
+            kpis.append((f("coal.k_tier", hours=t["hours"], points=f.num(t["points"])), head,
+                         [meter, f("coal.s_from", time=when(t["from"])) if t["from"] else "", until,
+                          f("coal.s_last", time=when(t["last"])) if t["last"] else f("coal.s_never")]))
+        note = f("coal.note")
+    by = {s["key"]: s for s in P["sources"]}
+    bonus = [by[k] for k in ("logtime_50", "logtime_80") if k in by]
+    kpis.append((f("coal.k_logtime"), f.num(sum(b["points"] for b in bonus)),
+                 [f("coal.s_logtime", n=f.num(sum(b["count"] for b in bonus))), f("coal.s_share", pct=f.pct(sum(b["points"] for b in bonus), P["total"]))]))
+    src, months = P["sources"], P["months"]
+    names = [f(f"coal.src.{s['key']}") for s in src]
+    return {"id": "coal-points", "title": f("coal.title"), "nav": f("nav.coal"), "lede": f("coal.lede"), "note": note,
+            "kpis": [(k, v, [x for x in subs if x]) for k, v, subs in kpis],
+            "total": f("coal.total", points=f.num(P["total"]), n=f.plural(P["count"], "coal.awards")),
+            "sources": ch.hbars(f, names, [(f("coal.points"), [s["points"] for s in src], ch.S1)], label=f("coal.sources"), end=lambda i, v: f.num(v),
+                                tips=[f"{n} · {f.num(s['points'])} · {f.plural(s['count'], 'coal.awards')}" for n, s in zip(names, src)],
+                                empty_text=f("empty.period")),
+            "months": ch.vbars(f, [f.month_label(m["month"]) for m in months],
+                               [(f("coal.src.logtime"), [m["logtime"] for m in months], ch.S1), (f("coal.rest"), [m["other"] for m in months], ch.S2)],
+                               label=f("coal.months"), stacked=True, fmt=f.num, every=math.ceil(len(months) / 6) or 1, empty_text=f("empty.period")),
+            "legend": ch.legend([(f("coal.src.logtime"), ch.S1), (f("coal.rest"), ch.S2)])}
 
 
 # ---------- Projects ----------
@@ -406,8 +501,8 @@ def projects(pg: Page) -> list[dict]:
 
     areas = ex.domains(pg.data["periods"].get("all", D)["projects"])
     sections.append({"id": "domains", "title": f("domains.title"), "nav": f("domains.title"), "lede": f("domains.lede"),
-                     "chart": ch.hbars(f, [(lambda t: t[:1].upper() + t[1:])(f(f"astra.tag.{a['key']}")) for a in areas], [(f("col.xp"), [a["xp"] for a in areas], ch.S1)],
-                                       label=f("domains.title"), tips=[f"{f(f'astra.tag.{a['key']}')} · ≈ {f.num(a['xp'])} XP · {', '.join(a['projects'])}" for a in areas],
+                     "chart": ch.hbars(f, [(lambda t: t[:1].upper() + t[1:])(f(f"domains.tag.{a['key']}")) for a in areas], [(f("col.xp"), [a["xp"] for a in areas], ch.S1)],
+                                       label=f("domains.title"), tips=[f"{f(f'domains.tag.{a['key']}')} · ≈ {f.num(a['xp'])} XP · {', '.join(a['projects'])}" for a in areas],
                                        end=lambda i, v: f"≈ {f.num(v)}", extra=lambda i: f.plural(len(areas[i]["projects"]), "domains.projects"),
                                        empty_text=f("domains.none")),
                      "portfolio": pg.url(None).replace(PAGES["projects"], "/app/portfolio.csv", 1)})
@@ -492,7 +587,7 @@ def evaluations(pg: Page) -> list[dict]:
     sections.append({
         "id": "when", "title": f("when.title"), "nav": f("nav.when"),
         "lede": f("when.lede", recv=f.num(W["median_duration_received"]), given=f.num(W["median_duration_given"]), lead=f.num(W["median_lead_received"], 1)),
-        "heat_recv": gr.heat(f, W["heat_received"], gr.AMBER, f("unit.evaluations")), "heat_given": gr.heat(f, W["heat_given"], gr.SLATE, f("unit.evaluations")),
+        "heat_recv": gr.heat(f, W["heat_received"], gr.ACCENT, f("unit.evaluations")), "heat_given": gr.heat(f, W["heat_given"], gr.SLATE, f("unit.evaluations")),
         "roles": ch.legend(roles),
         "duration": ch.vbars(f, edges(W["duration_edges"]), [(f("role.received"), W["duration_received"], ch.S1), (f("role.given"), W["duration_given"], ch.S2)],
                              label=f("when.duration_title"), xtitle=f("when.minutes"), fmt=f.num, empty_text=f("empty.period")),
@@ -783,7 +878,7 @@ def campus(pg: Page) -> list[dict]:
                      "lede": f("days.lede", days=f.plural(L["days_present"], "count.days"), first=f.day(L["first_day"]), last=f.day(L["last_day"]),
                                avg=f.hm(L["total_seconds"] / L["days_present"]), longest=f.nb(L["longest_session_h"], "h"),
                                busiest=f.day(busiest[0], weekday=True), busiest_h=f.nb(busiest[1], "h")) if L["days_present"] and busiest else f("empty.sessions"),
-                     "calendar": cal, "calendar_scale": cal_scale, "heat": gr.heat(f, L["heat"], gr.AMBER, "h")})
+                     "calendar": cal, "calendar_scale": cal_scale, "heat": gr.heat(f, L["heat"], gr.ACCENT, "h")})
 
     sq = pg.q("sq", "")[:80].lower()
     log = [s for s in L["log"] if not sq or sq in f"{s['begin']} {s.get('end')} {s['host']}".lower()]
@@ -817,43 +912,4 @@ def campus(pg: Page) -> list[dict]:
     return sections
 
 
-# ---------- Astra Victoris ----------
-
-def astra(pg: Page) -> list[dict]:
-    f = pg.f
-    v = av.view(f, pg.data)
-    gk = v["gatekeeper"]
-
-    def bar(have, need, label, fmt=lambda x: f.num(x)):
-        return {"label": label, "have": fmt(have), "need": fmt(need), "pct": min(100, round(100 * have / need)) if need else 0, "met": have >= need}
-
-    goals = []
-    for g in av.GOALS:
-        goal = {"key": g, "name": f(f"astra.goal.{g}.name"), "rule": f(f"astra.goal.{g}.rule"), "hex": av.hexagon(g, f(f"astra.goal.{g}.name"))}
-        if g in ("grandmaster", "architect"):
-            goal.update(auto=v[g]["met"], options=v[g]["options"])
-        elif g == "gatekeeper":
-            goal.update(auto=gk["met"], bars=[
-                bar(gk["outer"], 50, f("astra.gk.outer")),
-                bar(gk["total"], 150, f("astra.gk.total")),
-                bar(gk["hours"], 2000, f("astra.gk.hours_intra" if gk["official"] else "astra.gk.hours"), lambda x: f.nb(x, "h", 0))],
-                avg=f("astra.gk.avg", avg=f.num(gk["avg"], 2)) if gk["avg"] is not None else "")
-        else:
-            goal["auto"] = None
-            if g == "titan" and v["titan"]:
-                c = v["titan"]
-                goal["auto"] = c["met"]
-                goal["coalition"] = " · ".join(x for x in [c["name"], f("astra.coal.rank", n=c["rank"]) if c["rank"] else "",
-                                                          f("astra.coal.score", n=f.num(c["score"])) if c["score"] is not None else "",
-                                                          f("astra.coal.master") if c["master"] else ""] if x)
-            goal["counters"] = {"kraken": [("babel", f("astra.kraken.babel"), 5), ("manguito", f("astra.kraken.manguito"), 3)],
-                                "headhunter": [("alumni", f("astra.hh.events"), 4)]}.get(g, [])
-            goal["switches"] = {"headhunter": [("referral", f("astra.hh.referral"))],
-                                "titan": [("tool", f("astra.titan.tool")), ("scorer", f("astra.titan.scorer"))]}.get(g, [])
-        goals.append(goal)
-    auto_done = sum(1 for g in goals if g["auto"])
-    return [{"id": "astra", "title": f("astra.title"), "nav": f("astra.title"), "lede": f("astra.lede"), "goals": goals,
-             "count": f("astra.count", n=auto_done), "laurel": av.laurel(), "laurel_flip": av.laurel(flip=True)}]
-
-
-BUILDERS = {"home": home, "projects": projects, "evaluations": evaluations, "people": people, "campus": campus, "astra": astra}
+BUILDERS = {"home": home, "projects": projects, "evaluations": evaluations, "people": people, "campus": campus}

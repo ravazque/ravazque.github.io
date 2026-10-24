@@ -8,12 +8,10 @@ from app.extract import extract
 from app.store import Store
 from test_extract import UID, FakeApi
 
-PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus",
-         "/app/astra": "astra"}
-SECTIONS = {"/app": ["home-kpis", "rhythm", "pace", "skills", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
+PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus"}
+SECTIONS = {"/app": ["home-kpis", "rhythm", "pace", "skills", "coal-points", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
             "/app/evaluations": ["community", "over-time", "when", "correction-stats", "feedback", "points", "log"],
-            "/app/people": ["who", "connections", "circle", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"],
-            "/app/astra": ["astra"]}
+            "/app/people": ["who", "connections", "circle", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"]}
 INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>")
 
 
@@ -270,3 +268,34 @@ async def test_every_tooltip_also_works_without_javascript(signed_in, report, pa
             assert text[m.end():m.end() + 7] == "<title>", m.group(0)[:80]
         else:
             assert ' title="' in m.group(0), m.group(0)[:80]
+
+
+def test_the_logtime_bonus_says_what_is_missing_and_when(report):
+    from datetime import datetime, timedelta, timezone
+    from app.dash.views import Page, coalition_points
+    data = report
+    D = data["periods"]["student"]
+    now = datetime(2026, 10, 24, 20, 0, tzinfo=timezone.utc)
+    D = {**D, "logtime_bonus": {"at": now.isoformat(), "open": True, "last": {"50": "2026-10-22T15:33:00Z", "80": "2026-10-07T08:24:00Z"},
+                                "sessions": [[(now - timedelta(hours=56)).isoformat(), now.isoformat()]]}}
+    pg = Page(Fmt("en"), {**data, "periods": {**data["periods"], "student": D}}, "home", {"period": "student"})
+    s = coalition_points(pg, now)
+    flat = " ".join(str(x) for _, v, subs in s["kpis"] for x in [v, *subs])
+    assert "56 h" in s["kpis"][0][1] or "56<small>" in s["kpis"][0][1]
+    assert "Waiting" in flat and "available again from 29 Oct 2026, 16:33" in flat  # 50 h: 7 days after the last one
+    assert "24<small> h to go" in flat and "log out from 25 Oct 2026, 21:00" in flat  # 80 h: 24 h more, Madrid time
+    assert "Exams passed" in s["sources"] and "6,900 points in 5 awards" in s["total"]
+
+
+async def test_home_opens_on_six_equal_modules_with_the_bonus_live(signed_in, report):
+    text = (await signed_in.get("/app")).text
+    keys = re.findall(r'data-module="([a-z]+)"', text)
+    assert keys == ["level", "projects", "evals", "coalition", "bonus", "pace"]
+    assert re.search(r'data-module="bonus"[^>]*class="[^"]*live', text) or re.search(r'class="[^"]*live[^"]*"[^>]*data-module="bonus"', text)
+    assert 'class="rail"' not in text and "rail.figure_aria" not in text  # no side rail, hours are not the lead
+
+
+async def test_the_page_head_names_the_page_and_keeps_the_period_switch(signed_in, report):
+    text = (await signed_in.get("/app/projects?period=all")).text
+    assert re.search(r'<h1[^>]*>\s*Projects\s*</h1>', text)
+    assert 'aria-label="Period"' in text or 'class="periods"' in text

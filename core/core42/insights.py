@@ -5,7 +5,7 @@ Everything here is a pure function over data the extraction already holds; nothi
 """
 import json
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from statistics import median
 
@@ -172,6 +172,90 @@ def skill_sets(cursus_users: list[dict]) -> dict[str, list[dict]]:
         levels = {s["name"]: s["level"] for s in cu.get("skills") or []}
         out[name] = [{"name": n, "level": levels.get(n, 0)} for n in SKILLS[name]] + \
                     [{"name": n, "level": l} for n, l in levels.items() if n not in SKILLS[name]]
+    return out
+
+
+# Coalition points: /coalitions_users/:id/scores. The logtime bonus rule is inferred (2026-10-24, ten awards on two
+# profiles): at every logout the intra sums the last 7 rolling days, overlaps merged; >= 50 h gives +500 (calculation
+# 7), >= 80 h +1000 (calculation 20), each at most once every 7 days since it was last given.
+BONUS_TIERS = {7: 50, 20: 80}
+BONUS_POINTS = {50: 500, 80: 1000}
+WEEK = timedelta(days=7)
+SOURCES = {"ScaleTeam": "evaluations", "ProjectsUser": "projects", "Team": "exams", "Location": "logtime",
+           "Transaction": "wallet"}
+
+
+def coalition_points(scores: list[dict] | None) -> dict | None:
+    """Points given to the coalition by source (biggest first), per Madrid month (logtime apart), and the logtime bonuses."""
+    if scores is None:
+        return None
+    sources, months = {}, {}
+    for s in scores:
+        key = SOURCES.get(s.get("scoreable_type"), "other")
+        if key == "logtime" and s.get("calculation_id") in BONUS_TIERS:
+            key = f"logtime_{BONUS_TIERS[s['calculation_id']]}"
+        row = sources.setdefault(key, {"key": key, "points": 0, "count": 0})
+        row["points"] += s["value"]
+        row["count"] += 1
+        m = months.setdefault(local(ts(s["created_at"])).strftime("%Y-%m"), {"logtime": 0, "other": 0})
+        m["logtime" if key.startswith("logtime") else "other"] += s["value"]
+    span = []
+    if months:
+        y, mo = map(int, min(months).split("-"))
+        while f"{y}-{mo:02d}" <= max(months):
+            span.append({"month": f"{y}-{mo:02d}", **months.get(f"{y}-{mo:02d}", {"logtime": 0, "other": 0})})
+            y, mo = (y + 1, 1) if mo == 12 else (y, mo + 1)
+    bonuses = sorted(({"at": s["created_at"], "hours": BONUS_TIERS[s["calculation_id"]], "points": s["value"]} for s in scores
+                      if s.get("scoreable_type") == "Location" and s.get("calculation_id") in BONUS_TIERS), key=lambda b: b["at"], reverse=True)
+    return {"total": sum(r["points"] for r in sources.values()), "count": len(scores),
+            "sources": sorted(sources.values(), key=lambda r: -r["points"]), "months": span, "bonuses": bonuses}
+
+
+def bonus_window(locations: list[dict], scores: list[dict], now: datetime) -> dict:
+    """What logtime_bonus needs, kept in the report: the last 7 days of sessions (merged; an open one ends now) and when
+    each bonus was last given."""
+    start = now - WEEK
+    sessions = merge_intervals([(max(ts(l["begin_at"]), start), min(ts(l["end_at"]) or now, now)) for l in locations
+                                if (ts(l["end_at"]) or now) > start])
+    last = {str(h): max((s["created_at"] for s in scores if s.get("scoreable_type") == "Location" and s.get("calculation_id") == c), default=None)
+            for c, h in BONUS_TIERS.items()}
+    return {"at": now.isoformat(), "open": any(not l.get("end_at") for l in locations),
+            "sessions": [[b.isoformat(), e.isoformat()] for b, e in sessions if e > b], "last": last}
+
+
+def logtime_bonus(window: dict, now: datetime) -> list[dict]:
+    """Each bonus now: hours in the rolling week, what is missing, when the cooldown ends, and the earliest logout that
+    earns it when connected from now on (an open session is assumed to go on: the report cannot know)."""
+    sessions = [(ts(b), ts(e)) for b, e in window["sessions"]]
+    if window["open"] and sessions:
+        sessions[-1] = (sessions[-1][0], max(sessions[-1][1], now))
+    sessions = [(b, min(e, now)) for b, e in sessions if b < now]
+
+    def hours(t):  # in the week before t, connected from now to t
+        start = t - WEEK
+        past = sum(max(0, (min(e, now) - max(b, start)).total_seconds()) for b, e in sessions)
+        return (past + max(0, (t - max(now, start)).total_seconds())) / 3600
+
+    edges = sorted({now, now + WEEK} | {x + WEEK for b, e in sessions for x in (b, e) if now < x + WEEK < now + WEEK})
+    out = []
+    for h in BONUS_TIERS.values():
+        last = window["last"].get(str(h))
+        ready_at = ts(last) + WEEK if last else None
+        cooldown = ready_at is not None and ready_at > now
+        have = hours(now)
+        until, prev = None, now
+        for t in edges:  # hours() is linear between edges and never decreases: find the first edge over h, then interpolate
+            if hours(t) >= h:
+                hp, ht = hours(prev), hours(t)
+                until = prev if hp >= h else prev + timedelta(seconds=round((h - hp) / (ht - hp) * (t - prev).total_seconds()))
+                break
+            prev = t
+        if until and cooldown:
+            until = max(until, ready_at)
+        out.append({"hours": h, "points": BONUS_POINTS[h], "window_h": round(have, 1), "need_h": round(max(0, h - have), 1),
+                    "last": last, "from": ready_at.isoformat() if cooldown else None,
+                    "state": "cooldown" if cooldown else "ready" if have >= h else "short",
+                    "until": until.isoformat() if until else None})
     return out
 
 

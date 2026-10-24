@@ -132,3 +132,83 @@ def test_analyze_adds_the_extra_views():
     assert set(report["insights"]) == {"teammates", "exams", "pace", "evaluations"}
     assert set(report["extras"]["skills_by_cursus"]) == {"42cursus", "C Piscine"}
     assert all("group" in p for p in report["projects"])
+    assert report["coalition_points"]["total"] == 6900 and report["logtime_bonus"]["last"]["80"].startswith("2026-10-07")
+    assert "coalition_points" not in analyze({k: v for k, v in d.items() if k != "coalition_scores"}, "all")  # older reports
+
+
+def test_coalition_points_follow_the_period_but_the_bonus_does_not():
+    import json
+    from pathlib import Path
+    from core42.analysis import analyze
+    d = json.loads((Path(__file__).resolve().parents[2] / "web" / "tests" / "fixtures" / "42.json").read_text())
+    d.update({"people": d.get("people", []), "corrector_sessions": {}, "feedbacks": {}})
+    piscine = analyze(d, "piscine")
+    assert piscine["coalition_points"]["total"] == 0 and piscine["logtime_bonus"]["last"]["50"].startswith("2026-10-04")
+
+
+def _score(at, kind, value, calc=1):
+    return {"created_at": at, "scoreable_type": kind, "value": value, "calculation_id": calc}
+
+
+def test_coalition_points_sum_by_source_and_by_month_in_madrid_time():
+    from core42.insights import coalition_points
+    scores = [_score("2026-08-31T22:30:00Z", "ScaleTeam", 250), _score("2026-09-03T10:00:00Z", "ProjectsUser", 840, 3),
+              _score("2026-10-04T22:24:00Z", "Location", 500, 7), _score("2026-10-07T08:24:00Z", "Location", 1000, 20),
+              _score("2026-10-08T07:52:00Z", "Team", 2000, 4), _score("2026-10-09T07:52:00Z", "Weird", 5, 99), _score("2026-10-09T08:00:00Z", "Transaction", 7, 8)]
+    p = coalition_points(scores)
+    assert p["total"] == 4602 and p["count"] == 7
+    assert [(s["key"], s["points"], s["count"]) for s in p["sources"]] == [
+        ("exams", 2000, 1), ("logtime_80", 1000, 1), ("projects", 840, 1), ("logtime_50", 500, 1), ("evaluations", 250, 1), ("wallet", 7, 1),
+        ("other", 5, 1)]
+    assert p["months"] == [{"month": "2026-09", "logtime": 0, "other": 1090}, {"month": "2026-10", "logtime": 1500, "other": 2012}]
+    assert [b["at"][:10] for b in p["bonuses"]] == ["2026-10-07", "2026-10-04"] and p["bonuses"][0]["hours"] == 80
+    assert coalition_points(None) is None and coalition_points([])["months"] == []
+
+
+def _loc(b, e):
+    return {"begin_at": b, "end_at": e}
+
+
+def test_bonus_window_keeps_the_last_seven_days_merged_and_when_each_bonus_was_last_given():
+    from core42.insights import bonus_window
+    locs = [_loc("2026-10-10T08:00:00Z", "2026-10-10T20:00:00Z"),  # older than 7 days: dropped
+            _loc("2026-10-11T06:00:00Z", "2026-10-11T14:00:00Z"),  # cut at the window's start
+            _loc("2026-10-15T08:00:00Z", "2026-10-15T12:00:00Z"), _loc("2026-10-15T11:00:00Z", "2026-10-15T13:00:00Z"),
+            _loc("2026-10-18T10:00:00Z", None)]
+    scores = [_score("2026-10-04T22:24:00Z", "Location", 500, 7), _score("2026-10-12T15:33:00Z", "Location", 500, 7),
+              _score("2026-10-07T08:24:00Z", "Location", 1000, 20), _score("2026-10-17T08:00:00Z", "ScaleTeam", 250)]
+    w = bonus_window(locs, scores, NOW)
+    assert w == {"at": "2026-10-18T12:00:00+00:00", "open": True,
+                 "sessions": [["2026-10-11T12:00:00+00:00", "2026-10-11T14:00:00+00:00"], ["2026-10-15T08:00:00+00:00", "2026-10-15T13:00:00+00:00"],
+                              ["2026-10-18T10:00:00+00:00", "2026-10-18T12:00:00+00:00"]],
+                 "last": {"50": "2026-10-12T15:33:00Z", "80": "2026-10-07T08:24:00Z"}}
+
+
+def test_logtime_bonus_counts_the_rolling_week_waits_out_the_cooldown_and_forecasts_the_logout():
+    from datetime import timedelta
+    from core42.insights import logtime_bonus
+    # 45 h in the window, logged in since 10:00; 50 h given 6 days ago, 80 h never
+    w = {"at": NOW.isoformat(), "open": True, "last": {"50": (NOW - timedelta(days=6)).isoformat(), "80": None},
+         "sessions": [[(NOW - timedelta(days=3)).isoformat(), (NOW - timedelta(days=3) + timedelta(hours=43)).isoformat()],
+                      [(NOW - timedelta(hours=2)).isoformat(), NOW.isoformat()]]}
+    t50, t80 = logtime_bonus(w, NOW)
+    assert (t50["hours"], t50["points"], t50["window_h"], t50["need_h"]) == (50, 500, 45.0, 5.0)
+    assert t50["state"] == "cooldown" and t50["from"] == (NOW + timedelta(days=1)).isoformat()
+    assert t50["until"] == t50["from"]  # 5 h are reached before the cooldown ends: the logout waits for it
+    assert t80["state"] == "short" and t80["need_h"] == 35.0 and t80["until"] == (NOW + timedelta(hours=35)).isoformat()
+    # an hour later, still logged in (assumed): the window grew by an hour
+    later = logtime_bonus(w, NOW + timedelta(hours=1))[1]
+    assert later["window_h"] == 46.0 and later["until"] == t80["until"]
+
+
+def test_logtime_bonus_is_ready_when_the_window_is_over_and_the_old_hours_drop_out():
+    from datetime import timedelta
+    from core42.insights import logtime_bonus
+    # 52 h in the window, logged out: the 50 h one is due at the next logout; 80 h has to make up what leaves the window
+    w = {"at": NOW.isoformat(), "open": False, "last": {"50": None, "80": None},
+         "sessions": [[(NOW - timedelta(days=7)).isoformat(), (NOW - timedelta(days=6)).isoformat()],
+                      [(NOW - timedelta(days=5)).isoformat(), (NOW - timedelta(days=5) + timedelta(hours=28)).isoformat()]]}
+    t50, t80 = logtime_bonus(w, NOW)
+    assert t50["window_h"] == 52.0 and t50["state"] == "ready" and t50["until"] == NOW.isoformat()
+    # logging in now: the first 24 h leave the window while they are made up, the 28 h later on too, so it takes 80 h
+    assert t80["state"] == "short" and t80["need_h"] == 28.0 and t80["until"] == (NOW + timedelta(hours=80)).isoformat()
