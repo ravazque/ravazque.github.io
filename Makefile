@@ -14,14 +14,16 @@ dev: .env web/Caddyfile.local ## Start at https://localhost with the last saved 
 	@$(COMPOSE_DEV) up -d --build
 	@if [ -f web/preview/data.json ]; then echo "Up at https://localhost — 'Dev · …' on the landing enters with the saved report"; \
 	  else echo "Up at https://localhost — no saved report yet: run 'make build' (needs DEV_UID in .env)"; fi
+	@if ls web/preview/test-*.json >/dev/null 2>&1; then echo "Test profiles (synthetic): 'Test · …' on the landing"; fi
 
 up: .env web/Caddyfile.local ## Start the web as built, without live reload
 	@$(COMPOSE) up -d --build
 
-build: .env ## Build the images and refresh the saved report of DEV_UID (a real extraction, ~110 requests, under a minute with two apps)
+build: .env ## Build the images, refresh the saved report of DEV_UID (~110 requests, under a minute with two apps) and the synthetic test profiles
 	@$(COMPOSE) build
 	@if [ -n "$(DEV_UID)" ]; then mkdir -p web/preview && $(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(DEV_UID); \
 	  else echo "DEV_UID is not set in .env: images built, saved report not refreshed"; fi
+	@mkdir -p web/preview && $(COMPOSE) run --rm -v ./web:/srv/web api python scripts/test_profiles.py
 
 down: ## Stop the web (sessions and server copies of reports are in memory: they go; browsers keep theirs)
 	@$(COMPOSE) down

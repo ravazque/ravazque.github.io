@@ -50,3 +50,33 @@ async def test_the_saved_report_is_served_at_once(dev_client):
     page = await client.get("/app")
     assert '<section id="home-kpis"' in page.text
     assert await Store(memory, settings).load_report(UID) is not None
+
+
+@pytest.fixture
+async def dev_with_tests(tmp_path, settings):
+    data = await extract(FakeApi(), UID, _noop)
+    (tmp_path / "data.json").write_text(json.dumps(data))
+    test = json.loads(json.dumps(data))
+    for p in test["periods"].values():
+        p["profile"]["login"], p["profile"]["name"] = "tnova", "Nova Tester"
+    test["test_profile"] = 990001
+    (tmp_path / "test-new.json").write_text(json.dumps(test))
+    owner = data["periods"]["all"]["profile"]["login"]
+    s = replace(settings, dev_report=str(tmp_path / "data.json"), dev_uid=UID, owner_login=owner, github_token="t", github_repo="o/r")
+    memory = Memory()
+    app = create_app(s, memory)
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://localhost") as c:
+            yield c, memory, s
+
+
+async def test_test_profiles_sit_beside_the_saved_report_and_never_publish(dev_with_tests):
+    client, memory, settings = dev_with_tests
+    landing = (await client.get("/")).text
+    assert 'href="/dev/login"' in landing and 'href="/dev/login?as=tnova"' in landing
+    r = await client.get("/dev/login?as=tnova")
+    assert r.status_code == 303 and r.headers["location"] == "/app"
+    page = (await client.get("/app")).text
+    assert "Nova Tester" in page and "/app/publish" not in page
+    assert (await client.get("/app/publish")).status_code in (303, 403, 404)
+    assert (await client.get("/dev/login?as=nobody")).status_code == 404

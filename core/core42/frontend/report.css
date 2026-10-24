@@ -16,6 +16,17 @@ body { min-height: 100vh; }
 .brand-mark .tile, .mark .tile { fill: var(--on-accent); }
 .brand-mark .seat-off, .mark .seat { fill: color-mix(in oklab, var(--accent) 38%, var(--on-accent)); }
 .brand-mark .seat-on, .mark .lit { fill: var(--accent); }
+.brand-mark .seat-off rect { transition: fill var(--motion-settle) ease-out; }
+.brand:hover .brand-mark .seat-off rect, .brand:focus-visible .brand-mark .seat-off rect { animation: seat-wave .9s var(--motion-ease) both; }
+.brand-mark .seat-off rect:nth-child(2), .mark .seat rect:nth-child(2) { animation-delay: 60ms; }
+.brand-mark .seat-off rect:nth-child(3), .mark .seat rect:nth-child(3) { animation-delay: 120ms; }
+.brand-mark .seat-off rect:nth-child(5), .mark .seat rect:nth-child(5) { animation-delay: 180ms; }
+.brand-mark .seat-off rect:nth-child(8), .mark .seat rect:nth-child(8) { animation-delay: 240ms; }
+.brand-mark .seat-off rect:nth-child(7), .mark .seat rect:nth-child(7) { animation-delay: 300ms; }
+.brand-mark .seat-off rect:nth-child(6), .mark .seat rect:nth-child(6) { animation-delay: 360ms; }
+.brand-mark .seat-off rect:nth-child(4), .mark .seat rect:nth-child(4) { animation-delay: 420ms; }
+@keyframes seat-wave { 45% { fill: var(--accent); } }
+@media (prefers-reduced-motion: reduce) { .brand:hover .brand-mark .seat-off rect { animation: none; } }
 .topbar .pages { display: flex; gap: 2px; }
 .topbar .pages a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; color: inherit; text-decoration: none;
   font: 700 17px var(--type-font-display); border-radius: var(--radius-m); transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }

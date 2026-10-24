@@ -23,8 +23,10 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
   };
   document.documentElement.classList.add("js");
 
-  const tip = document.getElementById("tip");
+  // looked up each time: a period switch swaps the body, the tooltip element with it
+  const tipEl = () => document.getElementById("tip") || {style: {}};
   function showTip(text, x, y) {
+    const tip = tipEl();
     tip.textContent = text; tip.style.display = "block";
     tip.style.left = Math.max(8, Math.min(x, innerWidth - tip.offsetWidth - 8)) + "px";
     tip.style.top = (y + tip.offsetHeight + 8 > innerHeight ? y - tip.offsetHeight - 28 : y) + "px";
@@ -32,21 +34,21 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
   document.addEventListener("mousemove", (ev) => {
     const el = ev.target.closest?.("[data-tip]");
     if (el) showTip(el.dataset.tip, ev.clientX + 12, ev.clientY + 16);
-    else if (!document.activeElement?.dataset?.tip) tip.style.display = "none";
+    else if (!document.activeElement?.dataset?.tip) tipEl().style.display = "none";
   });
   document.addEventListener("focusin", (ev) => {
     const el = ev.target.closest?.("[data-tip]");
-    if (!el) { tip.style.display = "none"; return; }
+    if (!el) { tipEl().style.display = "none"; return; }
     const r = el.getBoundingClientRect();
     showTip(el.dataset.tip, r.left, r.bottom + 8);
   });
-  document.addEventListener("focusout", () => { tip.style.display = "none"; });
+  document.addEventListener("focusout", () => { tipEl().style.display = "none"; });
   // touch screens have no hover: a tap shows the cell's details, a tap elsewhere hides them
   document.addEventListener("pointerdown", (ev) => {
     if (ev.pointerType === "mouse") return;
     const el = ev.target.closest?.("[data-tip]");
     if (el) showTip(el.dataset.tip, Math.max(8, ev.clientX - 40), ev.clientY + 18);
-    else tip.style.display = "none";
+    else tipEl().style.display = "none";
   });
 
   document.addEventListener("click", (ev) => {
@@ -100,8 +102,9 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     $$("#theme button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (v || "auto"))));
   }
   applyTheme(store.get("theme"));
-  document.getElementById("theme")?.addEventListener("click", (ev) => {
-    const b = ev.target.closest("button"); if (!b) return;
+  // delegated: a period switch swaps the whole body, settings included, and new buttons must still answer
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("#theme button"); if (!b) return;
     store.set("theme", b.dataset.v); applyTheme(b.dataset.v); applyAccentChoice(store.get("accent"));
   });
 
@@ -121,10 +124,12 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     }).catch(() => {});
   }
   applyAccentChoice(store.get("accent"));
-  document.getElementById("accentChoice")?.addEventListener("click", (ev) => {
-    const b = ev.target.closest("button"); if (!b || b.disabled) return;
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("#accentChoice button"); if (!b || b.disabled) return;
     store.set("accent", b.dataset.v); applyAccentChoice(b.dataset.v);
   });
+  // the swapped-in settings show the current choices again
+  document.body.addEventListener("htmx:afterSettle", () => { applyTheme(store.get("theme")); applyAccentChoice(store.get("accent")); });
 
   // the section in view lights up in the section index
   let tocIO;

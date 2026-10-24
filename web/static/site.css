@@ -7,12 +7,34 @@
 .mark { display: block; }
 .mark .tile { fill: var(--on-accent); }
 .mark .seat { fill: color-mix(in oklab, var(--accent) 38%, var(--on-accent)); }
+.mark .seat rect:nth-child(2) { animation-delay: 60ms; } .mark .seat rect:nth-child(3) { animation-delay: 120ms; }
+.mark .seat rect:nth-child(5) { animation-delay: 180ms; } .mark .seat rect:nth-child(8) { animation-delay: 240ms; }
+.mark .seat rect:nth-child(7) { animation-delay: 300ms; } .mark .seat rect:nth-child(6) { animation-delay: 360ms; }
+.mark .seat rect:nth-child(4) { animation-delay: 420ms; }
 .mark .lit { fill: var(--accent); }
 
 
 /* landing: logo panel beside the sign-in */
 .landing { min-height: 100vh; display: grid; grid-template-columns: 1fr; }
-.landing-plan { background: var(--accent); display: grid; place-items: center; padding: 48px var(--c-site-padding-x); }
+.landing-plan { position: relative; overflow: hidden; background: var(--accent); display: grid; place-items: center; padding: 48px var(--c-site-padding-x); }
+/* a field of seats, faint everywhere and lit around the pointer (landing.js moves --px / --py) */
+.landing-plan::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(240px circle at var(--px, 50%) var(--py, 50%), color-mix(in oklab, var(--on-accent) 34%, transparent),
+    color-mix(in oklab, var(--on-accent) 8%, transparent) 75%);
+  -webkit-mask: linear-gradient(90deg, var(--mask) 18px, transparent 0) 3px 3px / 24px 24px, linear-gradient(var(--mask) 18px, transparent 0) 3px 3px / 24px 24px;
+  -webkit-mask-composite: source-in;
+  mask: linear-gradient(90deg, var(--mask) 18px, transparent 0) 3px 3px / 24px 24px, linear-gradient(var(--mask) 18px, transparent 0) 3px 3px / 24px 24px;
+  mask-composite: intersect; transition: opacity var(--motion-settle) ease-out; }
+.landing-plan .mark { position: relative; transform: perspective(900px) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
+  transition: transform .6s var(--motion-ease); }
+.landing-plan .mark .lit { transform-box: fill-box; transform-origin: center; animation: lit-breathe 3.2s ease-in-out infinite; }
+.landing-plan:hover .mark .seat rect { animation: seat-wave .9s var(--motion-ease) both; }
+@keyframes lit-breathe { 50% { transform: scale(1.14); } }
+@keyframes seat-wave { 45% { fill: var(--accent); } }
+@media (prefers-reduced-motion: reduce) {
+  .landing-plan .mark { transform: none; transition: none; }
+  .landing-plan .mark .lit, .landing-plan:hover .mark .seat rect { animation: none; }
+}
 .landing-plan .mark { width: var(--c-site-mark-size); height: var(--c-site-mark-size); }
 
 .landing-text { padding: 48px var(--c-site-padding-x); display: flex; flex-direction: column; justify-content: center; gap: 14px; max-width: calc(var(--c-site-max-width) + 2 * var(--c-site-padding-x)); }
@@ -21,6 +43,7 @@
 .pitch { margin: 6px 0 8px; font-size: var(--c-section-lede-size); color: var(--text-2); max-width: 52ch; }
 .error { margin: 0; color: var(--critical); font-weight: 600; }
 .landing .btn { align-self: flex-start; }
+.dev-logins { display: flex; flex-wrap: wrap; gap: 10px; }
 .signin { display: flex; flex-direction: column; gap: 14px; }
 
 /* privacy consent: a native required checkbox drawn from ui.json */

@@ -3,7 +3,8 @@ import re
 from core42 import FRONTEND_DIR
 from core42.ui import css_from_ui, load_ui, validate_ui
 
-RUNTIME_VARS = {"--v", "--seats", "--cols", "--i"}  # set inline per cell or section by the dashboard's markup
+RUNTIME_VARS = {"--v", "--seats", "--cols", "--i",  # set inline per cell or section by the dashboard's markup
+                "--px", "--py", "--tx", "--ty"}  # the landing's pointer position and tilt, set by landing.js
 
 
 def test_default_ui_is_valid():

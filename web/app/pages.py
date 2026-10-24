@@ -36,8 +36,9 @@ def safe_next(target: str) -> str:
 async def landing(request: Request, error: str = ""):
     if await SessionStore(request.app.state.memory, request.app.state.settings).get(request.cookies.get(COOKIE)):
         return RedirectResponse("/app", status_code=303)
-    dev = getattr(request.app.state, "dev_login", None)
-    return render(request, "landing.html", error=error if error in ("signin", "consent") else "", dev=dev["login"] if dev else "")
+    dev = [{"label": ("Test · " if u["test"] else "Dev · ") + u["login"], "href": f"/dev/login?as={u['login']}" if u["test"] else "/dev/login"}
+           for u in getattr(request.app.state, "dev_logins", {}).values()]
+    return render(request, "landing.html", error=error if error in ("signin", "consent") else "", dev=dev)
 
 
 @router.get("/about")

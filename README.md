@@ -66,8 +66,8 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | Command | Action |
 |---------|--------|
 | `make` | List the commands |
-| `make dev` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42); live reload |
-| `make build` | Build the images and refresh the saved report of `DEV_UID` (a real extraction, ~110 requests, under a minute with two apps) |
+| `make dev` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented from a fixed seed, never real people, never able to publish); live reload |
+| `make build` | Build the images, refresh the saved report of `DEV_UID` (~110 requests, under a minute with two apps) and the synthetic test profiles |
 | `make up` / `make down` | Start as built / stop (memory is cleared; browsers keep their reports) |
 | `make logs`, `make ps` | Follow logs / list services |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
