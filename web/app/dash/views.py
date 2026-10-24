@@ -180,6 +180,10 @@ class Page:
             "now": f.html("rail.now_at", seat=Markup(f"<b>{escape(P['location'])}</b>")) if P.get("location") else f("rail.not_logged"),
             "generated": f("head.generated", when=D.get("generated", "")),
             "groups": P.get("groups") or [],
+            "card": self.key == "home",
+            "grade": next((c["grade"] for c in D["extras"].get("cursus") or [] if c["name"] == "42cursus" and c.get("grade")), None),
+            "facts": [(f.num(P["wallet"]) + " ₳", f("head.wallet")) if P.get("wallet") is not None else None,
+                      (f.num(P["correction_point"]), f("head.points")) if P.get("correction_point") is not None else None],
         }
 
     def footer(self):

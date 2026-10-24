@@ -220,10 +220,10 @@
    "font-size": "15px"
   },
   "badge": {
-   "padding-x": "8px",
-   "padding-y": "1px",
+   "padding-x": "9px",
+   "padding-y": "3px",
    "radius": "2px",
-   "font-size": "14px"
+   "font-size": "13px"
   },
   "tooltip": {
    "max-width": "320px",
@@ -305,7 +305,7 @@
    "h1-size": "44px",
    "h2-size": "22px",
    "mark-size": "150px",
-   "head-mark-size": "26px",
+   "head-mark-size": "32px",
    "plan-width": "100%",
    "desktop": {
     "padding-x": "48px",

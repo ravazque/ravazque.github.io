@@ -41,7 +41,7 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .has-line .ch-plot { margin-right: var(--c-chart-axis-width); }
 .ch-y { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
 .ch-y.right { left: auto; right: calc(-1 * var(--c-chart-axis-width)); text-align: left; }
-.ch-y span { position: absolute; right: 0; transform: translateY(50%); font-variant-numeric: tabular-nums; }
+.ch-y span { position: absolute; right: 0; transform: translateY(50%); }
 .ch-y.right span { left: 6px; right: auto; }
 .ch-plot::before { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); opacity: .7; }

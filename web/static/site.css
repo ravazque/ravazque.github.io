@@ -5,15 +5,16 @@
 
 /* seat-grid logo, one lit seat */
 .mark { display: block; }
-.mark .seat { fill: var(--seat-empty); }
+.mark .tile { fill: var(--on-accent); }
+.mark .seat { fill: color-mix(in oklab, var(--accent) 38%, var(--on-accent)); }
 .mark .lit { fill: var(--accent); }
+
 
 /* landing: logo panel beside the sign-in */
 .landing { min-height: 100vh; display: grid; grid-template-columns: 1fr; }
 .landing-plan { background: var(--accent); display: grid; place-items: center; padding: 48px var(--c-site-padding-x); }
 .landing-plan .mark { width: var(--c-site-mark-size); height: var(--c-site-mark-size); }
-.landing-plan .mark .seat { fill: color-mix(in oklab, var(--on-accent) 16%, var(--accent)); }
-.landing-plan .mark .lit { fill: var(--on-accent); }
+
 .landing-text { padding: 48px var(--c-site-padding-x); display: flex; flex-direction: column; justify-content: center; gap: 14px; max-width: calc(var(--c-site-max-width) + 2 * var(--c-site-padding-x)); }
 .landing-text h1 { margin: 0; padding-bottom: 14px; border-bottom: 6px solid var(--rule-strong); font: 900 var(--c-site-title-size)/0.9 var(--type-font-display); letter-spacing: -.045em; }
 .tagline { margin: 6px 0 0; font: 700 var(--c-site-h2-size)/1.25 var(--type-font-display); letter-spacing: -.01em; }
@@ -36,8 +37,7 @@
 /* header of the reading pages */
 .site-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px;
   min-height: var(--c-topbar-height); padding: 10px var(--c-site-padding-x); background: var(--accent); color: var(--on-accent); --focus: var(--on-accent); }
-.site-head .mark .seat { fill: color-mix(in oklab, var(--on-accent) 22%, var(--accent)); }
-.site-head .mark .lit { fill: var(--on-accent); }
+
 .site-head .site-links a { color: inherit; text-decoration-color: currentColor; }
 .site-head .lang { border-color: var(--on-accent); }
 .site-head .lang button { color: var(--on-accent); }

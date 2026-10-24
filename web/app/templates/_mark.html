@@ -1,3 +1,1 @@
-<svg class="mark" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
-  {% for y in [0, 11, 22] %}{% for x in [0, 11, 22] %}<rect class="{{ 'lit' if x == 11 and y == 11 else 'seat' }}" x="{{ x }}" y="{{ y }}" width="8" height="8"/>{% endfor %}{% endfor %}
-</svg>
+<svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect class="tile" width="32" height="32"/><g class="seat"><rect x="4" y="4" width="7" height="7"/><rect x="12.5" y="4" width="7" height="7"/><rect x="21" y="4" width="7" height="7"/><rect x="4" y="12.5" width="7" height="7"/><rect x="21" y="12.5" width="7" height="7"/><rect x="4" y="21" width="7" height="7"/><rect x="12.5" y="21" width="7" height="7"/><rect x="21" y="21" width="7" height="7"/></g><rect class="lit" x="12.5" y="12.5" width="7" height="7"/></svg>

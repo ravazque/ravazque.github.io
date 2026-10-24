@@ -717,5 +717,7 @@
  "home.bonus_rest": "{hours} h: faltan {n} h",
  "home.bonus_ready": "{hours} h: toca al cerrar sesión",
  "head.generated": "datos de {when}",
- "home.master": "master"
+ "home.master": "master",
+ "head.wallet": "Wallet",
+ "head.points": "Puntos de evaluación"
 }

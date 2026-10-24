@@ -299,3 +299,10 @@ async def test_the_page_head_names_the_page_and_keeps_the_period_switch(signed_i
     text = (await signed_in.get("/app/projects?period=all")).text
     assert re.search(r'<h1[^>]*>\s*Projects\s*</h1>', text)
     assert 'aria-label="Period"' in text or 'class="periods"' in text
+
+
+async def test_only_home_carries_the_identity_card(signed_in, report):
+    home = (await signed_in.get("/app")).text
+    assert 'class="id-card"' in home and "wallet" in home.lower() and "evaluation points" in home.lower()
+    other = (await signed_in.get("/app/projects")).text
+    assert 'class="id-card"' not in other and 'class="who"' not in other
