@@ -25,7 +25,7 @@ async def fetch(uid: int):
     settings = Settings.from_env()
     memory = Memory()
     async with httpx.AsyncClient() as http:
-        api = Api42(settings, memory, http, RateLimiter(memory))
+        api = Api42(settings, memory, http, RateLimiter(memory, apps=len(settings.apps)))
         async def progress(f):
             print(f"\r  {round(100 * f)}%", end="", flush=True)
         data = await extract(api, uid, progress)

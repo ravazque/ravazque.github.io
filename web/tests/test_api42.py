@@ -37,8 +37,8 @@ async def test_token_cached_in_redis(api, memory):
     token_route()
     respx.get(f"{API}/v2/me").respond(json={"id": 1})
     await api.get("/v2/me")
-    assert await memory.get("api42:token") == b"T"
-    assert 0 < await memory.ttl("api42:token") <= 7140
+    assert await memory.get("api42:token:0") == b"T"
+    assert 0 < await memory.ttl("api42:token:0") <= 7140
 
 
 @respx.mock
@@ -65,7 +65,7 @@ async def test_records_rate_limit_headers(api, memory):
     token_route()
     respx.get(f"{API}/v2/me").respond(json={}, headers={"x-hourly-ratelimit-remaining": "12"})
     await api.get("/v2/me")
-    assert int(await memory.get("rl:hourly")) == 12
+    assert int(await memory.get("rl:hourly:0")) == 12
 
 
 @respx.mock
@@ -102,3 +102,18 @@ async def test_a_network_that_never_answers_ends_in_an_api_error_without_ids(api
     with pytest.raises(Api42Error) as err:
         await api.get("/v2/users/192183/scale_teams")
     assert err.value.status == 0 and "192183" not in str(err.value) and "/v2/users/:id/scale_teams" in str(err.value)
+
+
+@respx.mock
+async def test_requests_spread_over_both_apps_each_with_its_token(memory):
+    from app.settings import Settings
+    s = Settings(ft_uid="A1", ft_secret="S1", ft_uid_2="A2", ft_secret_2="S2", session_secret="x" * 32)
+    respx.post(f"{API}/oauth/token").mock(side_effect=lambda req: httpx.Response(
+        200, json={"access_token": "TA" if b"client_id=A1" in req.content else "TB", "expires_in": 7200}))
+    route = respx.get(f"{API}/v2/me").respond(json={"id": 1})
+    async with httpx.AsyncClient() as http:
+        api = Api42(s, memory, http, RateLimiter(memory, apps=len(s.apps), sleep=no_sleep), sleep=no_sleep)
+        for _ in range(4):
+            await api.get("/v2/me")
+    assert {c.request.headers["Authorization"] for c in route.calls} == {"Bearer TA", "Bearer TB"}
+    assert await memory.get("api42:token:0") == b"TA" and await memory.get("api42:token:1") == b"TB"

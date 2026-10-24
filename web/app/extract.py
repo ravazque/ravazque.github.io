@@ -1,5 +1,6 @@
 """The light extraction: everything the report shows except the per-evaluation lookups
 (the corrector's seat and per-criterion feedback), plus the rank group of everyone met."""
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 from core42.analysis import PERIODS, analyze, seat_layout, ts
@@ -56,43 +57,70 @@ async def extract(api, uid: int, progress) -> dict:
     if not allowed:  # checked again at every extraction: blackholed or frozen since signing in
         raise AccessRefused(reason)
     await step()
-    for name, endpoint in USER_LISTS.items():
+    # the independent lists go out together: the limiter paces them over every app it holds
+
+    async def user_list(name, endpoint):
         d[name] = await api.get_all(f"/v2/users/{uid}/{endpoint}")
         await step()
-    # the intra's own daily logtime since the account began (1 request), and the profile's groups (names only)
-    d["locations_stats"] = await api.get(f"/v2/users/{uid}/locations_stats", begin_at=(d["user"].get("created_at") or "2013-01-01")[:10])
-    d["groups"] = [{"name": g.get("name")} for g in await api.get_all(f"/v2/users/{uid}/groups")]
-    await step()
-    d["achievements_users"] = await api.get_all("/v2/achievements_users", **{"filter[user_id]": uid})
+
+    async def stats_and_groups():
+        # the intra's own daily logtime since the account began (1 request), and the profile's groups (names only)
+        d["locations_stats"] = await api.get(f"/v2/users/{uid}/locations_stats", begin_at=(d["user"].get("created_at") or "2013-01-01")[:10])
+        d["groups"] = [{"name": g.get("name")} for g in await api.get_all(f"/v2/users/{uid}/groups")]
+        await step()
+
+    async def achievements_users():
+        d["achievements_users"] = await api.get_all("/v2/achievements_users", **{"filter[user_id]": uid})
+
+    async def coalitions_of_user():
+        d["_coalitions"] = await api.get(f"/v2/users/{uid}/coalitions")
+
+    await asyncio.gather(*(user_list(n, e) for n, e in USER_LISTS.items()), stats_and_groups(), achievements_users(), coalitions_of_user())
     known = {a["id"] for a in d["user"].get("achievements", [])}
     missing = sorted({a["achievement_id"] for a in d["achievements_users"]} - known)
-    d["achievements"] = [await api.get(f"/v2/achievements/{i}") for i in missing]
+    d["achievements"] = list(await asyncio.gather(*(api.get(f"/v2/achievements/{i}") for i in missing)))
     await step()
-    coalitions = await api.get(f"/v2/users/{uid}/coalitions")
+    coalitions = d.pop("_coalitions")
     rank = {slug: i for i, slug in enumerate(MAIN_COALITIONS)}
     d["coalitions"] = sorted(coalitions, key=lambda c: rank.get(c.get("slug"), len(rank)))
     order = {c["id"]: i for i, c in enumerate(d["coalitions"])}
     d["coalitions_users"] = sorted(d["coalitions_users"], key=lambda cu: order.get(cu.get("coalition_id"), len(order)))
-    # the points given to the main coalition (paged, ~1 request per 100) feed the logtime bonus and the points by source
-    cu = (d["coalitions_users"] or [None])[0]
-    d["coalition_scores"] = [{k: s.get(k) for k in SCORE_FIELDS} for s in await api.get_all(f"/v2/coalitions_users/{cu['id']}/scores")] if cu else []
-    await step()
-    # other people: only id, login and name are kept (no photo, staff flag or cursus data)
     drop_hidden_evaluations(d)
     met = people_ids(d, uid)
-    d["people"] = [{"id": p["id"], "login": p["login"], "displayname": p.get("displayname")}
-                   for p in await _batched(api, "/v2/users", "filter[id]", met)]
-    await step()
-    d["projects"] = [{k: p.get(k) for k in PROJECT_FIELDS} for p in await _batched(api, "/v2/projects", "filter[id]", project_ids(d))]
-    await step()
-    cursus_rows = await _batched(api, f"/v2/cursus/{MAIN_CURSUS}/cursus_users", "filter[user_id]", met)
-    quest_rows = await _batched(api, "/v2/quests_users", "filter[user_id]", met)
-    groups = rank_groups(cursus_rows, quest_rows)
-    await step()
-    d["corrector_sessions"], d["feedbacks"] = {}, await _feedbacks(api, d)
-    await step()
-    standing = await _standing(api, d)
-    await step()
+    # everything below depends only on the lists above, so it goes out together as well
+
+    async def coalition_scores():
+        # the points given to the main coalition (paged, ~1 request per 100) feed the logtime bonus and the points by source
+        cu = (d["coalitions_users"] or [None])[0]
+        d["coalition_scores"] = [{k: s.get(k) for k in SCORE_FIELDS} for s in await api.get_all(f"/v2/coalitions_users/{cu['id']}/scores")] if cu else []
+        await step()
+
+    async def people():
+        # other people: only id, login and name are kept (no photo, staff flag or cursus data)
+        d["people"] = [{"id": p["id"], "login": p["login"], "displayname": p.get("displayname")}
+                       for p in await _batched(api, "/v2/users", "filter[id]", met)]
+        await step()
+
+    async def projects():
+        d["projects"] = [{k: p.get(k) for k in PROJECT_FIELDS} for p in await _batched(api, "/v2/projects", "filter[id]", project_ids(d))]
+        await step()
+
+    async def ranks():
+        cursus_rows, quest_rows = await asyncio.gather(_batched(api, f"/v2/cursus/{MAIN_CURSUS}/cursus_users", "filter[user_id]", met),
+                                                       _batched(api, "/v2/quests_users", "filter[user_id]", met))
+        await step()
+        return rank_groups(cursus_rows, quest_rows)
+
+    async def feedbacks():
+        d["corrector_sessions"], d["feedbacks"] = {}, await _feedbacks(api, d)
+        await step()
+
+    async def standing_():
+        result = await _standing(api, d)
+        await step()
+        return result
+
+    _, _, _, groups, _, standing = await asyncio.gather(coalition_scores(), people(), projects(), ranks(), feedbacks(), standing_())
 
     periods = {}
     for p in PERIODS:
@@ -149,9 +177,9 @@ async def _network(api, d, contacts) -> dict:
     limiter = getattr(api, "limiter", None)
     given_by = {}
     if limiter is None or await limiter.budget_ok():
-        for c in top:
-            if c["login"] in ids:
-                evs = await api.get(f"/v2/users/{ids[c['login']]}/scale_teams/as_corrector", **{"page[size]": 100, "sort": "-begin_at"})
-                given_by[c["login"]] = [{"correcteds": [{"login": u.get("login")} for u in e["correcteds"] if isinstance(u, dict)]
-                                         if isinstance(e.get("correcteds"), list) else []} for e in evs or []]
+        async def given(login):
+            evs = await api.get(f"/v2/users/{ids[login]}/scale_teams/as_corrector", **{"page[size]": 100, "sort": "-begin_at"})
+            given_by[login] = [{"correcteds": [{"login": u.get("login")} for u in e["correcteds"] if isinstance(u, dict)]
+                                if isinstance(e.get("correcteds"), list) else []} for e in evs or []]
+        await asyncio.gather(*(given(c["login"]) for c in top if c["login"] in ids))
     return contact_network(d["user"]["login"], [{"login": c["login"], "group": c["group"]} for c in top], given_by)

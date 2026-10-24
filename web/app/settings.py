@@ -8,6 +8,8 @@ class Settings:
     base_url: str = "https://localhost"
     ft_uid: str = ""
     ft_secret: str = ""
+    ft_uid_2: str = ""             # a second 42 app, optional: app-token requests are spread over both
+    ft_secret_2: str = ""
     session_secret: str = ""
     cooldown_s: int = 3600
     cache_s: int = 3600            # the server's copy of a report, renewed on every use; the browser keeps the original
@@ -24,6 +26,11 @@ class Settings:
     github_token: str = ""         # fine-grained, this repository only, Contents: read and write
     github_repo: str = ""
     github_branch: str = "main"
+
+    @property
+    def apps(self) -> list[tuple[str, str]]:
+        """The 42 apps that answer app-token requests; the first one also signs users in."""
+        return [(self.ft_uid, self.ft_secret)] + ([(self.ft_uid_2, self.ft_secret_2)] if self.ft_uid_2 and self.ft_secret_2 else [])
 
     def check(self) -> "Settings":
         """Refuse to run with a missing or short SESSION_SECRET (it keys the HMACs) or without a contact and a controller."""
@@ -44,6 +51,8 @@ class Settings:
             base_url=env.get("BASE_URL", cls.base_url).rstrip("/"),
             ft_uid=env.get("FT_UID", ""),
             ft_secret=env.get("FT_SECRET", ""),
+            ft_uid_2=env.get("FT_UID_2", ""),
+            ft_secret_2=env.get("FT_SECRET_2", ""),
             session_secret=env.get("SESSION_SECRET", ""),
             contact_email=env.get("CONTACT_EMAIL", ""),
             issues_url=env.get("ISSUES_URL", ""),

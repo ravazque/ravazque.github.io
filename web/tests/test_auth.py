@@ -48,7 +48,7 @@ async def test_refused_profiles_get_no_session_and_nothing_stored(client, memory
     r = await signed_callback(client)
     assert r.headers["location"] == f"/app/refused?reason={reason}"
     assert "__Host-session" not in r.headers.get("set-cookie", "")
-    assert [k for k in await memory.keys("*") if not k.startswith(b"rl:")] == [b"api42:token"] or \
+    assert [k for k in await memory.keys("*") if not k.startswith(b"rl:")] == [b"api42:token:0"] or \
         [k for k in await memory.keys("*") if not k.startswith(b"rl:")] == []
 
 

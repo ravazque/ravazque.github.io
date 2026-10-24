@@ -18,7 +18,7 @@ dev: .env web/Caddyfile.local ## Start at https://localhost with the last saved 
 up: .env web/Caddyfile.local ## Start the web as built, without live reload
 	@$(COMPOSE) up -d --build
 
-build: .env ## Build the images and refresh the saved report of DEV_UID (a real extraction, ~135 requests, ~3 min)
+build: .env ## Build the images and refresh the saved report of DEV_UID (a real extraction, ~110 requests, under a minute with two apps)
 	@$(COMPOSE) build
 	@if [ -n "$(DEV_UID)" ]; then mkdir -p web/preview && $(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(DEV_UID); \
 	  else echo "DEV_UID is not set in .env: images built, saved report not refreshed"; fi
@@ -38,7 +38,7 @@ test: .env ## Run every test: web + core (pytest in the image) and JS (local nod
 	  api sh -c "python -m pytest -q -p no:cacheprovider && python -m pytest -q -p no:cacheprovider -o asyncio_default_fixture_loop_scope=function /srv/core/tests"
 	@node --test web/tests/js/*.test.mjs core/tests/js/*.test.mjs site/tests/*.test.mjs
 
-preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 135 requests)
+preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 110 requests)
 	@$(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(UID)
 
 snapshot: .env ## Write site/data/42.json from web/preview/data.json (what the publish button would send)

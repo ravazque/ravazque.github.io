@@ -67,11 +67,11 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 |---------|--------|
 | `make` | List the commands |
 | `make dev` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42); live reload |
-| `make build` | Build the images and refresh the saved report of `DEV_UID` (a real extraction, ~135 requests, ~3 min) |
+| `make build` | Build the images and refresh the saved report of `DEV_UID` (a real extraction, ~110 requests, under a minute with two apps) |
 | `make up` / `make down` | Start as built / stop (memory is cleared; browsers keep their reports) |
 | `make logs`, `make ps` | Follow logs / list services |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
-| `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 135 requests) |
+| `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 110 requests) |
 | `make snapshot` | Write `site/data/42.json` from the preview data |
 | `make site` | Stage `site/` into `site/_build` and serve it at http://localhost:8080 |
 | `make certs` | Create the HTTPS certificates |
@@ -81,8 +81,10 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 
 - **Access**: students, transcenders and alumni whose primary campus is 42 Madrid. Staff, pisciners, blackholed and
   frozen accounts get a refusal page with the reason. Access is re-checked on every extraction.
-- **42 API budget**: 2 requests/s and 1200/h per application, shared by every user. One extraction per user per hour
-  (about 135 requests, 3 minutes, measured), run inside the web process, one at a time, with a progress bar. When the hourly budget runs low, the job
+- **42 API budget**: 2 requests/s and 1200/h per application, shared by every user. A second app (`FT_UID_2`,
+  `FT_SECRET_2`) is optional: app-token requests are spread over both, each within its own limits, while sign-in stays
+  on the first. One extraction per user per hour (about 110 requests: 47 s measured with two apps, its independent
+  lists fetched together), run inside the web process, one at a time, with a progress bar. When the hourly budget runs low, the job
   waits for the next hour. Every extraction logs its request count.
 - **Extras and their cost**: teammates, exams, pace, evaluations in depth and campus history reuse downloaded data
   (0 requests); feedback details ~5, promo 2–3, coalitions 1, the network of the 30 closest contacts 30.

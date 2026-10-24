@@ -60,7 +60,7 @@ def create_app(settings: Settings, memory: Memory, http: httpx.AsyncClient | Non
 
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.settings, app.state.memory, app.state.http = settings, memory, http
-    app.state.limiter = RateLimiter(memory)
+    app.state.limiter = RateLimiter(memory, apps=len(settings.apps))
     app.state.api = Api42(settings, memory, http, app.state.limiter)
     ctx = {"store": Store(memory, settings), "api": app.state.api}
     app.state.jobs = jobs or Jobs(lambda uid: extract_job(ctx, uid))
