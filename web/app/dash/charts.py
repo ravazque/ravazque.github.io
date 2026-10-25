@@ -182,6 +182,7 @@ def trend(values, *, bars=False, last=False) -> Markup:
         w = 100 / n
         marks = "".join(f'<rect x="{i * w + w * .18:.2f}" y="{40 - 38 * v / top:.2f}" width="{w * .64:.2f}" height="{38 * v / top:.2f}"'
                         f'{" class=\"now\"" if last and i == n - 1 else ""}/>' for i, v in enumerate(vals))
+        marks += '<line class="base" x1="0" y1="40" x2="100" y2="40"/>'  # the bars stand on a line, not in the air
     else:
         pts = " ".join(f"{100 * i / (n - 1):.2f},{40 - 38 * v / top:.2f}" for i, v in enumerate(vals))
         marks = f'<polyline points="{pts}" pathLength="1"/>'

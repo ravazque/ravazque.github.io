@@ -57,7 +57,7 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .has-line .ch-x { margin-right: var(--c-chart-axis-width); }
 .ch-x span { text-align: center; white-space: nowrap; overflow: visible; }
 .ch-title { text-align: center; margin-top: 4px; }
-.ch-line, .ch-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.ch-line, .ch-lines { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .ch-line polyline, .ch-lines path { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .ch-hover { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), 1fr); }
 .ch-hover i:hover { background: color-mix(in oklab, var(--ink) 6%, transparent); }
@@ -97,7 +97,7 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 /* the circle: one-way and two-way chords with arrowheads */
 .net .net-links path.one { stroke: var(--control); }
 .net .net-links path.both { stroke: var(--accent-data); stroke-opacity: .55; }
-.net .arrowhead { fill: var(--muted); }
+.net .arrowhead { fill: var(--ink); }
 .focused .net-links path.hl { stroke-opacity: .95; }
 .arrow-key { width: 30px; height: 10px; }
 .arrow-key line { stroke: var(--control); stroke-width: 2; }
@@ -125,19 +125,20 @@ html body .net .net-node.me .halo { fill: var(--accent-data); opacity: .35; }
 .seg > a:hover, .seg > label:hover, .seg button:hover { background: color-mix(in oklab, var(--accent-data) 10%, transparent); }
 .block { transition: border-color var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
 .block:hover { border-color: color-mix(in oklab, var(--accent-data) 45%, var(--rule)); }
-.net .net-node.me .halo { animation: pulse 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes pulse { 50% { transform: scale(1.18); opacity: .18; } }
 
 /* charts draw themselves the first time they scroll into view (dash.js adds .in); without it they are simply there */
 .js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: scale(0); }
 .vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease); }
 .hchart .hb-track i { transform-origin: left; transition: transform .6s var(--motion-ease); }
-.js .lchart:not(.in) .ch-lines path, .js .vchart:not(.in) .ch-line polyline { stroke-dasharray: 1; stroke-dashoffset: 1; }
-.lchart .ch-lines path, .vchart .ch-line polyline { stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset 1.1s var(--motion-ease); }
+/* stacked marks grow one after the other: the bottom (or first) segment, then the one above it */
+.vchart .ch-col.stack i:nth-child(2), .hchart .hb-track i:nth-child(2) { transition-delay: .45s; }
+.vchart .ch-col.stack i:nth-child(3), .hchart .hb-track i:nth-child(3) { transition-delay: .9s; }
+/* lines wipe in from the left: a dash trick on a non-scaling stroke measures the wrong length and leaves lines cut short */
+.js .lchart:not(.in) .ch-lines, .js .vchart:not(.in) .ch-line { clip-path: inset(0 100% 0 0); }
+.lchart .ch-lines, .vchart .ch-line { clip-path: inset(0 0 0 0); transition: clip-path 1.1s var(--motion-ease); }
 @media (prefers-reduced-motion: reduce) {
   .js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: none; }
-  .js .lchart:not(.in) .ch-lines path, .js .vchart:not(.in) .ch-line polyline { stroke-dashoffset: 0; }
-  .net .net-node.me .halo { animation: none; }
+  .js .lchart:not(.in) .ch-lines, .js .vchart:not(.in) .ch-line { clip-path: none; }
   .btn:hover, .periods > a:hover, .toggle-check:hover span { transform: none; }
 }
 
@@ -159,6 +160,7 @@ html body .net .net-node.me .halo { fill: var(--accent-data); opacity: .35; }
 .module .trend polyline { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
 .module .trend rect { fill: var(--ink); }
 .module .trend rect.now { fill: var(--accent-data); }
+.module .trend .base { stroke: var(--rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 /* the live module: the accent marks what can still be earned */
 .module.live .tab { border-top-color: var(--accent); border-top-width: 6px; padding-top: 6px; }
 .meter { position: relative; display: block; height: 12px; margin: 4px 0 12px; background: var(--seat-empty); }
@@ -193,3 +195,18 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
   .ch-x span:last-child { text-align: right; }
   .line-end { display: block; }
 }
+
+/* skill bars read from the left: labels as wide as they need, not a centred column */
+[data-panel="skills"] .hchart { grid-template-columns: max-content minmax(0, 1fr); column-gap: 12px; }
+[data-panel="skills"] .hchart .hb-row { display: contents; }
+[data-panel="skills"] .hb-label { text-align: left; }
+
+/* your circle: a smaller drawing, no glow; you sit under the chords and dim when the one in focus never met you */
+[data-panel="network"] .graph.net { max-width: 640px; margin: 0 auto; }
+[data-panel="network"] .plot, [data-panel="network"] .graph-wide, [data-panel="network"] .graph-narrow { height: auto; }
+.net .net-me .net-node.me .core { fill-opacity: .85; transition: opacity var(--motion-fast) ease-out; }
+.net.me-off .net-me { opacity: .3; }
+.focused .net-links path.hl { stroke-width: 2.5; }
+.table-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-top: 12px; }
+.table-foot .note { margin: 0; }
+.table-foot .note b { color: var(--ink); }

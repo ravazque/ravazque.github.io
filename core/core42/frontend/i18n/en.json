@@ -719,5 +719,9 @@
  "head.generated": "data from {when}",
  "home.master": "master",
  "head.wallet": "Wallet",
- "head.points": "Evaluation points"
+ "head.points": "Evaluation points",
+ "profile.title": "Profile",
+ "profile.piscine": "Piscine",
+ "profile.kickoff": "42cursus since",
+ "site.back": "← Back"
 }

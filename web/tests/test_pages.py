@@ -62,3 +62,13 @@ async def test_favicons_served(client):
     for path, kind in (("/static/favicon.svg", "image/svg+xml"), ("/static/favicon-32.png", "image/png"), ("/static/apple-touch-icon.png", "image/png")):
         r = await client.get(path)
         assert r.status_code == 200 and r.headers["content-type"].startswith(kind)
+
+
+async def test_reading_pages_have_no_header_and_a_back_link_to_where_you_came_from(client):
+    r = await client.get("/about", headers={"referer": "https://localhost/app/projects?period=all"})
+    assert 'class="site-head"' not in r.text and 'class="back"' in r.text
+    assert 'href="/app/projects?period=all"' in r.text
+    r = await client.get("/privacy", headers={"referer": "https://evil.example/app"})
+    assert 'class="back" href="/"' in r.text  # another host never becomes the link
+    r = await client.get("/privacy")
+    assert 'class="back" href="/"' in r.text

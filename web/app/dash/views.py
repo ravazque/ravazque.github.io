@@ -37,6 +37,17 @@ def avatar(p) -> str:
     return f'<span class="avatar" data-i="{escape(initials(p.get("name") or p.get("login")))}" aria-hidden="true">{img}</span>'
 
 
+def shared(projects):
+    """(project, teams together) pairs; reports saved before 2026-10-25 list the names once each."""
+    return projects.items() if isinstance(projects, dict) else ((n, 1) for n in projects)
+
+
+def past_blackhole(pg) -> bool:
+    """Transcenders and alumni have finished the Common Core: no blackhole applies to them, so none is shown."""
+    main = next((c for c in pg.data["periods"]["all"]["extras"].get("cursus") or [] if c["name"] == "42cursus"), {})
+    return main.get("grade") in ("Transcender", "Alumni")
+
+
 def my_rank(extras) -> str | None:
     main = next((c for c in (extras or {}).get("cursus", []) if c["name"] == "42cursus"), None)
     if not main:
@@ -160,8 +171,10 @@ class Page:
 
     def seg(self, name, options, current, *, label, target) -> Markup:
         """A segmented switch made of links; htmx swaps only the target section."""
-        links = "".join(f'<a href="{escape(self.url(**{name: v}))}#{target}" role="button" aria-pressed="{str(v == current).lower()}">{escape(t)}</a>'
-                        for v, t in options)
+        # the anchor serves pages without JavaScript; htmx asks for (and remembers) the same URL without it, so the
+        # switch swaps its section in place instead of scrolling the page to it
+        links = "".join(f'<a href="{escape(self.url(**{name: v}))}#{target}" hx-get="{escape(self.url(**{name: v}))}" hx-push-url="true" role="button"'
+                        f' aria-pressed="{str(v == current).lower()}">{escape(t)}</a>' for v, t in options)
         return Markup(f'<div class="seg" role="group" aria-label="{escape(label)}" hx-boost="true" hx-target="#{target}"'
                       f' hx-select="#{target}" hx-swap="outerHTML show:none">{links}</div>')
 
@@ -180,24 +193,44 @@ class Page:
             "now": f.html("rail.now_at", seat=Markup(f"<b>{escape(P['location'])}</b>")) if P.get("location") else f("rail.not_logged"),
             "generated": f("head.generated", when=D.get("generated", "")),
             "groups": P.get("groups") or [],
-            "card": self.key == "home",
-            "grade": next((c["grade"] for c in D["extras"].get("cursus") or [] if c["name"] == "42cursus" and c.get("grade")), None),
-            "facts": [(f.num(P["wallet"]) + " ₳", f("head.wallet")) if P.get("wallet") is not None else None,
-                      (f.num(P["correction_point"]), f("head.points")) if P.get("correction_point") is not None else None],
         }
 
-    def footer(self):
+    def campuses(self) -> list[dict]:
         f = self.f
-        campuses = []
+        out = []
         for c in self.D.get("campuses") or []:
             when = f("foot.time", hours=f.num(c.get("hours"), 1), sessions=f.num(c.get("sessions"))) if c.get("sessions") else f("foot.no_sessions")
-            campuses.append({"name": c.get("name") or "?", "primary": c.get("primary"), "city": c.get("city"),
-                             "line": f"{f('foot.joined', when=f.day(c.get('joined')))} · {when}",
-                             "span": f("foot.span", first=f.day(c["first"]), last=f.day(c["last"])) if c.get("first") else ""})
-        return {"campuses": campuses, "note": f("footer.light" if self.light else "footer.full", when=self.D.get("generated", ""))}
+            out.append({"name": c.get("name") or "?", "primary": c.get("primary"), "city": c.get("city"),
+                        "line": f"{f('foot.joined', when=f.day(c.get('joined')))} · {when}",
+                        "span": f("foot.span", first=f.day(c["first"]), last=f.day(c["last"])) if c.get("first") else ""})
+        return out
+
+    def footer(self):
+        return {"note": self.f("footer.light" if self.light else "footer.full", when=self.D.get("generated", ""))}
 
 
 # ---------- Home ----------
+
+def profile(pg: Page) -> dict:
+    """Home's first section: who this is (photo, name, campus, coalition, grade, groups) and the facts the intra keeps
+    on the profile (wallet, evaluation points, piscine, kickoff, blackhole, coalition rank), then where they are now."""
+    f, D, P = pg.f, pg.D, pg.D["profile"]
+    h = pg.head()
+    cursus = {c["name"]: c for c in pg.data["periods"]["all"]["extras"].get("cursus") or []}
+    main, piscine = cursus.get("42cursus") or {}, cursus.get("C Piscine") or {}
+    pc = (D.get("insights") or {}).get("pace") or {}
+    coal = P.get("coalition")
+    month = lambda s: f"{f.months[int(s[5:7]) - 1]} {s[:4]}" if s else None  # noqa: E731
+    facts = [(f("head.wallet"), f.num(P["wallet"]) + " ₳") if P.get("wallet") is not None else None,
+             (f("head.points"), f.num(P["correction_point"])) if P.get("correction_point") is not None else None,
+             (f("profile.piscine"), month(piscine.get("begin"))) if piscine.get("begin") else None,
+             (f("profile.kickoff"), f.day(main["begin"])) if main.get("begin") else None,
+             (f("pace.blackhole"), f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left"))
+             if main and not past_blackhole(pg) else None,
+             (f("home.k_coalition"), f"{coal['name']} · {f('home.nth', n=coal['rank'])}" if coal.get("rank") else coal["name"]) if coal else None]
+    return {"id": "profile", "title": f("profile.title"), "nav": f("profile.title"), "head": h,
+            "grade": main.get("grade"), "facts": [x for x in facts if x and x[1]]}
+
 
 def home(pg: Page) -> list[dict]:
     f, D = pg.f, pg.D
@@ -246,13 +279,13 @@ def home(pg: Page) -> list[dict]:
         bonus_module(pg),
         {"key": "pace", "label": f("home.k_pace"), "aside": f("home.since_kickoff"),
          "value": num(pc["xp_per_month"], 0, " " + f("home.xp_month_unit")) if pc.get("xp_per_month") is not None else "–",
-         "lines": [f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left"),
+         "lines": ["" if past_blackhole(pg) else f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left"),
                    f("home.days", days=f.plural(L["days_present"], "count.days"))],
          "trend": ch.trend([m["xp"] for m in months], bars=True, last=True)},
     ]
     for m in modules:
         m["lines"] = [x for x in m["lines"] if x]
-    sections = [{"id": "home-kpis", "title": f("home.title"), "nav": f("nav.home_kpis"), "modules": modules}]
+    sections = [profile(pg), {"id": "home-kpis", "title": f("home.title"), "nav": f("nav.home_kpis"), "modules": modules}]
 
     weeks, span = ex.active_weeks(L["days"], L["hours"])
     split = ex.day_split(L["heat"])
@@ -274,7 +307,8 @@ def home(pg: Page) -> list[dict]:
             (f("pace.since"), escape(f.plural(pc["months_since_kickoff"], "pace.months")) if pc.get("months_since_kickoff") is not None else "–"),
             (f("pace.xp_month"), f.num(pc.get("xp_per_month"))),
             (f("pace.validated"), f.num(sum(m["validated"] for m in months))),
-            (f("pace.blackhole"), escape(f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left")))]),
+            *([] if past_blackhole(pg) else [(f("pace.blackhole"), escape(f("pace.no_blackhole") if pc.get("blackhole_days") is None
+                                                                      else f.plural(pc["blackhole_days"], "pace.days_left")))])]),
             "chart": ch.vbars(f, [f.month_label(m["month"]) for m in months], [(f("pace.xp"), [m["xp"] for m in months], ch.S1)],
                               label=f("pace.xp_title"), line=(f("pace.cumulative"), [m["cumulative"] for m in months], ch.S2),
                               fmt=lambda v: f.num(v), empty_text=f("empty.period")),
@@ -328,9 +362,12 @@ def home(pg: Page) -> list[dict]:
             + [f'<li><span><b>{escape(f("extras.title_item"))}</b> {escape(x["name"])}{" " + badge(f("extras.selected")) if x.get("selected") else ""}</span>'
                f'<span class="when">{escape(x["at"][:10])}</span></li>' for x in X["titles"]]
             + [f'<li><span><b>{escape(f("extras.expertise"))}</b> {escape(x["name"])}</span><span class="when">{x["value"]} / 5</span></li>' for x in X["expertises"]])
+    campuses = pg.campuses()
     sections.append({"id": "activity", "title": f("activity.title"), "nav": f("activity.title"),
                      "achievements": Markup(ach) or none, "events": Markup(evs) or none, "misc": Markup("".join(misc)) or none,
                      "event_kinds": " · ".join(f"{ev_kind(k)}: {v}" for k, v in X["event_kinds"].items())})
+    if campuses:
+        sections.append({"id": "campuses", "title": f("foot.campuses"), "nav": f("foot.campuses"), "campuses": campuses})
     return sections
 
 
@@ -756,7 +793,7 @@ def people(pg: Page) -> list[dict]:
     first_of = lambda xs, n: f("common.first_of", list=", ".join(xs[:n]), more=len(xs) - n) if len(xs) > n else ", ".join(xs)  # noqa: E731
 
     def details(p):
-        projs = [f"{k} ×{v}" if v > 1 else k for k, v in p["projects_on_me"].items()]
+        projs = [f"{k} (x{v})" if v > 1 else k for k, v in p["projects_on_me"].items()]
         seats = list(p.get("hosts") or {})
         line = " · ".join(x for x in [f("who.seats", list=first_of(seats, 2)) if seats else "", f"{p['first'][:10]} → {p['last'][:10]}" if p.get("first") else ""] if x)
         return (f'<span title="{escape(", ".join(projs))}">{escape(first_of(projs, 3) or "–")}</span>'
@@ -826,7 +863,8 @@ def people(pg: Page) -> list[dict]:
     sections.append({"id": "teammates", "title": f("teammates.title"), "nav": f("nav.teammates"), "table": table(f, [
         {"k": "login", "t": f("col.login"), "nw": True}, {"k": "name", "t": f("col.name"), "hide": True, "f": lambda r: escape(r.get("name") or "")},
         {"k": "teams", "t": f("col.teams"), "num": True},
-        {"k": "projects", "t": f("col.projects"), "sv": lambda r: len(r["projects"]), "f": lambda r: escape(", ".join(r["projects"]))},
+        {"k": "projects", "t": f("col.projects"), "sv": lambda r: len(r["projects"]),
+         "f": lambda r: escape(", ".join(f"{n} (x{c})" if c > 1 else n for n, c in shared(r["projects"])))},
     ], tm, label=f("teammates.title"), sort=("teams", -1), empty=f("teammates.none"))})
     return sections
 

@@ -160,6 +160,9 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     const svg = node.closest("svg"), login = on ? node.dataset.login : null;
     svg.classList.toggle("focused", !!login);
     $$("path[data-a]", svg).forEach((p) => p.classList.toggle("hl", !!login && (p.dataset.a === login || p.dataset.b === login)));
+    // you dim while the one in focus has no chord with you
+    const me = svg.dataset.me;
+    svg.classList.toggle("me-off", !!login && login !== me && !$$("path.hl", svg).some((p) => p.dataset.a === me || p.dataset.b === me));
   }
   document.addEventListener("mouseover", (ev) => focusNet(ev, true));
   document.addEventListener("mouseout", (ev) => focusNet(ev, false));

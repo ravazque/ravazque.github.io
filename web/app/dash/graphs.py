@@ -275,8 +275,8 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
             continue
         p, q = at[a], at[b]
         mx, my = (p["x"] + q["x"]) / 4 + cx / 2, (p["y"] + q["y"]) / 4 + cy / 2
-        x1, y1 = _trim(p["x"], p["y"], mx, my, p["r"] + 2)
-        x2, y2 = _trim(q["x"], q["y"], mx, my, q["r"] + 2)
+        x1, y1 = _trim(p["x"], p["y"], mx, my, p["r"] + 1)
+        x2, y2 = _trim(q["x"], q["y"], mx, my, q["r"] + 1)
         both = c["ab"] and c["ba"]
         # the path runs a → b: marker-end points at b (a evaluated b), marker-start back at a (b evaluated a)
         ends = (f' marker-end="url(#{marker})"' if c["ab"] else "") + (f' marker-start="url(#{marker})"' if c["ba"] else "")
@@ -286,7 +286,7 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
                       f' stroke-width="{min(5, 1 + (c["ab"] + c["ba"]) / 3):.1f}" d="{d}"><title>{escape(tip)}</title></path>')
         # the arrowheads live on a twin path, shown only for the person in focus
         arrows.append(f'<path data-a="{escape(a)}" data-b="{escape(b)}"{ends} d="{d}"/>')
-    marks = []
+    marks, centre = [], []
     for n in at.values():
         d = degree.get(n["login"], 0)
         tip = n["login"] if n["group"] == "me" else " · ".join([n["login"], f("groups." + n["group"]), f("network.tip", count=d, n=d)])
@@ -297,13 +297,15 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
             anchor = "start" if math.cos(n["a"]) > .15 else "end" if math.cos(n["a"]) < -.15 else "middle"
             text = (f'<text x="{(n["r"] + 6) * math.cos(n["a"]):.1f}" y="{(n["r"] + 6) * math.sin(n["a"]) + 4:.1f}"'
                     f' text-anchor="{anchor}">{escape(n["login"])}</text>')
-        marks.append(f'<g class="net-node {_net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"'
-                     f' aria-label="{escape(tip)}" data-tip="{escape(tip)}" transform="translate({n["x"]:.1f},{n["y"]:.1f})"'
-                     f' style="--lvl:{level(n["group"]):.2f}"><title>{escape(tip)}</title><circle class="halo" r="{n["r"] + (4 if compact else 6):.1f}"/>'
-                     f'<circle class="core" r="{n["r"]:.1f}"/>{text}</g>')
-    defs = (f'<defs><marker id="{marker}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse"'
-            f' markerWidth="{5 if compact else 6}" markerHeight="{5 if compact else 6}" orient="auto-start-reverse">'
-            f'<path d="M0,1 L10,5 L0,9 Z" class="arrowhead"/></marker></defs>')
-    return (f'<svg class="graph net" viewBox="0 0 {width} {height}"{roving(f, f("network.title"))}>{defs}'
-            f'<g class="net-links">{"".join(chords)}</g><g class="net-arrows">{"".join(arrows)}</g>'
+        (centre if n["group"] == "me" else marks).append(
+            f'<g class="net-node {_net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"'
+            f' aria-label="{escape(tip)}" data-tip="{escape(tip)}" transform="translate({n["x"]:.1f},{n["y"]:.1f})">'
+            f'<title>{escape(tip)}</title><circle class="core" r="{n["r"]:.1f}"/>{text}</g>')
+    defs = (f'<defs><marker id="{marker}" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse"'
+            f' markerWidth="{8 if compact else 11}" markerHeight="{8 if compact else 11}" orient="auto-start-reverse">'
+            f'<path d="M0,0 L10,5 L0,10 Z" class="arrowhead"/></marker></defs>')
+    # you sit under the chords: a chord between two others is seen passing over you, never ending on you
+    me_login = escape(me[0]["login"]) if me else ""
+    return (f'<svg class="graph net" data-me="{me_login}" viewBox="0 0 {width} {height}"{roving(f, f("network.title"))}>{defs}'
+            f'<g class="net-me">{"".join(centre)}</g><g class="net-links">{"".join(chords)}</g><g class="net-arrows">{"".join(arrows)}</g>'
             f'<g class="net-nodes">{"".join(marks)}</g></svg>')

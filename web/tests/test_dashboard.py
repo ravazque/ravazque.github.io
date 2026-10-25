@@ -9,7 +9,7 @@ from app.store import Store
 from test_extract import UID, FakeApi
 
 PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus"}
-SECTIONS = {"/app": ["home-kpis", "rhythm", "pace", "skills", "coal-points", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
+SECTIONS = {"/app": ["profile", "home-kpis", "rhythm", "pace", "skills", "coal-points", "activity", "campuses"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
             "/app/evaluations": ["community", "over-time", "when", "correction-stats", "feedback", "points", "log"],
             "/app/people": ["who", "connections", "circle", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"]}
 INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>")
@@ -304,5 +304,20 @@ async def test_the_page_head_names_the_page_and_keeps_the_period_switch(signed_i
 async def test_only_home_carries_the_identity_card(signed_in, report):
     home = (await signed_in.get("/app")).text
     assert 'class="id-card"' in home and "wallet" in home.lower() and "evaluation points" in home.lower()
+    profile = home[home.index('<section id="profile"'):home.index('<section id="home-kpis"')]  # the first section, before the figures
+    assert 'class="id-card"' in profile and "Piscine" in profile and "42cursus since" in profile
+    head = home[home.index('<header class="page-head'):home.index("</header>", home.index('<header class="page-head'))]
+    assert "id-card" not in head
     other = (await signed_in.get("/app/projects")).text
     assert 'class="id-card"' not in other and 'class="who"' not in other
+
+
+async def test_transcenders_and_alumni_see_no_blackhole(signed_in, report):
+    text = (await signed_in.get("/app")).text  # the fixture's student is a Transcender
+    assert "Blackhole" not in text and "none ahead" not in text and "days left" not in text
+
+
+async def test_campuses_are_a_home_section_and_leave_every_footer(signed_in, report):
+    home = (await signed_in.get("/app")).text
+    assert '<section id="campuses"' in home and home.count('class="campuses"') == 1
+    assert 'class="campuses"' not in (await signed_in.get("/app/projects")).text

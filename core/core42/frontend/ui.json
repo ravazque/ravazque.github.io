@@ -3,7 +3,8 @@
   "how": "Edit any value and reload the page. Colours accept #hex, rgb()/rgba(), transparent or a reference like \"@ink\" (another variable). Sizes accept px, rem, em, vh, vw, % or ch.",
   "breakpoints": "Minimum viewport width in px where each step starts. Below 'desktop' the band wraps its page links onto a second row.",
   "components": "Values directly inside a component apply from 0 px up; an object named after a breakpoint (\"desktop\", \"large\"…) overrides them from that width up.",
-  "panels": "Each panel is a block inside a section, on a 12-column grid: span (1-12), order, height of its chart, hidden."
+  "panels": "Each panel is a block inside a section, on a 12-column grid: span (1-12), order, height of its chart, hidden.",
+  "site.field": "The landing's animated background: seats (small cubes bouncing off each other), shapes (Swiss forms floating), bubbles (blobs that merge and part) or cubes (cubes that grow and shed smaller ones). Try one with ?field=… on the landing."
  },
  "breakpoints": {
   "mobile": 0,
@@ -312,8 +313,9 @@
     "title-size": "104px",
     "h1-size": "72px",
     "mark-size": "300px",
-    "plan-width": "42%"
-   }
+    "plan-width": "35%"
+   },
+   "field": "seats"
   },
   "chart": {
    "height": "240px",

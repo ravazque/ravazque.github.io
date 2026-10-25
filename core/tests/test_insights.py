@@ -37,8 +37,8 @@ def test_teammates_count_shared_teams_most_frequent_first():
                                     attempt("2025-06-01 10:00", 125, ["me", "bob"])])]
     names = {"ana": "Ana A", "bob": "Bob B"}
     assert teammates(projects, "me", names) == [
-        {"login": "ana", "name": "Ana A", "teams": 3, "projects": ["minishell", "cub3d", "webserv"]},
-        {"login": "bob", "name": "Bob B", "teams": 2, "projects": ["webserv"]}]
+        {"login": "ana", "name": "Ana A", "teams": 3, "projects": {"minishell": 1, "cub3d": 1, "webserv": 1}},
+        {"login": "bob", "name": "Bob B", "teams": 2, "projects": {"webserv": 2}}]  # two teams on one project: webserv (x2)
 
 
 def test_exams_list_every_try_and_the_days_until_passed():
@@ -54,8 +54,12 @@ def test_pace_sums_xp_by_month_cumulatively_and_counts_down_the_blackhole():
                 project("minitalk", [], xp=1142, marked="2025-01-08 10:00"), project("fail", [], validated=False, xp=0, marked="2025-01-09 10:00")]
     cursus = {"name": "42cursus", "begin": "2024-09-16 09:42", "blackholed": "2026-11-17 09:00"}
     p = pace(projects, cursus, NOW)
-    assert p["months"] == [{"month": "2024-10", "xp": 1344, "validated": 2, "cumulative": 1344},
-                           {"month": "2025-01", "xp": 1142, "validated": 1, "cumulative": 2486}]
+    # every month from the first validation to today, empty ones at 0, so the axis is time and the total never jumps
+    assert [m["month"] for m in p["months"]][:4] == ["2024-10", "2024-11", "2024-12", "2025-01"] and p["months"][-1]["month"] == "2026-10"
+    assert p["months"][0] == {"month": "2024-10", "xp": 1344, "validated": 2, "cumulative": 1344}
+    assert p["months"][1] == {"month": "2024-11", "xp": 0, "validated": 0, "cumulative": 1344}
+    assert p["months"][3] == {"month": "2025-01", "xp": 1142, "validated": 1, "cumulative": 2486}
+    assert p["months"][-1]["cumulative"] == 2486 and len(p["months"]) == 25
     assert p["blackhole_days"] == 29
     assert p["months_since_kickoff"] == 25
     assert pace(projects, {**cursus, "blackholed": None}, NOW)["blackhole_days"] is None

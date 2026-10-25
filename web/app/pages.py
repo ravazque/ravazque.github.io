@@ -32,6 +32,14 @@ def safe_next(target: str) -> str:
     return u.path + (f"?{u.query}" if u.query else "")
 
 
+def back_to(request: Request) -> str:
+    """Where the reading pages' Back button leads: the page of this site you came from, otherwise the landing."""
+    ref = urlsplit(request.headers.get("referer", ""))
+    if ref.netloc != request.url.netloc or ref.path in ("/about", "/privacy") or not (ref.path in SAFE_NEXT or ref.path.startswith("/app")):
+        return "/"
+    return ref.path + (f"?{ref.query}" if ref.query else "")
+
+
 @router.get("/")
 async def landing(request: Request, error: str = ""):
     if await SessionStore(request.app.state.memory, request.app.state.settings).get(request.cookies.get(COOKIE)):
@@ -43,12 +51,12 @@ async def landing(request: Request, error: str = ""):
 
 @router.get("/about")
 async def about(request: Request):
-    return render(request, "about.html", page="about", heading=strings(pick_lang(request))["about.title"])
+    return render(request, "about.html", page="about", heading=strings(pick_lang(request))["about.title"], back=back_to(request))
 
 
 @router.get("/privacy")
 async def privacy(request: Request):
-    return render(request, "privacy.html", page="privacy", heading=strings(pick_lang(request))["privacy.title"],
+    return render(request, "privacy.html", page="privacy", heading=strings(pick_lang(request))["privacy.title"], back=back_to(request),
                   controller=request.app.state.settings.controller_name, version=consent.VERSION, updated=consent.UPDATED)
 
 

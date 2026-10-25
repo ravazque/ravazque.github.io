@@ -47,17 +47,16 @@ def campus_history(user: dict, locations: list[dict], now: datetime) -> list[dic
 
 
 def teammates(projects: list[dict], me: str, names: dict[str, str]) -> list[dict]:
-    """Everyone you shared a team with: how many teams and on which projects, most frequent first."""
+    """Everyone you shared a team with: how many teams, and on which projects how many times each, most frequent first."""
     acc = {}
     for p in projects:
         for a in p.get("attempts") or []:
             for login in a.get("members") or []:
                 if login == me:
                     continue
-                row = acc.setdefault(login, {"login": login, "name": names.get(login), "teams": 0, "projects": []})
+                row = acc.setdefault(login, {"login": login, "name": names.get(login), "teams": 0, "projects": {}})
                 row["teams"] += 1
-                if p["name"] not in row["projects"]:
-                    row["projects"].append(p["name"])
+                row["projects"][p["name"]] = row["projects"].get(p["name"], 0) + 1
     return sorted(acc.values(), key=lambda r: -r["teams"])
 
 
@@ -84,10 +83,17 @@ def pace(projects: list[dict], cursus: dict | None, now: datetime) -> dict:
             m = by_month.setdefault(p["marked"][:7], {"month": p["marked"][:7], "xp": 0, "validated": 0})
             m["xp"] += p.get("xp_earned") or 0
             m["validated"] += 1
+    # every month from the first validation to this one, empty months at 0: the chart's axis is time
     months, total = [], 0
-    for m in sorted(by_month.values(), key=lambda m: m["month"]):
-        total += m["xp"]
-        months.append({**m, "cumulative": total})
+    if by_month:
+        y, mo = map(int, min(by_month).split("-"))
+        end = max(max(by_month), local(now).strftime("%Y-%m"))
+        while f"{y}-{mo:02d}" <= end:
+            key = f"{y}-{mo:02d}"
+            m = by_month.get(key, {"month": key, "xp": 0, "validated": 0})
+            total += m["xp"]
+            months.append({**m, "cumulative": total})
+            y, mo = (y + 1, 1) if mo == 12 else (y, mo + 1)
     cursus = cursus or {}
     since = None
     if cursus.get("begin"):

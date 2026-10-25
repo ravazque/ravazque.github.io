@@ -719,5 +719,9 @@
  "head.generated": "datos de {when}",
  "home.master": "master",
  "head.wallet": "Wallet",
- "head.points": "Puntos de evaluación"
+ "head.points": "Puntos de evaluación",
+ "profile.title": "Perfil",
+ "profile.piscine": "Piscina",
+ "profile.kickoff": "En el 42cursus desde",
+ "site.back": "← Volver"
 }

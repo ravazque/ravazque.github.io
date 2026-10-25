@@ -16,10 +16,10 @@
     <label class="toggle-check"><input type="checkbox" name="group" value="1"{% if fl.grouped %} checked{% endif %}><span>{{ t("projects_table.group") }}</span></label>
   {% endcall %}
   <div id="projects-table-results">
-    <p class="controls-after"><span class="note">{{ s.count }}</span> <a class="btn secondary" href="{{ s.csv }}" download>{{ t("projects_table.csv") }}</a></p>
     <div class="cols" data-grid><div class="block" data-panel="projects-table">
       <div class="table-wrap tall">{{ s.table }}</div>
-      <p class="note">{{ t("projects_table.xp_note") }}</p>
+      <div class="table-foot"><p class="note"><b>{{ s.count }}</b> · {{ t("projects_table.xp_note") }}</p>
+        <a class="btn secondary" href="{{ s.csv }}" download>{{ t("projects_table.csv") }}</a></div>
     </div></div>
   </div>
 </section>

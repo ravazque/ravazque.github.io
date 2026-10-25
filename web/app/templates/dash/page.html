@@ -2,21 +2,8 @@
 {% import "dash/_macros.html" as m %}
 {% block body %}
 <main id="main">
-<header class="page-head{{ ' has-card' if head.card }}">
+<header class="page-head">
   <h1>{{ head.title }}</h1>
-  {% if head.card %}
-  <div class="id-card">
-    <div class="avatar-lg"><span aria-hidden="true">{{ head.initials }}</span>{% if head.image %}<img src="{{ head.image }}" alt="">{% endif %}</div>
-    <div class="id-text">
-      <p class="name">{{ head.name }}</p>
-      <p>{{ head.login }}{% if head.campus %} · {{ head.campus }}{% endif %}</p>
-      <p class="coal">{{ head.coalition }}{% if head.grade %} <span class="badge">{{ head.grade }}</span>{% endif %}</p>
-      {% if head.groups %}<p class="groups">{% for g in head.groups %}<span class="badge">{{ g }}</span>{% endfor %}</p>{% endif %}
-    </div>
-    <dl class="id-facts">{% for x in head.facts if x %}<div><dt>{{ x[1] }}</dt><dd>{{ x[0] }}</dd></div>{% endfor %}</dl>
-    <p class="id-now">{{ head.now }} · {{ head.generated }}</p>
-  </div>
-  {% endif %}
   {% if head.periods %}
   <nav class="seg periods" aria-label="{{ t('rail.period') }}" hx-boost="true" hx-swap="innerHTML show:none">
     {% for p in head.periods %}<a href="{{ p.href }}" role="button" aria-pressed="{{ 'true' if p.on else 'false' }}">{{ p.label }}</a>{% endfor %}
@@ -30,9 +17,6 @@
 {% for s in sections %}{% include "dash/s_" ~ s.id ~ ".html" %}
 {% endfor %}
 <footer class="site-foot">
-  <div class="foot-campus">{% if foot.campuses %}<h2 class="foot-title">{{ t("foot.campuses") }}</h2><ul class="campuses">
-    {% for c in foot.campuses %}<li><p><b>{{ c.name }}</b>{% if c.primary %} <span class="badge">{{ t("foot.current") }}</span>{% endif %}{% if c.city %} <span class="note">{{ c.city }}</span>{% endif %}</p>
-      <p>{{ c.line }}</p>{% if c.span %}<p class="note">{{ c.span }}</p>{% endif %}</li>{% endfor %}</ul>{% endif %}</div>
   {% include "dash/_credit.html" %}
   <nav class="foot-links"><a href="/about">{{ t("site.about") }}</a><a href="/privacy">{{ t("site.privacy") }}</a>{% if issues_url %}<a href="{{ issues_url }}" rel="noopener" target="_blank">{{ t("site.issues") }}</a>{% endif %}</nav>
   <p class="foot-note">{{ foot.note }}</p>

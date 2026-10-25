@@ -16,17 +16,6 @@ body { min-height: 100vh; }
 .brand-mark .tile, .mark .tile { fill: var(--on-accent); }
 .brand-mark .seat-off, .mark .seat { fill: color-mix(in oklab, var(--accent) 38%, var(--on-accent)); }
 .brand-mark .seat-on, .mark .lit { fill: var(--accent); }
-.brand-mark .seat-off rect { transition: fill var(--motion-settle) ease-out; }
-.brand:hover .brand-mark .seat-off rect, .brand:focus-visible .brand-mark .seat-off rect { animation: seat-wave .9s var(--motion-ease) both; }
-.brand-mark .seat-off rect:nth-child(2), .mark .seat rect:nth-child(2) { animation-delay: 60ms; }
-.brand-mark .seat-off rect:nth-child(3), .mark .seat rect:nth-child(3) { animation-delay: 120ms; }
-.brand-mark .seat-off rect:nth-child(5), .mark .seat rect:nth-child(5) { animation-delay: 180ms; }
-.brand-mark .seat-off rect:nth-child(8), .mark .seat rect:nth-child(8) { animation-delay: 240ms; }
-.brand-mark .seat-off rect:nth-child(7), .mark .seat rect:nth-child(7) { animation-delay: 300ms; }
-.brand-mark .seat-off rect:nth-child(6), .mark .seat rect:nth-child(6) { animation-delay: 360ms; }
-.brand-mark .seat-off rect:nth-child(4), .mark .seat rect:nth-child(4) { animation-delay: 420ms; }
-@keyframes seat-wave { 45% { fill: var(--accent); } }
-@media (prefers-reduced-motion: reduce) { .brand:hover .brand-mark .seat-off rect { animation: none; } }
 .topbar .pages { display: flex; gap: 2px; }
 .topbar .pages a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; color: inherit; text-decoration: none;
   font: 700 17px var(--type-font-display); border-radius: var(--radius-m); transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
@@ -69,7 +58,7 @@ body { min-height: 100vh; }
 .avatar-lg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .avatar-lg { border-radius: 50%; }
 /* Home's identity card: the photo in a circle, who and where, and the two balances the intra keeps */
-.id-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 18px; align-items: center; max-width: 560px; padding: 18px 20px 16px;
+.id-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 18px; align-items: center; max-width: 640px; padding: 18px 20px 16px;
   background: var(--sunken); border-top: 2px solid var(--rule-strong); }
 .id-card .avatar-lg { width: 88px; height: 88px; font-size: 24px; background: var(--ground); }
 .id-text p { color: var(--text-2); font-size: 15px; line-height: 1.5; }
@@ -78,7 +67,7 @@ body { min-height: 100vh; }
 .id-text .groups { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .id-facts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 0; padding-top: 12px; border-top: 1px solid var(--rule); }
 .id-facts dt { color: var(--text-2); font-size: 14px; }
-.id-facts dd { margin: 2px 0 0; font: 800 26px/1 var(--type-font-display); letter-spacing: -.03em; }
+.id-facts dd { margin: 2px 0 0; font: 800 22px/1.1 var(--type-font-display); letter-spacing: -.02em; }
 .id-now { grid-column: 1 / -1; color: var(--text-2); font-size: 14px; }
 .id-now b { color: var(--ink); }
 .who p { color: var(--text-2); font-size: 15px; line-height: 1.45; }
@@ -92,13 +81,9 @@ body { min-height: 100vh; }
 @media (min-width: 960px) {
   .page-head { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: end; }
   .page-head h1 { grid-row: 1 / 3; }
-  .page-head.has-card { grid-template-columns: minmax(0, 1fr) auto; }
-  .page-head.has-card h1 { grid-row: 1; align-self: end; }
-  .page-head.has-card .periods { grid-row: 2; grid-column: 1; justify-self: start; }
-  .page-head .id-card { grid-row: 1 / 3; grid-column: 2; align-self: end; width: 640px; max-width: none;
-    grid-template-columns: auto minmax(0, 1fr) auto; }
-  .page-head .id-card .id-facts { grid-column: 3; grid-row: 1; grid-template-columns: auto; border-top: 0; padding: 0 0 0 20px;
-    border-left: 1px solid var(--rule); gap: 10px; }
+  #profile .id-card { max-width: none; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.7fr); padding: 22px 24px 18px; }
+  #profile .id-facts { grid-column: 3; grid-row: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 0;
+    padding: 0 0 0 24px; border-left: 1px solid var(--rule); gap: 16px 24px; }
   .page-head .who { justify-self: end; text-align: right; flex-direction: row-reverse; }
   .page-head .who .coal, .page-head .who .groups { justify-content: flex-end; }
   .page-head .periods { justify-self: end; }

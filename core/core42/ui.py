@@ -21,7 +21,8 @@ NUMBER = re.compile(r"^-?(\d+(\.\d+)?|\.\d+)$")
 COLOUR = re.compile(r"^(#[0-9a-fA-F]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%deg]+\)|transparent|currentColor)$")
 DURATION = re.compile(r"^(\d+(\.\d+)?|\.\d+)(ms|s)$")
 EASING = re.compile(r"^(cubic-bezier\([\d\s.,-]+\)|ease|ease-in|ease-out|ease-in-out|linear)$")
-KEYWORDS = {"none", "auto", "uppercase", "normal", "bold"}
+KEYWORDS = {"none", "auto", "uppercase", "normal", "bold",
+            "seats", "shapes", "bubbles", "cubes"}  # site.field: the landing's animated background (landing.js)
 PLACES = {"side": {"left", "right"}, "position": {"top", "bottom"}}
 FREE_TEXT = ("shadow", "font")  # keys whose values are CSS shorthands or font stacks
 
