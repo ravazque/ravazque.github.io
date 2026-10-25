@@ -22,6 +22,14 @@ services:
       CONSENT_LOG: /data/consent.log
     volumes: ["./core:/srv/core:ro", "consent:/data"]
     restart: unless-stopped
+  # make tunnel: a free Cloudflare quick tunnel to Caddy's internal port for testers (random *.trycloudflare.com URL,
+  # new on every start). Only with the profile, so make up / make dev never start it.
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.3
+    profiles: [tunnel]
+    command: ["tunnel", "--no-autoupdate", "--url", "http://caddy:8080"]
+    depends_on: [caddy]
+    restart: "no"
 
 volumes:
   caddy_data: {}

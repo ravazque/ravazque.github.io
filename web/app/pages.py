@@ -1,6 +1,6 @@
 """Public pages rendered on the server: landing, About, Privacy, the refused page and the language switch."""
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
@@ -27,9 +27,11 @@ def render(request: Request, name: str, **ctx):
 def safe_next(target: str) -> str:
     """A path of this site (its query kept) or "/": never another host."""
     u = urlsplit(target)
-    if u.scheme or u.netloc or u.path not in SAFE_NEXT:
+    # the path handed back is this site's own constant, never the request's text; the query only follows a "?"
+    path = next((p for p in SAFE_NEXT if p == u.path), None)
+    if u.scheme or u.netloc or path is None:
         return "/"
-    return u.path + (f"?{u.query}" if u.query else "")
+    return f"{path}?{urlencode(parse_qsl(u.query))}" if u.query else path
 
 
 def back_to(request: Request) -> str:
@@ -63,8 +65,8 @@ async def privacy(request: Request):
 @router.post("/lang")
 async def set_lang(request: Request, lang: str = Form(""), next: str = Form("/")):
     response = RedirectResponse(safe_next(next), status_code=303)
-    if lang in LANGS:
-        response.set_cookie("lang", lang, max_age=31_536_000, path="/", secure=request.app.state.settings.secure_cookies, samesite="lax")
+    if (chosen := {code: code for code in LANGS}.get(lang)):  # the cookie holds our constant, not the form's text
+        response.set_cookie("lang", chosen, max_age=31_536_000, path="/", secure=request.app.state.settings.secure_cookies, samesite="lax")
     return response
 
 

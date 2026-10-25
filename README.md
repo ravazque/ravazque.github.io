@@ -52,6 +52,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `FT_UID`, `FT_SECRET` | yes | 42 application credentials |
+| `FT_UID_2`, `FT_SECRET_2`, `FT_UID_3`, `FT_SECRET_3` | no | More 42 apps: app-token requests are spread over them |
 | `SESSION_SECRET` | yes | ≥ 32 characters (`openssl rand -hex 32`); keys session HMACs |
 | `CONTROLLER_NAME` | yes | Data controller named by the privacy policy |
 | `CONTACT_EMAIL` | yes | Contact for privacy requests, shown on the About and Privacy pages |
@@ -67,11 +68,12 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 |---------|--------|
 | `make` | List the commands |
 | `make dev` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented from a fixed seed, never real people, never able to publish); live reload |
-| `make build` | Build the images, refresh the saved report of `DEV_UID` (~110 requests, under a minute with two apps) and the synthetic test profiles |
+| `make build` | Build the images, refresh the saved report of `DEV_UID` (~120 requests, about 40 s with three apps) and the synthetic test profiles |
 | `make up` / `make down` | Start as built / stop (memory is cleared; browsers keep their reports) |
+| `make tunnel` / `make tunnel-stop` | Open / close a free Cloudflare quick tunnel for testers: prints the `*.trycloudflare.com` URL to set as `BASE_URL` and as a redirect URI of the 42 app, then `make up` (never `make dev`) |
 | `make logs`, `make ps` | Follow logs / list services |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
-| `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 110 requests) |
+| `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 120 requests) |
 | `make snapshot` | Write `site/data/42.json` from the preview data |
 | `make site` | Stage `site/` into `site/_build` and serve it at http://localhost:8080 |
 | `make certs` | Create the HTTPS certificates |
@@ -81,13 +83,15 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 
 - **Access**: students, transcenders and alumni whose primary campus is 42 Madrid. Staff, pisciners, blackholed and
   frozen accounts get a refusal page with the reason. Access is re-checked on every extraction.
-- **42 API budget**: 2 requests/s and 1200/h per application, shared by every user. A second app (`FT_UID_2`,
-  `FT_SECRET_2`) is optional: app-token requests are spread over both, each within its own limits, while sign-in stays
-  on the first. One extraction per user per hour (about 110 requests: 47 s measured with two apps, its independent
+- **42 API budget**: 2 requests/s and 1200/h per application, shared by every user. A second and a third app
+  (`FT_UID_2`/`FT_SECRET_2`, `FT_UID_3`/`FT_SECRET_3`) are optional: app-token requests are spread over all of them, each
+  within its own limits, while sign-in stays on the first. One extraction per user per hour (119 requests in 39 s
+  measured with three apps, its independent
   lists fetched together), run inside the web process, one at a time, with a progress bar. When the hourly budget runs low, the job
   waits for the next hour. Every extraction logs its request count.
 - **Extras and their cost**: teammates, exams, pace, evaluations in depth and campus history reuse downloaded data
-  (0 requests); feedback details ~5, promo 2–3, coalitions 1, the network of the 30 closest contacts 30.
+  (0 requests); feedback details ~5, promo 2–3, coalitions 1, the network of the 30 closest contacts 30, the other
+  side's seat in the evaluations of the last 60 days one per day with evaluations (~25; only the seat is kept).
 
 ## Privacy and security
 
