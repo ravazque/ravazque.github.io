@@ -1,12 +1,12 @@
-"""The light extraction: everything the report shows except the per-evaluation lookups
-(the corrector's seat and per-criterion feedback), plus the rank group of everyone met."""
+"""The light extraction: everything the report shows without one request per evaluation. The other side's seat is
+looked up per day, for the last SEAT_DAYS days only; feedback comes in batches; plus the rank group of everyone met."""
 import asyncio
 from datetime import datetime, timedelta, timezone
 
 from core42.analysis import PERIODS, analyze, seat_layout, ts
 from core42.collect import drop_hidden_evaluations, people_ids, project_ids
 from core42.connections import connections
-from core42.constants import MADRID_CAMPUS, MAIN_COALITIONS, MAIN_CURSUS
+from core42.constants import COMMON_CORE_QUESTS, MADRID_CAMPUS, MAIN_COALITIONS, MAIN_CURSUS
 from core42.insights import coalition_standings, contact_network, promo_standing
 from core42.profile import access
 from core42.ranks import rank_groups
@@ -32,13 +32,14 @@ USER_LISTS = {
 PROJECT_FIELDS = ("id", "name", "slug", "difficulty", "exam", "parent")
 SCORE_FIELDS = ("value", "scoreable_type", "scoreable_id", "calculation_id", "created_at")
 BATCH = 100
+SEAT_DAYS = 60  # the other side's seat is looked up for evaluations of the last 60 days (one request per day with any)
 NETWORK_SIZE = 30  # closest contacts whose given evaluations are read for the network (1 request each)
 
 
-async def _batched(api, path, key, ids):
+async def _batched(api, path, key, ids, **params):
     ids, out = sorted(ids), []
     for i in range(0, len(ids), BATCH):
-        out += await api.get_all(path, **{key: ",".join(map(str, ids[i:i + BATCH]))})
+        out += await api.get_all(path, **{key: ",".join(map(str, ids[i:i + BATCH])), **params})
     return out
 
 
@@ -78,7 +79,7 @@ async def extract(api, uid: int, progress) -> dict:
     await asyncio.gather(*(user_list(n, e) for n, e in USER_LISTS.items()), stats_and_groups(), achievements_users(), coalitions_of_user())
     known = {a["id"] for a in d["user"].get("achievements", [])}
     missing = sorted({a["achievement_id"] for a in d["achievements_users"]} - known)
-    d["achievements"] = list(await asyncio.gather(*(api.get(f"/v2/achievements/{i}") for i in missing)))
+    d["achievements"] = await _batched(api, "/v2/achievements", "filter[id]", missing) if missing else []
     await step()
     coalitions = d.pop("_coalitions")
     rank = {slug: i for i, slug in enumerate(MAIN_COALITIONS)}
@@ -107,12 +108,14 @@ async def extract(api, uid: int, progress) -> dict:
 
     async def ranks():
         cursus_rows, quest_rows = await asyncio.gather(_batched(api, f"/v2/cursus/{MAIN_CURSUS}/cursus_users", "filter[user_id]", met),
-                                                       _batched(api, "/v2/quests_users", "filter[user_id]", met))
+                                                       _batched(api, "/v2/quests_users", "filter[user_id]", met,
+                                                                **{"filter[quest_id]": ",".join(map(str, COMMON_CORE_QUESTS))}))
         await step()
         return rank_groups(cursus_rows, quest_rows)
 
     async def feedbacks():
-        d["corrector_sessions"], d["feedbacks"] = {}, await _feedbacks(api, d)
+        (d["corrector_sessions"], d["evaluated_sessions"]), d["feedbacks"] = await asyncio.gather(
+            _other_sessions(api, d, datetime.now(timezone.utc)), _feedbacks(api, d))
         await step()
 
     async def standing_():
@@ -135,6 +138,7 @@ async def extract(api, uid: int, progress) -> dict:
     return {
         "page": "web",
         "light": True,
+        "seat_days": SEAT_DAYS,
         "default_period": "student",
         "periods": periods,
         "layout": seat_layout([s["host"] for s in d["locations"]]),
@@ -142,6 +146,42 @@ async def extract(api, uid: int, progress) -> dict:
         "network": network,
         **standing,
     }
+
+
+async def _other_sessions(api, d, now) -> tuple[dict, dict]:
+    """The other side's login sessions around each evaluation of the last SEAT_DAYS days, to tell their seat: the corrector
+    of a received one, the evaluated students of a given one. One request per day with evaluations (up to 100 people);
+    only begin, end and host are kept, under the evaluation's id, and the analysis keeps nothing but the seat."""
+    since, wanted, days = now - timedelta(days=SEAT_DAYS), [], {}
+    for role, key in (("received", "evals_received"), ("given", "evals_given")):
+        for e in d[key]:
+            begin = ts(e["begin_at"])
+            if since <= begin <= now:
+                people = [e.get("corrector")] if role == "received" else e.get("correcteds") or []
+                people = [p for p in people if isinstance(p, dict) and p.get("id")]
+                wanted.append((role, e, people))
+                days.setdefault(begin.date(), set()).update(p["id"] for p in people)
+
+    async def day(date, ids):
+        # sessions that began from the day before (one can run overnight into the evaluation) to the end of the day
+        start = datetime(date.year, date.month, date.day, tzinfo=timezone.utc)
+        window = ",".join(t.strftime("%Y-%m-%dT%H:%M:%SZ") for t in (start - timedelta(days=1), start + timedelta(days=1)))
+        return await _batched(api, "/v2/locations", "filter[user_id]", ids, **{"range[begin_at]": window})
+
+    found = await asyncio.gather(*(day(date, ids) for date, ids in days.items()))
+    by_person = {}
+    for rows in found:
+        for l in rows:
+            by_person.setdefault((l.get("user") or {}).get("id"), {})[l["id"] if "id" in l else id(l)] = \
+                {"host": l.get("host"), "begin_at": l.get("begin_at"), "end_at": l.get("end_at")}
+    sessions = lambda p: list(by_person.get(p["id"], {}).values())  # noqa: E731
+    corrector, evaluated = {}, {}
+    for role, e, people in wanted:
+        if role == "received":
+            corrector[str(e["id"])] = sessions(people[0]) if people else []
+        else:
+            evaluated[str(e["id"])] = {p.get("login"): sessions(p) for p in people}
+    return corrector, evaluated
 
 
 async def _feedbacks(api, d) -> dict:

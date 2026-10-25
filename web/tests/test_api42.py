@@ -117,3 +117,12 @@ async def test_requests_spread_over_both_apps_each_with_its_token(memory):
             await api.get("/v2/me")
     assert {c.request.headers["Authorization"] for c in route.calls} == {"Bearer TA", "Bearer TB"}
     assert await memory.get("api42:token:0") == b"TA" and await memory.get("api42:token:1") == b"TB"
+
+
+def test_a_third_app_joins_the_others_and_a_half_filled_one_is_ignored(monkeypatch):
+    from app.settings import Settings
+    for k, v in {"FT_UID": "A1", "FT_SECRET": "S1", "FT_UID_2": "A2", "FT_SECRET_2": "S2", "FT_UID_3": "A3", "FT_SECRET_3": "S3"}.items():
+        monkeypatch.setenv(k, v)
+    assert Settings.from_env().apps == [("A1", "S1"), ("A2", "S2"), ("A3", "S3")]
+    monkeypatch.setenv("FT_SECRET_2", "")
+    assert Settings.from_env().apps == [("A1", "S1"), ("A3", "S3")]

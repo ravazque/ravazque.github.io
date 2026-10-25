@@ -1,11 +1,12 @@
 """Save a real light extraction as preview/data.json, the input of scripts/snapshot.py.
 
-    python scripts/preview.py --fetch UID   run the extraction for UID with the app token from .env (about 100 requests)
+    python scripts/preview.py --fetch UID   run the extraction for UID with the app token from .env (about 120 requests)
 """
 import argparse
 import asyncio
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # the web app package
@@ -28,8 +29,9 @@ async def fetch(uid: int):
         api = Api42(settings, memory, http, RateLimiter(memory, apps=len(settings.apps)))
         async def progress(f):
             print(f"\r  {round(100 * f)}%", end="", flush=True)
+        t0 = time.monotonic()
         data = await extract(api, uid, progress)
-    print()
+    print(f"\n  {api.requests} requests in {time.monotonic() - t0:.1f} s")
     return data
 
 

@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-VERSION, UPDATED = 1, "2026-10-22"
+VERSION, UPDATED = 2, "2026-10-25"
 KEY = "consent:{}"
 KEEP_S = 2 * 365 * 86400
 

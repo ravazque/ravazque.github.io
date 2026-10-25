@@ -99,6 +99,7 @@ def dataset():
                       {"host": "c3r1s1", "begin_at": "2026-09-02T09:00:00Z", "end_at": "2026-09-02T11:00:00Z"}],
         "corrector_sessions": {"100": [{"host": "c2r5s5", "begin_at": "2026-09-02T07:50:00Z", "end_at": None}],
                                "101": []},
+        "evaluated_sessions": {"200": {"alice": [{"host": "c1r3s2", "begin_at": "2026-09-05T07:00:00Z", "end_at": "2026-09-05T12:00:00Z"}]}},
         "feedbacks": {},
         "projects": [{"id": 1, "name": "libft", "slug": "libft", "difficulty": 462, "exam": False}],
         "people": [{"id": 2, "login": "alice", "displayname": "Alice"}],
@@ -145,6 +146,17 @@ class ReportBuild(unittest.TestCase):
         self.assertEqual((e["duration_min"], e["planned_min"], e["lead_h"]), (40.0, 30, 22.0))
         self.assertEqual((e["my_host"], e["other_host"]), ("c2r1s1", "c2r5s5"))
         self.assertIsNone(self.r["received"][1]["other_host"])
+
+    def test_the_other_side_s_seat_rides_on_the_person_and_counts_in_the_place(self):
+        self.assertEqual(self.r["received"][0]["corrector"]["host"], "c2r5s5")
+        g = self.r["given"][0]
+        self.assertEqual((g["correcteds"][0]["host"], g["other_host_checked"]), ("c1r3s2", True))
+        self.assertEqual(self.r["place"]["given_evaluated_hosts"], {"c1r3s2": 1})
+        self.assertEqual((self.r["place"]["given_evaluated_cluster"], self.r["place"]["evaluated_located"]), ({"c1": 1}, 1))
+        d = dataset()
+        del d["evaluated_sessions"]  # reports built before the lookup existed
+        g = Report(d, now=NOW).build()["given"][0]
+        self.assertEqual((g["correcteds"][0].get("host"), g["other_host_checked"]), (None, False))
 
     def test_my_rating_ignores_teammates(self):
         self.assertEqual(self.r["received"][1]["fb_rating"], 5)

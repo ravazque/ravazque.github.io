@@ -281,6 +281,9 @@ class FakeApi:
             return d["contact_evals"].get(int(m.group(1)), [])
         if path == "/v2/achievements_users":
             return d["achievements_users"]
+        if path == "/v2/achievements":
+            ids = {int(x) for x in params["filter[id]"].split(",")}
+            return [a for a in d["achievements"] if a["id"] in ids]
         if m := re.match(r"^/v2/achievements/(\d+)$", path):
             return next(a for a in d["achievements"] if a["id"] == int(m.group(1)))
         if path == "/v2/users":
@@ -299,6 +302,11 @@ class FakeApi:
             return d["blocs"]
         if re.match(r"^/v2/coalitions_users/\d+/scores$", path):
             return d["coalition_scores"]
+        if path == "/v2/locations":  # the other side's seat: a peer is at the same computer all that day, one in five not logged in
+            day = datetime.strptime(params["range[begin_at]"].split(",")[0], "%Y-%m-%dT%H:%M:%SZ") + timedelta(days=1)
+            return [{"id": i * 1000 + day.toordinal() % 1000, "user": {"id": i}, "host": f"c{1 + i % 3}r{1 + i % 14}s{1 + i % 6}",
+                     "begin_at": iso(day + timedelta(hours=6)), "end_at": iso(day + timedelta(hours=23))}
+                    for i in map(int, params["filter[user_id]"].split(",")) if i % 5]
         raise LookupError(path)
 
     async def get(self, path, **params):

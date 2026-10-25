@@ -293,10 +293,17 @@ class Report:
             "fb_scores": {k: scores[k] for k in FEEDBACK_KINDS},
             "my_host": self.my_host(begin, end),
         }
+        # the other side's seat, looked up for recent evaluations only; it rides on the person so a hidden one loses it
         if role == "received":
             sessions = self.d["corrector_sessions"].get(str(e["id"])) or []
             out["other_host"] = session_host(sessions, begin, end, self.now)
             out["other_host_checked"] = str(e["id"]) in self.d["corrector_sessions"]
+            out["corrector"]["host"] = out["other_host"]
+        else:
+            looked = (self.d.get("evaluated_sessions") or {}).get(str(e["id"]))
+            out["other_host_checked"] = looked is not None
+            for c in out["correcteds"]:
+                c["host"] = session_host(looked.get(c["login"]) or [], begin, end, self.now) if looked is not None else None
         return out
 
     # ---------- projects & attempts ----------
@@ -489,8 +496,15 @@ class Report:
         same_host = sum(1 for e in received if e["other_host"] and e["other_host"] == e["my_host"])
         same_cluster = sum(1 for e in received if e["other_host"] and e["my_host"]
                            and cluster(e["other_host"]) == cluster(e["my_host"]))
+        theirs = [c["host"] for e in given if e.get("other_host_checked") for c in e["correcteds"]]
         return {
-            "received_corrector_cluster": counter(cluster(e["other_host"]) for e in received),
+            # only evaluations whose other side was looked up: an older one is unknown, not "not logged"
+            "received_corrector_cluster": counter(cluster(e["other_host"]) for e in received if e.get("other_host_checked")),
+            "given_evaluated_cluster": counter(cluster(h) for h in theirs),
+            "given_evaluated_hosts": dict(Counter(h for h in theirs if h).most_common()),
+            "evaluated_located": sum(1 for h in theirs if h),
+            "evaluated_checked": len(theirs),
+            "corrector_checked": sum(1 for e in received if e.get("other_host_checked")),
             "received_my_cluster": counter(cluster(e["my_host"]) for e in received),
             "given_my_cluster": counter(cluster(e["my_host"]) for e in given),
             "received_corrector_hosts": dict(Counter(e["other_host"] for e in received if e["other_host"]).most_common()),
