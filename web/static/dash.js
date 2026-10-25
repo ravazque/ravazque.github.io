@@ -96,6 +96,35 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     $$("details.settings-wrap[open]").forEach((d) => { if (!d.contains(ev.target)) d.open = false; });
   });
 
+  // a tooltip or the open settings never outlive what they belong to: scrolling (the page or a box inside it), leaving
+  // the window, resizing, Escape or swapping in new content closes them
+  const hideTip = () => { tipEl().style.display = "none"; };
+  const closeSettings = () => $$("details.settings-wrap[open]").forEach((d) => { d.open = false; });
+  let openedAt = 0, dismissed = null;
+  document.addEventListener("toggle", (ev) => {
+    if (ev.target.matches?.("details.settings-wrap") && ev.target.open) openedAt = scrollY;
+  }, true);
+  document.addEventListener("scroll", (ev) => {
+    // a tooltip opened from the keyboard follows its element (Tab scrolls it into view right after focusing it)
+    const kb = document.activeElement?.matches?.("[data-tip]:focus-visible") && document.activeElement !== dismissed && document.activeElement;
+    const r = kb && kb.getBoundingClientRect();
+    if (r && r.bottom > 0 && r.top < innerHeight) showTip(kb.dataset.tip, r.left, r.bottom + 8);
+    else hideTip();
+    const inSettings = ev.target.closest?.("details.settings-wrap");
+    // the page's own scroll gets a few pixels of slack: opening the panel on a phone can nudge it
+    if (!inSettings && (ev.target !== document || Math.abs(scrollY - openedAt) > 8)) closeSettings();
+  }, {capture: true, passive: true});
+  document.documentElement.addEventListener("mouseleave", hideTip);
+  addEventListener("blur", hideTip);
+  addEventListener("resize", () => { hideTip(); closeSettings(); }, {passive: true});
+  // Escape dismisses it until focus moves on
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { hideTip(); dismissed = document.activeElement; } });
+  document.addEventListener("focusin", () => { dismissed = null; });
+  // only on moving around (links, boosted pages): the sync poll and the search ask in the background
+  document.body.addEventListener("htmx:beforeRequest", (ev) => {
+    if (ev.detail.boosted || ev.detail.elt?.tagName === "A") { hideTip(); closeSettings(); }
+  });
+
   function applyTheme(v) {
     if (v === "light" || v === "dark") document.documentElement.dataset.theme = v;
     else delete document.documentElement.dataset.theme;

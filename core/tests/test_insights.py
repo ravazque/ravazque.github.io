@@ -169,6 +169,19 @@ def test_coalition_points_sum_by_source_and_by_month_in_madrid_time():
     assert coalition_points(None) is None and coalition_points([])["months"] == []
 
 
+def test_coalition_points_list_the_latest_awards_newest_first_with_what_they_came_from():
+    from core42.insights import RECENT, coalition_points
+    scores = [{**_score("2026-10-04T22:24:00Z", "Location", 500, 7), "scoreable_id": 7},
+              {**_score("2026-10-09T07:52:00Z", "ScaleTeam", 250), "scoreable_id": 41},
+              _score("2026-10-08T07:52:00Z", "ProjectsUser", 840, 3)]  # reports saved before 2026-10-25 have no id
+    assert coalition_points(scores)["recent"] == [
+        {"at": "2026-10-09T07:52:00Z", "key": "evaluations", "points": 250, "id": 41},
+        {"at": "2026-10-08T07:52:00Z", "key": "projects", "points": 840, "id": None},
+        {"at": "2026-10-04T22:24:00Z", "key": "logtime_50", "points": 500, "id": 7}]
+    many = [_score(f"2026-10-{d:02d}T10:00:00Z", "ScaleTeam", d) for d in range(1, 29)] * 3
+    assert len(coalition_points(many)["recent"]) == RECENT
+
+
 def _loc(b, e):
     return {"begin_at": b, "end_at": e}
 

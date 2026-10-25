@@ -341,6 +341,7 @@ class Report:
             validated_at = next((a["end_ms"] for a in attempts if a["validated"]), None)
             rows.append({
                 "id": pid,
+                "pu_id": pu.get("id"),  # what a coalition award for this project points at
                 "name": pu["project"]["name"],
                 "slug": pu["project"].get("slug"),
                 "track": track_of(pu),

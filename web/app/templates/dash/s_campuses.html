@@ -1,7 +1,0 @@
-<section id="campuses">
-  <h2>{{ s.title }}</h2>
-  <ul class="campuses">
-    {% for c in s.campuses %}<li><p><b>{{ c.name }}</b>{% if c.primary %} <span class="badge">{{ t("foot.current") }}</span>{% endif %}{% if c.city %} <span class="note">{{ c.city }}</span>{% endif %}</p>
-      <p>{{ c.line }}</p>{% if c.span %}<p class="note">{{ c.span }}</p>{% endif %}</li>{% endfor %}
-  </ul>
-</section>

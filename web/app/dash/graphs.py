@@ -221,17 +221,11 @@ def bubbles(f, people, mode, *, width, height, href) -> str:
         tip = " · ".join(x for x in parts if x)
         initials = "".join(w[0] for w in str(p.get("name") or p["login"]).replace(".", " ").replace("_", " ").replace("-", " ").split() if w)[:2].upper()
         marks.append(f'<a href="{escape(href(p["login"]))}" class="bubble {n["dir"]}" data-cell aria-label="{escape(tip)}" data-tip="{escape(tip)}"'
-                     f' transform="translate({n["x"]:.1f},{n["y"]:.1f})" style="--lvl:{level(n["group"]):.2f}"><title>{escape(tip)}</title>'
-                     f'<circle class="halo" r="{n["r"] + 5:.1f}"/><circle class="core" r="{n["r"]:.1f}"/>'
+                     f' transform="translate({n["x"]:.1f},{n["y"]:.1f})"><title>{escape(tip)}</title>'
+                     f'<circle class="core" r="{n["r"]:.1f}"/>'
                      + (f'<text text-anchor="middle" dy="0.35em">{escape(initials)}</text>' if n["r"] >= 15 else "") + "</a>")
     return (f'<svg class="graph" viewBox="0 0 {width} {h}" style="aspect-ratio:{width}/{h}"{roving(f, f("connections.title"))}>'
             f'<g class="labels">{labels}</g><g class="links">{links}</g><g class="nodes">{"".join(marks)}</g></svg>')
-
-
-def level(group) -> float:
-    """0 (no 42cursus, Rank 00) … 1 (Alumni): how far along the 42cursus someone is, for the halo."""
-    order = ["no-cursus", "rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni"]
-    return order.index(group) / (len(order) - 1) if group in order else 0
 
 
 def _net_class(g):

@@ -623,6 +623,14 @@
     "span": 6
    }
   },
+  "campuses": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 6
+   }
+  },
   "kpis": {
    "mobile": {
     "span": 12

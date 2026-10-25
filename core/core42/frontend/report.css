@@ -7,7 +7,9 @@ body { min-height: 100vh; }
 /* ---------- band: brand, pages, sync, settings on the accent ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 28px;
-  min-height: var(--c-topbar-height); padding: 0 var(--c-topbar-padding-x);
+  min-height: var(--c-topbar-height);
+  /* the band spans the window; what is on it lines up with the page below, whose width stops at the page's maximum */
+  padding: 0 max(var(--c-topbar-padding-x), calc((100% - var(--c-page-max-width)) / 2 + var(--c-page-padding-x)));
   background: var(--accent); color: var(--on-accent); --focus: var(--on-accent);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; white-space: nowrap;
@@ -399,14 +401,10 @@ details .txt { white-space: pre-wrap; margin: 6px 0 10px; max-width: 80ch; }
 tbody.group th { text-align: left; padding: 10px 12px; background: var(--sunken); color: var(--ink);
   font: 700 13px var(--type-font-display); }
 
-/* ---------- footer: campuses and credits ---------- */
+/* ---------- footer: credits ---------- */
 .site-foot { margin-top: 64px; padding-top: 18px; border-top: var(--c-section-h2-rule) solid var(--rule-strong); display: grid; gap: 20px;
   color: var(--text-2); max-width: none; }
 .foot-title { font-size: 22px; border: 0; padding: 0; margin: 0 0 8px; }
-.campuses { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.campuses li { padding: 12px 0; border-top: 2px solid var(--rule-strong); }
-.campuses p { margin: 0; font-size: 14px; }
-.campuses b { color: var(--ink); font: 700 17px var(--type-font-display); }
 .foot-credit { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .foot-credit p { margin: 0 auto 0 0; font-weight: 600; color: var(--ink); }
 .icon-link { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--rule-strong);

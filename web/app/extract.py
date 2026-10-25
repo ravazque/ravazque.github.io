@@ -30,7 +30,7 @@ USER_LISTS = {
     "expertises_users": "expertises_users",
 }
 PROJECT_FIELDS = ("id", "name", "slug", "difficulty", "exam", "parent")
-SCORE_FIELDS = ("value", "scoreable_type", "calculation_id", "created_at")
+SCORE_FIELDS = ("value", "scoreable_type", "scoreable_id", "calculation_id", "created_at")
 BATCH = 100
 NETWORK_SIZE = 30  # closest contacts whose given evaluations are read for the network (1 request each)
 

@@ -136,10 +136,10 @@ def build(key, now, rng):
                     feedbacks.append({**fb, "feedback_details": [{"kind": k, "rate": rng.randint(3, 4)} for k in ("nice", "rigorous", "interested", "punctuality")]})
                     received.append(e)
             if end and exam and mark:
-                scores.append(("Team", 4, 2000, end))
+                scores.append(("Team", 4, 2000, end, team["id"]))
             cursor = (end or now) + timedelta(days=rng.randint(1, 9))
         if mark and mark >= 80 and diff:
-            scores.append(("ProjectsUser", 3, int(diff * mark / 100 / 4), end))
+            scores.append(("ProjectsUser", 3, int(diff * mark / 100 / 4), end, pu_id))
         projects_users.append({"id": pu_id, "occurrence": tries - 1, "final_mark": mark, "status": "in_progress" if in_progress else "finished",
                                "validated?": None if in_progress else bool(mark and mark >= 80), "current_team_id": pu_teams[-1]["id"],
                                "project": {"id": project_id, "name": pname, "slug": slug, "parent_id": None}, "cursus_ids": [21],
@@ -163,7 +163,7 @@ def build(key, now, rng):
         e["feedbacks"] = [{"id": next(pid), "user": {"login": mates[0]["login"], "id": mates[0]["id"]}, "feedbackable_type": "ScaleTeam",
                            "feedbackable_id": e["id"], "comment": "Thanks, clear and fair.", "rating": rng.choice([4, 5, 5]), "created_at": iso(when)}]
         given.append(e)
-        scores.append(("ScaleTeam", 1, 250, when))
+        scores.append(("ScaleTeam", 1, 250, when, e["id"]))
 
     # sessions on campus: the piscine month every day, then by presence; an alumni comes by less and less
     locations, day, last_day = [], piscine, now - timedelta(hours=3)
@@ -198,16 +198,16 @@ def build(key, now, rng):
                  - max(datetime.strptime(l["begin_at"], ISO).replace(tzinfo=timezone.utc), week)).total_seconds()
                 for l in locations if l["begin_at"] < iso(week + timedelta(days=7)) and (l["end_at"] or iso(now)) > iso(week)) / 3600
         if h >= 50:
-            scores.append(("Location", 7, 500, week + timedelta(days=6, hours=20)))
+            scores.append(("Location", 7, 500, week + timedelta(days=6, hours=20), next(pid)))
         if h >= 80:
-            scores.append(("Location", 20, 1000, week + timedelta(days=6, hours=21)))
+            scores.append(("Location", 20, 1000, week + timedelta(days=6, hours=21), next(pid)))
         week += timedelta(days=7)
 
     coalition = copy.deepcopy(FIXTURE["coalitions"][0])
     cu = {**copy.deepcopy(FIXTURE["coalitions_users"][0]), "id": 990900 + uid % 100, "user_id": uid, "score": rng.randint(300, 9000), "rank": rng.randint(2, 60)}
-    coalition_scores = [{"id": next(pid), "coalition_id": coalition["id"], "scoreable_id": next(pid), "scoreable_type": kind,
+    coalition_scores = [{"id": next(pid), "coalition_id": coalition["id"], "scoreable_id": sid, "scoreable_type": kind,
                          "coalitions_user_id": cu["id"], "calculation_id": calc, "value": value, "reason": "", "created_at": iso(when),
-                         "updated_at": iso(when)} for kind, calc, value, when in scores if when <= now]
+                         "updated_at": iso(when)} for kind, calc, value, when, sid in scores if when <= now]
     correction_points, total = [], 5
     for kind, sign, when in sorted([("given", 1, datetime.strptime(e["begin_at"], ISO)) for e in given]
                                    + [("received", -1, datetime.strptime(e["begin_at"], ISO)) for e in received], key=lambda x: x[2]):

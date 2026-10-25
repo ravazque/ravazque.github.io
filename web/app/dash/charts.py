@@ -41,11 +41,11 @@ def _yaxis(f, top) -> str:
         f'<span style="bottom:{_pct(top * k / 4, top)}">{escape(_tick(f, top * k / 4, d))}</span>' for k in range(5)) + "</div>"
 
 
-def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, line=None, fmt=None, every=None,
+def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, line=None, fmt=None, every=None, tips=None,
           empty_text="") -> Markup:
     """Vertical bars per label. series: [(name, values, colour)], side by side or stacked.
     peak: a format string for the tallest column's caption ({v}, {label}). line: (name, values, colour) drawn over the
-    bars on its own right-hand scale (cumulative figures)."""
+    bars on its own right-hand scale (cumulative figures). tips: one text per label instead of the series' values."""
     if not labels or not any(v for _, vals, _ in series for v in vals):
         return empty(empty_text)
     fmt = fmt or (lambda v: f.num(v, 1))
@@ -56,11 +56,13 @@ def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, li
     best = totals.index(max(totals))
     cols = []
     for i, lab in enumerate(labels):
-        tip = " · ".join([lab] + [f"{name} {fmt(vals[i] or 0)}" for name, vals, _ in series]
-                         + ([f"{line[0]} {fmt(line[1][i])}"] if line else []))
-        bars = "".join(f'<i style="height:{_pct(vals[i] or 0, top)};background:{c}"></i>' for _, vals, c in series)
+        tip = tips[i] if tips else " · ".join([lab] + [f"{name} {fmt(vals[i] or 0)}" for name, vals, _ in series]
+                                              + ([f"{line[0]} {fmt(line[1][i])}"] if line else []))
+        # the details belong to the bars, not to the column's empty space above them
+        bars = "".join(f'<i style="height:{_pct(vals[i] or 0, top)};background:{c}"' + (f' data-tip="{escape(tip)}" title="{escape(tip)}"' if vals[i] else "") + "></i>"
+                       for _, vals, c in series)
         cap = (f'<b class="peak">{escape(peak.format(v=fmt(totals[i]), label=lab))}</b>' if peak and i == best else "")
-        cols.append(f'<div class="ch-col{" stack" if stacked else ""}" data-tip="{escape(tip)}" title="{escape(tip)}">{cap}{bars}</div>')
+        cols.append(f'<div class="ch-col{" stack" if stacked else ""}">{cap}{bars}</div>')
     overlay = ""
     if line:
         ltop = nice_max(max(line[1]) or 1)
@@ -93,8 +95,8 @@ def hbars(f, labels, series, *, label, end=None, extra=None, tips=None, empty_te
     rows = []
     for i, lab in enumerate(labels):
         tip = tips[i] if tips else " · ".join([lab] + [f"{name} {f.num(vals[i] or 0, 2)}" for name, vals, _ in series if vals[i]])
-        segs = "".join(f'<i style="width:{_pct(vals[i] or 0, top)};background:{c}"></i>' for _, vals, c in series if vals[i])
-        rows.append(f'<div class="hb-row" data-tip="{escape(tip)}" title="{escape(tip)}"><span class="hb-label">{escape(lab)}</span>'
+        segs = "".join(f'<i style="width:{_pct(vals[i] or 0, top)};background:{c}" data-tip="{escape(tip)}" title="{escape(tip)}"></i>' for _, vals, c in series if vals[i])
+        rows.append(f'<div class="hb-row"><span class="hb-label">{escape(lab)}</span>'
                     f'<span class="hb-track">{segs}<b>{escape(end(i, totals[i]))}'
                     f'{f"<span class=hb-extra> · {escape(x)}</span>" if extra and (x := extra(i)) else ""}</b></span></div>')
     summary = f"{label}: " + ", ".join(f"{lab} {end(i, totals[i])}" for i, lab in enumerate(labels))

@@ -4,8 +4,9 @@ import csv
 import io
 import json
 import math
+import calendar
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from urllib.parse import urlencode
 
 from core42.analysis import ts
@@ -46,6 +47,42 @@ def past_blackhole(pg) -> bool:
     """Transcenders and alumni have finished the Common Core: no blackhole applies to them, so none is shown."""
     main = next((c for c in pg.data["periods"]["all"]["extras"].get("cursus") or [] if c["name"] == "42cursus"), {})
     return main.get("grade") in ("Transcender", "Alumni")
+
+
+WORK_EXPERIENCE = {"work-experience-i", "work-experience-ii"}
+ALUMNI_MONTHS = 8
+
+
+def alumni_due(projects, grade) -> date | str | None:
+    """A Transcender has eight months from the last validated 42cursus project to become alumni (swifty-companion's
+    rule); an open work experience pauses the count ("paused"). None for anyone else or without a validated project."""
+    if grade != "Transcender":
+        return None
+    main = [p for p in projects if p.get("track") != "piscine"]
+    waiting = ("waiting_for_correction", "searching_a_group", "creating_group")
+    passed = lambda p: p.get("status") not in waiting and p.get("validated") is True  # noqa: E731
+    closed = lambda p: passed(p) or p.get("validated") is False or p.get("status") == "finished"  # noqa: E731
+    if any((p.get("slug") or "").removeprefix("42cursus-") in WORK_EXPERIENCE and not closed(p) for p in main):
+        return "paused"
+    last = max((p["marked"][:10] for p in main if passed(p) and p.get("marked")), default=None)
+    if not last:
+        return None
+    y, m = divmod(int(last[5:7]) - 1 + ALUMNI_MONTHS, 12)
+    y, m = int(last[:4]) + y, m + 1
+    return date(y, m, min(int(last[8:10]), calendar.monthrange(y, m)[1]))
+
+
+def promo_chart(f, promo) -> Markup:
+    """Students of the promo per whole level, every level on the axis; yours in the accent."""
+    hist = {h["level"]: h["count"] for h in promo["histogram"]}
+    levels = list(range(min(hist), max(hist) + 1)) if hist else []
+    mine = math.floor(promo["mine"])
+    tips = [" · ".join([f("standing.level_tip", level=lv), f.plural(hist.get(lv, 0), "standing.n_students")]
+                       + ([f("standing.you_here")] if lv == mine else [])) for lv in levels]
+    return ch.vbars(f, [str(lv) for lv in levels],
+                    [(f("standing.students"), [hist.get(lv, 0) if lv != mine else 0 for lv in levels], ch.S2),
+                     (f("standing.your_level"), [hist.get(lv, 0) if lv == mine else 0 for lv in levels], ch.S1)],
+                    label=f("standing.promo"), stacked=True, xtitle=f("standing.level_axis"), fmt=f.num, tips=tips)
 
 
 def my_rank(extras) -> str | None:
@@ -221,12 +258,14 @@ def profile(pg: Page) -> dict:
     pc = (D.get("insights") or {}).get("pace") or {}
     coal = P.get("coalition")
     month = lambda s: f"{f.months[int(s[5:7]) - 1]} {s[:4]}" if s else None  # noqa: E731
+    due = alumni_due(pg.data["periods"]["all"]["projects"], main.get("grade"))
     facts = [(f("head.wallet"), f.num(P["wallet"]) + " ₳") if P.get("wallet") is not None else None,
              (f("head.points"), f.num(P["correction_point"])) if P.get("correction_point") is not None else None,
              (f("profile.piscine"), month(piscine.get("begin"))) if piscine.get("begin") else None,
              (f("profile.kickoff"), f.day(main["begin"])) if main.get("begin") else None,
              (f("pace.blackhole"), f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left"))
              if main and not past_blackhole(pg) else None,
+             (f("profile.alumni"), f("profile.paused") if due == "paused" else f.day(due.isoformat())) if due else None,
              (f("home.k_coalition"), f"{coal['name']} · {f('home.nth', n=coal['rank'])}" if coal.get("rank") else coal["name"]) if coal else None]
     return {"id": "profile", "title": f("profile.title"), "nav": f("profile.title"), "head": h,
             "grade": main.get("grade"), "facts": [x for x in facts if x and x[1]]}
@@ -277,11 +316,11 @@ def home(pg: Page) -> list[dict]:
                    f("home.points_total", n=f.num(cp["total"])) if cp else ""],
          "trend": ch.trend([m["logtime"] + m["other"] for m in cp["months"]], bars=True, last=True) if cp else Markup("")},
         bonus_module(pg),
-        {"key": "pace", "label": f("home.k_pace"), "aside": f("home.since_kickoff"),
-         "value": num(pc["xp_per_month"], 0, " " + f("home.xp_month_unit")) if pc.get("xp_per_month") is not None else "–",
-         "lines": ["" if past_blackhole(pg) else f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left"),
-                   f("home.days", days=f.plural(L["days_present"], "count.days"))],
-         "trend": ch.trend([m["xp"] for m in months], bars=True, last=True)},
+        {"key": "hours", "label": f("home.k_hours"), "aside": f(f"period.{pg.period}"),
+         "value": num(round(L["total_seconds"] / 3600, 1), 1, " h"),
+         "lines": [f("home.days", days=f.plural(L["days_present"], "count.days")),
+                   f("home.hours_avg", time=f.hm(L["total_seconds"] / L["days_present"])) if L["days_present"] else ""],
+         "trend": ch.trend(list(L["monthly"].values()), bars=True, last=True)},
     ]
     for m in modules:
         m["lines"] = [x for x in m["lines"] if x]
@@ -328,14 +367,12 @@ def home(pg: Page) -> list[dict]:
                                   pg.seg("skills", [("radar", f("skills.radar")), ("bars", f("skills.bars"))], view, label=f("skills.view"), target="skills")]})
 
     C, promo = pg.data.get("coalitions") or [], pg.data.get("promo")
-    if C or promo:
+    if C or promo or recent_points(pg):
         best = max([1] + [c["score"] for c in C])
         coal = Markup("".join(
             f'<li class="{"mine" if c.get("mine") else ""}"><span class="rank">{c["rank"]}</span><span class="name"><i style="background:{safe_color(c.get("color"))}"></i>'
             f'{escape(c["name"])}{" " + badge(f("standing.yours")) if c.get("mine") else ""}</span><span class="track"><b style="width:{100 * c["score"] / best:.1f}%;'
             f'background:{safe_color(c.get("color"))}"></b></span><span class="num">{f.num(c["score"])}</span></li>' for c in C))
-        hist = promo["histogram"] if promo else []
-        mine = math.floor(promo["mine"]) if promo else None
         mine_c = pg.data["periods"]["all"]["profile"].get("coalition")
         coal_line = " · ".join(x for x in [mine_c["name"], f("standing.coal_rank", n=mine_c["rank"]) if mine_c.get("rank") else "",
                                          f("standing.coal_score", n=f.num(mine_c["score"])) if mine_c.get("score") is not None else "",
@@ -343,10 +380,7 @@ def home(pg: Page) -> list[dict]:
         sections.append({"id": "standing", "title": f("standing.title"), "nav": f("nav.standing"), "coalitions": coal, "mine": coal_line,
                          "promo_lede": f("standing.promo_lede", rank=f.num(promo["rank"]), size=f.num(promo["size"]), pct=f.num(promo["percentile"], 1),
                                          median=f.num(promo["median"], 2)) if promo else f("standing.no_promo"),
-                         "promo": ch.vbars(f, [str(h["level"]) for h in hist],
-                                           [(f("standing.students"), [h["count"] if h["level"] != mine else 0 for h in hist], ch.S2),
-                                            (f("standing.yours"), [h["count"] if h["level"] == mine else 0 for h in hist], ch.S1)],
-                                           label=f("standing.promo"), stacked=True, xtitle=f("standing.level_axis"), fmt=f.num) if promo else ""})
+                         "promo": promo_chart(f, promo) if promo else "", "recent": recent_points(pg)})
 
     if (cp := coalition_points(pg)):
         sections.append(cp)
@@ -365,10 +399,27 @@ def home(pg: Page) -> list[dict]:
     campuses = pg.campuses()
     sections.append({"id": "activity", "title": f("activity.title"), "nav": f("activity.title"),
                      "achievements": Markup(ach) or none, "events": Markup(evs) or none, "misc": Markup("".join(misc)) or none,
-                     "event_kinds": " · ".join(f"{ev_kind(k)}: {v}" for k, v in X["event_kinds"].items())})
-    if campuses:
-        sections.append({"id": "campuses", "title": f("foot.campuses"), "nav": f("foot.campuses"), "campuses": campuses})
+                     "event_kinds": " · ".join(f"{ev_kind(k)}: {v}" for k, v in X["event_kinds"].items()), "campuses": campuses})
     return sections
+
+
+def recent_points(pg: Page) -> Markup | None:
+    """The latest awards to the coalition, newest first, each with the project, evaluation or exam it came from."""
+    f, D = pg.f, pg.D
+    recent = (D.get("coalition_points") or {}).get("recent")
+    if not recent:
+        return None
+    every = pg.data["periods"]["all"]
+    names = {("projects", p.get("pu_id")): p["name"] for p in every["projects"]}
+    names |= {("exams", a.get("team_id")): p["name"] for p in every["projects"] for a in p["attempts"]}
+    names |= {("evaluations", e.get("id")): e["project"] for e in every["given"]}
+
+    def item(r):
+        name = names.get((r["key"], r.get("id")))
+        what = f(f"coal.why.{r['key']}", name=name) if name or r["key"].startswith("logtime") else f(f"coal.src.{r['key']}")
+        return (f'<li><span>{escape(what)}<br><span class="note">{escape(f.stamp(ts(r["at"]).timestamp() * 1000))}</span></span>'
+                f'<span class="when">+{escape(f.num(r["points"]))}</span></li>')
+    return Markup("".join(item(r) for r in recent))
 
 
 def bonus_module(pg: Page, now=None) -> dict:

@@ -50,8 +50,8 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .ch-col i { flex: 1 1 0; max-width: var(--c-chart-bar-max); border-radius: 2px 2px 0 0; min-height: 0; }
 .ch-col.stack { flex-direction: column-reverse; align-items: center; justify-content: flex-start; gap: 2px; }
 .ch-col.stack i { flex: none; width: 100%; max-width: var(--c-chart-bar-max); border-radius: 1px; }
-.ch-col.stack i[style^="height:0"] { display: none; }  /* empty segments add no gap */
-.ch-col:hover i { filter: brightness(1.08); }
+.ch-col.stack i[style^="height:0%"], .ch-col.stack i[style^="height:0.00%"] { display: none; }  /* empty segments add no gap */
+.ch-col i:hover, .hb-track i:hover { filter: brightness(1.12); }
 .ch-col .peak { position: absolute; top: -4px; transform: translateY(-100%); white-space: nowrap; color: var(--ink); font: 700 14px var(--type-font-display); }
 .ch-x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-left: var(--c-chart-axis-width); padding-top: 6px; }
 .has-line .ch-x { margin-right: var(--c-chart-axis-width); }
@@ -73,7 +73,7 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .hb-track i + i { margin-left: 2px; }
 .hb-track i:first-child { border-radius: 2px 0 0 2px; }
 .hb-track b { margin-left: 6px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
-.hb-row:hover .hb-label { color: var(--ink); }
+.hb-row:has(i:hover) .hb-label { color: var(--ink); }
 .timeline { display: grid; gap: 2px; }
 .tl-row, .tl-axis { display: grid; grid-template-columns: var(--c-chart-timeline-label-width) minmax(0, 1fr); gap: 10px; align-items: center; }
 .tl-label { color: var(--text-2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -106,17 +106,11 @@ details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
 .net .net-arrows path { fill: none; stroke: none; pointer-events: none; display: none; }
 .net .net-arrows path.hl { display: inline; }
 
-/* halo by how far along the 42cursus someone is (--lvl 0…1): slate for the start, the accent for Outer Core and Alumni */
-html body .graph .halo, html body .graph .bubble .halo, html body .net .net-node .halo {
-  fill: color-mix(in oklab, var(--accent-data) calc(var(--lvl, 0) * 100%), var(--slate)); opacity: calc(.12 + var(--lvl, 0) * .3);
-  stroke: none; pointer-events: none; }
-html body .net .net-node.me .halo { fill: var(--accent-data); opacity: .35; }
 .graph .bubble.received .core, .graph .bubble.given .core { transition: transform var(--motion-fast) ease-out; }
 
 /* nodes and bubbles grow under the pointer or focus; the person's chords take the accent */
-.net-node .core, .net-node .halo, .graph .bubble .core, .graph .bubble .halo { transform-box: fill-box; transform-origin: center; transition: transform var(--motion-fast) ease-out; }
+.net-node .core, .graph .bubble .core { transform-box: fill-box; transform-origin: center; transition: transform var(--motion-fast) ease-out; }
 .net-node:hover .core, .net-node:focus-visible .core, .graph .bubble:hover .core, .graph .bubble:focus-visible .core { transform: scale(1.2); }
-.net-node:hover .halo, .net-node:focus-visible .halo, .graph .bubble:hover .halo { transform: scale(1.35); }
 .focused .net-links path.hl { stroke: var(--accent-data); }
 
 /* lively controls: a small lift and the accent border under the pointer */
@@ -196,10 +190,16 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
   .line-end { display: block; }
 }
 
-/* skill bars read from the left: labels as wide as they need, not a centred column */
-[data-panel="skills"] .hchart { grid-template-columns: max-content minmax(0, 1fr); column-gap: 12px; }
-[data-panel="skills"] .hchart .hb-row { display: contents; }
-[data-panel="skills"] .hb-label { text-align: left; }
+/* bars and timelines read from the left: labels only as wide as the longest one needs, not a wide centred column */
+.hchart, .timeline { grid-template-columns: minmax(0, max-content) minmax(0, 1fr); column-gap: 12px; align-items: center; }
+.hchart .hb-row, .timeline .tl-row, .timeline .tl-axis { display: contents; }
+.hb-label, .tl-label { text-align: left; max-width: min(240px, 34vw); }
+.timeline { container-type: inline-size; }
+@container (max-width: 520px) { .tl-axis .ch-months span:nth-child(even) { visibility: hidden; } }
+/* a panel's title with its key on the right */
+.block-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 24px; }
+.block-head h3 { margin-bottom: 0; }
+.block-head .legend { margin-top: 0; }
 
 /* your circle: a smaller drawing, no glow; you sit under the chords and dim when the one in focus never met you */
 [data-panel="network"] .graph.net { max-width: 640px; margin: 0 auto; }
@@ -210,3 +210,13 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
 .table-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-top: 12px; }
 .table-foot .note { margin: 0; }
 .table-foot .note b { color: var(--ink); }
+
+/* coalitions and your latest points share one column; side by side with the promo, the column is as tall as the promo
+   and the points scroll inside it */
+[data-panel="coal-recent"] { margin-top: 28px; }
+[data-panel="coal-recent"] .list li > span:first-child { min-width: 0; }
+@media (min-width: 1280px) {
+  [data-panel="coalitions"].fit { height: 0; min-height: 100%; display: flex; flex-direction: column; }
+  .fit [data-panel="coal-recent"] { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .fit [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }
+}

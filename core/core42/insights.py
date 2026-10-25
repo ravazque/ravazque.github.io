@@ -189,17 +189,20 @@ BONUS_POINTS = {50: 500, 80: 1000}
 WEEK = timedelta(days=7)
 SOURCES = {"ScaleTeam": "evaluations", "ProjectsUser": "projects", "Team": "exams", "Location": "logtime",
            "Transaction": "wallet"}
+RECENT = 40  # latest awards listed one by one
 
 
 def coalition_points(scores: list[dict] | None) -> dict | None:
-    """Points given to the coalition by source (biggest first), per Madrid month (logtime apart), and the logtime bonuses."""
+    """Points given to the coalition by source (biggest first), per Madrid month (logtime apart), the logtime bonuses and the
+    latest awards (scoreable_id says which project, evaluation or exam each came from)."""
     if scores is None:
         return None
-    sources, months = {}, {}
+    sources, months, recent = {}, {}, []
     for s in scores:
         key = SOURCES.get(s.get("scoreable_type"), "other")
         if key == "logtime" and s.get("calculation_id") in BONUS_TIERS:
             key = f"logtime_{BONUS_TIERS[s['calculation_id']]}"
+        recent.append({"at": s["created_at"], "key": key, "points": s["value"], "id": s.get("scoreable_id")})
         row = sources.setdefault(key, {"key": key, "points": 0, "count": 0})
         row["points"] += s["value"]
         row["count"] += 1
@@ -214,7 +217,8 @@ def coalition_points(scores: list[dict] | None) -> dict | None:
     bonuses = sorted(({"at": s["created_at"], "hours": BONUS_TIERS[s["calculation_id"]], "points": s["value"]} for s in scores
                       if s.get("scoreable_type") == "Location" and s.get("calculation_id") in BONUS_TIERS), key=lambda b: b["at"], reverse=True)
     return {"total": sum(r["points"] for r in sources.values()), "count": len(scores),
-            "sources": sorted(sources.values(), key=lambda r: -r["points"]), "months": span, "bonuses": bonuses}
+            "sources": sorted(sources.values(), key=lambda r: -r["points"]), "months": span, "bonuses": bonuses,
+            "recent": sorted(recent, key=lambda r: r["at"], reverse=True)[:RECENT]}
 
 
 def bonus_window(locations: list[dict], scores: list[dict], now: datetime) -> dict:

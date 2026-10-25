@@ -72,3 +72,20 @@ async def test_reading_pages_have_no_header_and_a_back_link_to_where_you_came_fr
     assert 'class="back" href="/"' in r.text  # another host never becomes the link
     r = await client.get("/privacy")
     assert 'class="back" href="/"' in r.text
+
+
+async def test_the_landing_shows_what_you_will_see_in_a_dialog(client):
+    text = (await client.get("/", headers={"Accept-Language": "en"})).text
+    assert re.search(r'<a [^>]*href="/about#features"[^>]*data-features', text)  # without JavaScript: the About list
+    dialog = text[text.index('<dialog id="features"'):text.index("</dialog>")]
+    for s in ("Time on campus", "logged hours", "whom you evaluated", "how long", "computers you used most", "alumni"):
+        assert s in dialog, s
+    assert 'method="dialog"' in dialog
+
+
+async def test_about_says_why_what_and_how_without_promises(client):
+    text = (await client.get("/about", headers={"Accept-Language": "en"})).text
+    for h in ("Why this project?", "What you can see", "How it is built", "Beta"):
+        assert re.search(rf"<h2[^>]*>{re.escape(h)}</h2>", text), h
+    assert 'id="features"' in text and text.count("<li>") >= 10
+    assert "Coming soon" not in text and "FastAPI" in text and "not affiliated with" in text

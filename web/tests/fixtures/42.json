@@ -8070,7 +8070,7 @@
   {
    "id": 900001,
    "coalition_id": 401,
-   "scoreable_id": 900101,
+   "scoreable_id": 7000181,
    "scoreable_type": "ScaleTeam",
    "coalitions_user_id": 146330,
    "calculation_id": 1,
@@ -8106,7 +8106,7 @@
   {
    "id": 900004,
    "coalition_id": 401,
-   "scoreable_id": 900104,
+   "scoreable_id": 7000061,
    "scoreable_type": "ProjectsUser",
    "coalitions_user_id": 146330,
    "calculation_id": 3,
@@ -8118,7 +8118,7 @@
   {
    "id": 900005,
    "coalition_id": 401,
-   "scoreable_id": 900105,
+   "scoreable_id": 7000154,
    "scoreable_type": "Team",
    "coalitions_user_id": 146330,
    "calculation_id": 4,

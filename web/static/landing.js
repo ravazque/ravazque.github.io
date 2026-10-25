@@ -3,9 +3,18 @@
 // (components.site.field, or ?field=… to try one): "seats" (small cubes drifting and bouncing off each other, never
 // joining), "shapes" (Swiss forms floating and bouncing softly), "bubbles"
 // (blobs that merge and part), "cubes" (cubes that take in smaller ones and, once big, shed little cubes that do the
-// same). The pointer pushes things around and the mark tilts toward it. With reduced motion the field is one still
-// frame; without this script the panel is plain accent.
+// same). The pointer pushes things around and the mark tilts toward it; a pointer that rests lets them drift back. Bodies
+// bounce off the mark, also while it spins. With reduced motion the field is one still frame; without this script the
+// panel is plain accent.
 (() => {
+  // "What you'll see" opens its dialog; without this script the link leads to the list on About
+  const features = document.getElementById("features");
+  document.querySelector("[data-features]")?.addEventListener("click", (ev) => {
+    if (!features?.showModal) return;
+    ev.preventDefault(); features.showModal();
+  });
+  features?.addEventListener("click", (ev) => { if (ev.target === features) features.close(); });  // the backdrop
+
   const plan = document.querySelector(".landing-plan");
   if (!plan) return;
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -42,8 +51,10 @@
       }
       b.heading += Math.sin(clock * b.freq + b.phase) * b.turn * dt;
       let tx = Math.cos(b.heading) * b.cruise, ty = Math.sin(b.heading) * b.cruise;
-      if (pointer) {  // a soft field around the pointer: stronger near, gone at the edge of its reach
-        const boost = pointer.boost || 1, dx = b.x - pointer.x, dy = b.y - pointer.y, d = Math.hypot(dx, dy) || 1, reach = push * 1.3 * boost + b.r;
+      // a soft field around the pointer: stronger near, gone at the edge of its reach; it fades while the pointer rests
+      const boost = pointer ? (pointer.boost || 1) * pointer.fade + pointer.burst * 2 : 0;
+      if (boost > .02) {
+        const dx = b.x - pointer.x, dy = b.y - pointer.y, d = Math.hypot(dx, dy) || 1, reach = push * 1.3 * boost + b.r;
         if (d < reach) {
           const f = (1 - d / reach) ** 2 * cap * 7 * boost;
           tx += dx / d * f; ty += dy / d * f;
@@ -83,6 +94,46 @@
     }
   }
 
+  // ---------- the mark as an obstacle: a rounded square at the centre, turned by the spin ----------
+  // Each body is a circle; the mark's corners sweep while it spins, so its surface speed kicks what it touches.
+  const solid = {x: 0, y: 0, half: 0, round: 0, angle: 0, spin: 0};
+  function measureMark() {
+    if (!mark) return;
+    const r = mark.getBoundingClientRect(), p = plan.getBoundingClientRect(), side = parseFloat(getComputedStyle(mark).width) || 0;
+    solid.x = r.left + r.width / 2 - p.left; solid.y = r.top + r.height / 2 - p.top;
+    solid.half = side / 2; solid.round = side * 6 / 32;  // the tile's rx in its 32-unit viewBox
+  }
+  function turnMark(dt) {
+    const a = mark?.classList.contains("spin") ? (parseFloat(getComputedStyle(mark).rotate) || 0) * Math.PI / 180 : 0;
+    const da = Math.atan2(Math.sin(a - solid.angle), Math.cos(a - solid.angle));  // 360° → 0° at the end is no turn
+    solid.spin = dt ? da / dt : 0; solid.angle = a;
+  }
+  function hitMark(bodies) {
+    if (!solid.half) return;
+    const cos = Math.cos(solid.angle), sin = Math.sin(solid.angle), inner = solid.half - solid.round;
+    for (const b of bodies) {
+      if (!b) continue;
+      const wx = b.x - solid.x, wy = b.y - solid.y;
+      const lx = wx * cos + wy * sin, ly = -wx * sin + wy * cos;  // the body in the mark's own frame
+      const cx = Math.max(-inner, Math.min(inner, lx)), cy = Math.max(-inner, Math.min(inner, ly));
+      let nx = lx - cx, ny = ly - cy, d = Math.hypot(nx, ny);
+      const reach = b.r + solid.round;
+      if (d >= reach) continue;
+      if (d < 1e-6) {  // the centre is inside the square's core: out along the nearest side
+        const ex = inner - Math.abs(lx), ey = inner - Math.abs(ly);
+        [nx, ny] = ex < ey ? [Math.sign(lx) || 1, 0] : [0, Math.sign(ly) || 1];
+        d = 0;
+      } else { nx /= d; ny /= d; }
+      const push = reach - d, gx = nx * cos - ny * sin, gy = nx * sin + ny * cos;  // the normal back in the plan's frame
+      b.x += gx * push; b.y += gy * push;
+      // the surface under the body moves with the spin: ω × r
+      const sx = -solid.spin * (b.y - solid.y), sy = solid.spin * (b.x - solid.x);
+      const rel = (b.vx - sx) * gx + (b.vy - sy) * gy;
+      if (rel < 0) { b.vx -= 1.8 * rel * gx; b.vy -= 1.8 * rel * gy; b.heading = Math.atan2(b.vy, b.vx); }
+      b.x = Math.min(Math.max(b.x, b.r), W - b.r); b.y = Math.min(Math.max(b.y, b.r), H - b.r);
+    }
+  }
+
   // ---------- seats: small cubes that drift, turn a little and bounce off each other, never joining ----------
   const seats = {
     items: [],
@@ -91,7 +142,7 @@
       this.items = Array.from({length: n}, () => ({r: rand(9, 14), x: rand(0, W), y: rand(0, H), vx: rand(-.04, .04), vy: rand(-.04, .04),
                                                    a: rand(0, Math.PI), va: rand(-.0006, .0006), alpha: rand(.16, .32)}));
     },
-    step(dt) { move(this.items, dt, {cap: .06, push: 110}); collide(this.items); },
+    step(dt) { move(this.items, dt, {cap: .06, push: 110}); collide(this.items); hitMark(this.items); },
     draw() {
       for (const s of this.items) {
         ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.a);
@@ -113,7 +164,7 @@
         vx: rand(-.03, .03), vy: rand(-.03, .03), a: rand(0, Math.PI * 2), va: rand(-.00025, .00025),
         tone: Math.random() < .62 ? ink : PAPER, alpha: rand(.12, .3)}));
     },
-    step(dt) { move(this.items, dt); collide(this.items); },
+    step(dt) { move(this.items, dt); collide(this.items); hitMark(this.items); },
     draw() {
       for (const s of this.items) {
         ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.a);
@@ -200,6 +251,7 @@
         out.push(c);
       }
       this.items = out.slice(0, 60);
+      hitMark(this.items);
     },
     draw() {
       for (const c of this.items) {
@@ -216,6 +268,7 @@
   }
 
   const mode = {seats, shapes, bubbles, cubes}[field];
+  const mark = plan.querySelector(".mark");
 
   function resize() {
     const r = plan.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
@@ -223,12 +276,15 @@
     W = r.width; H = r.height;
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    measureMark();
     mode.init();
     if (still) { ctx.clearRect(0, 0, W, H); mode.draw(); }
   }
 
   function loop(now) {
     const dt = Math.min(48, now - (last || now)); last = now;  // milliseconds, capped after a hidden tab
+    if (pointer) { pointer.fade = Math.exp(-(now - pointer.at) / 1200); pointer.burst *= Math.exp(-(dt || 16) / 450); }
+    turnMark(dt);
     mode.step(dt || 16);
     ctx.clearRect(0, 0, W, H); mode.draw();
     frame = requestAnimationFrame(loop);
@@ -245,12 +301,11 @@
     if (!document.hidden) frame = requestAnimationFrame(loop);
   });
 
-  const mark = plan.querySelector(".mark");
   plan.addEventListener("pointermove", (ev) => {
     const r = plan.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
     // over the mark the field reacts twice as hard
     const m = mark?.getBoundingClientRect(), over = m && ev.clientX > m.left && ev.clientX < m.right && ev.clientY > m.top && ev.clientY < m.bottom;
-    pointer = {x, y, boost: over ? 2 : 1};
+    pointer = {x, y, boost: over ? 2 : 1, at: performance.now(), fade: 1, burst: pointer?.burst || 0};
     const tilt = over ? 40 : 30;
     plan.style.setProperty("--ty", `${((x / r.width - .5) * tilt).toFixed(1)}deg`);
     plan.style.setProperty("--tx", `${((.5 - y / r.height) * tilt).toFixed(1)}deg`);
@@ -258,7 +313,7 @@
   // a click spins the mark once; it overshoots and settles back
   mark?.addEventListener("click", () => {
     mark.classList.remove("spin"); void mark.getBoundingClientRect(); mark.classList.add("spin");
-    if (pointer) pointer.boost = 3;
+    if (pointer) pointer.burst = 1;  // a strong push that dies out: resting on the mark lets everything drift back
   });
   mark?.addEventListener("animationend", (ev) => { if (ev.animationName === "mark-spin") mark.classList.remove("spin"); });
   plan.addEventListener("pointerleave", () => {

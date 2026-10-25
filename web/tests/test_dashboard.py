@@ -9,7 +9,7 @@ from app.store import Store
 from test_extract import UID, FakeApi
 
 PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus"}
-SECTIONS = {"/app": ["profile", "home-kpis", "rhythm", "pace", "skills", "coal-points", "activity", "campuses"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
+SECTIONS = {"/app": ["profile", "home-kpis", "rhythm", "pace", "skills", "coal-points", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
             "/app/evaluations": ["community", "over-time", "when", "correction-stats", "feedback", "points", "log"],
             "/app/people": ["who", "connections", "circle", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"]}
 INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>")
@@ -172,7 +172,7 @@ def test_charts_escape_labels_and_summarise_for_screen_readers():
 def test_bubbles_never_overlap():
     people = [{"login": f"p{i}", "group": "rank-0" + str(i % 3), "received": 1 + i % 7, "given": i % 4} for i in range(40)]
     svg = graphs.bubbles(Fmt("en"), people, "mix", width=960, height=520, href=lambda login: "#")
-    circles = [(float(x), float(y), float(r)) for x, y, r in re.findall(r'translate\(([\d.]+),([\d.]+)\)"[^>]*>(?:<title>[^<]*</title>)?<circle class="halo" r="[\d.]+"/><circle class="core" r="([\d.]+)"', svg)]
+    circles = [(float(x), float(y), float(r)) for x, y, r in re.findall(r'translate\(([\d.]+),([\d.]+)\)"[^>]*>(?:<title>[^<]*</title>)?<circle class="core" r="([\d.]+)"', svg)]
     assert len(circles) == sum(1 for p in people for d in ("received", "given") if p[d])
     for i, (x, y, r) in enumerate(circles):
         for x2, y2, r2 in circles[i + 1:]:
@@ -290,7 +290,7 @@ def test_the_logtime_bonus_says_what_is_missing_and_when(report):
 async def test_home_opens_on_six_equal_modules_with_the_bonus_live(signed_in, report):
     text = (await signed_in.get("/app")).text
     keys = re.findall(r'data-module="([a-z]+)"', text)
-    assert keys == ["level", "projects", "evals", "coalition", "bonus", "pace"]
+    assert keys == ["level", "projects", "evals", "coalition", "bonus", "hours"]
     assert re.search(r'data-module="bonus"[^>]*class="[^"]*live', text) or re.search(r'class="[^"]*live[^"]*"[^>]*data-module="bonus"', text)
     assert 'class="rail"' not in text and "rail.figure_aria" not in text  # no side rail, hours are not the lead
 
@@ -317,7 +317,63 @@ async def test_transcenders_and_alumni_see_no_blackhole(signed_in, report):
     assert "Blackhole" not in text and "none ahead" not in text and "days left" not in text
 
 
-async def test_campuses_are_a_home_section_and_leave_every_footer(signed_in, report):
+async def test_campuses_are_a_panel_of_activity_and_leave_every_footer(signed_in, report):
     home = (await signed_in.get("/app")).text
-    assert '<section id="campuses"' in home and home.count('class="campuses"') == 1
-    assert 'class="campuses"' not in (await signed_in.get("/app/projects")).text
+    assert '<section id="campuses"' not in home and home.count('data-panel="campuses"') == 1
+    activity = home[home.index('<section id="activity"'):]
+    assert 'data-panel="campuses"' in activity[:activity.index("</section>")]
+    assert 'data-panel="campuses"' not in (await signed_in.get("/app/projects")).text
+
+
+async def test_the_hours_module_follows_the_period(signed_in, report):
+    for period in ("all", "piscine"):
+        text = (await signed_in.get(f"/app?period={period}")).text
+        m = text[text.index('data-module="hours"'):]
+        hours = report["periods"][period]["logtime"]["total_seconds"] / 3600
+        assert f'data-count="{round(hours, 1)}"' in m[:m.index("</article>")]
+
+
+def test_the_promo_chart_has_every_level_and_says_where_you_are():
+    from app.dash.views import promo_chart
+    html = str(promo_chart(Fmt("en"), {"histogram": [{"level": 0, "count": 3}, {"level": 2, "count": 2}], "mine": 2.4}))
+    assert html.count('class="ch-col stack"') == 3  # level 1 is empty but still on the axis
+    assert "Level 2 · 2 students · you are here" in html and "Level 0 · 3 students\"" in html and "Level 1 ·" not in html  # an empty level has no bar to point at
+    assert "Yours" not in html and "Students 0" not in html
+
+
+def test_alumni_comes_eight_months_after_the_last_validated_project_unless_paused():
+    from datetime import date
+    from app.dash.views import alumni_due
+    p = lambda slug, status, validated, marked, track="outer-core": {"slug": slug, "status": status, "validated": validated, "marked": marked, "track": track}  # noqa: E731
+    done = [p("42cursus-ft_irc", "finished", True, "2026-03-30 12:00"), p("42cursus-ft_linear_regression", "finished", True, "2026-09-28 18:46"),
+            p("music-room", "finished", False, "2026-10-01 10:00"), p("c-piscine-exam-00", "finished", True, "2026-12-01 10:00", "piscine")]
+    assert alumni_due(done, "Transcender") == date(2027, 5, 28)
+    assert alumni_due(done + [p("work-experience-i", "in_progress", None, None)], "Transcender") == "paused"
+    assert alumni_due(done + [p("42cursus-work-experience-ii", "waiting_for_correction", None, None)], "Transcender") == "paused"
+    assert alumni_due(done + [p("work-experience-i", "finished", False, "2023-04-24 10:00")], "Transcender") == date(2027, 5, 28)
+    assert alumni_due(done + [p("work-experience-i-work-experience-i-duration", "in_progress", None, None)], "Transcender") == date(2027, 5, 28)
+    assert alumni_due([p("x", "finished", True, "2026-06-30 10:00")], "Transcender") == date(2027, 2, 28)  # the month's last day
+    assert alumni_due(done, "Alumni") is None and alumni_due(done, None) is None and alumni_due([], "Transcender") is None
+
+
+async def test_transcenders_see_when_they_become_alumni(signed_in, report):
+    text = (await signed_in.get("/app")).text  # the fixture's student is a Transcender, last validated in Oct 2026
+    profile = text[text.index('<section id="profile"'):text.index('<section id="home-kpis"')]
+    assert "Alumni by" in profile and "Jun 2027" in profile
+
+
+async def test_the_latest_coalition_points_say_what_they_came_from(signed_in, report):
+    text = (await signed_in.get("/app?period=all")).text
+    standing = text[text.index('<section id="standing"'):]
+    panel = standing[standing.index('data-panel="coal-recent"'):]
+    panel = panel[:panel.index("</ol>")]
+    assert panel.index("scop") < panel.index("Leaffliction") < panel.index("over 80 h")  # newest first
+    assert "+3,150" in panel and "Evaluated" in panel
+
+
+def test_bars_show_their_details_only_over_the_bar():
+    f = Fmt("en")
+    v = str(charts.vbars(f, ["a", "b"], [("s", [3, 1], charts.S1)], label="L"))
+    assert 'class="ch-col" data-tip' not in v and v.count('data-tip="a · s 3"') == 1
+    h = str(charts.hbars(f, ["a"], [("s", [3], charts.S1), ("t", [2], charts.S2)], label="L"))
+    assert 'class="hb-row" data-tip' not in h and h.count("data-tip=") == 2

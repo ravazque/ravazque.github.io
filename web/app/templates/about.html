@@ -1,8 +1,21 @@
 {% extends "_page.html" %}
 {% block content %}
-<p class="lede">{{ t["about.p1"] }}</p>
+<h2>{{ t["about.h_why"] }}</h2>
+<p class="lede">{{ t["about.why"] }}</p>
+<p>{{ t["about.p1"] }}</p>
+<h2 id="features">{{ t["about.h_features"] }}</h2>
+<ul class="features-list">{% for n in range(1, 14) %}<li>{{ t["about.feature_" ~ n] }}</li>{% endfor %}</ul>
+<h2>{{ t["about.h_how"] }}</h2>
+<dl class="stack">
+  <div><dt>{{ t["about.k_pages"] }}</dt><dd>{{ t["about.pages"] }}</dd></div>
+  <div><dt>{{ t["about.k_backend"] }}</dt><dd>{{ t["about.backend"] }}</dd></div>
+  <div><dt>{{ t["about.k_infra"] }}</dt><dd>{{ t["about.infra"] }}</dd></div>
+</dl>
+<h2>{{ t["about.h_who"] }}</h2>
 <p>{{ t["about.p2"] }}</p>
 <p>{{ t["about.p3"] }}</p>
 <p>{{ t["about.p4"] }}</p>
+<h2>{{ t["about.h_beta"] }}</h2>
+<p>{{ t["about.beta"] }}</p>
 <p class="note">{{ t["about.contact"].replace("{email}", email) }}</p>
 {% endblock %}

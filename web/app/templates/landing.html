@@ -12,10 +12,20 @@
         <span>{{ t["site.accept"].replace("{privacy}", '<a href="/privacy">' ~ t["site.accept_link"] ~ '</a>') | safe }}</span></label>
       <button class="btn primary" type="submit">{{ t["site.signin"] }}</button>
     </form>
+    <a class="btn secondary" href="/about#features" data-features aria-haspopup="dialog">{{ t["landing.features_button"] }}</a>
     {% if dev %}<p class="dev-logins">{% for d in dev %}<a class="btn secondary" href="{{ d.href }}">{{ d.label }}</a>{% endfor %}</p>{% endif %}
     <p class="note">{{ t["site.only_madrid"] }} {{ t["site.independent"] }}</p>
     {% include "_links.html" %}
   </section>
+  <dialog id="features" class="features" aria-labelledby="features-title"><div class="features-body">
+    <div class="features-head"><h2 id="features-title">{{ t["landing.features_title"] }}</h2>
+      <form method="dialog"><button class="btn secondary" type="submit">{{ t["landing.close"] }}</button></form></div>
+    <p class="lede">{{ t["landing.features_lede"] }}</p>
+    <ul class="features-grid">{% for k in ["time", "evals", "projects", "people", "coalition", "profile"] %}
+      <li><h3>{{ t["landing.f_" ~ k ~ "_t"] }}</h3><p>{{ t["landing.f_" ~ k] }}</p></li>{% endfor %}
+    </ul>
+    <p class="note">{{ t["landing.features_note"] }} <a href="/about#features">{{ t["landing.features_all"] }}</a></p>
+  </div></dialog>
 </main>
 <script src="/static/landing.js" defer></script>
 {% endblock %}
