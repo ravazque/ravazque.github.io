@@ -26,11 +26,59 @@ section { scroll-margin-top: 80px; }
 .panel-head h2 { margin-right: auto; }
 
 /* settings as a disclosure */
-details.settings-wrap > summary { list-style: none; cursor: pointer; }
-details.settings-wrap > summary::-webkit-details-marker { display: none; }
-details.settings-wrap > summary::marker { content: ""; }
-details.settings-wrap > summary::before { content: none; }  /* report.css draws a disclosure marker on every summary */
+details.pop > summary { list-style: none; cursor: pointer; }
+details.pop > summary::-webkit-details-marker { display: none; }
+details.pop > summary::marker { content: ""; }
+details.pop > summary::before { content: none; }  /* report.css draws a disclosure marker on every summary */
 details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
+details.pop { position: relative; }
+
+/* the best stats: a star drawn like the band's other buttons; it turns gold, on a dark tile that reads on any coalition
+   colour, under the pointer or while its menu is open */
+.best { display: inline-flex; align-items: center; gap: 4px; min-height: 48px; padding: 0 10px 0 12px; background: transparent; color: var(--on-accent);
+  border: 2px solid var(--on-accent); border-radius: var(--radius-m);
+  transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out; }
+.best:hover, details.best-wrap[open] > .best { background: var(--star-bg); color: var(--star); border-color: var(--star-bg); }
+.best svg { width: 22px; height: 22px; }
+.best .star { fill: currentColor; }
+.best .caret { width: 10px; height: 6px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform var(--motion-fast) ease-out; }
+details.best-wrap[open] .caret { transform: rotate(180deg); }
+.best-menu, .menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 40; min-width: 260px; display: flex; flex-direction: column;
+  padding: 10px; background: var(--ground); color: var(--ink); border: 2px solid var(--ink); animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--ink); }
+.best-menu { border-top: 6px solid var(--star); }
+.best-menu .s-label { margin: 2px 8px 6px; }
+.best-menu a, .menu a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink); text-decoration: none; font: 600 16px var(--type-font-text); }
+.best-menu a:hover, .menu a:hover { background: var(--sunken); }
+.menu a[aria-current="page"] { background: var(--ink); color: var(--ground); }
+/* narrow windows: the pages move into a menu behind the bars */
+.menu-wrap { display: none; }
+.menu-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.menu-btn .shut, details.menu-wrap[open] .menu-btn .open { display: none; }
+details.menu-wrap[open] .menu-btn .shut { display: block; }
+details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--accent); }
+@media (max-width: 959.98px) {
+  .topbar .pages { display: none; }
+  .menu-wrap { display: block; }
+  .menu, .best-menu { min-width: 0; width: min(320px, calc(100vw - 24px)); }
+}
+@media (max-width: 519.98px) {  /* one row on a phone: the mark alone stands for the brand */
+  .topbar .brand > span { display: none; }
+  .topbar-end { gap: 8px; }
+}
+
+/* Preview: a download's table on screen */
+.head-actions { display: inline-flex; flex-wrap: wrap; gap: 10px; }
+.btn[aria-busy="true"] { cursor: progress; opacity: .6; }
+.preview { width: min(1200px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); padding: 20px 22px; border-radius: 0; box-shadow: none;
+  background: var(--ground); }
+.preview-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 10px; border-bottom: 6px solid var(--rule-strong); }
+.preview-head h2 { margin: 0; border: 0; padding: 0; font: 800 28px var(--type-font-display); }
+.preview-head form { margin: 0; }
+.preview .table-wrap { max-height: calc(100dvh - 160px); }
+.preview th { padding: 10px 12px; font: 700 14px var(--type-font-display); color: var(--text-2); white-space: nowrap; }
+.preview td { white-space: nowrap; }
+.block[id] { scroll-margin-top: calc(var(--c-topbar-height) + 64px); }
 .settings form.theme { margin: 0; }
 .settings .publish .btn { width: 100%; }
 .settings .row-links a.link-btn { text-decoration: underline; }

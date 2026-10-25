@@ -41,7 +41,9 @@
    "tip-shadow": "none",
    "list-shadow": "none",
    "mask": "#000000",
-   "bubble-fill": "38%"
+   "bubble-fill": "38%",
+   "star": "#f2c14e",
+   "star-bg": "#111417"
   },
   "dark": {
    "ground": "#0f1214",
@@ -68,7 +70,9 @@
    "list-shadow": "none",
    "bubble-fill": "52%",
    "accent": "#00babc",
-   "on-accent": "#111417"
+   "on-accent": "#111417",
+   "star": "#f2c14e",
+   "star-bg": "#111417"
   },
   "type": {
    "font-display": "\"Schibsted Grotesk\", system-ui, sans-serif",
@@ -327,7 +331,9 @@
    "row-label-width": "36%",
    "timeline-label-width": "30%",
    "timeline-row": "20px",
-   "desktop": {"height": "280px"}
+   "desktop": {
+    "height": "280px"
+   }
   },
   "consent": {
    "box": "20px",

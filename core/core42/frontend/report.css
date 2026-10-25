@@ -209,7 +209,7 @@ h3 { font: 700 var(--c-section-h3-size)/1.25 var(--type-font-display); margin-bo
 }
 .table-wrap.tall { max-height: var(--c-table-tall-max-height); }
 table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--c-table-font-size); }
-th, td { text-align: left; padding: var(--c-table-cell-padding-y) var(--c-table-cell-padding-x); border-bottom: 1px solid var(--c-table-border); vertical-align: top; }
+th, td { text-align: left; padding: var(--c-table-cell-padding-y) var(--c-table-cell-padding-x); border-bottom: 1px solid var(--c-table-border); vertical-align: middle; }
 th { position: sticky; top: 0; z-index: 1; padding: 0; background: var(--c-table-bg); border-bottom: var(--c-table-head-rule) solid var(--rule-strong); vertical-align: bottom; }
 th button {
   display: flex; align-items: center; gap: 6px; width: 100%; padding: var(--c-sort-header-padding); border: 0; background: none; cursor: pointer;
@@ -222,12 +222,17 @@ th[aria-sort] button { color: var(--c-sort-header-fg-active); }
 th[aria-sort] button::after { content: ""; flex: none; border: var(--c-sort-header-arrow-size) solid transparent; }
 th[aria-sort="ascending"] button::after { border-bottom-color: currentColor; margin-top: calc(-1 * var(--c-sort-header-arrow-size)); }
 th[aria-sort="descending"] button::after { border-top-color: currentColor; margin-top: var(--c-sort-header-arrow-size); }
+/* every sortable column shows a faint arrow, so it reads as something to press */
+th:not([aria-sort]) button::after { content: ""; flex: none; border: var(--c-sort-header-arrow-size) solid transparent; border-top-color: currentColor;
+  margin-top: var(--c-sort-header-arrow-size); opacity: .35; transition: opacity var(--motion-fast) ease-out; }
+th:not([aria-sort]) button:hover::after { opacity: .8; }
 td.num, th.num { text-align: right; }
 td.nowrap { white-space: nowrap; }
 td.mid { min-width: 160px; }
 /* table cells ignore max-width, so the clipping lives on their content */
 td.name span { display: block; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 td.proj { min-width: 140px; }
+td.proj .badge { margin-left: 10px; }
 td.proj .sub { max-width: 150px; }
 td.marks-col { min-width: 120px; }
 td.details { min-width: 200px; }
@@ -277,7 +282,7 @@ details[open] > summary::before { transform: rotate(90deg); }
 details[open] > summary .preview { display: none; }
 details .txt { white-space: pre-wrap; margin: 6px 0 10px; max-width: 80ch; }
 
-.list { margin: 10px 0 0; padding: 0; list-style: none; max-height: 440px; overflow: auto; }
+.list { margin: 10px 0 0; padding: 0 14px 0 0; list-style: none; max-height: 440px; overflow: auto; }  /* the text keeps clear of the scrollbar */
 .list li { padding: 9px 0; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 16px; }
 .list li .when { color: var(--muted); white-space: nowrap; font-size: 14px; }
 
@@ -418,8 +423,6 @@ tbody.group th { text-align: left; padding: 10px 12px; background: var(--sunken)
 
 @media (max-width: 959.98px) {
   .topbar { gap: 10px 12px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
-  .topbar .pages { order: 3; flex: 1 1 100%; flex-wrap: wrap; }
-  .topbar .pages a { flex: 1 0 auto; justify-content: center; min-height: 44px; padding: 0 12px; }
   .standings li { grid-template-columns: 1.6em minmax(0, 1fr) auto; row-gap: 6px; }
   .standings .track { grid-column: 2 / -1; grid-row: 2; }
   .sync .last, .sync .wait { display: none; }

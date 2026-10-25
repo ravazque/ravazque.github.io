@@ -24,7 +24,20 @@
   {% endif %}
   <div class="topbar-end">
     {% include "dash/_sync.html" %}
-    <details class="settings-wrap">
+    {% if page %}
+    <details class="pop best-wrap">
+      <summary class="best" aria-label="{{ t('best.label') }}" title="{{ t('best.label') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="star" d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5-4.8-4.5 6.5-.8z"/></svg><svg class="caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></summary>
+      <nav class="best-menu" aria-label="{{ t('best.label') }}">
+        <p class="s-label">{{ t("best.label") }}</p>
+        <a href="{{ page.url('home') }}#profile">{{ t("pages.home") }}</a>
+        <a href="{{ page.url('campus') }}#where-plan">{{ t("best.where") }}</a>
+        <a href="{{ page.url('campus') }}#where-clusters">{{ t("where.clusters_title") }}</a>
+        <a href="{{ page.url('people') }}#who">{{ t("who.title") }}</a>
+        <a href="{{ page.url('evaluations') }}#log">{{ t("log.title") }}</a>
+      </nav>
+    </details>
+    {% endif %}
+    <details class="pop settings-wrap">
       <summary class="gear" aria-label="{{ t('settings.label') }}" title="{{ t('settings.label') }}">{% include "dash/_gear.html" %}</summary>
       <div class="settings" role="group" aria-label="{{ t('settings.label') }}">
         <p class="s-label">{{ t("settings.accent") }}</p>
@@ -55,12 +68,25 @@
         </div>
       </div>
     </details>
+    {% if page %}
+    <details class="pop menu-wrap">
+      <summary class="gear menu-btn" aria-label="{{ t('pages.label') }}" title="{{ t('pages.label') }}"><svg class="open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="shut" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></summary>
+      <nav class="menu" aria-label="{{ t('pages.label') }}">
+        {% for k in pages %}<a href="{{ page.url(k) }}"{% if k == key %} aria-current="page"{% endif %}>{{ t("pages." ~ k) }}</a>{% endfor %}
+      </nav>
+    </details>
+    {% endif %}
   </div>
 </header>
 
 {% block body %}{% endblock %}
 
 <div id="tip" role="tooltip"></div>
+<dialog id="preview" class="preview" aria-labelledby="preview-title" data-error="{{ t('preview.error') }}">
+  <div class="preview-head"><h2 id="preview-title"></h2><form method="dialog"><button class="btn secondary" type="submit">{{ t("landing.close") }}</button></form></div>
+  <div class="table-wrap tall" id="preview-body"></div>
+</dialog>
+{% include "_touch.html" %}
 <script src="/static/vendor/htmx.min.js"></script>
 <script src="/shared/controls.js"></script>
 <script src="/shared/accent.js"></script>

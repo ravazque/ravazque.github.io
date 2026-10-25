@@ -14,6 +14,33 @@
     ev.preventDefault(); features.showModal();
   });
   features?.addEventListener("click", (ev) => { if (ev.target === features) features.close(); });  // the backdrop
+  // its sign-in button: straight in once the policy is accepted (the dialog stays until 42's page arrives), otherwise
+  // to the checkbox beside the real button
+  const form = document.querySelector("form.signin"), accept = form?.querySelector('input[name="accept"]');
+  const go = features?.querySelector("[data-go-signin]");
+  go?.addEventListener("click", () => {
+    if (accept?.checked) { busy(go); form.requestSubmit(); return; }
+    features.close();
+    if (accept) { accept.focus(); accept.closest(".consent")?.classList.add("ask"); }
+  });
+  accept?.addEventListener("change", () => accept.closest(".consent")?.classList.remove("ask"));
+  // leaving the page: the button says so and a thin bar runs along the top until the next page arrives
+  function busy(btn) {
+    if (!btn) return;
+    btn.dataset.label ??= btn.textContent; btn.textContent = btn.dataset.busy || btn.textContent;
+    btn.setAttribute("aria-busy", "true"); btn.disabled = true;
+    document.documentElement.classList.add("leaving");
+  }
+  form?.addEventListener("submit", () => setTimeout(() => busy(form.querySelector('button[type="submit"]')), 0));  // after the form is sent
+  document.addEventListener("click", (ev) => {
+    const a = ev.target.closest?.("a[href]");
+    if (!a || a.hasAttribute("data-features") || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || a.target) return;
+    if (new URL(a.href, location.href).origin === location.origin) document.documentElement.classList.add("leaving");
+  });
+  addEventListener("pageshow", () => {  // back here from 42 or another page: everything as it was
+    document.documentElement.classList.remove("leaving");
+    document.querySelectorAll("[aria-busy]").forEach((b) => { b.removeAttribute("aria-busy"); b.disabled = false; if (b.dataset.label) b.textContent = b.dataset.label; });
+  });
 
   const plan = document.querySelector(".landing-plan");
   if (!plan) return;

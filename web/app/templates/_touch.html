@@ -1,0 +1,8 @@
+{% macro tx(k) %}{{ t[k] if t is mapping else t(k) }}{% endmacro %}
+<div class="touch-block" role="alertdialog" aria-modal="true" aria-labelledby="touch-title" aria-describedby="touch-body">
+  <div class="touch-card">
+    <p class="touch-title" id="touch-title">{{ tx("touch.title") }}</p>
+    <p id="touch-body">{{ tx("touch.body") }}</p>
+    <p class="touch-links"><a href="/about">{{ tx("site.about") }}</a><a href="/privacy">{{ tx("site.privacy") }}</a></p>
+  </div>
+</div>

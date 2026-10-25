@@ -5,7 +5,7 @@
     <div class="block" data-panel="events"><h3>{{ t("extras.events_title") }}</h3><p class="note">{{ s.event_kinds }}</p><ul class="list">{{ s.events }}</ul></div>
     <div class="block" data-panel="misc"><h3>{{ t("extras.misc_title") }}</h3><ul class="list">{{ s.misc }}</ul></div>
     {% if s.campuses %}<div class="block" data-panel="campuses"><h3>{{ t("foot.campuses") }}</h3><ul class="list">
-      {% for c in s.campuses %}<li><span><b>{{ c.name }}</b>{% if c.primary %} <span class="badge">{{ t("foot.current") }}</span>{% endif %}{% if c.city %} <span class="note">{{ c.city }}</span>{% endif %}<br>
+      {% for c in s.campuses %}<li><span><b>{{ c.name }}</b>{% if c.city %} <span class="note">{{ c.city }}</span>{% endif %}<br>
         <span class="note">{{ c.line }}</span></span>{% if c.span %}<span class="when">{{ c.span }}</span>{% endif %}</li>{% endfor %}
     </ul></div>{% endif %}
   </div>

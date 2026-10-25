@@ -6,6 +6,7 @@ import json
 import math
 import calendar
 import re
+from collections import Counter
 from datetime import date, datetime, timezone
 from urllib.parse import urlencode
 
@@ -143,7 +144,7 @@ def table(f, cols, rows, *, label, sort=None, empty=None, sticky=False, detail=N
     else:
         body = "<tbody>" + "".join(line(r) for r in rows) + "</tbody>"
     attrs = f' id="{tid}"' if tid else ""
-    return Markup(f'<table{attrs} class="{"sticky-first" if sticky else ""}"{" data-nosort" if group else ""} aria-label="{escape(label)}">'
+    return Markup(f'<table{attrs} class="{"sticky-first" if sticky else ""}" aria-label="{escape(label)}">'
                   f"<thead><tr>{head}</tr></thead>{body}</table>")
 
 
@@ -170,7 +171,7 @@ def hide(value, logins: frozenset, label: str, own: str):
     if isinstance(value, dict):
         out = {k: hide(v, logins, label, own) for k, v in value.items()}
         if str(value.get("login", "")).lower() in logins and value.get("login") != own:
-            out.update(login=label, **{k: None for k in ("name", "image", "displayname") if k in value})
+            out.update(login=label, **{k: None for k in ("name", "image", "displayname", "host", "hosts") if k in value})
         return out
     if isinstance(value, list):
         return [hide(v, logins, label, own) for v in value]
@@ -192,6 +193,7 @@ class Page:
         self.period = p if p in periods else data["default_period"]
         self.D = data["periods"][self.period]
         self.light = data.get("light") is True
+        self.seats = data.get("seat_days")  # days back the other side's seat was looked up; None in older reports
         self.periods = periods
 
     def q(self, name, default="", allowed=None):
@@ -237,13 +239,13 @@ class Page:
         out = []
         for c in self.D.get("campuses") or []:
             when = f("foot.time", hours=f.num(c.get("hours"), 1), sessions=f.num(c.get("sessions"))) if c.get("sessions") else f("foot.no_sessions")
-            out.append({"name": c.get("name") or "?", "primary": c.get("primary"), "city": c.get("city"),
+            out.append({"name": c.get("name") or "?", "city": c.get("city"),
                         "line": f"{f('foot.joined', when=f.day(c.get('joined')))} · {when}",
                         "span": f("foot.span", first=f.day(c["first"]), last=f.day(c["last"])) if c.get("first") else ""})
         return out
 
     def footer(self):
-        return {"note": self.f("footer.light" if self.light else "footer.full", when=self.D.get("generated", ""))}
+        return {"note": self.f("footer.light" if self.light and not self.seats else "footer.full", when=self.D.get("generated", ""))}
 
 
 # ---------- Home ----------
@@ -791,24 +793,27 @@ def log_section(pg: Page) -> dict:
         return f'<details><summary>{escape(what)}<span class="preview">{escape(preview)}</span></summary>{"".join(parts)}</details>'
 
     flag_col = {"k": "flag", "t": f("col.flag"), "nw": True, "sv": lambda e: 2 if e.get("outstanding") else 0 if e.get("negative_flag") else 1, "f": lambda e: flag_badge(f, e)}
-    min_col = {"k": "duration_min", "t": f("col.minutes"), "num": True, "nw": True, "hide": True,
-               "f": lambda e: f'{f.num(e.get("duration_min"))} <span class="note">/ {e.get("planned_min")}</span>'
-                              + (f'<span class="sub">{escape(f("log.booked_ahead", h=f.num(e["lead_h"], 1)))}</span>' if e.get("lead_h") is not None else "")}
+    min_col = {"k": "duration_min", "t": f("col.duration"), "num": True, "nw": True,
+               "f": lambda e: f'{escape(f("unit.min", n=f.num(e.get("duration_min"))))}'
+                              f'<span class="sub">{escape(" · ".join(x for x in [f("log.planned", n=e.get("planned_min")), f("log.booked_ahead", h=f.num(e["lead_h"], 1)) if e.get("lead_h") is not None else ""] if x))}</span>'}
     my_seat = lambda e: escape(e.get("my_host") or f("log.not_logged"))  # noqa: E731
+    when = {"k": "begin_ms", "t": f("col.when"), "nw": True, "f": lambda e: escape(f'{e["begin"]} → {e["filled"][11:]}' if e.get("filled") else e["begin"])}
+
+    def person(p, checked):  # login with the seat they were at, when it was looked up
+        seat = (f("log.at_seat", seat=p["host"]) if p.get("host") else f("log.not_logged")) if checked else ""
+        return f'{avatar(p)}{escape(p.get("login"))}' + (f'<span class="sub">{escape(seat)}</span>' if seat else "")
     if role == "received":
-        cols = [{"k": "begin_ms", "t": f("col.when"), "nw": True, "f": lambda e: escape(e["begin"])},
+        cols = [when,
                 {"k": "project", "t": f("col.project"), "nw": True, "f": lambda e: f'{escape(e["project"])}<span class="sub">{escape(f("projects.attempt", n=attempt_of.get(e.get("team_id"), "?")))}</span>'},
-                {"k": "corrector", "t": f("col.corrector"), "nw": True, "sv": lambda e: e["corrector"].get("login"), "f": lambda e: f'{avatar(e["corrector"])}{escape(e["corrector"].get("login"))}'},
-                {"k": "my_host", "t": f("col.your_seat"), "nw": True, "hide": True, "f": my_seat} if pg.light else
-                {"k": "other_host", "t": f("col.seats"), "nw": True, "hide": True,
-                 "f": lambda e: f'{escape(e.get("other_host") or (f("log.not_logged") if e.get("other_host_checked") else "–"))}'
-                                f'<span class="sub">{escape(f("log.you_seat", seat=e.get("my_host") or f("log.not_logged")))}</span>'},
+                {"k": "corrector", "t": f("col.corrector"), "nw": True, "sv": lambda e: e["corrector"].get("login"),
+                 "f": lambda e: person(e["corrector"], e.get("other_host_checked"))},
+                {"k": "my_host", "t": f("col.your_seat"), "nw": True, "hide": True, "f": my_seat},
                 min_col, {"k": "mark", "t": f("col.mark"), "num": True}, flag_col, {"k": "fb_rating", "t": f("col.your_rating"), "num": True, "hide": True}]
     else:
-        cols = [{"k": "begin_ms", "t": f("col.when"), "nw": True, "f": lambda e: escape(e["begin"])},
+        cols = [when,
                 {"k": "project", "t": f("col.project"), "nw": True},
                 {"k": "correcteds", "t": f("col.evaluated"), "nw": True, "sv": lambda e: ",".join(c.get("login", "") for c in e["correcteds"]),
-                 "f": lambda e: "<br>".join(f'{avatar(c)}{escape(c.get("login"))}' for c in e["correcteds"])},
+                 "f": lambda e: "<br>".join(person(c, e.get("other_host_checked")) for c in e["correcteds"])},
                 {"k": "my_host", "t": f("col.your_seat"), "nw": True, "hide": True, "f": my_seat},
                 min_col, {"k": "mark", "t": f("col.mark"), "num": True}, flag_col, {"k": "fb_rating", "t": f("col.their_rating"), "num": True, "hide": True}]
     return {"id": "log", "title": f("log.title"), "nav": f("nav.log"), "lede": f("log.lede"), "role": role, "flag": flag, "project": proj,
@@ -985,22 +990,38 @@ def campus(pg: Page) -> list[dict]:
                      ], log, label=f("sessions.table_aria"), sort=("begin_ms", -1), empty=f("empty.search_sessions") if sq else f("empty.sessions"))})
 
     PL, S = D["place"], D["summary"]
-    role = "mine" if pg.light else pg.q("where", "corrector", ("corrector", "mine"))
-    values = PL["received_corrector_hosts"] if role == "corrector" else PL["my_eval_hosts"]
-    who = f("where.tip_corrector" if role == "corrector" else "where.tip_mine")
+    # the other side's views only where it was looked up for at least one evaluation of this period
+    looked = {"corrector": any(e.get("other_host_checked") for e in D["received"]), "evaluated": any(e.get("other_host_checked") for e in D["given"])}
+    roles = [r for r in ("corrector", "evaluated") if pg.seats and looked[r]] + ["mine"]
+    role = pg.q("where", roles[0], roles)
+    clus = lambda h: h.split("r")[0] if h and h.startswith("c") and "r" in h else (h or "not logged")  # noqa: E731
+    # the other side is known only for the evaluations it was looked up for; both series count those same evaluations
+    if role == "corrector":
+        evs = [e for e in D["received"] if e.get("other_host_checked")]
+        theirs, who = [e.get("other_host") for e in evs], f("where.tip_corrector")
+    elif role == "evaluated":
+        evs = [e for e in D["given"] if e.get("other_host_checked")]
+        theirs, who = [c.get("host") for e in evs for c in e["correcteds"]], f("where.tip_evaluated")
+    else:
+        evs, theirs, who = [], [], f("where.tip_mine")
+    values = dict(Counter(h for h in theirs if h).most_common()) if role != "mine" else PL["my_eval_hosts"]
     wplan, wscale = gr.seat_plan(f, layout, values, unit=f("unit.evals"), detail=lambda h, v: f'{h} · {f.plural(v, "count.evaluations")} · {who}')
-    first = PL["received_my_cluster"] if pg.light else PL["received_corrector_cluster"]
-    ckeys = sorted(set(first) | set(PL["given_my_cluster"]), key=lambda k: (k == "not logged", k))
+    count = lambda xs: {k: sum(1 for x in xs if clus(x) == k) for k in {clus(x) for x in xs}}  # noqa: E731
+    if role == "mine":
+        series = [(f("where.you_evaluated"), PL["received_my_cluster"], ch.S1), (f("where.you_evaluating"), PL["given_my_cluster"], ch.S2)]
+    else:
+        series = [(f(f"where.series_{role}"), count(theirs), ch.S1), (f("where.you"), count([e.get("my_host") for e in evs]), ch.S2)]
+    ckeys = sorted(set().union(*(v for _, v, _ in series)), key=lambda k: (k == "not logged", k))
     lab = lambda k: f("log.not_logged") if k == "not logged" else k  # noqa: E731
-    first_name = f("where.you_evaluated" if pg.light else "where.corrector_evaluating")
-    sections.append({"id": "where", "title": f("where.title"), "nav": f("nav.where"),
-                     "lede": f("where.lede_light", me=PL["me_located_received"], n=S["received"], given=PL["me_located_given"], total_given=S["given"]) if pg.light
-                     else f("where.lede", corrector=PL["corrector_located"], n=S["received"], me=PL["me_located_received"], same=PL["same_cluster"]),
-                     "switch": "" if pg.light else pg.seg("where", [("corrector", f("where.role_corrector")), ("mine", f("where.role_mine"))], role,
-                                                         label=f("where.role_label"), target="where"),
-                     "plan": wplan, "scale": wscale, "legend": ch.legend([(first_name, ch.S1), (f("where.you_evaluating"), ch.S2)]),
-                     "clusters": ch.vbars(f, [lab(k) for k in ckeys], [(first_name, [first.get(k, 0) for k in ckeys], ch.S1),
-                                                                       (f("where.you_evaluating"), [PL["given_my_cluster"].get(k, 0) for k in ckeys], ch.S2)],
+    lede = (f("where.lede_seats", days=pg.seats, corrector=PL["corrector_located"], c_checked=PL.get("corrector_checked", 0),
+              evaluated=PL.get("evaluated_located", 0), e_checked=PL.get("evaluated_checked", 0), me=PL["me_located_received"] + PL["me_located_given"],
+              n=S["received"] + S["given"]) if len(roles) > 1 else
+            f("where.lede_none_recent" if pg.seats else "where.lede_light", days=pg.seats, me=PL["me_located_received"], n=S["received"],
+              given=PL["me_located_given"], total_given=S["given"]))
+    sections.append({"id": "where", "title": f("where.title"), "nav": f("nav.where"), "lede": lede,
+                     "switch": pg.seg("where", [(r, f(f"where.role_{r}")) for r in roles], role, label=f("where.role_label"), target="where") if len(roles) > 1 else "",
+                     "plan": wplan, "scale": wscale, "legend": ch.legend([(n, c) for n, _, c in series]),
+                     "clusters": ch.vbars(f, [lab(k) for k in ckeys], [(n, [v.get(k, 0) for k in ckeys], c) for n, v, c in series],
                                           label=f("where.clusters_title"), fmt=f.num, empty_text=f("empty.period"))})
     return sections
 

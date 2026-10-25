@@ -1,5 +1,5 @@
 <section id="domains">
-  <div class="panel-head"><h2>{{ s.title }}</h2><a class="btn secondary" href="{{ s.portfolio }}" download>{{ t("domains.portfolio") }}</a></div>
+  <div class="panel-head"><h2>{{ s.title }}</h2><span class="head-actions"><button class="btn secondary" type="button" data-preview="{{ s.portfolio }}" data-title="{{ t('domains.portfolio_title') }}" aria-haspopup="dialog">{{ t("common.preview") }}</button><a class="btn secondary" href="{{ s.portfolio }}" download>{{ t("domains.portfolio") }}</a></span></div>
   <p class="lede">{{ s.lede }}</p>
   <div class="cols" data-grid><div class="block" data-panel="domains">{{ s.chart }}<p class="note">{{ t("domains.xp_note") }}</p></div></div>
 </section>

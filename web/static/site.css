@@ -44,18 +44,17 @@
 .features[open] { animation: features-in var(--motion-settle) var(--motion-ease); }
 @keyframes features-in { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .features[open] { animation: none; } }
-.features-body { padding: 24px var(--c-site-padding-x) 20px; }
-.features-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 24px;
-  padding-bottom: 12px; border-bottom: 6px solid var(--rule-strong); }
-.features-head h2 { margin: 0; font: 900 clamp(28px, 4.4vw, 44px)/1 var(--type-font-display); letter-spacing: -.035em; text-wrap: balance; }
-.features-head form { margin: 0; }
-.features .lede { margin: 14px 0 6px; max-width: 64ch; }
+.features-body { padding: 10px var(--c-site-padding-x) 24px; }
 .features-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); column-gap: 32px; }
 .features-grid li { padding: 14px 0 6px; border-top: 2px solid var(--rule-strong); margin-top: 14px; }
 .features-grid h3 { margin: 0 0 6px; font: 700 19px var(--type-font-display); }
 .features-grid p { margin: 0; color: var(--text-2); }
-.features .note { margin: 18px 0 0; }
-.features .note a { color: var(--ink); text-underline-offset: 3px; }
+.features-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 6px solid var(--rule-strong); }
+.features-actions form { margin: 0; }
+.landing .features-actions .btn { align-self: auto; }
+/* sign in and "What you'll see" side by side; the checkbox asks for attention when the dialog sent you to it */
+.signin-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.consent.ask { outline: 2px solid var(--accent-data); outline-offset: 6px; }
 
 /* About: the feature list and how it is built */
 .features-list { margin: 0 0 14px; padding-left: 1.2em; max-width: 70ch; }
@@ -92,10 +91,16 @@
 
 .site-main { max-width: calc(var(--c-site-max-width) + 2 * var(--c-site-padding-x)); padding: 32px var(--c-site-padding-x) 64px; }
 /* About and Privacy: no header, the text alone in the middle of the screen, Back at the bottom left */
-.site:has(.reading) { min-height: 100vh; display: grid; grid-template-rows: 1fr auto; }
+.site:has(.reading) { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-rows: 1fr auto; }
 .site-main.reading { align-self: center; justify-self: center; width: 100%; padding-top: 64px; padding-bottom: 32px; }
 .reading-foot { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px;
-  padding: 14px var(--c-site-padding-x); background: var(--ground); border-top: 1px solid var(--rule); }
+  padding: 14px var(--c-site-padding-x) max(14px, env(safe-area-inset-bottom)); background: var(--ground); border-top: 1px solid var(--rule); }
+/* a phone: one short row, Back and the language; the page's own links stay on wider screens */
+@media (max-width: 599.98px) {
+  .reading-foot { flex-wrap: nowrap; gap: 12px; padding-top: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .reading-foot .site-links > a { display: none; }
+  .reading-foot .back { flex: none; }
+}
 .back { display: inline-flex; align-items: center; min-height: var(--c-button-height); padding: 0 var(--c-button-padding-x);
   border: var(--c-button-border-width) solid var(--rule-strong); border-radius: var(--c-button-radius); color: var(--ink); text-decoration: none;
   font: 700 var(--c-button-font-size) var(--type-font-display); transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }

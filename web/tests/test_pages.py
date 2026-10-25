@@ -28,7 +28,7 @@ async def test_public_pages_link_about_privacy_and_issues(client, path):
 
 @pytest.mark.parametrize("path", ["/", "/about", "/privacy"])
 async def test_public_pages_have_no_inline_scripts(client, path):
-    assert not re.search(r"<script(?![^>]*\bsrc=)[^>]*>", (await client.get(path)).text)
+    assert not re.search(r"<script\b(?![^>]*\bsrc=)[^>]*>", (await client.get(path)).text, re.IGNORECASE)
 
 
 async def test_lang_cookie_wins_over_browser(client):
@@ -78,7 +78,7 @@ async def test_the_landing_shows_what_you_will_see_in_a_dialog(client):
     text = (await client.get("/", headers={"Accept-Language": "en"})).text
     assert re.search(r'<a [^>]*href="/about#features"[^>]*data-features', text)  # without JavaScript: the About list
     dialog = text[text.index('<dialog id="features"'):text.index("</dialog>")]
-    for s in ("Time on campus", "logged hours", "whom you evaluated", "how long", "computers you used most", "alumni"):
+    for s in ("Time on campus", "hour you logged", "who evaluated you", "how long it lasted", "computers you used most", "alumni"):
         assert s in dialog, s
     assert 'method="dialog"' in dialog
 
@@ -89,3 +89,22 @@ async def test_about_says_why_what_and_how_without_promises(client):
         assert re.search(rf"<h2[^>]*>{re.escape(h)}</h2>", text), h
     assert 'id="features"' in text and text.count("<li>") >= 10
     assert "Coming soon" not in text and "FastAPI" in text and "not affiliated with" in text
+
+
+async def test_touch_only_devices_are_blocked_on_the_landing_but_can_read_about_and_privacy(client):
+    landing = (await client.get("/", headers={"Accept-Language": "en"})).text
+    block = landing[landing.index('class="touch-block"'):]
+    assert 'href="/about"' in block and 'href="/privacy"' in block
+    for path in ("/about", "/privacy"):
+        assert "touch-block" not in (await client.get(path)).text
+
+
+async def test_what_you_will_see_sits_by_sign_in_and_its_dialog_is_only_the_modules(client):
+    text = (await client.get("/", headers={"Accept-Language": "en"})).text
+    form = text[text.index('<form class="signin"'):text.index("</form>", text.index('<form class="signin"'))]
+    assert "data-features" in form  # beside the sign-in button
+    dialog = text[text.index('<dialog id="features"'):text.index("</dialog>")]
+    assert "<h2" not in dialog and "Only your data" not in dialog and "The full list" not in dialog
+    assert re.search(r'class="features-actions".*method="dialog".*data-go-signin', dialog, re.S)
+    for s in ("hours", "seat", "evaluated", "correctors"):
+        assert s in dialog

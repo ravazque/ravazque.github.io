@@ -13,7 +13,40 @@ function sortRows(rows, index, dir, numeric) {
   });
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {sortRows};
+// one tbody per record; a grouped table sorts inside each group, its header bodies (tbody.group) staying in place
+function sortBodies(bodies, index, dir, numeric) {
+  const out = [];
+  let run = [];
+  const flush = () => { out.push(...sortRows(run, index, dir, numeric)); run = []; };
+  for (const b of bodies) {
+    if (b.classList.contains("group")) { flush(); out.push(b); } else run.push(b);
+  }
+  flush();
+  return out;
+}
+
+// CSV text (RFC 4180: quoted fields, doubled quotes, commas and line breaks inside quotes) as rows of fields
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = "", quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') quoted = false;
+      else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); rows.push(row); row = []; field = "";
+    } else field += c;
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+if (typeof module !== "undefined" && module.exports) module.exports = {sortRows, sortBodies, parseCsv};
 
 if (typeof window !== "undefined" && document.body?.dataset.page) {
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
@@ -25,43 +58,54 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
 
   // looked up each time: a period switch swaps the body, the tooltip element with it
   const tipEl = () => document.getElementById("tip") || {style: {}};
-  function showTip(text, x, y) {
+  let tipFor = null;
+  // beside the mark it explains, never over it: to its right, else its left; a mark too wide for either (a long bar,
+  // a timeline row) gets it above, else below, at the pointer's x
+  function placeTip(el, x = null) {
     const tip = tipEl();
-    tip.textContent = text; tip.style.display = "block";
-    tip.style.left = Math.max(8, Math.min(x, innerWidth - tip.offsetWidth - 8)) + "px";
-    tip.style.top = (y + tip.offsetHeight + 8 > innerHeight ? y - tip.offsetHeight - 28 : y) + "px";
+    if (tipFor === el && tip.style.display === "block") return;
+    tip.textContent = el.dataset.tip; tip.style.display = "block"; tipFor = el;
+    tip.style.left = tip.style.top = "0px";  // measured at the corner: near the right edge it would be squeezed narrower
+    const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 10, edge = 8;
+    let left, top = r.top + r.height / 2 - h / 2;
+    if (r.right + gap + w <= innerWidth - edge) left = r.right + gap;
+    else if (r.left - gap - w >= edge) left = r.left - gap - w;
+    else {
+      left = (x ?? r.left + r.width / 2) - w / 2;
+      top = r.top - gap - h >= edge ? r.top - gap - h : r.bottom + gap;
+    }
+    tip.style.left = Math.max(edge, Math.min(left, innerWidth - w - edge)) + "px";
+    tip.style.top = Math.max(edge, Math.min(top, innerHeight - h - edge)) + "px";
   }
+  const hideTip = () => { tipEl().style.display = "none"; tipFor = null; };
   document.addEventListener("mousemove", (ev) => {
     const el = ev.target.closest?.("[data-tip]");
-    if (el) showTip(el.dataset.tip, ev.clientX + 12, ev.clientY + 16);
-    else if (!document.activeElement?.dataset?.tip) tipEl().style.display = "none";
+    if (el) placeTip(el, ev.clientX);
+    else if (!document.activeElement?.dataset?.tip) hideTip();
   });
   document.addEventListener("focusin", (ev) => {
     const el = ev.target.closest?.("[data-tip]");
-    if (!el) { tipEl().style.display = "none"; return; }
-    const r = el.getBoundingClientRect();
-    showTip(el.dataset.tip, r.left, r.bottom + 8);
+    if (el) placeTip(el); else hideTip();
   });
-  document.addEventListener("focusout", () => { tipEl().style.display = "none"; });
-  // touch screens have no hover: a tap shows the cell's details, a tap elsewhere hides them
+  document.addEventListener("focusout", hideTip);
+  // a pen or a touch has no hover: a tap shows the mark's details, a tap elsewhere hides them
   document.addEventListener("pointerdown", (ev) => {
     if (ev.pointerType === "mouse") return;
     const el = ev.target.closest?.("[data-tip]");
-    if (el) showTip(el.dataset.tip, Math.max(8, ev.clientX - 40), ev.clientY + 18);
-    else tipEl().style.display = "none";
+    if (el) placeTip(el, ev.clientX); else hideTip();
   });
 
   document.addEventListener("click", (ev) => {
     const btn = ev.target.closest("th button");
     const table = btn?.closest("table");
-    if (!btn || table.hasAttribute("data-nosort")) return;
+    if (!btn) return;
     const th = btn.parentElement, index = [...th.parentElement.children].indexOf(th);
     const numeric = btn.dataset.num === "1";
     const dir = th.getAttribute("aria-sort") === "descending" ? 1 : th.getAttribute("aria-sort") === "ascending" ? -1 : numeric ? -1 : 1;
     $$("th", th.parentElement).forEach((x) => x.removeAttribute("aria-sort"));
     th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending");
     const bodies = $$(":scope > tbody", table);
-    if (bodies.length > 1) table.append(...sortRows(bodies, index, dir, numeric));
+    if (bodies.length > 1) table.append(...sortBodies(bodies, index, dir, numeric));
     else if (bodies[0]) bodies[0].append(...sortRows($$(":scope > tr", bodies[0]), index, dir, numeric));
   });
 
@@ -70,7 +114,7 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     $$("[data-roving]", root).forEach((g) => $$("[data-cell]", g).forEach((c, i) => { c.tabIndex = i ? -1 : 0; }));
   }
   document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") $$("details.settings-wrap[open]").forEach((d) => { d.open = false; d.querySelector("summary").focus(); });
+    if (ev.key === "Escape") $$("details.pop[open]").forEach((d) => { d.open = false; d.querySelector("summary").focus(); });
     const cell = ev.target.closest?.("[data-cell]"), grid = cell?.closest("[data-roving]");
     if (!grid) return;
     const cells = $$("[data-cell]", grid), i = cells.indexOf(cell);
@@ -93,24 +137,23 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     if (next) { cell.tabIndex = -1; next.tabIndex = 0; next.focus(); }
   });
   document.addEventListener("click", (ev) => {
-    $$("details.settings-wrap[open]").forEach((d) => { if (!d.contains(ev.target)) d.open = false; });
+    $$("details.pop[open]").forEach((d) => { if (!d.contains(ev.target)) d.open = false; });
   });
 
   // a tooltip or the open settings never outlive what they belong to: scrolling (the page or a box inside it), leaving
   // the window, resizing, Escape or swapping in new content closes them
-  const hideTip = () => { tipEl().style.display = "none"; };
-  const closeSettings = () => $$("details.settings-wrap[open]").forEach((d) => { d.open = false; });
+  const closeSettings = () => $$("details.pop[open]").forEach((d) => { d.open = false; });
   let openedAt = 0, dismissed = null;
   document.addEventListener("toggle", (ev) => {
-    if (ev.target.matches?.("details.settings-wrap") && ev.target.open) openedAt = scrollY;
+    if (ev.target.matches?.("details.pop") && ev.target.open) openedAt = scrollY;
   }, true);
   document.addEventListener("scroll", (ev) => {
     // a tooltip opened from the keyboard follows its element (Tab scrolls it into view right after focusing it)
     const kb = document.activeElement?.matches?.("[data-tip]:focus-visible") && document.activeElement !== dismissed && document.activeElement;
     const r = kb && kb.getBoundingClientRect();
-    if (r && r.bottom > 0 && r.top < innerHeight) showTip(kb.dataset.tip, r.left, r.bottom + 8);
-    else hideTip();
-    const inSettings = ev.target.closest?.("details.settings-wrap");
+    hideTip();
+    if (r && r.bottom > 0 && r.top < innerHeight) placeTip(kb);
+    const inSettings = ev.target.closest?.("details.pop");
     // the page's own scroll gets a few pixels of slack: opening the panel on a phone can nudge it
     if (!inSettings && (ev.target !== document || Math.abs(scrollY - openedAt) > 8)) closeSettings();
   }, {capture: true, passive: true});
@@ -157,6 +200,48 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     const b = ev.target.closest("#accentChoice button"); if (!b || b.disabled) return;
     store.set("accent", b.dataset.v); applyAccentChoice(b.dataset.v);
   });
+  // Preview: the CSV a download button would give, in a dialog; it opens once the file is here, never empty
+  document.addEventListener("click", async (ev) => {
+    const btn = ev.target.closest?.("[data-preview]"), dlg = document.getElementById("preview");
+    if (!btn || !dlg?.showModal || btn.getAttribute("aria-busy") === "true") return;
+    btn.setAttribute("aria-busy", "true");
+    try {
+      const r = await fetch(btn.dataset.preview, {credentials: "same-origin"});
+      if (!r.ok) throw new Error(String(r.status));
+      const [head = [], ...rows] = parseCsv(await r.text());
+      const cell = (tag, v) => { const el = document.createElement(tag); el.textContent = v; if (tag === "th") el.scope = "col"; return el; };
+      const table = document.createElement("table"), thead = table.createTHead().insertRow(), tbody = table.createTBody();
+      head.forEach((h) => thead.append(cell("th", h)));
+      rows.forEach((r) => { const tr = tbody.insertRow(); r.forEach((v) => tr.append(cell("td", v))); });
+      table.setAttribute("aria-label", btn.dataset.title || "");
+      dlg.querySelector("#preview-title").textContent = btn.dataset.title || "";
+      dlg.querySelector("#preview-body").replaceChildren(table);
+      hideTip(); closeSettings();
+      dlg.showModal();
+    } catch (e) {
+      const note = document.createElement("p");
+      note.className = "note"; note.setAttribute("role", "alert"); note.textContent = dlg.dataset.error || "";
+      dlg.querySelector("#preview-title").textContent = btn.dataset.title || "";
+      dlg.querySelector("#preview-body").replaceChildren(note);
+      dlg.showModal();
+    } finally {
+      btn.removeAttribute("aria-busy");
+    }
+  });
+  document.addEventListener("click", (ev) => { if (ev.target.id === "preview") ev.target.close(); });  // the backdrop
+
+  // moving to another page: a thin bar runs under the band until the new page (or swap) arrives; nothing changes before
+  const leaving = (on) => document.documentElement.classList.toggle("leaving", on);
+  document.addEventListener("click", (ev) => {
+    const a = ev.target.closest?.("a[href]");
+    if (!a || ev.defaultPrevented || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || a.target || a.hasAttribute("download")) return;
+    const u = new URL(a.href, location.href);
+    if (u.origin === location.origin && (u.pathname !== location.pathname || u.search !== location.search)) leaving(true);
+  });
+  document.addEventListener("submit", () => leaving(true));
+  addEventListener("pageshow", () => leaving(false));  // back from the next page (bfcache) with the bar still on
+  ["htmx:afterSettle", "htmx:responseError", "htmx:sendError"].forEach((n) => document.body.addEventListener(n, () => leaving(false)));
+
   // the swapped-in settings show the current choices again
   document.body.addEventListener("htmx:afterSettle", () => { applyTheme(store.get("theme")); applyAccentChoice(store.get("accent")); });
 

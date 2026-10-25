@@ -12,7 +12,7 @@ PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evalu
 SECTIONS = {"/app": ["profile", "home-kpis", "rhythm", "pace", "skills", "coal-points", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
             "/app/evaluations": ["community", "over-time", "when", "correction-stats", "feedback", "points", "log"],
             "/app/people": ["who", "connections", "circle", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"]}
-INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>")
+INLINE_SCRIPT = re.compile(r"<script\b(?![^>]*\bsrc=)[^>]*>", re.IGNORECASE)
 
 
 async def _noop(_):
@@ -377,3 +377,85 @@ def test_bars_show_their_details_only_over_the_bar():
     assert 'class="ch-col" data-tip' not in v and v.count('data-tip="a · s 3"') == 1
     h = str(charts.hbars(f, ["a"], [("s", [3], charts.S1), ("t", [2], charts.S2)], label="L"))
     assert 'class="hb-row" data-tip' not in h and h.count("data-tip=") == 2
+
+
+async def test_the_sync_bar_shows_only_the_progress_while_reading(signed_in, report, memory, settings):
+    await Store(memory, settings).set_status(7, state="running", progress=.4)
+    text = (await signed_in.get("/app/sync")).text
+    assert 'class="progress"' in text and 'class="wait"' not in text
+    assert re.search(r'class="visually-hidden">Reading the 42 API<', text)  # still said to screen readers
+
+
+async def test_home_is_called_profile_and_opens_on_the_identity_card(signed_in, report):
+    text = (await signed_in.get("/app")).text
+    assert re.search(r"<h1[^>]*>\s*Profile\s*</h1>", text) and re.search(r'aria-current="page">Profile</a>', text)
+    profile = text[text.index('<section id="profile"'):text.index("</section>", text.index('<section id="profile"'))]
+    assert "<h2" not in profile and 'class="id-card"' in profile
+
+
+async def test_campuses_carry_no_current_badge(signed_in, report):
+    text = (await signed_in.get("/app")).text
+    panel = text[text.index('data-panel="campuses"'):]
+    assert "current" not in panel[:panel.index("</div>")]
+
+
+@pytest.mark.parametrize("path", ["/app", "/app/people"])
+async def test_touch_only_devices_get_the_block_on_the_app(signed_in, report, path):
+    assert 'class="touch-block"' in (await signed_in.get(path)).text
+
+
+def _with_seats(report):
+    """The fixture report with the other side looked up for its first received and first given evaluation."""
+    import copy
+    data = copy.deepcopy(report)
+    data["seat_days"] = 60
+    for D in data["periods"].values():
+        for e in D["received"][:1]:
+            e.update(other_host="c1r1s1", other_host_checked=True)
+            e["corrector"]["host"] = "c1r1s1"
+        for e in D["given"][:1]:
+            e["other_host_checked"] = True
+            for c in e["correcteds"]:
+                c["host"] = "c3r2s1"
+    return data
+
+
+def test_the_log_says_when_each_evaluation_ran_how_long_and_where_everyone_sat(report):
+    from app.dash.views import Page, log_section
+    data = _with_seats(report)
+    for role, other in (("received", "c1r1s1"), ("given", "c3r2s1")):
+        s = log_section(Page(Fmt("en"), data, "evaluations", {"period": "all", "log": role}))
+        e = data["periods"]["all"][role][0]
+        table = str(s["table"])
+        assert f'{e["begin"]} → {e["filled"][11:]}' in table  # start and end, Madrid time
+        assert other in table and "Your seat" in table and "min" in table
+        assert re.search(r'<th scope="col" class="num nowrap"[^>]*><button[^>]*>Duration', table)  # not hidden on narrow screens
+
+
+def test_where_shows_the_corrector_whom_you_evaluated_or_you(report):
+    from app.dash.views import Page, campus
+    data = _with_seats(report)
+    for role, seat in (("corrector", "c1r1s1"), ("evaluated", "c3r2s1")):
+        where = campus(Page(Fmt("en"), data, "campus", {"period": "all", "where": role}))[-1]
+        assert seat in str(where["plan"]) and "last 60 days" in where["lede"]
+    old = {k: v for k, v in report.items() if k != "seat_days"}
+    plain = campus(Page(Fmt("en"), old, "campus", {"period": "all", "where": "corrector"}))[-1]
+    assert plain["switch"] == "" and "c1r1s1" not in str(plain["plan"])  # an older report: only your own seat
+
+
+def test_a_hidden_student_loses_their_seat_too(report):
+    from app.dash.views import hide
+    data = _with_seats(report)
+    login = data["periods"]["all"]["received"][0]["corrector"]["login"]
+    out = hide(data, frozenset({login.lower()}), "Hidden", "someone-else")
+    assert out["periods"]["all"]["received"][0]["corrector"] == {**out["periods"]["all"]["received"][0]["corrector"], "login": "Hidden", "host": None}
+
+
+def test_where_offers_the_other_side_only_when_it_was_looked_up(report):
+    from app.dash.views import Page, campus
+    data = {**report, "seat_days": 60}
+    for D in data["periods"].values():
+        for e in D["received"] + D["given"]:
+            e["other_host_checked"] = False  # nothing in the last 60 days
+    where = campus(Page(Fmt("en"), data, "campus", {"period": "all"}))[-1]
+    assert where["switch"] == "" and "c1r1s1" not in str(where["plan"])  # straight to your own seat, no empty views

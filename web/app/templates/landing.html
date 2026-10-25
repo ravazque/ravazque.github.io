@@ -10,22 +10,23 @@
     <form class="signin" method="get" action="/auth/login">
       <label class="consent"><input type="checkbox" name="accept" value="1" required>
         <span>{{ t["site.accept"].replace("{privacy}", '<a href="/privacy">' ~ t["site.accept_link"] ~ '</a>') | safe }}</span></label>
-      <button class="btn primary" type="submit">{{ t["site.signin"] }}</button>
+      <div class="signin-actions"><button class="btn primary" type="submit" data-busy="{{ t["landing.signing_in"] }}">{{ t["site.signin"] }}</button>
+        <a class="btn secondary" href="/about#features" data-features aria-haspopup="dialog">{{ t["landing.features_button"] }}</a></div>
     </form>
-    <a class="btn secondary" href="/about#features" data-features aria-haspopup="dialog">{{ t["landing.features_button"] }}</a>
     {% if dev %}<p class="dev-logins">{% for d in dev %}<a class="btn secondary" href="{{ d.href }}">{{ d.label }}</a>{% endfor %}</p>{% endif %}
     <p class="note">{{ t["site.only_madrid"] }} {{ t["site.independent"] }}</p>
     {% include "_links.html" %}
   </section>
-  <dialog id="features" class="features" aria-labelledby="features-title"><div class="features-body">
-    <div class="features-head"><h2 id="features-title">{{ t["landing.features_title"] }}</h2>
-      <form method="dialog"><button class="btn secondary" type="submit">{{ t["landing.close"] }}</button></form></div>
-    <p class="lede">{{ t["landing.features_lede"] }}</p>
+  <dialog id="features" class="features" aria-label="{{ t["landing.features_button"] }}"><div class="features-body">
     <ul class="features-grid">{% for k in ["time", "evals", "projects", "people", "coalition", "profile"] %}
       <li><h3>{{ t["landing.f_" ~ k ~ "_t"] }}</h3><p>{{ t["landing.f_" ~ k] }}</p></li>{% endfor %}
     </ul>
-    <p class="note">{{ t["landing.features_note"] }} <a href="/about#features">{{ t["landing.features_all"] }}</a></p>
+    <div class="features-actions">
+      <form method="dialog"><button class="btn secondary" type="submit">{{ t["landing.close"] }}</button></form>
+      <button class="btn primary" type="button" data-go-signin data-busy="{{ t["landing.signing_in"] }}">{{ t["site.signin"] }}</button>
+    </div>
   </div></dialog>
 </main>
+{% include "_touch.html" %}
 <script src="/static/landing.js" defer></script>
 {% endblock %}

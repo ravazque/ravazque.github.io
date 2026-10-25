@@ -1,5 +1,4 @@
-<section id="profile">
-  <h2>{{ s.title }}</h2>
+<section id="profile" aria-label="{{ s.title }}">
   <div class="id-card">
     <div class="avatar-lg"><span aria-hidden="true">{{ s.head.initials }}</span>{% if s.head.image %}<img src="{{ s.head.image }}" alt="">{% endif %}</div>
     <div class="id-text">
