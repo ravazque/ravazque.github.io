@@ -513,7 +513,7 @@ def test_the_log_says_when_each_evaluation_ran_how_long_and_where_everyone_sat(r
         s = log_section(Page(Fmt("en"), data, "evaluations", {"period": "all", "log": role}))
         e = data["periods"]["all"][role][0]
         table = str(s["table"])
-        assert f'{e["begin"]} → {e["filled"][11:]}' in table  # start and end, Madrid time
+        assert f'{e["begin"]} <span class="arr">➜</span> {e["filled"][11:]}' in table  # start and end, Madrid time
         assert other in table and "Your seat" in table and "min" in table
         assert re.search(r'<th scope="col" class="num nowrap"[^>]*><button[^>]*>Duration', table)  # not hidden on narrow screens
 
@@ -626,3 +626,18 @@ def test_teammates_say_how_many_different_people(report):
     tm = next(s for s in people(Page(Fmt("en"), report, "people", {"period": "all"})) if s["id"] == "teammates")
     n = len((report["periods"]["all"].get("insights") or {}).get("teammates") or [])
     assert tm["count"] == (f"{n} person" if n == 1 else f"{n} people")
+
+
+@pytest.mark.parametrize("mode", ["received", "given", "mix"])
+async def test_every_connections_mode_draws_its_section(signed_in, report, mode):
+    r = await signed_in.get(f"/app/people?period=all&mode={mode}", headers={"HX-Request": "true"})
+    assert r.status_code == 200
+    section = r.text[r.text.index('<section id="connections"'):]
+    section = section[:section.index("</section>")]
+    assert 'class="bubble' in section and f'mode={mode}' in section
+
+
+async def test_an_htmx_request_without_a_session_takes_the_whole_page_to_the_landing(client):
+    r = await client.get("/app/people?mode=given", headers={"HX-Request": "true"})
+    assert r.status_code == 200 and r.headers["HX-Redirect"] == "/"  # not a 303 that htmx would swap into a section
+    assert (await client.get("/app/people")).status_code == 303

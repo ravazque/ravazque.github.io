@@ -130,8 +130,7 @@ def table(f, cols, rows, *, label, sort=None, empty=None, sticky=False, detail=N
         for r in rows:
             g = group["key"](r) if group else None
             if group and g != prev:
-                n = sum(1 for x in rows if group["key"](x) == g)
-                parts.append(f'<tbody class="group"><tr><th scope="rowgroup" colspan="{len(cols)}">{escape(group["label"](g))} <span class="note">– {n}</span></th></tr></tbody>')
+                parts.append(f'<tbody class="group"><tr><th scope="rowgroup" colspan="{len(cols)}">{escape(group["label"](g))}</th></tr></tbody>')
                 prev = g
             d = detail(r) if detail else ""
             parts.append(f'<tbody class="pair">{line(r)}<tr class="detail"><td colspan="{len(cols)}">{d}</td></tr></tbody>' if d else f"<tbody>{line(r)}</tbody>")
@@ -141,6 +140,9 @@ def table(f, cols, rows, *, label, sort=None, empty=None, sticky=False, detail=N
     attrs = f' id="{tid}"' if tid else ""
     return Markup(f'<table{attrs} class="{"sticky-first" if sticky else ""}" aria-label="{escape(label)}">'
                   f"<thead><tr>{head}</tr></thead>{body}</table>")
+
+
+ARROW = '<span class="arr">➜</span>'  # ranges and steps
 
 
 def badge(text, kind="") -> str:
@@ -558,7 +560,7 @@ def projects(pg: Page) -> list[dict]:
         if not p["attempts"]:
             return ""
         items = "".join(
-            f'<li><p><b>{escape(f("projects.attempt_title", n=a["n"]))}</b> {mark_chip(f, a)} <span class="note">{escape(a.get("start"))} → '
+            f'<li><p><b>{escape(f("projects.attempt_title", n=a["n"]))}</b> {mark_chip(f, a)} <span class="note">{escape(a.get("start"))} {ARROW} '
             f'{escape(a.get("closed") or a.get("locked") or f("projects.tip_open"))}</span></p>'
             f'<p class="note">{escape(f("projects_table.team", list=", ".join(a["members"])) if a.get("members") else f("projects_table.solo"))}</p>'
             + (f'<ul class="evals">{"".join(eval_line(e) for e in a["evaluations"])}</ul>' if a.get("evaluations") else f'<p class="note">{escape(f("projects_table.no_evals"))}</p>')
@@ -576,7 +578,7 @@ def projects(pg: Page) -> list[dict]:
         {"k": "status", "t": f("col.status"), "nw": True, "hide": True, "f": status},
         {"k": "mark", "t": f("col.final"), "num": True, "f": lambda p: escape(p["mark"]) if p.get("mark") is not None else "–"},
         {"k": "attempts", "t": f("col.attempts"), "cls": "marks-col", "sv": lambda p: len(p["attempts"]),
-         "f": lambda p: '<span class="marks">' + "".join(mark_chip(f, a) if i == 0 else f'<span class="step">→{mark_chip(f, a)}</span>'
+         "f": lambda p: '<span class="marks">' + "".join(mark_chip(f, a) if i == 0 else f'<span class="step">{ARROW}{mark_chip(f, a)}</span>'
                                                           for i, a in enumerate(p["attempts"])) + "</span>"},
         {"k": "outstanding", "t": f("col.outstanding"), "num": True},
         {"k": "xp_earned", "t": f("col.xp"), "num": True, "nw": True,
@@ -616,7 +618,7 @@ def projects(pg: Page) -> list[dict]:
             outcome = f("outcome.validated") if a.get("validated") else f("outcome.failed") if a.get("validated") is False else a.get("status") or ""
             tip = " · ".join(x for x in [
                 f("projects.tip_title", name=p["name"], n=a["n"], of=len(p["attempts"])), f"{outcome} · {f('projects.tip_mark', mark=a.get('mark') if a.get('mark') is not None else '–')}",
-                f"{a.get('start')} → {a.get('closed') or a.get('locked') or f('projects.tip_open')} ({f('projects.tip_days', n=f.num(a.get('days'), 1))})",
+                f"{a.get('start')} ➜ {a.get('closed') or a.get('locked') or f('projects.tip_open')} ({f('projects.tip_days', n=f.num(a.get('days'), 1))})",
                 f.plural(len(a.get("evals") or []), "count.evaluations") + (f" · {a['outstanding']} {f('flag.outstanding')}" if a.get("outstanding") else ""),
                 f("projects.by", list=", ".join(a["correctors"])) if a.get("correctors") else "",
                 f("projects.team", list=", ".join(a["members"])) if a.get("members") else ""] if x)
@@ -843,7 +845,7 @@ def log_section(pg: Page) -> dict:
                "f": lambda e: f'{escape(f("unit.min", n=f.num(e.get("duration_min"))))}'
                               f'<span class="sub">{escape(" · ".join(x for x in [f("log.planned", n=e.get("planned_min")), f("log.booked_ahead", h=f.num(e["lead_h"], 1)) if e.get("lead_h") is not None else ""] if x))}</span>'}
     my_seat = lambda e: escape(e.get("my_host") or f("log.not_logged"))  # noqa: E731
-    when = {"k": "begin_ms", "t": f("col.when"), "nw": True, "f": lambda e: escape(f'{e["begin"]} → {e["filled"][11:]}' if e.get("filled") else e["begin"])}
+    when = {"k": "begin_ms", "t": f("col.when"), "nw": True, "f": lambda e: f'{escape(e["begin"])} {ARROW} {escape(e["filled"][11:])}' if e.get("filled") else escape(e["begin"])}
 
     def person(p, checked):  # login with the seat they were at, when it was looked up
         seat = (f("log.at_seat", seat=p["host"]) if p.get("host") else f("log.not_logged")) if checked else ""
@@ -1002,7 +1004,7 @@ def campus(pg: Page) -> list[dict]:
             + (" " + f("seats.lede_overlap", overlap=f.hm(overlap)) if overlap >= 60 else "")) if top else f("empty.sessions")
     info = {s["host"]: s for s in L["seats"]}
     plan, sc = gr.seat_plan(f, layout, {s["host"]: s["seconds"] for s in L["seats"]}, unit="h", to_unit=lambda v: v / 3600, anchor=True,
-                            detail=lambda h, v: f'{h} · {f.nb(info[h]["hours"], "h")} · {f.plural(info[h]["sessions"], "count.sessions")} · {f.day(info[h]["first"])} → {f.day(info[h]["last"])}')
+                            detail=lambda h, v: f'{h} · {f.nb(info[h]["hours"], "h")} · {f.plural(info[h]["sessions"], "count.sessions")} · {f.day(info[h]["first"])} ➜ {f.day(info[h]["last"])}')
     best = max(top["hours"], 1e-9) if top else 1
     part = lambda s, i: (m.group(i) if (m := re.fullmatch(r"c(\d+)r(\d+)s(\d+)", s["host"])) else None)  # noqa: E731
     seat_link = lambda s: f'<a class="code" href="#seat-{escape(s["host"])}" title="{escape(f("computers.show_on_plan", seat=s["host"]))}">{escape(s["host"])}</a>'  # noqa: E731

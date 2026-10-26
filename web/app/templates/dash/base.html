@@ -80,8 +80,8 @@
           {% endif %}
           {% if dev_mode %}<button class="link-btn" type="button" data-tour-again>{{ t("tour.again") }}</button>{% endif %}
           <div class="row-links">
-            <a class="link-btn" href="/app/delete">{{ t("delete.button") }}</a>
-            <form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link-btn" type="submit">{{ t("signout.button") }}</button></form>
+            <form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn secondary" type="submit">{{ t("signout.button") }}</button></form>
+            <a class="btn secondary danger" href="/app/delete">{{ t("delete.button") }}</a>
           </div>
         </div>
       </div>

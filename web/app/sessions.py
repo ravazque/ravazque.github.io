@@ -3,7 +3,7 @@ import json
 import secrets
 
 from fastapi import Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 COOKIE = "__Host-session"
 KEY = "sess:{}"
@@ -50,6 +50,8 @@ async def current_user(request: Request) -> dict:
 async def no_session_handler(request: Request, _exc: NoSession):
     if request.url.path.startswith("/api/") or request.url.path.startswith("/avatar/"):
         return JSONResponse({"error": "session"}, status_code=401)
+    if request.headers.get("HX-Request"):  # htmx would follow a 303 and swap the landing into a section: go there whole
+        return Response(headers={"HX-Redirect": "/"})
     return RedirectResponse("/", status_code=303)
 
 

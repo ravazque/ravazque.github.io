@@ -94,7 +94,6 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 .block[id] { scroll-margin-top: calc(var(--c-topbar-height) + 64px); }
 .settings form.theme { margin: 0; }
 .settings .publish .btn { width: 100%; }
-.settings .row-links a.link-btn { text-decoration: underline; }
 
 /* charts */
 .vchart, .lchart, .hchart, .timeline { margin: 10px 0 0; font-size: var(--c-chart-font-size); color: var(--muted); }
@@ -403,13 +402,21 @@ html body .seg > a[aria-pressed="true"]:hover, html body .seg button[aria-presse
 /* your circle: the invisible double of your node that sits above the chords */
 .net .me-hit circle { fill: transparent; stroke: none; }
 .net .me-hit:hover circle { stroke: none; }
-/* connections: each bubble bobs in its place, slowly and out of step with its neighbours; a translate animation the
-   compositor runs, so the initials glide instead of snapping to pixels */
-.graph .bubble { animation: bob 5.5s ease-in-out infinite alternate; will-change: translate; }
-.graph .bubble:nth-child(4n + 1) { animation-duration: 6.5s; animation-delay: -2s; }
-.graph .bubble:nth-child(4n + 2) { animation-duration: 7s; animation-delay: -4.5s; }
-.graph .bubble:nth-child(4n + 3) { animation-duration: 6s; animation-delay: -1s; animation-direction: alternate-reverse; }
-.graph .bubble text { text-rendering: geometricPrecision; }
-@keyframes bob { from { translate: 0 1.5px; } to { translate: 0 -1.5px; } }
-@media (prefers-reduced-motion: reduce) { .graph .bubble { animation: none; } }
+/* connections: every few seconds a heartbeat runs through each group, biggest bubble first; only the circle grows,
+   never the text, so nothing jerks */
+.graph .bubble .core { animation: beat 7s ease-in-out infinite; animation-delay: calc(var(--i, 0) * .14s + var(--g, 0) * .8s); }
+@keyframes beat { 0%, 9%, 100% { scale: 1; } 4% { scale: 1.09; } }
+@media (prefers-reduced-motion: reduce) { .graph .bubble .core { animation: none; } }
 .fb-quote { font-style: italic; }
+
+/* ranges and steps: the arrow on the middle of the line, not on its baseline */
+.arr { display: inline-block; font-size: .85em; line-height: 1; vertical-align: .08em; color: var(--muted); }
+.step .arr { margin: 0 2px; }
+/* everyone you crossed paths with: one line of headings */
+[data-panel="table-people"] th button { white-space: nowrap; }
+/* account actions in the settings, as buttons; deleting in red */
+.settings .row-links { display: flex; gap: 8px; flex-wrap: wrap; }
+.settings .row-links .btn { flex: 1 1 auto; min-height: 40px; white-space: nowrap; }
+.settings .row-links .btn.danger { color: var(--critical); border-color: var(--critical); }
+.settings .row-links .btn.danger:hover { background: color-mix(in oklab, var(--critical) 12%, transparent); }
+.settings .row-links form { flex: 1 1 auto; display: flex; margin: 0; }

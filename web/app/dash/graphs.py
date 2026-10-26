@@ -212,10 +212,12 @@ def bubbles(f, people, mode, *, width, height, href) -> str:
     links = "".join(f'<line class="link" x1="{n["x"]:.1f}" y1="{n["y"]:.1f}" x2="{at[(n["login"], "given")]["x"]:.1f}" y2="{at[(n["login"], "given")]["y"]:.1f}"/>'
                     for n in nodes if mode == "mix" and n["dir"] == "received" and (n["login"], "given") in at)
     labels = "".join(f'<text class="group-label" text-anchor="middle" x="{c["x"]:.1f}" y="{c["top"] + 18:.1f}">'
-                     f'{escape(f(f"groups.{g}"))} – {sum(1 for n in nodes if n["group"] == g)}</text>' for g, c in cells.items())
+                     f'{escape(f(f"groups.{g}"))}</text>' for g, c in cells.items())
     # each group on its own grey ground, so the clusters read apart
     grounds = "".join(f'<rect class="group-bg" rx="14" x="{c["left"] + 3:.1f}" y="{c["top"] + 3:.1f}" width="{c["right"] - c["left"] - 6:.1f}"'
                       f' height="{c["bottom"] - c["top"] - 6:.1f}"/>' for c in cells.values())
+    # the heartbeat runs through each group from its biggest bubble to its smallest, the groups out of step
+    order = {id(n): (gi, k) for gi, g in enumerate(cells) for k, n in enumerate(sorted((n for n in nodes if n["group"] == g), key=lambda n: -n["r"]))}
     marks = []
     for n in nodes:
         p = n["p"]
@@ -223,7 +225,7 @@ def bubbles(f, people, mode, *, width, height, href) -> str:
                  f("groups." + p["group"]), f("connections.tip_last", when=p["last"]) if p.get("last") else None]
         tip = " · ".join(x for x in parts if x)
         initials = "".join(w[0] for w in str(p.get("name") or p["login"]).replace(".", " ").replace("_", " ").replace("-", " ").split() if w)[:2].upper()
-        marks.append(f'<a href="{escape(href(p["login"]))}" class="bubble {n["dir"]}" data-cell aria-label="{escape(tip)}" data-tip="{escape(tip)}"'
+        marks.append(f'<a href="{escape(href(p["login"]))}" class="bubble {n["dir"]}" style="--g:{order[id(n)][0]};--i:{order[id(n)][1]}" data-cell aria-label="{escape(tip)}" data-tip="{escape(tip)}"'
                      f' transform="translate({n["x"]:.1f},{n["y"]:.1f})"><title>{escape(tip)}</title>'
                      f'<circle class="core" r="{n["r"]:.1f}"/>'
                      + (f'<text text-anchor="middle" dy="0.35em">{escape(initials)}</text>' if n["r"] >= 15 else "") + "</a>")
