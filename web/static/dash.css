@@ -47,7 +47,20 @@ details.best-wrap[open] .caret { transform: rotate(180deg); }
 .best-menu, .menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 40; min-width: 260px; display: flex; flex-direction: column;
   padding: 10px; background: var(--ground); color: var(--ink); border: 2px solid var(--ink); animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--ink); }
 .best-menu { border-top: 6px solid var(--star); }
-.best-menu .s-label { margin: 2px 8px 6px; }
+.best-anchor { position: relative; }
+.best-menu a svg { flex: none; width: 18px; height: 18px; margin-right: 12px; fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.best-menu a span { display: flex; flex-direction: column; line-height: 1.2; padding: 6px 0; }
+.best-menu a small { color: var(--muted); font: 500 13px var(--type-font-text); }
+/* first visit: a note under the star, pointing at it */
+.tour { position: absolute; right: 0; top: calc(100% + 14px); z-index: 45; width: min(340px, calc(100vw - 32px)); padding: 16px 18px;
+  background: var(--accent); color: var(--on-accent); border: 2px solid var(--on-accent); border-top: 6px solid var(--star); font-size: 15px;
+  animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--on-accent); }
+.tour::before { content: ""; position: absolute; right: 26px; top: -14px; border: 8px solid transparent; border-top: 0; border-bottom-color: var(--star); }
+.tour p { margin: 0 0 8px; }
+.tour .btn { margin-top: 4px; }
+/* the page under the band dims while the note is up, as behind the landing's dialog */
+.tour-shade { position: fixed; inset: 0; z-index: 25; background: color-mix(in oklab, var(--ink) 55%, transparent); animation: fade var(--motion-settle) ease-out; }
+@keyframes fade { from { opacity: 0; } }
 .best-menu a, .menu a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink); text-decoration: none; font: 600 16px var(--type-font-text); }
 .best-menu a:hover, .menu a:hover { background: var(--sunken); }
 .menu a[aria-current="page"] { background: var(--ink); color: var(--ground); }
@@ -85,6 +98,8 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 
 /* charts */
 .vchart, .lchart, .hchart, .timeline { margin: 10px 0 0; font-size: var(--c-chart-font-size); color: var(--muted); }
+/* the top value label sits on the top line: keep it clear of the title or note above, and the axis of what follows */
+.vchart, .lchart { margin: 16px 0 6px; }
 .ch-plot { position: relative; height: var(--c-chart-height); margin-left: var(--c-chart-axis-width); border-bottom: 2px solid var(--rule-strong); }
 .has-line .ch-plot { margin-right: var(--c-chart-axis-width); }
 .ch-y { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
@@ -151,6 +166,22 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 .arrow-key line { stroke: var(--control); stroke-width: 2; }
 .arrow-key.both line { stroke: var(--accent-data); }
 .arrow-key path { fill: var(--muted); }
+.net-key { width: 12px; height: 12px; overflow: visible; }
+.net-key circle { stroke-dasharray: none; }
+.net-key .dead circle { stroke-dasharray: 2 2; }
+.legend b { color: var(--ink); font-weight: 600; }
+.dir-key { width: 30px; height: 10px; }
+.dir-key line { stroke-width: 3; }
+.dir-key.in line { stroke: var(--accent-data); }
+.dir-key.out line { stroke: var(--slate); }
+.dir-key.both line { stroke: var(--ink); stroke-width: 5; }
+.dir-key.both line.gap { stroke: var(--ground); stroke-width: 1.5; }
+/* with you in focus the arrowheads give way to colour: in, out, and a hollow double line for both ways */
+.net.focus-me .net-arrows path.hl { display: none; }
+.net.focus-me .net-links path.hl[data-dir="in"] { stroke: var(--accent-data); }
+.net.focus-me .net-links path.hl[data-dir="out"] { stroke: var(--slate); }
+.net.focus-me .net-links path.hl[data-dir="both"] { stroke: var(--ink); stroke-width: 4.5; }
+.net.focus-me .net-arrows path.hl[data-dir="both"] { display: inline; marker: none; stroke: var(--ground); stroke-width: 1.5; }
 .net .net-arrows path { fill: none; stroke: none; pointer-events: none; display: none; }
 .net .net-arrows path.hl { display: inline; }
 
@@ -268,3 +299,97 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
   .fit [data-panel="coal-recent"] { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .fit [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }
 }
+
+/* bars that are read by name (skills, domains): sizes in ui.json → chart.big-* */
+.hchart.big { font-size: var(--c-chart-big-font-size); }
+.hchart.big .hb-row { min-height: var(--c-chart-big-row-height); }
+.hchart.big .hb-track i { height: calc(var(--c-chart-big-row-height) - 10px); }
+.hchart.big .hb-label { white-space: normal; overflow-wrap: anywhere; max-width: min(var(--c-chart-big-label-max), 40vw); line-height: 1.2; }
+
+/* when you work: the day in three parts, in the order the line below reads them */
+.kpis .split { display: flex; height: 10px; margin: 2px 0 8px; gap: 2px; }
+.kpis .split i { display: block; min-width: 2px; }
+.kpis .split .morning { background: var(--accent-data); }
+.kpis .split .afternoon { background: var(--slate); }
+.kpis .split .night { background: var(--neutral); }
+.kpis .part { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.45; }
+.kpis .part i { flex: none; width: 10px; height: 10px; }
+.kpis .part .morning { background: var(--accent-data); }
+.kpis .part .afternoon { background: var(--slate); }
+.kpis .part .night { background: var(--neutral); }
+
+/* one feedback below the maximum: the form's sliders as pips, the short ones in ink */
+.list li.fb-item { display: block; }
+.fb-head { display: flex; justify-content: space-between; gap: 16px; }
+.fb-crit { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 20px; margin: 8px 0 4px; }
+.fb-crit > div { display: grid; gap: 3px; color: var(--muted); }
+.fb-crit dt { font-size: 13px; }
+.fb-crit dd { margin: 0; display: flex; align-items: center; gap: 8px; }
+.fb-crit dd b { font-weight: 600; font-size: 14px; color: var(--text-2); }
+.fb-crit dd b small { color: var(--muted); font-weight: 500; }
+.fb-crit .low dt, .fb-crit .low dd b { color: var(--ink); font-weight: 700; }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 16px; height: 8px; background: var(--seat-empty); }
+.pips i.on { background: var(--accent-data); }
+.fb-crit .low .pips i.on { background: var(--critical); }
+/* light reports have no criteria table: the breakdown takes the whole row */
+html body [data-panel="low-feedback"]:only-child { grid-column: span 12; }
+.hchart.big + .note { margin-top: 12px; }
+
+/* a note that belongs to the lede: right under it, a step smaller */
+.lede:has(+ .lede-note) { margin-bottom: 6px; }
+.lede-note { margin: 0 0 var(--c-section-lede-gap); }
+
+/* evaluation points: the balance sits halfway down its panel when the table beside it is taller */
+[data-panel="points"] { display: flex; flex-direction: column; }
+[data-panel="points"] > .lchart, [data-panel="points"] > .empty { margin-block: auto; }
+
+/* your circle: the key and its counts on the left, the ring on the right; stacked on narrow screens */
+.net-wrap { display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); gap: 24px 40px; align-items: center; }
+.net-side { align-self: center; }
+.net-side h3 { margin: 14px 0 6px; font-size: 15px; }
+.net-side ul { list-style: none; margin: 0; padding: 0; }
+.net-side li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid var(--rule); color: var(--text-2); font-size: var(--c-legend-font-size); }
+.net-side li .net-key { justify-self: center; }
+.net-side li b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+@media (max-width: 959.98px) {  /* the key above the ring, each group as one wrapping row */
+  .net-wrap { grid-template-columns: minmax(0, 1fr); }
+  .net-side ul { display: flex; flex-wrap: wrap; gap: 0 20px; }
+  .net-side li { grid-template-columns: 30px auto auto; border-bottom: 0; padding: 3px 0; }
+}
+
+/* a caveat that would interrupt the reading: an info mark beside the title, on its x-height, its text in the tooltip;
+   nothing to press (hover, or keyboard focus) */
+.info { display: inline-flex; width: .8em; height: .8em; margin-left: .3em; vertical-align: -.06em; cursor: help; color: var(--muted); outline-offset: 2px; }
+.info svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+h2 .info { width: .42em; height: .42em; margin-left: .25em; vertical-align: .32em; }
+.info:hover, .info:focus-visible { color: var(--ink); }
+
+/* a little air between a title, its note or key and the table or chart under it */
+[data-panel] .note + .table-wrap, [data-panel] h3 + .table-wrap, [data-panel] .legend + .table-wrap, [data-panel] .controls + #who-results { margin-top: 10px; }
+[data-panel] h3 + .note, [data-panel] .block-head + .legend { margin-top: 3px; }
+
+/* text runs to the end of its panel before it wraps */
+.note, details .txt { max-width: none; }
+td.details .sub, td.details > span:first-child { max-width: 420px; }
+.marks { max-width: 420px; }
+
+/* your circle: the key and the ring as one centred group */
+.net-wrap { max-width: 1040px; margin: 0 auto; justify-content: center; }
+
+/* a pressed choice stays as it is under the pointer */
+.theme button[aria-pressed="true"]:hover, .theme a[aria-pressed="true"]:hover { background: var(--ink); color: var(--ground); }
+html body .seg > a[aria-pressed="true"]:hover, html body .seg button[aria-pressed="true"]:hover, html body .seg > label:has(input:checked):hover {
+  background: var(--c-segmented-bg-active); color: var(--c-segmented-fg-active); transform: none; }
+.periods > a[aria-pressed="true"]:hover { transform: none; }
+
+/* never split a date and its time */
+.nw { white-space: nowrap; }
+
+/* connections: each group on its own grey ground */
+.graph .group-bg { fill: var(--sunken); }
+
+/* a chart in the middle of its panel when the panel beside it is taller */
+[data-panel="by-hour"] { display: flex; flex-direction: column; }
+[data-panel="by-hour"] > .centred { margin-block: auto; }

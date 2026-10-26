@@ -111,6 +111,14 @@ def test_contact_network_links_contacts_who_evaluated_each_other():
                             {"source": "bob", "target": "cyd", "count": 1}]
 
 
+def test_contact_network_keeps_only_the_evaluations_a_period_asks_for():
+    contacts = [{"login": "ana", "group": "rank-05"}, {"login": "bob", "group": "outer-core"}]
+    given_by = {"ana": [{"begin_at": "2024-07-10T10:00:00Z", "correcteds": [{"login": "bob"}]},
+                        {"begin_at": "2025-01-10T10:00:00Z", "correcteds": [{"login": "bob"}]}]}
+    net = contact_network("me", contacts, given_by, keep=lambda at: at >= "2024-10-01")
+    assert net["links"] == [{"source": "ana", "target": "bob", "count": 1}]
+
+
 def test_skill_sets_follow_the_intra_order_with_every_skill_of_the_cursus():
     from core42.insights import SKILLS, skill_sets
     cursus_users = [{"cursus": {"name": "C Piscine"}, "skills": [{"name": "Unix", "level": 2.5}, {"name": "Rigor", "level": 1.0}]},

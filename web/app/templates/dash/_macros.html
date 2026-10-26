@@ -10,6 +10,10 @@
 <div class="block" data-panel="{{ panel }}">{% if title %}<h3>{{ title }}</h3>{% endif %}{% if note %}<p class="note">{{ note }}</p>{% endif %}{{ caller() }}</div>
 {%- endmacro %}
 
+{% macro info(text) -%}
+<span class="info" tabindex="0" role="note" data-tip="{{ text }}" title="{{ text }}" aria-label="{{ text }}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 7.2v4.3M8 4.6v.1"/></svg></span>
+{%- endmacro %}
+
 {% macro search(name, value, label, placeholder) -%}
 <label class="field"><span>{{ label }}</span><input type="search" name="{{ name }}" value="{{ value }}" placeholder="{{ placeholder }}" autocomplete="off"></label>
 {%- endmacro %}

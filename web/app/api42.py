@@ -81,9 +81,10 @@ class Api42:
 
     async def exchange_code(self, code: str) -> str:
         """The signed-in user's access token. Used once to read /v2/me, never stored."""
-        await self.limiter.acquire(0)
+        await self.limiter.acquire(self.settings.oauth_index)
+        uid, secret = self.settings.oauth
         r = await self.http.post(f"{API}/oauth/token", data={
-            "grant_type": "authorization_code", "client_id": self.settings.ft_uid, "client_secret": self.settings.ft_secret,
+            "grant_type": "authorization_code", "client_id": uid, "client_secret": secret,
             "code": code, "redirect_uri": f"{self.settings.base_url}/auth/callback"}, timeout=30)
         if r.status_code != 200:
             raise Api42Error(r.status_code, "/oauth/token")

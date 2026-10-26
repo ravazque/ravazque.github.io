@@ -126,3 +126,31 @@ def test_a_third_app_joins_the_others_and_a_half_filled_one_is_ignored(monkeypat
     assert Settings.from_env().apps == [("A1", "S1"), ("A2", "S2"), ("A3", "S3")]
     monkeypatch.setenv("FT_SECRET_2", "")
     assert Settings.from_env().apps == [("A1", "S1"), ("A3", "S3")]
+
+
+def test_each_deployment_signs_in_with_its_own_app_and_spreads_requests_over_all(monkeypatch):
+    from app.settings import Settings
+    for k, v in {"FT_UID": "A1", "FT_SECRET": "S1", "FT_UID_2": "A2", "FT_SECRET_2": "S2", "FT_UID_3": "A3", "FT_SECRET_3": "S3"}.items():
+        monkeypatch.setenv(k, v)
+    assert Settings.from_env().oauth == ("A1", "S1")  # production
+    monkeypatch.setenv("OAUTH_APP", "2")  # make dev
+    s = Settings.from_env()
+    assert s.oauth == ("A2", "S2") and s.oauth_index == 1 and s.apps == [("A1", "S1"), ("A2", "S2"), ("A3", "S3")]
+
+
+def test_signing_in_with_a_missing_app_is_refused():
+    from app.settings import Settings
+    s = Settings(ft_uid="A1", ft_secret="S1", oauth_app=2, session_secret="x" * 32, contact_email="a@example.invalid", controller_name="X")
+    with pytest.raises(ValueError, match="OAUTH_APP"):
+        s.check()
+
+
+@respx.mock
+async def test_the_code_is_exchanged_with_the_sign_in_app(memory):
+    from app.settings import Settings
+    s = Settings(ft_uid="A1", ft_secret="S1", ft_uid_2="A2", ft_secret_2="S2", oauth_app=2, session_secret="x" * 32)
+    route = respx.post(f"{API}/oauth/token").respond(json={"access_token": "U"})
+    async with httpx.AsyncClient() as http:
+        api = Api42(s, memory, http, RateLimiter(memory, apps=len(s.apps), sleep=no_sleep), sleep=no_sleep)
+        assert await api.exchange_code("c") == "U"
+    assert b"client_id=A2" in route.calls[0].request.content and b"client_secret=S2" in route.calls[0].request.content

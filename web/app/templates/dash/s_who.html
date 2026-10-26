@@ -4,7 +4,7 @@
   <div class="cols" data-grid>
     <div class="block" data-panel="correctors"><div class="block-head"><h3>{{ t("who.top_title") }}</h3>{{ s.legend }}</div>{{ s.chart }}</div>
     <div class="block" data-panel="table-people">
-      <h3>{{ t("who.people_title") }}</h3><p class="note">{{ t("who.people_note") }}</p>
+      <h3>{{ t("who.people_title") }} {{ m.info(t("who.people_note")) }}</h3>
       {% call m.filters("/app/people", "who", {"period": page.period, "view": page.q("view"), "mode": page.q("mode")}) %}
         {{ m.search("q", s.q, t("common.search"), t("who.search_placeholder")) }}
       {% endcall %}

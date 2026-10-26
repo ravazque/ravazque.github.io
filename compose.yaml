@@ -1,12 +1,13 @@
 name: ravazque-info
 
-# Run through the root Makefile (make dev / make up). Every service reads the one root .env.
+# Run through the root Makefile. This file alone is production (make prod: reached only through the tunnel, signs in
+# with FT_UID); with compose.dev.yaml it is make dev, a separate project on https://localhost that signs in with
+# FT_UID_2. Both can run at once. Every service reads the one root .env.
 # No database: sessions, report copies and limits live in the api's memory; the only file it writes is the
 # consent log in the consent volume.
 services:
   caddy:
     image: caddy:2.11
-    ports: ["80:80", "443:443"]
     volumes:
       - ./web/Caddyfile.local:/etc/caddy/Caddyfile:ro
       - ./web/certs:/certs:ro
@@ -20,10 +21,13 @@ services:
         required: false  # make clean / down / logs work before .env exists; make dev creates it first
     environment:
       CONSENT_LOG: /data/consent.log
+      BASE_URL: ${BASE_URL:-https://localhost}  # make prod passes the tunnel's
+      OAUTH_APP: "1"
+      GITHUB_TOKEN: ""  # production never publishes: the token only reaches make dev
     volumes: ["./core:/srv/core:ro", "consent:/data"]
     restart: unless-stopped
-  # make tunnel: a free Cloudflare quick tunnel to Caddy's internal port for testers (random *.trycloudflare.com URL,
-  # new on every start). Only with the profile, so make up / make dev never start it.
+  # make prod: a free Cloudflare quick tunnel to Caddy's internal port (random *.trycloudflare.com URL, new on every
+  # start). Only with the profile, so make dev never starts it.
   tunnel:
     image: cloudflare/cloudflared:2026.10.3
     profiles: [tunnel]

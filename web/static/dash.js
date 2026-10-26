@@ -88,6 +88,8 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     if (el) placeTip(el); else hideTip();
   });
   document.addEventListener("focusout", hideTip);
+  // an info mark is read, not pressed: a click never focuses it, so its tip leaves with the pointer
+  document.addEventListener("mousedown", (ev) => { if (ev.target.closest?.(".info")) ev.preventDefault(); });
   // a pen or a touch has no hover: a tap shows the mark's details, a tap elsewhere hides them
   document.addEventListener("pointerdown", (ev) => {
     if (ev.pointerType === "mouse") return;
@@ -245,6 +247,36 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
   // the swapped-in settings show the current choices again
   document.body.addEventListener("htmx:afterSettle", () => { applyTheme(store.get("theme")); applyAccentChoice(store.get("accent")); });
 
+  // the first visit points at the star once; "Got it" or opening the star puts it away for good
+  function tour() {
+    const note = document.querySelector(".tour");
+    if (!note) return;
+    const shade = document.querySelector(".tour-shade");
+    if (store.get("tour:star")) { note.hidden = true; if (shade) shade.hidden = true; return; }
+    note.hidden = false; if (shade) shade.hidden = false;
+    const done = () => { note.hidden = true; if (shade) shade.hidden = true; store.set("tour:star", "1"); };
+    note.querySelector("[data-tour-ok]")?.addEventListener("click", done);
+    shade?.addEventListener("click", done);
+    note.closest(".best-anchor")?.querySelector(".best-wrap")?.addEventListener("toggle", (ev) => { if (ev.target.open) done(); });
+  }
+  tour();
+  document.body.addEventListener("htmx:afterSettle", tour);
+
+  // the period switch shows in the settings too while the page's own is not wholly in sight: scrolled away, under the
+  // band, or under the open panel itself (measured with the copy shown, the panel's tallest)
+  function periodCopy() {
+    const copy = document.querySelector(".periods-wrap"), own = document.querySelector(".page-head .periods");
+    const panel = copy?.closest(".settings");
+    if (!copy || !own || !panel?.offsetParent) return;
+    copy.hidden = false;
+    const r = own.getBoundingClientRect(), p = panel.getBoundingClientRect();
+    const band = Math.max(0, document.querySelector(".topbar")?.getBoundingClientRect().bottom || 0);
+    const covered = p.left < r.right && p.right > r.left && p.top < r.bottom && p.bottom > r.top;
+    copy.hidden = r.top >= band && r.bottom <= innerHeight && !covered;
+  }
+  document.addEventListener("toggle", (ev) => { if (ev.target.matches?.(".settings-wrap") && ev.target.open) periodCopy(); }, true);
+  addEventListener("scroll", periodCopy, {passive: true});
+
   // the section in view lights up in the section index
   let tocIO;
   function watchToc() {
@@ -273,6 +305,7 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     if (!node) return;
     const svg = node.closest("svg"), login = on ? node.dataset.login : null;
     svg.classList.toggle("focused", !!login);
+    svg.classList.toggle("focus-me", !!login && login === svg.dataset.me);
     $$("path[data-a]", svg).forEach((p) => p.classList.toggle("hl", !!login && (p.dataset.a === login || p.dataset.b === login)));
     // you dim while the one in focus has no chord with you
     const me = svg.dataset.me;

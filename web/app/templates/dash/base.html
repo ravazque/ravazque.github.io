@@ -18,24 +18,31 @@
 <header class="topbar">
   <a class="brand" href="{{ page.url('home') if page else '/app' }}">{% include "dash/_brand.html" %}<span>{{ t("brand.name") }}</span></a>
   {% if page %}
-  <nav class="pages" aria-label="{{ t('pages.label') }}" hx-boost="true">
+  <nav class="pages" aria-label="{{ t('pages.label') }}" hx-boost="true" hx-swap="innerHTML show:window:top">
     {% for k in pages %}<a href="{{ page.url(k) }}"{% if k == key %} aria-current="page"{% endif %}>{{ t("pages." ~ k) }}</a>{% endfor %}
   </nav>
   {% endif %}
   <div class="topbar-end">
     {% include "dash/_sync.html" %}
     {% if page %}
+    <div class="best-anchor">
     <details class="pop best-wrap">
       <summary class="best" aria-label="{{ t('best.label') }}" title="{{ t('best.label') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="star" d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5-4.8-4.5 6.5-.8z"/></svg><svg class="caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></summary>
       <nav class="best-menu" aria-label="{{ t('best.label') }}">
-        <p class="s-label">{{ t("best.label") }}</p>
-        <a href="{{ page.url('home') }}#profile">{{ t("pages.home") }}</a>
-        <a href="{{ page.url('campus') }}#where-plan">{{ t("best.where") }}</a>
-        <a href="{{ page.url('campus') }}#where-clusters">{{ t("where.clusters_title") }}</a>
-        <a href="{{ page.url('people') }}#who">{{ t("who.title") }}</a>
-        <a href="{{ page.url('evaluations') }}#log">{{ t("log.title") }}</a>
+        <a href="{{ page.url('campus') }}#where-plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>{{ t("best.where") }}<small>{{ t("pages.campus") }}</small></span></a>
+        <a href="{{ page.url('campus') }}#where-clusters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>{{ t("where.clusters_title") }}<small>{{ t("pages.campus") }}</small></span></a>
+        <a href="{{ page.url('people') }}#who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span>{{ t("who.title") }}<small>{{ t("pages.people") }}</small></span></a>
+        <a href="{{ page.url('people') }}#circle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span>{{ t("network.title") }}<small>{{ t("pages.people") }}</small></span></a>
+        <a href="{{ page.url('evaluations') }}#in-depth"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>{{ t("depth.given_title") }}<small>{{ t("pages.evaluations") }}</small></span></a>
+        <a href="{{ page.url('evaluations') }}#log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>{{ t("log.title") }}<small>{{ t("pages.evaluations") }}</small></span></a>
       </nav>
     </details>
+    <div class="tour-shade" hidden></div>
+    <div class="tour" role="dialog" aria-labelledby="tour-t" hidden>
+      <p id="tour-t"><b>{{ t("tour.star_title") }}</b></p><p>{{ t("tour.star") }}</p>
+      <button class="btn on-band" type="button" data-tour-ok>{{ t("tour.ok") }}</button>
+    </div>
+    </div>
     {% endif %}
     <details class="pop settings-wrap">
       <summary class="gear" aria-label="{{ t('settings.label') }}" title="{{ t('settings.label') }}">{% include "dash/_gear.html" %}</summary>
@@ -48,6 +55,14 @@
         <div class="theme" id="theme" role="group" aria-label="{{ t('theme.label') }}">
           <button type="button" data-v="auto">{{ t("theme.auto") }}</button><button type="button" data-v="light">{{ t("theme.light") }}</button><button type="button" data-v="dark">{{ t("theme.dark") }}</button>
         </div>
+        {% if head and head.periods %}
+        <div class="periods-wrap">
+          <p class="s-label">{{ t("rail.period") }}</p>
+          <nav class="theme periods-copy" aria-label="{{ t('rail.period') }}" hx-boost="true" hx-swap="innerHTML show:none">
+            {% for p in head.periods %}<a href="{{ p.href }}" role="button" aria-pressed="{{ 'true' if p.on else 'false' }}">{{ p.short }}</a>{% endfor %}
+          </nav>
+        </div>
+        {% endif %}
         <div class="web-controls">
           <p class="s-label">{{ t("settings.language") }}</p>
           <form class="theme" method="post" action="/lang" aria-label="{{ t('site.language') }}">
@@ -71,7 +86,7 @@
     {% if page %}
     <details class="pop menu-wrap">
       <summary class="gear menu-btn" aria-label="{{ t('pages.label') }}" title="{{ t('pages.label') }}"><svg class="open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="shut" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></summary>
-      <nav class="menu" aria-label="{{ t('pages.label') }}">
+      <nav class="menu" aria-label="{{ t('pages.label') }}" hx-boost="true" hx-swap="innerHTML show:window:top">
         {% for k in pages %}<a href="{{ page.url(k) }}"{% if k == key %} aria-current="page"{% endif %}>{{ t("pages." ~ k) }}</a>{% endfor %}
       </nav>
     </details>

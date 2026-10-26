@@ -9,17 +9,21 @@
 (() => {
   // "What you'll see" opens its dialog; without this script the link leads to the list on About
   const features = document.getElementById("features");
+  // once on the way to 42 the dialog holds: no closing it (button, backdrop, Escape) until the page leaves or comes back
+  let holding = false;
+  const closeBtn = features?.querySelector('form[method="dialog"] button');
   document.querySelector("[data-features]")?.addEventListener("click", (ev) => {
     if (!features?.showModal) return;
     ev.preventDefault(); features.showModal();
   });
-  features?.addEventListener("click", (ev) => { if (ev.target === features) features.close(); });  // the backdrop
+  features?.addEventListener("click", (ev) => { if (ev.target === features && !holding) features.close(); });  // the backdrop
   // its sign-in button: straight in once the policy is accepted (the dialog stays until 42's page arrives), otherwise
   // to the checkbox beside the real button
   const form = document.querySelector("form.signin"), accept = form?.querySelector('input[name="accept"]');
   const go = features?.querySelector("[data-go-signin]");
+  features?.addEventListener("cancel", (ev) => { if (holding) ev.preventDefault(); });
   go?.addEventListener("click", () => {
-    if (accept?.checked) { busy(go); form.requestSubmit(); return; }
+    if (accept?.checked) { holding = true; if (closeBtn) closeBtn.disabled = true; busy(go); form.requestSubmit(); return; }
     features.close();
     if (accept) { accept.focus(); accept.closest(".consent")?.classList.add("ask"); }
   });
@@ -38,6 +42,7 @@
     if (new URL(a.href, location.href).origin === location.origin) document.documentElement.classList.add("leaving");
   });
   addEventListener("pageshow", () => {  // back here from 42 or another page: everything as it was
+    holding = false; if (closeBtn) closeBtn.disabled = false;
     document.documentElement.classList.remove("leaving");
     document.querySelectorAll("[aria-busy]").forEach((b) => { b.removeAttribute("aria-busy"); b.disabled = false; if (b.dataset.label) b.textContent = b.dataset.label; });
   });

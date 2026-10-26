@@ -1,8 +1,8 @@
 <section id="where">
-  <div class="panel-head"><h2>{{ s.title }}</h2>{{ s.switch }}</div>
+  <div class="panel-head"><h2>{{ s.title }} {{ m.info(t("where.inferred_note")) }}</h2>{{ s.switch }}</div>
   <p class="lede">{{ s.lede }}</p>
   <div class="cols" data-grid>
-    <div class="block" data-panel="where-plan" id="where-plan">{{ s.plan }}{{ s.scale }}<p class="note">{{ t("where.inferred_note") }}</p></div>
+    <div class="block" data-panel="where-plan" id="where-plan">{{ s.plan }}{{ s.scale }}</div>
     <div class="block" data-panel="where-clusters" id="where-clusters"><h3>{{ t("where.clusters_title") }}</h3>{{ s.legend }}{{ s.clusters }}</div>
   </div>
 </section>

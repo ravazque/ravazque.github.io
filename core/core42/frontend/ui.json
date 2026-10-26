@@ -3,6 +3,7 @@
   "how": "Edit any value and reload the page. Colours accept #hex, rgb()/rgba(), transparent or a reference like \"@ink\" (another variable). Sizes accept px, rem, em, vh, vw, % or ch.",
   "breakpoints": "Minimum viewport width in px where each step starts. Below 'desktop' the band wraps its page links onto a second row.",
   "components": "Values directly inside a component apply from 0 px up; an object named after a breakpoint (\"desktop\", \"large\"…) overrides them from that width up.",
+  "chart.big": "Bars read by name (Skills as bars, Technical domains): big-font-size is the names and figures, big-row-height each bar's row, big-label-max the widest a name gets before it wraps.",
   "panels": "Each panel is a block inside a section, on a 12-column grid: span (1-12), order, height of its chart, hidden.",
   "site.field": "The landing's animated background: seats (small cubes bouncing off each other), shapes (Swiss forms floating), bubbles (blobs that merge and part) or cubes (cubes that grow and shed smaller ones). Try one with ?field=… on the landing."
  },
@@ -329,6 +330,9 @@
    "bar-max": "40px",
    "row-height": "24px",
    "row-label-width": "36%",
+   "big-font-size": "15px",
+   "big-row-height": "34px",
+   "big-label-max": "320px",
    "timeline-label-width": "30%",
    "timeline-row": "20px",
    "desktop": {
@@ -471,6 +475,15 @@
    }
   },
   "cum-retries": {
+   "mobile": {
+    "span": 12,
+    "height": "380px"
+   },
+   "large": {
+    "span": 6
+   }
+  },
+  "cum-validated": {
    "mobile": {
     "span": 12,
     "height": "380px"

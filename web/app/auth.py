@@ -31,7 +31,7 @@ async def login(request: Request, accept: str = ""):
         return RedirectResponse("/?error=consent", status_code=303)
     s = request.app.state.settings
     state = secrets.token_urlsafe(24)
-    query = urlencode({"client_id": s.ft_uid, "redirect_uri": f"{s.base_url}/auth/callback", "response_type": "code",
+    query = urlencode({"client_id": s.oauth[0], "redirect_uri": f"{s.base_url}/auth/callback", "response_type": "code",
                        "scope": "public", "state": state})
     response = RedirectResponse(f"{API}/oauth/authorize?{query}", status_code=307)
     response.set_cookie(STATE_COOKIE, state, max_age=600, path="/", secure=s.secure_cookies, httponly=True, samesite="lax")

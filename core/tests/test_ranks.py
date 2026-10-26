@@ -5,13 +5,19 @@ def q(login, name, validated="2025-01-01T00:00:00Z"):
     return {"user": {"login": login}, "quest": {"name": name}, "validated_at": validated}
 
 
-def c(login, grade=None):
-    return {"user": {"login": login}, "cursus_id": 21, "grade": grade}
+def c(login, grade=None, end_at=None):
+    return {"user": {"login": login}, "cursus_id": 21, "grade": grade, "end_at": end_at}
 
 
 def test_groups_in_display_order():
     assert GROUPS == ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06",
-                      "outer-core", "alumni", "no-cursus"]
+                      "outer-core", "alumni", "blackholed", "no-cursus"]
+
+
+def test_a_past_blackhole_is_its_own_group_unless_the_common_core_was_done():
+    g = rank_groups([c("bh", end_at="2025-03-01T00:00:00Z"), c("later", end_at="2999-01-01T00:00:00Z"),
+                     c("tr", "Transcender", end_at="2025-03-01T00:00:00Z")], [])
+    assert g == {"bh": "blackholed", "later": "rank-00", "tr": "outer-core"}
 
 
 def test_rank_is_the_one_being_worked_on():

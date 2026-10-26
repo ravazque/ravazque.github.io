@@ -151,14 +151,15 @@ def coalition_standings(bloc: dict | None, mine_id: int | None) -> list[dict]:
             for i, c in enumerate(ranked)]
 
 
-def contact_network(me: str, contacts: list[dict], given_by: dict[str, list[dict]]) -> dict:
-    """Who evaluated whom among you and your closest contacts: nodes and directed links (corrector → evaluated)."""
+def contact_network(me: str, contacts: list[dict], given_by: dict[str, list[dict]], keep=lambda at: True) -> dict:
+    """Who evaluated whom among you and your closest contacts: nodes and directed links (corrector → evaluated).
+    keep(begin_at) picks the evaluations of one period."""
     nodes = [{"login": me, "group": "me"}] + [{"login": c["login"], "group": c.get("group")} for c in contacts]
     known = {n["login"] for n in nodes}
     links = {}
     for c in contacts:
         for e in given_by.get(c["login"]) or []:
-            if not isinstance(e.get("correcteds"), list):
+            if not isinstance(e.get("correcteds"), list) or not keep(e.get("begin_at") or ""):
                 continue
             for u in e["correcteds"]:
                 target = u.get("login") if isinstance(u, dict) else None

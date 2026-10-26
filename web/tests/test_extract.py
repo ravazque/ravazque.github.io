@@ -187,8 +187,8 @@ async def test_paid_extras_are_cheap_bounded_and_keep_no_names():
     assert [c["name"] for c in data["coalitions"]] == ["Other", "Mine"] and data["coalitions"][1]["mine"]
     assert data["promo"]["size"] == 3 and data["promo"]["rank"] == 1
     assert "login" not in json.dumps(data["promo"]) and "someone" not in json.dumps(data)
-    assert data["network"]["nodes"][0] == {"login": "ravazque", "group": "me"}
-    assert any(l["count"] == 1 for l in data["network"]["links"])
+    assert data["network"]["all"]["nodes"][0] == {"login": "ravazque", "group": "me"}
+    assert any(l["count"] == 1 for l in data["network"]["all"]["links"])
     assert sum(1 for c in api.calls if c.endswith("/scale_teams/as_corrector") and f"/{UID}/" not in c) <= 30
     assert sum(1 for c in api.calls if c == "/v2/feedbacks") <= 5
 

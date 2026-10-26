@@ -12,6 +12,7 @@ class Settings:
     ft_secret_2: str = ""
     ft_uid_3: str = ""
     ft_secret_3: str = ""
+    oauth_app: int = 1             # the app that signs users in: 1 (FT_UID, production) or 2 (FT_UID_2, make dev); 3 never does
     session_secret: str = ""
     cooldown_s: int = 3600
     cache_s: int = 3600            # the server's copy of a report, renewed on every use; the browser keeps the original
@@ -30,13 +31,24 @@ class Settings:
     github_branch: str = "main"
 
     @property
+    def oauth(self) -> tuple[str, str]:
+        return (self.ft_uid_2, self.ft_secret_2) if self.oauth_app == 2 else (self.ft_uid, self.ft_secret)
+
+    @property
+    def oauth_index(self) -> int:
+        """Where the sign-in app sits in apps (its rate limit is shared with its app-token requests)."""
+        return self.apps.index(self.oauth)
+
+    @property
     def apps(self) -> list[tuple[str, str]]:
-        """The 42 apps that answer app-token requests; the first one also signs users in."""
+        """The 42 apps that answer app-token requests, whichever one signs users in."""
         extra = [(self.ft_uid_2, self.ft_secret_2), (self.ft_uid_3, self.ft_secret_3)]
         return [(self.ft_uid, self.ft_secret)] + [(u, s) for u, s in extra if u and s]
 
     def check(self) -> "Settings":
         """Refuse to run with a missing or short SESSION_SECRET (it keys the HMACs) or without a contact and a controller."""
+        if self.oauth_app not in (1, 2) or (self.oauth_app == 2 and not all(self.oauth)):
+            raise ValueError("OAUTH_APP must name a 42 app with its UID and secret set: 1 (FT_UID) or 2 (FT_UID_2)")
         if len(self.session_secret) < 32:
             raise ValueError("SESSION_SECRET must be at least 32 characters (openssl rand -hex 32)")
         if not self.contact_email:
@@ -58,6 +70,7 @@ class Settings:
             ft_secret_2=env.get("FT_SECRET_2", ""),
             ft_uid_3=env.get("FT_UID_3", ""),
             ft_secret_3=env.get("FT_SECRET_3", ""),
+            oauth_app=int(env.get("OAUTH_APP") or 1),
             session_secret=env.get("SESSION_SECRET", ""),
             contact_email=env.get("CONTACT_EMAIL", ""),
             issues_url=env.get("ISSUES_URL", ""),

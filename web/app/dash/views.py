@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 
 from core42.analysis import ts
 from core42.insights import logtime_bonus
+from core42.stats import _failed as failed
 from markupsafe import Markup, escape
 
 from . import extra as ex
@@ -42,12 +43,6 @@ def avatar(p) -> str:
 def shared(projects):
     """(project, teams together) pairs; reports saved before 2026-10-25 list the names once each."""
     return projects.items() if isinstance(projects, dict) else ((n, 1) for n in projects)
-
-
-def past_blackhole(pg) -> bool:
-    """Transcenders and alumni have finished the Common Core: no blackhole applies to them, so none is shown."""
-    main = next((c for c in pg.data["periods"]["all"]["extras"].get("cursus") or [] if c["name"] == "42cursus"), {})
-    return main.get("grade") in ("Transcender", "Alumni")
 
 
 WORK_EXPERIENCE = {"work-experience-i", "work-experience-ii"}
@@ -136,7 +131,7 @@ def table(f, cols, rows, *, label, sort=None, empty=None, sticky=False, detail=N
             g = group["key"](r) if group else None
             if group and g != prev:
                 n = sum(1 for x in rows if group["key"](x) == g)
-                parts.append(f'<tbody class="group"><tr><th scope="rowgroup" colspan="{len(cols)}">{escape(group["label"](g))} <span class="note">{n}</span></th></tr></tbody>')
+                parts.append(f'<tbody class="group"><tr><th scope="rowgroup" colspan="{len(cols)}">{escape(group["label"](g))} <span class="note">– {n}</span></th></tr></tbody>')
                 prev = g
             d = detail(r) if detail else ""
             parts.append(f'<tbody class="pair">{line(r)}<tr class="detail"><td colspan="{len(cols)}">{d}</td></tr></tbody>' if d else f"<tbody>{line(r)}</tbody>")
@@ -227,7 +222,7 @@ class Page:
         return {
             "title": f(f"pages.{self.key}"), "name": P.get("name") or P["login"], "login": P["login"], "campus": campus,
             "coalition": Markup(coal_html), "initials": initials(P.get("name")), "image": P.get("image"),
-            "periods": [{"key": p, "label": f(f"period.{p}"), "href": self.url(period=p), "on": p == self.period}
+            "periods": [{"key": p, "label": f(f"period.{p}"), "short": f(f"period.{p}_short"), "href": self.url(period=p), "on": p == self.period}
                         for p in self.periods] if len(self.periods) > 1 else [],
             "now": f.html("rail.now_at", seat=Markup(f"<b>{escape(P['location'])}</b>")) if P.get("location") else f("rail.not_logged"),
             "generated": f("head.generated", when=D.get("generated", "")),
@@ -252,12 +247,11 @@ class Page:
 
 def profile(pg: Page) -> dict:
     """Home's first section: who this is (photo, name, campus, coalition, grade, groups) and the facts the intra keeps
-    on the profile (wallet, evaluation points, piscine, kickoff, blackhole, coalition rank), then where they are now."""
+    on the profile (wallet, evaluation points, piscine, kickoff, coalition rank), then where they are now."""
     f, D, P = pg.f, pg.D, pg.D["profile"]
     h = pg.head()
     cursus = {c["name"]: c for c in pg.data["periods"]["all"]["extras"].get("cursus") or []}
     main, piscine = cursus.get("42cursus") or {}, cursus.get("C Piscine") or {}
-    pc = (D.get("insights") or {}).get("pace") or {}
     coal = P.get("coalition")
     month = lambda s: f"{f.months[int(s[5:7]) - 1]} {s[:4]}" if s else None  # noqa: E731
     due = alumni_due(pg.data["periods"]["all"]["projects"], main.get("grade"))
@@ -265,8 +259,6 @@ def profile(pg: Page) -> dict:
              (f("head.points"), f.num(P["correction_point"])) if P.get("correction_point") is not None else None,
              (f("profile.piscine"), month(piscine.get("begin"))) if piscine.get("begin") else None,
              (f("profile.kickoff"), f.day(main["begin"])) if main.get("begin") else None,
-             (f("pace.blackhole"), f("pace.no_blackhole") if pc.get("blackhole_days") is None else f.plural(pc["blackhole_days"], "pace.days_left"))
-             if main and not past_blackhole(pg) else None,
              (f("profile.alumni"), f("profile.paused") if due == "paused" else f.day(due.isoformat())) if due else None,
              (f("home.k_coalition"), f"{coal['name']} · {f('home.nth', n=coal['rank'])}" if coal.get("rank") else coal["name"]) if coal else None]
     return {"id": "profile", "title": f("profile.title"), "nav": f("profile.title"), "head": h,
@@ -335,8 +327,10 @@ def home(pg: Page) -> list[dict]:
     sections.append({"id": "rhythm", "title": f("rhythm.title"), "nav": f("rhythm.title"), "lede": f("rhythm.lede"), "kpis": [
         (f("rhythm.k_streak"), f.num(ex.streak(L["days"], L["hours"])), [f("rhythm.s_streak")]),
         (f("rhythm.k_weeks"), f.num(weeks), [f("rhythm.s_weeks", total=f.num(span))]),
-        (f("rhythm.k_time"), f"{max(split.values())}%",
-         [f("rhythm.s_mostly", part=f("rhythm." + max(split, key=split.get))), f("rhythm.s_time", m=split["morning"], a=split["afternoon"], n=split["night"])]),
+        (f("rhythm.k_time"), f("rhythm." + max(split, key=split.get)).capitalize() if any(split.values()) else "–",
+         [Markup('<span class="split" aria-hidden="true">' + "".join(f'<i class="{k}" style="width:{v}%"></i>' for k, v in split.items() if v) + "</span>"),
+          Markup("".join(f'<span class="part"><i class="{k}"></i>{escape(f("rhythm.s_part", pct=v, part=f(f"rhythm.{k}"), hours=hours))}</span>'
+                         for (k, v), hours in zip(split.items(), ("6–14 h", "14–20 h", "20–6 h"))))]),
         (f("rhythm.k_validate"), f.num(median, 1) if median is not None else "–",
          [f("rhythm.s_validate", n=len(to_validate)), f("rhythm.s_resilience", n=ex.resilience(D["projects"]))]),
     ]})
@@ -347,15 +341,13 @@ def home(pg: Page) -> list[dict]:
         sections.append({"id": "pace", "title": f("pace.title"), "nav": f("nav.pace"), "facts": facts([
             (f("pace.since"), escape(f.plural(pc["months_since_kickoff"], "pace.months")) if pc.get("months_since_kickoff") is not None else "–"),
             (f("pace.xp_month"), f.num(pc.get("xp_per_month"))),
-            (f("pace.validated"), f.num(sum(m["validated"] for m in months))),
-            *([] if past_blackhole(pg) else [(f("pace.blackhole"), escape(f("pace.no_blackhole") if pc.get("blackhole_days") is None
-                                                                      else f.plural(pc["blackhole_days"], "pace.days_left")))])]),
+            (f("pace.validated"), f.num(sum(m["validated"] for m in months)))]),
             "chart": ch.vbars(f, [f.month_label(m["month"]) for m in months], [(f("pace.xp"), [m["xp"] for m in months], ch.S1)],
                               label=f("pace.xp_title"), line=(f("pace.cumulative"), [m["cumulative"] for m in months], ch.S2),
                               fmt=lambda v: f.num(v), empty_text=f("empty.period")),
             "legend": ch.legend([(f("pace.xp"), ch.S1), (f("pace.cumulative"), ch.S2)])})
 
-    cursus = pg.q("cursus", "42cursus", ("42cursus", "C Piscine"))
+    cursus = pg.q("cursus", "C Piscine" if pg.period == "piscine" else "42cursus", ("42cursus", "C Piscine"))
     view = pg.q("skills", "radar", ("radar", "bars"))
     items = (X.get("skills_by_cursus") or {}).get(cursus) or (X.get("skills", []) if cursus == "42cursus" else [])
     if view == "radar":
@@ -363,7 +355,7 @@ def home(pg: Page) -> list[dict]:
     else:
         bars = sorted((s for s in items if s["level"] > 0), key=lambda s: -s["level"])
         skills = ch.hbars(f, [s["name"] for s in bars], [(f("extras.level"), [s["level"] for s in bars], ch.S1)],
-                          label=f("extras.skills_title"), end=lambda i, v: f.num(v, 2), empty_text=f("empty.period"))
+                          label=f("extras.skills_title"), end=lambda i, v: f.num(v, 2), empty_text=f("empty.period"), big=True)
     sections.append({"id": "skills", "title": f("extras.skills_title"), "nav": f("extras.skills_title"), "chart": skills,
                      "switches": [pg.seg("cursus", [("42cursus", f("track.student")), ("C Piscine", f("track.piscine"))], cursus, label=f("skills.cursus"), target="skills"),
                                   pg.seg("skills", [("radar", f("skills.radar")), ("bars", f("skills.bars"))], view, label=f("skills.view"), target="skills")]})
@@ -393,11 +385,11 @@ def home(pg: Page) -> list[dict]:
                   f'<span class="note">{escape(a.get("description") or "")}</span></span><span class="when">{escape(a["at"][:10])}</span></li>' for a in reversed(X["achievements"]))
     evs = "".join(f'<li><span>{escape(e["name"])}<br><span class="note">{escape(ev_kind(e["kind"]))}{" · " + escape(e["location"]) if e.get("location") else ""}'
                   f'{f" · {e["hours"]} h" if e.get("hours") else ""}</span></span><span class="when">{escape(e["begin"])}</span></li>' for e in reversed(X["events"]))
-    misc = ([f'<li><span><b>{escape(f("extras.quest"))}</b> {escape(q["name"])}<br><span class="note">{escape(q.get("description") or "")}</span></span>'
-             f'<span class="when">{escape((q.get("validated") or f("extras.in_progress"))[:10])}</span></li>' for q in X["quests"]]
-            + [f'<li><span><b>{escape(f("extras.title_item"))}</b> {escape(x["name"])}{" " + badge(f("extras.selected")) if x.get("selected") else ""}</span>'
-               f'<span class="when">{escape(x["at"][:10])}</span></li>' for x in X["titles"]]
-            + [f'<li><span><b>{escape(f("extras.expertise"))}</b> {escape(x["name"])}</span><span class="when">{x["value"]} / 5</span></li>' for x in X["expertises"]])
+    misc = ([f'<li><span><b>{escape(f("extras.title_item"))}</b> {escape(x["name"])}{" " + badge(f("extras.selected")) if x.get("selected") else ""}</span>'
+             f'<span class="when">{escape(x["at"][:10])}</span></li>' for x in X["titles"]]
+            + [f'<li><span><b>{escape(f("extras.expertise"))}</b> {escape(x["name"])}</span><span class="when">{x["value"]} / 5</span></li>' for x in X["expertises"]]
+            + [f'<li><span><b>{escape(f("extras.quest"))}</b> {escape(q["name"])}<br><span class="note">{escape(q.get("description") or "")}</span></span>'
+               f'<span class="when">{escape((q.get("validated") or f("extras.in_progress"))[:10])}</span></li>' for q in X["quests"]])
     campuses = pg.campuses()
     sections.append({"id": "activity", "title": f("activity.title"), "nav": f("activity.title"),
                      "achievements": Markup(ach) or none, "events": Markup(evs) or none, "misc": Markup("".join(misc)) or none,
@@ -456,7 +448,7 @@ def coalition_points(pg: Page, now=None) -> dict | None:
     P = D.get("coalition_points")
     if P is None:  # older reports
         return None
-    when = lambda iso: f.stamp(ts(iso).timestamp() * 1000)  # noqa: E731
+    when = lambda iso: Markup(f'<span class="nw">{escape(f.stamp(ts(iso).timestamp() * 1000))}</span>')  # noqa: E731  a date never splits
     kpis, note = [], ""
     W = D.get("logtime_bonus")
     if W and pg.period != "piscine":
@@ -464,29 +456,32 @@ def coalition_points(pg: Page, now=None) -> dict | None:
         tiers = logtime_bonus(W, now)
         sessions = W["sessions"]
         kpis.append((f("coal.k_window"), Markup(f"{f.num(tiers[0]['window_h'], 1)}<small> h</small>"),
-                     [f("coal.s_open", since=when(sessions[-1][0])) if W["open"] and sessions else f("coal.s_closed"), f("coal.s_as_of", time=when(W["at"]))]))
+                     [f.html("coal.s_open", since=when(sessions[-1][0])) if W["open"] and sessions else f("coal.s_closed"), f.html("coal.s_as_of", time=when(W["at"]))]))
         for t in tiers:
             pct = min(100, 100 * t["window_h"] / t["hours"])
             meter = Markup(f'<span class="hbar" aria-hidden="true"><i style="width:{pct:.1f}%"></i></span>') + f("coal.s_meter", have=f.num(t["window_h"], 1), need=t["hours"])
             head = {"ready": f("coal.v_ready"), "cooldown": f("coal.v_cooldown"), "short": Markup(f'{f.num(t["need_h"], 1)}<small> {escape(f("coal.v_short"))}</small>')}[t["state"]]
             until = (f("coal.s_next_logout") if t["state"] == "ready" and W["open"] else
-                     f("coal.s_until" if W["open"] else "coal.s_login_until", time=when(t["until"])) if t["until"] and t["until"] != t["from"] else "")
+                     f.html("coal.s_until" if W["open"] else "coal.s_login_until", time=when(t["until"])) if t["until"] and t["until"] != t["from"] else "")
             kpis.append((f("coal.k_tier", hours=t["hours"], points=f.num(t["points"])), head,
-                         [meter, f("coal.s_from", time=when(t["from"])) if t["from"] else "", until,
-                          f("coal.s_last", time=when(t["last"])) if t["last"] else f("coal.s_never")]))
+                         [meter, f.html("coal.s_from", time=when(t["from"])) if t["from"] else "", until,
+                          f.html("coal.s_last", time=when(t["last"])) if t["last"] else f("coal.s_never")]))
         note = f("coal.note")
     by = {s["key"]: s for s in P["sources"]}
     bonus = [by[k] for k in ("logtime_50", "logtime_80") if k in by]
     kpis.append((f("coal.k_logtime"), f.num(sum(b["points"] for b in bonus)),
                  [f("coal.s_logtime", n=f.num(sum(b["count"] for b in bonus))), f("coal.s_share", pct=f.pct(sum(b["points"] for b in bonus), P["total"]))]))
     src, months = P["sources"], P["months"]
+    month = lambda m: f"{f.months[int(m[5:7]) - 1]} {m[:4]}"  # noqa: E731
     names = [f(f"coal.src.{s['key']}") for s in src]
     return {"id": "coal-points", "title": f("coal.title"), "nav": f("nav.coal"), "lede": f("coal.lede"), "note": note,
             "kpis": [(k, v, [x for x in subs if x]) for k, v, subs in kpis],
-            "total": f("coal.total", points=f.num(P["total"]), n=f.plural(P["count"], "coal.awards")),
+            "total": f("coal.total", points=f.num(P["total"]), n=f.plural(P["count"], "coal.awards"),
+                       coalition=(pg.data["periods"]["all"]["profile"].get("coalition") or {}).get("name") or "–",
+                       span=f("coal.span", first=month(months[0]["month"]), last=month(months[-1]["month"])) if months else f("empty.period")),
             "sources": ch.hbars(f, names, [(f("coal.points"), [s["points"] for s in src], ch.S1)], label=f("coal.sources"), end=lambda i, v: f.num(v),
                                 tips=[f"{n} · {f.num(s['points'])} · {f.plural(s['count'], 'coal.awards')}" for n, s in zip(names, src)],
-                                empty_text=f("empty.period")),
+                                empty_text=f("empty.period"), big=True),
             "months": ch.vbars(f, [f.month_label(m["month"]) for m in months],
                                [(f("coal.src.logtime"), [m["logtime"] for m in months], ch.S1), (f("coal.rest"), [m["other"] for m in months], ch.S2)],
                                label=f("coal.months"), stacked=True, fmt=f.num, every=math.ceil(len(months) / 6) or 1, empty_text=f("empty.period")),
@@ -499,15 +494,15 @@ def project_view(projects, track, search, marks, year):
     q = search.strip().lower()
     mark_ok = {"bonus": lambda p: (p.get("mark") or 0) > 100, "max": lambda p: p.get("mark") == 125,
                "failed": lambda p: not p.get("validated") and p.get("mark") is not None and p.get("status") == "finished"}.get(marks, lambda p: True)
-    return [p for p in projects
-            if (track == "all" or (p["track"] == "piscine") == (track == "piscine"))
+    return [p for p in projects if not p.get("exam")  # exams have their own section
+            and (track == "all" or (p["track"] == "piscine") == (track == "piscine"))
             and (not q or q in p["name"].lower()) and mark_ok(p)
             and (year == "all" or (p.get("marked") or p.get("registered") or "").startswith(year))]
 
 
 def project_filters(pg: Page):
     years = sorted({(p.get("marked") or p.get("registered") or "")[:4] for p in pg.data["periods"].get("all", pg.D)["projects"]} - {""}, reverse=True)
-    return {"track": pg.q("track", "student", ("student", "piscine", "all")), "search": pg.q("q", "")[:80],
+    return {"track": pg.q("track", pg.period, ("student", "piscine", "all")), "search": pg.q("q", "")[:80],
             "marks": pg.q("marks", "all", ("all", "bonus", "max", "failed")), "year": pg.q("year", "all", ["all", *years]),
             "grouped": pg.q("group") == "1", "years": years}
 
@@ -576,10 +571,10 @@ def projects(pg: Page) -> list[dict]:
         return escape(f(f"status.{s}") if f(f"status.{s}") != f"status.{s}" else s.replace("_", " "))
 
     tbl = table(f, [
-        {"k": "name", "t": f("col.project"), "cls": "proj", "f": lambda p: f'{escape(p["name"])}{" " + badge(f("projects.exam")) if p.get("exam") else ""}'},
+        {"k": "name", "t": f("col.project"), "cls": "proj"},
         {"k": "track", "t": f("col.track"), "nw": True, "hide": True, "f": lambda p: badge(f(f"track.{p['track']}"))},
         {"k": "status", "t": f("col.status"), "nw": True, "hide": True, "f": status},
-        {"k": "mark", "t": f("col.final"), "num": True},
+        {"k": "mark", "t": f("col.final"), "num": True, "f": lambda p: escape(p["mark"]) if p.get("mark") is not None else "–"},
         {"k": "attempts", "t": f("col.attempts"), "cls": "marks-col", "sv": lambda p: len(p["attempts"]),
          "f": lambda p: '<span class="marks">' + "".join(mark_chip(f, a) if i == 0 else f'<span class="step">→{mark_chip(f, a)}</span>'
                                                           for i, a in enumerate(p["attempts"])) + "</span>"},
@@ -593,12 +588,24 @@ def projects(pg: Page) -> list[dict]:
                  "count": f.plural(len(rows), "projects_table.count"), "table": tbl,
                  "csv": pg.url(None).replace(PAGES["projects"], "/app/projects.csv", 1)}]
 
+    exams_done = (D.get("insights") or {}).get("exams") or []
+    sections.append({"id": "exams", "title": f("exams.title"), "nav": f("nav.exams"), "table": table(f, [
+        {"k": "name", "t": f("col.exam"), "nw": True},
+        {"k": "passed", "t": f("col.status"), "nw": True, "sv": lambda e: 1 if e.get("passed") else 0,
+         "f": lambda e: badge(f("exams.passed" if e.get("passed") else "exams.pending"), "out" if e.get("passed") else "")},
+        {"k": "attempts", "t": f("col.attempts"), "num": True}, {"k": "best", "t": f("col.best"), "num": True},
+        {"k": "days_to_pass", "t": f("col.days_to_pass"), "num": True, "f": lambda e: escape(f.num(e.get("days_to_pass")))},
+        {"k": "tries", "t": f("col.tries"), "sv": lambda e: len(e["tries"]), "f": lambda e: '<span class="marks">' + "".join(
+            f'<span class="mark {"pass" if x.get("passed") else "fail"}" title="{escape(f.day(x.get("date")))}">{escape(x["mark"] if x.get("mark") is not None else "–")}</span>'
+            for x in e["tries"]) + "</span>"},
+    ], exams_done, label=f("exams.title"), sort=("name", 1), empty=f("exams.none"))})
+
     areas = ex.domains(pg.data["periods"].get("all", D)["projects"])
     sections.append({"id": "domains", "title": f("domains.title"), "nav": f("domains.title"), "lede": f("domains.lede"),
                      "chart": ch.hbars(f, [(lambda t: t[:1].upper() + t[1:])(f(f"domains.tag.{a['key']}")) for a in areas], [(f("col.xp"), [a["xp"] for a in areas], ch.S1)],
                                        label=f("domains.title"), tips=[f"{f(f'domains.tag.{a['key']}')} · ≈ {f.num(a['xp'])} XP · {', '.join(a['projects'])}" for a in areas],
                                        end=lambda i, v: f"≈ {f.num(v)}", extra=lambda i: f.plural(len(areas[i]["projects"]), "domains.projects"),
-                                       empty_text=f("domains.none")),
+                                       empty_text=f("domains.none"), big=True),
                      "portfolio": pg.url(None).replace(PAGES["projects"], "/app/portfolio.csv", 1)})
 
     tl_rows = []
@@ -616,24 +623,17 @@ def projects(pg: Page) -> list[dict]:
             spans.append((a["start_ms"], a.get("end_ms") or a["start_ms"], c, tip))
         tl_rows.append((p["name"], spans))
     retries = sorted(({"x": a["start_ms"], "y": 0} for p in D["projects"] for a in p["attempts"][1:]), key=lambda p: p["x"])
-    for i, r in enumerate(retries):
-        r["y"] = i + 1
+    firsts = (next((a["end_ms"] for a in p["attempts"] if a.get("validated") and a.get("end_ms")), None) for p in D["projects"])
+    validated = [{"x": x, "y": 0} for x in sorted(x for x in firsts if x)]
+    for line in (retries, validated):
+        for i, r in enumerate(line):
+            r["y"] = i + 1
     sections.append({"id": "timeline", "title": f("projects.title"), "nav": f("nav.projects"), "lede": f("projects.lede"),
                      "legend": ch.legend([(f("outcome.validated"), ch.GOOD), (f("outcome.failed"), ch.BAD), (f("outcome.in_progress"), ch.NEUTRAL)]),
                      "timeline": ch.timeline(f, tl_rows, label=f("projects.timeline_aria"), empty_text=f("empty.period")),
-                     "retries": ch.lines(f, [(f("col.retries"), retries, ch.S1)], label=f("projects.cum_title"), empty_text=f("empty.period"))})
+                     "retries": ch.lines(f, [(f("col.retries"), retries, ch.S1)], label=f("projects.cum_title"), empty_text=f("empty.period")),
+                     "validated": ch.lines(f, [(f("outcome.validated"), validated, ch.GOOD)], label=f("projects.validated_title"), empty_text=f("empty.period"))})
 
-    exams_done = (D.get("insights") or {}).get("exams") or []
-    sections.append({"id": "exams", "title": f("exams.title"), "nav": f("nav.exams"), "table": table(f, [
-        {"k": "name", "t": f("col.exam"), "nw": True},
-        {"k": "passed", "t": f("col.status"), "nw": True, "sv": lambda e: 1 if e.get("passed") else 0,
-         "f": lambda e: badge(f("exams.passed" if e.get("passed") else "exams.pending"), "out" if e.get("passed") else "")},
-        {"k": "attempts", "t": f("col.attempts"), "num": True}, {"k": "best", "t": f("col.best"), "num": True},
-        {"k": "days_to_pass", "t": f("col.days_to_pass"), "num": True, "f": lambda e: escape(f.num(e.get("days_to_pass")))},
-        {"k": "tries", "t": f("col.tries"), "sv": lambda e: len(e["tries"]), "f": lambda e: '<span class="marks">' + "".join(
-            f'<span class="mark {"pass" if x.get("passed") else "fail"}" title="{escape(f.day(x.get("date")))}">{escape(x["mark"] if x.get("mark") is not None else "–")}</span>'
-            for x in e["tries"]) + "</span>"},
-    ], exams_done, label=f("exams.title"), sort=("name", 1), empty=f("exams.none"))})
     return sections
 
 
@@ -690,19 +690,14 @@ def evaluations(pg: Page) -> list[dict]:
         "facts": facts([(f("depth.received_duration"), escape(dur(dp["received_duration"]))), (f("depth.given_duration"), escape(dur(dp["given_duration"]))),
                         (f("depth.lead"), escape("–" if dp.get("received_lead_h") is None else f("depth.hours", h=f.num(dp["received_lead_h"], 1)))),
                         (f("depth.streak"), f.num(dp.get("outstanding_streak")))]) if dp else "",
-        "depth": table(f, [
-            {"k": "project", "t": f("col.project"), "nw": True},
-            {"k": "received", "t": f("col.received"), "num": True}, {"k": "received_avg", "t": f("col.avg_received"), "num": True, "f": lambda r: f.num(r.get("received_avg"), 1)},
-            {"k": "received_outstanding", "t": f("col.outstanding"), "num": True},
-            {"k": "given", "t": f("col.given"), "num": True}, {"k": "given_avg", "t": f("col.avg_given"), "num": True, "hide": True, "f": lambda r: f.num(r.get("given_avg"), 1)},
-        ], dp["projects"], label=f("depth.title"), sort=("received", -1)) if dp else ""})
+        "depth": corrected_table(pg)})
 
     st = D.get("stats")
     if st:
         rate = lambda r, key: (f'<div><p class="v">{"–" if r.get("pct") is None else f"{f.num(r["pct"], 1)}<small>%</small>"}</p><p class="k">{escape(f(key))}</p>'  # noqa: E731
                                f'<p class="s">{escape(f("stats.of", n=r["n"], total=r["total"]))}</p></div>')
         R = st["outstanding_reciprocity"]
-        order = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "no-cursus"]
+        order = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "blackholed", "no-cursus"]
         groups = [{"g": g, **v, "i": order.index(g) if g in order else 99, "in_pct": 100 * v["received_out"] / v["received"] if v.get("received") else None,
                    "out_pct": 100 * v["given_out"] / v["given"] if v.get("given") else None} for g, v in (st.get("by_group") or {}).items()]
         h = st.get("by_hour") or []
@@ -739,10 +734,18 @@ def evaluations(pg: Page) -> list[dict]:
     rated = [{**x, "project": e["project"], "begin": e["begin"]} for e in D["given"] for x in e["feedbacks"] if x.get("rating") is not None]
     low = sorted((x for x in rated if x["rating"] < 5 or any(x.get(k) is not None and x[k] < 4 for k in KINDS)),
                  key=lambda x: (x["rating"], sum(x.get(k) if x.get(k) is not None else 4 for k in KINDS)))
+    def meter(label, n, top, tip=""):  # the form's slider as pips: filled up to the mark, short of the maximum flagged
+        pips = "".join(f'<i class="{"on" if n is not None and i < n else ""}"></i>' for i in range(top))
+        return (f'<div class="{"low" if n is not None and n < top else ""}"><dt title="{escape(tip or label)}">{escape(label)}</dt>'
+                f'<dd><span class="pips" role="img" aria-label="{escape(f("feedback.pips", label=label, n="–" if n is None else n, max=top))}">{pips}</span>'
+                f'<b>{"–" if n is None else n}<small>/{top}</small></b></dd></div>')
+
     def low_item(x):
-        crit = " · ".join(f"{f('criterion.' + k)} {x[k]}/4" for k in KINDS if x.get(k) is not None and x[k] < 4)
-        return (f'<li><span><b>{x["rating"]}/5</b>{" · " + escape(crit) if crit else ""} · {escape(f("feedback.by", login=x.get("by") or "?", project=x["project"]))}'
-                f'<br><span class="note">{escape(x.get("comment") or "")}</span></span><span class="when">{escape(x["begin"][:10])}</span></li>')
+        crit = "".join(meter(f(f"feedback.c.{k}"), x.get(k), 4, f(f"feedback.q.{k}")) for k in ("punctuality", "interested", "rigorous", "nice"))  # the form's order
+        return (f'<li class="fb-item"><p class="fb-head"><span>{escape(f("feedback.by", login=x.get("by") or "?", project=x["project"]))}</span>'
+                f'<span class="when">{escape(x["begin"][:10])}</span></p>'
+                f'<dl class="fb-crit">{meter(f("feedback.overall"), x["rating"], 5)}{crit}</dl>'
+                + (f'<p class="note">{escape(x["comment"])}</p>' if x.get("comment") else "") + "</li>")
     low_items = "".join(low_item(x) for x in low)
     sections.append({"id": "feedback", "title": f("feedback.title"), "nav": f("nav.feedback"), "lede": f("feedback.lede"), "criteria": crit,
                      "low_note": f("feedback.low_note", low=len(low), ratings=f.plural(len(rated), "count.ratings")) if rated else "",
@@ -756,6 +759,44 @@ def evaluations(pg: Page) -> list[dict]:
                                     [{"reason": k, **v} for k, v in CP["reasons"].items()], label=f("points.reasons_title"), sort=("count", -1))})
     sections.append(log_section(pg))
     return sections
+
+
+def corrected_table(pg: Page) -> Markup:
+    """The projects you corrected in this period: how often, how many people, the marks you gave; each row opens on
+    whom you evaluated and with which marks."""
+    f, given = pg.f, pg.D["given"]
+    by = {}
+    for e in given:
+        by.setdefault(e["project"], []).append(e)
+    rows = []
+    for name, evs in by.items():
+        marks = [e["mark"] for e in evs if e.get("mark") is not None]
+        whom = {}
+        for e in evs:
+            for c in e.get("correcteds") or []:
+                whom.setdefault(c.get("login") or "?", []).append(e)
+        rows.append({"project": name, "times": len(evs), "people": len(whom), "avg": sum(marks) / len(marks) if marks else None,
+                     "fails": sum(1 for e in evs if failed(e)), "outstanding": sum(1 for e in evs if e.get("outstanding")),
+                     "first": min(e["begin"] for e in evs)[:10], "last": max(e["begin"] for e in evs)[:10], "whom": whom})
+
+    def chip(e):
+        state = "open" if e.get("mark") is None else "fail" if failed(e) else "pass"
+        return f'<span class="mark {state}" title="{escape(e["begin"][:10])}">{escape(e["mark"] if e.get("mark") is not None else "–")}</span>'
+
+    def detail(r):
+        people = sorted(r["whom"].items(), key=lambda kv: (-len(kv[1]), kv[0]))
+        items = "".join(f'<li><a class="code" href="{escape(pg.url("evaluations", q=login, log="given"))}#log">{escape(login)}</a>'
+                        f'{f" ×{len(evs)}" if len(evs) > 1 else ""} <span class="marks">{"".join(chip(e) for e in sorted(evs, key=lambda e: e["begin"]))}</span></li>'
+                        for login, evs in people)
+        return f'<details><summary>{escape(f.plural(r["people"], "depth.whom"))}</summary><ul class="evals">{items}</ul></details>'
+
+    return table(f, [
+        {"k": "project", "t": f("col.project"), "nw": True},
+        {"k": "times", "t": f("col.times"), "num": True}, {"k": "people", "t": f("col.people"), "num": True},
+        {"k": "avg", "t": f("col.avg_mark"), "num": True, "f": lambda r: f.num(r["avg"], 1) if r["avg"] is not None else "–"},
+        {"k": "fails", "t": f("col.fails"), "num": True, "hide": True}, {"k": "outstanding", "t": f("col.outstanding"), "num": True, "hide": True},
+        {"k": "first", "t": f("col.first"), "nw": True, "hide": True}, {"k": "last", "t": f("col.last"), "nw": True},
+    ], rows, label=f("depth.given_title"), sort=("times", -1), detail=detail, empty=f("empty.period"))
 
 
 def log_section(pg: Page) -> dict:
@@ -827,6 +868,7 @@ def circle_links(net, me, given, received) -> dict:
     """The circle's links with the student's own side rebuilt from their evaluations: the contacts' lists only see
     "contact → me", so both directions with the student come from given (me → them) and received (them → me)."""
     known = {n["login"] for n in net.get("nodes") or []} - {me}
+    # the nodes are the closest contacts of every period: a period shows only those with a link in it
     links = {(l["source"], l["target"]): l["count"] for l in net.get("links") or [] if me not in (l["source"], l["target"])}
     for e in given:
         for c in e.get("correcteds") or []:
@@ -836,7 +878,9 @@ def circle_links(net, me, given, received) -> dict:
         login = (e.get("corrector") or {}).get("login")
         if login in known:
             links[(login, me)] = links.get((login, me), 0) + 1
-    return {**net, "links": [{"source": s_, "target": t, "count": n} for (s_, t), n in links.items()]}
+    linked = {x for pair in links for x in pair} | {me}
+    return {**net, "nodes": [n for n in net.get("nodes") or [] if n["login"] in linked],
+            "links": [{"source": s_, "target": t, "count": n} for (s_, t), n in links.items()]}
 
 
 def people(pg: Page) -> list[dict]:
@@ -851,7 +895,7 @@ def people(pg: Page) -> list[dict]:
     def details(p):
         projs = [f"{k} (x{v})" if v > 1 else k for k, v in p["projects_on_me"].items()]
         seats = list(p.get("hosts") or {})
-        line = " · ".join(x for x in [f("who.seats", list=first_of(seats, 2)) if seats else "", f"{p['first'][:10]} → {p['last'][:10]}" if p.get("first") else ""] if x)
+        line = f("who.seats", list=first_of(seats, 2)) if seats else ""
         return (f'<span title="{escape(", ".join(projs))}">{escape(first_of(projs, 3) or "–")}</span>'
                 + (f'<span class="sub" title="{escape(", ".join(seats))}">{escape(line)}</span>' if line else ""))
 
@@ -859,6 +903,8 @@ def people(pg: Page) -> list[dict]:
         return " · ".join([p["login"], f("who.tip_mark", mark=f.num(p.get("avg_mark_to_me"), 1), rating=f.num(p.get("my_rating_of_them"), 2)),
                            f("who.tip_cross", you=p.get("evaluated_by_me"), team=p.get("teammate"))])
 
+    group_of = {c["login"]: c["group"] for c in (pg.data.get("connections") or {}).get("all") or []}
+    order = {g: i for i, g in enumerate(gr.GROUPS)}
     sections = [{
         "id": "who", "title": f("who.title"), "nav": f("nav.who"),
         "lede": f("who.lede", correctors=S["unique_correctors"], mutual=S["mutual"]) + (" " + f("who.lede_most", login=most["login"], n=most["outstanding_to_me"]) if most else ""),
@@ -872,19 +918,22 @@ def people(pg: Page) -> list[dict]:
         "table": table(f, [
             {"k": "login", "t": f("col.login"), "nw": True, "f": lambda p: f'{avatar(p)}{escape(p["login"])}{" " + badge(f("who.staff")) if p.get("staff") else ""}'},
             {"k": "name", "t": f("col.name"), "cls": "name", "hide": True, "f": lambda p: f'<span title="{escape(p.get("name") or "")}">{escape(p.get("name") or "")}</span>'},
+            {"k": "group", "t": f("col.group"), "nw": True, "hide": True, "sv": lambda p: order.get(group_of.get(p["login"]), 99),
+             "f": lambda p: escape(f(f"groups.{group_of[p['login']]}")) if p["login"] in group_of else "–"},
             {"k": "evaluated_me", "t": f("col.evaluated_you"), "num": True}, {"k": "outstanding_to_me", "t": f("col.outstanding"), "num": True},
             {"k": "avg_mark_to_me", "t": f("col.avg_mark"), "num": True, "hide": True, "f": lambda p: f.num(p.get("avg_mark_to_me"), 1)},
             {"k": "evaluated_by_me", "t": f("col.you_evaluated"), "num": True}, {"k": "teammate", "t": f("col.teammate"), "num": True, "hide": True},
             {"k": "my_rating_of_them", "t": f("col.ratings"), "num": True, "nw": True, "hide": True,
              "f": lambda p: f"{f.num(p.get('my_rating_of_them'), 2)} / {f.num(p.get('their_rating_of_me'), 2)}"},
             {"k": "projects_on_me", "t": f("col.details"), "cls": "details", "hide": True, "sv": lambda p: len(p["projects_on_me"]), "f": details},
+            {"k": "first", "t": f("col.first"), "nw": True, "hide": True, "f": lambda p: escape((p.get("first") or "–")[:10])},
+            {"k": "last", "t": f("col.last"), "nw": True, "hide": True, "f": lambda p: escape((p.get("last") or "–")[:10])},
         ], rows, label=f("who.people_title"), sort=("evaluated_me", -1), sticky=True)}]
 
     mode = pg.q("mode", "received", ("received", "given", "mix"))
     conn = (pg.data.get("connections") or {}).get(pg.period) or []
     href = lambda login: pg.url("evaluations", q=login, log="received") + "#log"  # noqa: E731
     height = max(260, min(520, 160 + 12 * len(conn)))  # few people, a short panel
-    order = {g: i for i, g in enumerate(gr.GROUPS)}
     sections.append({
         "id": "connections", "title": f("connections.title"), "nav": f("nav.connections"), "lede": f("connections.lede"),
         "switches": [pg.seg("mode", [("received", f("connections.mode_received")), ("given", f("connections.mode_given")), ("mix", f("connections.mode_mix"))],
@@ -892,25 +941,35 @@ def people(pg: Page) -> list[dict]:
         "legend": ch.legend([(f("connections.legend_received"), ch.S1), (f("connections.legend_given"), ch.S2)]),
         "wide": Markup(gr.bubbles(f, conn, mode, width=960, height=height, href=href)),
         "narrow": Markup(gr.bubbles(f, conn, mode, width=420, height=height, href=href)),
-        "empty": f("connections.empty"),
-        "table": table(f, [
-            {"k": "login", "t": f("col.login"), "nw": True},
-            {"k": "name", "t": f("col.name"), "cls": "name", "hide": True, "f": lambda p: escape(p.get("name") or "")},
-            {"k": "group", "t": f("col.group"), "nw": True, "sv": lambda p: order.get(p["group"], 99), "f": lambda p: escape(f(f"groups.{p['group']}"))},
-            {"k": "received", "t": f("col.received"), "num": True}, {"k": "given", "t": f("col.given"), "num": True},
-            {"k": "last", "t": f("col.last"), "nw": True, "hide": True},
-        ], conn, label=f("connections.title"), sort=("received", -1))})
+        "empty": f("connections.empty")})
 
-    every = pg.data["periods"]["all"]
     net = pg.data.get("network") or {}
+    net = net if "nodes" in net else net.get(pg.period) or {}  # reports before 2026-10-26 hold one network for every period
     if net.get("nodes"):
-        net = circle_links(net, every["profile"]["login"], every["given"], every["received"])
+        net = circle_links(net, D["profile"]["login"], D["given"], D["received"])
     has = bool(net.get("links"))
-    sections.append({"id": "circle", "title": f("network.title"), "nav": f("nav.network"), "lede": f("network.lede"),
-                     "legend": Markup('<div class="legend">' + "".join(
-                         f'<span><svg class="arrow-key {kind}" viewBox="0 0 30 10" aria-hidden="true"><line x1="{4 if kind == "both" else 1}" y1="5" x2="25" y2="5"/>'
-                         + ('<path d="M1 5 L8 1.5 L8 8.5 Z"/>' if kind == "both" else "") + f'<path d="M29 5 L22 1.5 L22 8.5 Z"/></svg>{escape(label)}</span>'
-                         for kind, label in (("one", f("network.one_way")), ("both", f("network.both")))) + "</div>"),
+    pairs = {}
+    for l in net.get("links") or []:
+        pairs.setdefault(frozenset((l["source"], l["target"])), set()).add(l["source"])
+    lines = {"one": sum(1 for p in pairs.values() if len(p) == 1), "both": sum(1 for p in pairs.values() if len(p) == 2)}
+    arrow = {"one": '<line x1="1" y1="5" x2="25" y2="5"/><path d="M29 5 L22 1.5 L22 8.5 Z"/>',
+             "both": '<line x1="4" y1="5" x2="25" y2="5"/><path d="M1 5 L8 1.5 L8 8.5 Z"/><path d="M29 5 L22 1.5 L22 8.5 Z"/>'}
+    groups = [("me", f("network.key_me")), ("rank", f("network.key_rank")), ("outer", f("groups.outer-core")), ("alumni", f("groups.alumni")),
+              ("dead", f("groups.blackholed")), ("none", f("groups.no-cursus"))]
+    count = Counter(gr.net_class(n["group"]) for n in net.get("nodes") or [] if n["group"] != "me")
+    row = lambda key, label, n="": f'<li>{key}<span>{escape(label)}</span><b>{n}</b></li>'  # noqa: E731
+    side = (f'<h3>{escape(f("network.key_who"))}</h3><ul>'
+            + "".join(row(f'<svg class="net-key" viewBox="0 0 12 12" aria-hidden="true"><g class="net-node {c}"><circle cx="6" cy="6" r="5"/></g></svg>',
+                          label, f.num(count[c]) if c != "me" else "") for c, label in groups if c == "me" or count[c])
+            + f'</ul><h3>{escape(f("network.key_lines"))}</h3><ul>'
+            + "".join(row(f'<svg class="arrow-key {k}" viewBox="0 0 30 10" aria-hidden="true">{arrow[k]}</svg>', f(f"network.{"one_way" if k == "one" else "both"}"), f.num(lines[k]))
+                      for k in ("one", "both"))
+            + f'</ul><h3>{escape(f("network.dir_title"))}</h3><ul>'
+            + "".join(row(f'<svg class="dir-key {d}" viewBox="0 0 30 10" aria-hidden="true"><line x1="1" y1="5" x2="29" y2="5"/>'
+                          + ('<line class="gap" x1="1" y1="5" x2="29" y2="5"/>' if d == "both" else "") + "</svg>", f(f"network.dir_{d}"))
+                      for d in ("in", "out", "both"))
+            + "</ul>")
+    sections.append({"id": "circle", "title": f("network.title"), "nav": f("nav.network"), "lede": f("network.lede"), "side": Markup(side),
                      "wide": Markup(gr.ring(f, net, width=720, height=640, compact=False, uid="w")) if has else "",
                      "narrow": Markup(gr.ring(f, net, width=400, height=400, compact=True, uid="n")) if has else "",
                      "empty": f("network.empty")})
@@ -992,8 +1051,8 @@ def campus(pg: Page) -> list[dict]:
     PL, S = D["place"], D["summary"]
     # the other side's views only where it was looked up for at least one evaluation of this period
     looked = {"corrector": any(e.get("other_host_checked") for e in D["received"]), "evaluated": any(e.get("other_host_checked") for e in D["given"])}
-    roles = [r for r in ("corrector", "evaluated") if pg.seats and looked[r]] + ["mine"]
-    role = pg.q("where", roles[0], roles)
+    roles = ["mine"] + [r for r in ("corrector", "evaluated") if pg.seats and looked[r]]
+    role = pg.q("where", "mine", roles)
     clus = lambda h: h.split("r")[0] if h and h.startswith("c") and "r" in h else (h or "not logged")  # noqa: E731
     # the other side is known only for the evaluations it was looked up for; both series count those same evaluations
     if role == "corrector":

@@ -9,7 +9,7 @@ from app.store import Store
 from test_extract import UID, FakeApi
 
 PAGES = {"/app": "home", "/app/projects": "projects", "/app/evaluations": "evaluations", "/app/people": "people", "/app/campus": "campus"}
-SECTIONS = {"/app": ["profile", "home-kpis", "rhythm", "pace", "skills", "coal-points", "activity"], "/app/projects": ["projects-table", "domains", "timeline", "exams"],
+SECTIONS = {"/app": ["profile", "home-kpis", "rhythm", "pace", "skills", "coal-points", "activity"], "/app/projects": ["projects-table", "exams", "domains", "timeline"],
             "/app/evaluations": ["community", "over-time", "when", "correction-stats", "feedback", "points", "log"],
             "/app/people": ["who", "connections", "circle", "teammates"], "/app/campus": ["seats", "days", "sessions", "where"]}
 INLINE_SCRIPT = re.compile(r"<script\b(?![^>]*\bsrc=)[^>]*>", re.IGNORECASE)
@@ -244,6 +244,31 @@ def test_the_circle_draws_one_way_and_two_way_arrows():
     assert svg.count('<marker id="arr-t"') == 1
 
 
+def test_the_circle_colours_your_own_chords_by_direction():
+    net = {"nodes": [{"login": "me", "group": "me"}, {"login": "a", "group": "rank-01"}, {"login": "b", "group": "blackholed"}, {"login": "c", "group": "rank-01"}],
+           "links": [{"source": "a", "target": "me", "count": 1}, {"source": "me", "target": "b", "count": 1},
+                     {"source": "me", "target": "c", "count": 1}, {"source": "c", "target": "me", "count": 1}]}
+    svg = graphs.ring(Fmt("en"), net, width=400, height=400, compact=False, uid="t")
+    links = svg.split('<g class="net-links">')[1].split("</g>")[0]
+    dirs = {a if b == "me" else b: d for a, b, d in re.findall(r'data-a="(\w+)" data-b="(\w+)" data-dir="(\w+)"', links)}
+    assert dirs == {"a": "in", "b": "out", "c": "both"}
+    assert 'class="net-node dead"' in svg
+
+
+def test_the_circle_keeps_the_period_s_links(report):
+    from app.dash.views import Page, people
+    every = report["network"]["all"]
+    gone, other = [n for n in every["nodes"] if n["group"] != "me"][:2]
+    every = {"nodes": [{**n, "group": "blackholed"} if n is gone else n for n in every["nodes"]],
+             "links": every["links"] + [{"source": gone["login"], "target": other["login"], "count": 1}]}
+    data = {**report, "network": {"all": every, "student": {"nodes": [], "links": []}, "piscine": every}}
+    circle = lambda p: next(s for s in people(Page(Fmt("en"), data, "people", {"period": p})) if s["id"] == "circle")  # noqa: E731
+    assert circle("student")["wide"] == "" and circle("all")["wide"] != ""
+    side = str(circle("all")["side"])
+    assert 'class="net-key"' in side and "Blackholed" in side and re.search(r"Blackholed</span><b>1</b>", side)
+    assert re.search(r"Both ways</span><b>\d+</b>", side)
+
+
 def test_the_user_s_own_evaluations_draw_their_links():
     from app.dash.views import circle_links
     net = {"nodes": [{"login": "me", "group": "me"}, {"login": "a", "group": "x"}, {"login": "b", "group": "x"}],
@@ -280,7 +305,7 @@ def test_the_logtime_bonus_says_what_is_missing_and_when(report):
                                 "sessions": [[(now - timedelta(hours=56)).isoformat(), now.isoformat()]]}}
     pg = Page(Fmt("en"), {**data, "periods": {**data["periods"], "student": D}}, "home", {"period": "student"})
     s = coalition_points(pg, now)
-    flat = " ".join(str(x) for _, v, subs in s["kpis"] for x in [v, *subs])
+    flat = re.sub(r"</?span[^>]*>", ""," ".join(str(x) for _, v, subs in s["kpis"] for x in [v, *subs]))
     assert "56 h" in s["kpis"][0][1] or "56<small>" in s["kpis"][0][1]
     assert "Waiting" in flat and "available again from 29 Oct 2026, 16:33" in flat  # 50 h: 7 days after the last one
     assert "24<small> h to go" in flat and "log out from 25 Oct 2026, 21:00" in flat  # 80 h: 24 h more, Madrid time
@@ -312,9 +337,70 @@ async def test_only_home_carries_the_identity_card(signed_in, report):
     assert 'class="id-card"' not in other and 'class="who"' not in other
 
 
-async def test_transcenders_and_alumni_see_no_blackhole(signed_in, report):
-    text = (await signed_in.get("/app")).text  # the fixture's student is a Transcender
+async def test_no_profile_shows_a_blackhole(signed_in, report):
+    from app.dash.views import Page, home
+    D = report["periods"]["all"]
+    cursus = [{**c, "grade": "Learner"} for c in D["extras"]["cursus"]]  # a Common Core student this time
+    data = {**report, "periods": {**report["periods"], "all": {**D, "extras": {**D["extras"], "cursus": cursus}}}}
+    text = " ".join(str(s) for s in home(Page(Fmt("en"), data, "home", {"period": "all"})))
     assert "Blackhole" not in text and "none ahead" not in text and "days left" not in text
+    assert "Blackhole" not in (await signed_in.get("/app")).text
+
+
+def test_when_you_work_names_the_part_of_the_day_with_a_split_bar(report):
+    from app.dash.views import Page, home
+    rhythm = next(s for s in home(Page(Fmt("en"), report, "home", {"period": "all"})) if s["id"] == "rhythm")
+    k, v, subs = next(x for x in rhythm["kpis"] if x[0] == "When you work")
+    assert v in ("Morning", "Afternoon", "Night") and "%" not in str(v)
+    assert 'class="split"' in str(subs[0]) and "morning" in str(subs[1])
+
+
+def test_sections_with_their_own_switch_start_on_the_period(report):
+    from app.dash.views import Page, home, project_filters
+    for period, track, cursus in (("piscine", "piscine", "C Piscine"), ("student", "student", "42cursus"), ("all", "all", "42cursus")):
+        assert project_filters(Page(Fmt("en"), report, "projects", {"period": period}))["track"] == track
+        skills = next(s for s in home(Page(Fmt("en"), report, "home", {"period": period})) if s["id"] == "skills")
+        assert f'aria-pressed="true">{"Piscine" if cursus == "C Piscine" else "Student"}<' in str(skills["switches"][0])
+    assert project_filters(Page(Fmt("en"), report, "projects", {"period": "piscine", "track": "student"}))["track"] == "student"
+
+
+def test_the_projects_table_leaves_exams_to_their_own_section(report):
+    from app.dash.views import Page, projects
+    D = report["periods"]["all"]
+    exam = {**D["projects"][0], "name": "Exam Rank 02", "exam": True}
+    data = {**report, "periods": {**report["periods"], "all": {**D, "projects": D["projects"] + [exam]}}}
+    sections = projects(Page(Fmt("en"), data, "projects", {"period": "all", "track": "all"}))
+    assert [s["id"] for s in sections][:2] == ["projects-table", "exams"]
+    exams = ["Exam Rank 02"]
+    assert exams and not any(f">{n}<" in str(sections[0]["table"]) for n in exams)
+
+
+def test_validated_projects_add_up_beside_the_retries(report):
+    from app.dash.views import Page, projects
+    tl = next(s for s in projects(Page(Fmt("en"), report, "projects", {"period": "all"})) if s["id"] == "timeline")
+    assert "lchart" in str(tl["validated"]) or "empty" in str(tl["validated"])
+
+
+def test_points_by_source_name_the_coalition_and_the_months(report):
+    from app.dash.views import Page, coalition_points
+    s = coalition_points(Page(Fmt("en"), report, "home", {"period": "all"}))
+    months = report["periods"]["all"]["coalition_points"]["months"]
+    assert report["periods"]["all"]["profile"]["coalition"]["name"] in s["total"] and f"{Fmt('en').months[int(months[0]['month'][5:7]) - 1]} {months[0]['month'][:4]}" in s["total"]
+
+
+def test_each_feedback_below_the_maximum_is_broken_down_by_criterion(report):
+    from app.dash.views import Page, evaluations
+    fb = next(s for s in evaluations(Page(Fmt("en"), report, "evaluations", {"period": "all"})) if s["id"] == "feedback")
+    low = str(fb["low"])
+    if "fb-crit" in low:
+        assert low.count('class="pips"') == 5 * low.count('class="fb-item"')  # overall + the four criteria
+        assert "On time" in low or "Punctuality" in low
+
+
+async def test_the_settings_carry_the_period_switch_for_when_the_head_is_out_of_view(signed_in, report):
+    text = (await signed_in.get("/app/projects?period=all")).text
+    settings = text[text.index('class="settings"'):]
+    assert 'class="theme periods-copy"' in settings and "period=piscine" in settings
 
 
 async def test_campuses_are_a_panel_of_activity_and_leave_every_footer(signed_in, report):
@@ -438,6 +524,7 @@ def test_where_shows_the_corrector_whom_you_evaluated_or_you(report):
     for role, seat in (("corrector", "c1r1s1"), ("evaluated", "c3r2s1")):
         where = campus(Page(Fmt("en"), data, "campus", {"period": "all", "where": role}))[-1]
         assert seat in str(where["plan"]) and "last 60 days" in where["lede"]
+    assert campus(Page(Fmt("en"), data, "campus", {"period": "all"}))[-1]["switch"].count('aria-pressed="true">You, during evaluations') == 1
     old = {k: v for k, v in report.items() if k != "seat_days"}
     plain = campus(Page(Fmt("en"), old, "campus", {"period": "all", "where": "corrector"}))[-1]
     assert plain["switch"] == "" and "c1r1s1" not in str(plain["plan"])  # an older report: only your own seat
@@ -459,3 +546,42 @@ def test_where_offers_the_other_side_only_when_it_was_looked_up(report):
             e["other_host_checked"] = False  # nothing in the last 60 days
     where = campus(Page(Fmt("en"), data, "campus", {"period": "all"}))[-1]
     assert where["switch"] == "" and "c1r1s1" not in str(where["plan"])  # straight to your own seat, no empty views
+
+
+def test_the_projects_you_corrected_say_whom_and_with_which_marks(report):
+    from app.dash.views import Page, corrected_table
+    pg = Page(Fmt("en"), report, "evaluations", {"period": "all"})
+    html = str(corrected_table(pg))
+    e = pg.D["given"][0]
+    assert f">{e['project']}<" in html and 'class="evals"' in html
+    assert all(f">{c['login']}</a>" in html for c in e["correcteds"] if c.get("login"))
+
+
+def test_people_carry_their_group_and_the_first_and_last_time_you_crossed(report):
+    from app.dash.views import Page, people
+    who = people(Page(Fmt("en"), report, "people", {"period": "all"}))[0]
+    text = str(who["table"])
+    p = report["periods"]["all"]["people"][0]
+    assert ">Group<" in text and ">First<" in text and ">Last<" in text and p["first"][:10] in text
+    conn = next(s for s in people(Page(Fmt("en"), report, "people", {"period": "all"})) if s["id"] == "connections")
+    assert "table" not in conn
+
+
+def test_an_open_project_shows_a_dash_for_its_final_mark(report):
+    from app.dash.views import Page, projects
+    D = report["periods"]["all"]
+    open_ = {**D["projects"][0], "name": "still-open", "mark": None, "validated": None, "status": "in_progress"}
+    data = {**report, "periods": {**report["periods"], "all": {**D, "projects": D["projects"] + [open_]}}}
+    table = str(projects(Page(Fmt("en"), data, "projects", {"period": "all", "track": "all"}))[0]["table"])
+    row = table[table.index(">still-open<"):]
+    assert re.search(r'<td class="num"[^>]*>–</td>', row[:row.index("</tr>")])
+
+
+def test_titles_and_expertises_come_before_quests(report):
+    from app.dash.views import Page, home
+    D = report["periods"]["all"]
+    X = {**D["extras"], "titles": [{"name": "T", "at": "2025-01-01"}], "expertises": [{"name": "E", "value": 3}],
+         "quests": [{"name": "Q", "validated": "2025-01-01"}]}
+    data = {**report, "periods": {**report["periods"], "all": {**D, "extras": X}}}
+    misc = str(next(s for s in home(Page(Fmt("en"), data, "home", {"period": "all"})) if s["id"] == "activity")["misc"])
+    assert misc.index("</b> T") < misc.index("</b> E") < misc.index("</b> Q")

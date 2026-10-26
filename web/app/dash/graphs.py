@@ -4,7 +4,7 @@ from datetime import date
 
 from markupsafe import Markup, escape
 
-GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "no-cursus"]
+GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "blackholed", "no-cursus"]
 ACCENT = ("var(--ramp-hi)", "var(--ramp-lo)")
 SLATE = ("var(--slate)", "var(--slate-lo)")
 
@@ -212,7 +212,10 @@ def bubbles(f, people, mode, *, width, height, href) -> str:
     links = "".join(f'<line class="link" x1="{n["x"]:.1f}" y1="{n["y"]:.1f}" x2="{at[(n["login"], "given")]["x"]:.1f}" y2="{at[(n["login"], "given")]["y"]:.1f}"/>'
                     for n in nodes if mode == "mix" and n["dir"] == "received" and (n["login"], "given") in at)
     labels = "".join(f'<text class="group-label" text-anchor="middle" x="{c["x"]:.1f}" y="{c["top"] + 18:.1f}">'
-                     f'{escape(f(f"groups.{g}"))} · {sum(1 for n in nodes if n["group"] == g)}</text>' for g, c in cells.items())
+                     f'{escape(f(f"groups.{g}"))} – {sum(1 for n in nodes if n["group"] == g)}</text>' for g, c in cells.items())
+    # each group on its own grey ground, so the clusters read apart
+    grounds = "".join(f'<rect class="group-bg" x="{c["left"] + 3:.1f}" y="{c["top"] + 3:.1f}" width="{c["right"] - c["left"] - 6:.1f}"'
+                      f' height="{c["bottom"] - c["top"] - 6:.1f}"/>' for c in cells.values())
     marks = []
     for n in nodes:
         p = n["p"]
@@ -225,11 +228,11 @@ def bubbles(f, people, mode, *, width, height, href) -> str:
                      f'<circle class="core" r="{n["r"]:.1f}"/>'
                      + (f'<text text-anchor="middle" dy="0.35em">{escape(initials)}</text>' if n["r"] >= 15 else "") + "</a>")
     return (f'<svg class="graph" viewBox="0 0 {width} {h}" style="aspect-ratio:{width}/{h}"{roving(f, f("connections.title"))}>'
-            f'<g class="labels">{labels}</g><g class="links">{links}</g><g class="nodes">{"".join(marks)}</g></svg>')
+            f'<g class="grounds">{grounds}</g><g class="labels">{labels}</g><g class="links">{links}</g><g class="nodes">{"".join(marks)}</g></svg>')
 
 
-def _net_class(g):
-    return "me" if g == "me" else "outer" if g == "outer-core" else "alumni" if g == "alumni" else "rank" if (g or "").startswith("rank-") else "none"
+def net_class(g):
+    return {"me": "me", "outer-core": "outer", "alumni": "alumni", "blackholed": "dead"}.get(g) or ("rank" if (g or "").startswith("rank-") else "none")
 
 
 def _trim(x1, y1, cx, cy, by):
@@ -263,6 +266,7 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
         a = -math.pi / 2 + 2 * math.pi * i / len(others)
         at[n["login"]] = {**n, "a": a, "x": cx + R * math.cos(a), "y": cy + R * math.sin(a), "r": radius(n)}
     marker = f"arr-{uid}"
+    me_login = me[0]["login"] if me else None
     chords, arrows = [], []
     for (a, b), c in pairs.items():
         if a not in at or b not in at:
@@ -276,10 +280,13 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
         ends = (f' marker-end="url(#{marker})"' if c["ab"] else "") + (f' marker-start="url(#{marker})"' if c["ba"] else "")
         tip = " · ".join(x for x in [f"{a} → {b} ×{c['ab']}" if c["ab"] else "", f"{b} → {a} ×{c['ba']}" if c["ba"] else ""] if x)
         d = f"M{x1:.1f},{y1:.1f} Q{mx:.1f},{my:.1f} {x2:.1f},{y2:.1f}"
-        chords.append(f'<path class="{"both" if both else "one"}" data-a="{escape(a)}" data-b="{escape(b)}" data-tip="{escape(tip)}"'
+        # with you in focus colour says the direction: in (they evaluated you), out (you evaluated them) or both
+        out, back = (c["ab"], c["ba"]) if a == me_login else (c["ba"], c["ab"])
+        dir_ = f' data-dir="{"both" if out and back else "out" if out else "in"}"' if me_login in (a, b) else ""
+        chords.append(f'<path class="{"both" if both else "one"}" data-a="{escape(a)}" data-b="{escape(b)}"{dir_} data-tip="{escape(tip)}"'
                       f' stroke-width="{min(5, 1 + (c["ab"] + c["ba"]) / 3):.1f}" d="{d}"><title>{escape(tip)}</title></path>')
         # the arrowheads live on a twin path, shown only for the person in focus
-        arrows.append(f'<path data-a="{escape(a)}" data-b="{escape(b)}"{ends} d="{d}"/>')
+        arrows.append(f'<path data-a="{escape(a)}" data-b="{escape(b)}"{dir_}{ends} d="{d}"/>')
     marks, centre = [], []
     for n in at.values():
         d = degree.get(n["login"], 0)
@@ -292,14 +299,13 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
             text = (f'<text x="{(n["r"] + 6) * math.cos(n["a"]):.1f}" y="{(n["r"] + 6) * math.sin(n["a"]) + 4:.1f}"'
                     f' text-anchor="{anchor}">{escape(n["login"])}</text>')
         (centre if n["group"] == "me" else marks).append(
-            f'<g class="net-node {_net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"'
+            f'<g class="net-node {net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"'
             f' aria-label="{escape(tip)}" data-tip="{escape(tip)}" transform="translate({n["x"]:.1f},{n["y"]:.1f})">'
             f'<title>{escape(tip)}</title><circle class="core" r="{n["r"]:.1f}"/>{text}</g>')
     defs = (f'<defs><marker id="{marker}" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse"'
             f' markerWidth="{8 if compact else 11}" markerHeight="{8 if compact else 11}" orient="auto-start-reverse">'
             f'<path d="M0,0 L10,5 L0,10 Z" class="arrowhead"/></marker></defs>')
     # you sit under the chords: a chord between two others is seen passing over you, never ending on you
-    me_login = escape(me[0]["login"]) if me else ""
-    return (f'<svg class="graph net" data-me="{me_login}" viewBox="0 0 {width} {height}"{roving(f, f("network.title"))}>{defs}'
+    return (f'<svg class="graph net" data-me="{escape(me_login or "")}" viewBox="0 0 {width} {height}"{roving(f, f("network.title"))}>{defs}'
             f'<g class="net-me">{"".join(centre)}</g><g class="net-links">{"".join(chords)}</g><g class="net-arrows">{"".join(arrows)}</g>'
             f'<g class="net-nodes">{"".join(marks)}</g></svg>')

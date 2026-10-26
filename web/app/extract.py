@@ -133,7 +133,7 @@ async def extract(api, uid: int, progress) -> dict:
         periods[p] = report
     await step()
     links = {p: connections(r, groups) for p, r in periods.items()}
-    network = await _network(api, d, links["all"])
+    network = await _network(api, d, links["all"], kickoff(d))
     await step()
     return {
         "page": "web",
@@ -210,8 +210,14 @@ async def _standing(api, d) -> dict:
     return {"promo": promo, "coalitions": coalition_standings(blocs[0] if blocs else None, mine)}
 
 
-async def _network(api, d, contacts) -> dict:
-    """Who evaluated whom among the closest contacts: one request per contact, skipped when the hourly budget is low."""
+def kickoff(d) -> str | None:
+    """The 42cursus start, where the student period begins (as in analysis.for_period)."""
+    return next((c.get("begin_at") for c in d["user"]["cursus_users"] if c["cursus_id"] == MAIN_CURSUS), None)
+
+
+async def _network(api, d, contacts, start=None) -> dict:
+    """Who evaluated whom among the closest contacts, per period: one request per contact, skipped when the hourly
+    budget is low."""
     top = sorted(contacts, key=lambda c: -(c["received"] + c["given"]))[:NETWORK_SIZE]
     ids = {p["login"]: p["id"] for p in d["people"]}
     limiter = getattr(api, "limiter", None)
@@ -219,7 +225,10 @@ async def _network(api, d, contacts) -> dict:
     if limiter is None or await limiter.budget_ok():
         async def given(login):
             evs = await api.get(f"/v2/users/{ids[login]}/scale_teams/as_corrector", **{"page[size]": 100, "sort": "-begin_at"})
-            given_by[login] = [{"correcteds": [{"login": u.get("login")} for u in e["correcteds"] if isinstance(u, dict)]
+            given_by[login] = [{"begin_at": e.get("begin_at"), "correcteds": [{"login": u.get("login")} for u in e["correcteds"] if isinstance(u, dict)]
                                 if isinstance(e.get("correcteds"), list) else []} for e in evs or []]
         await asyncio.gather(*(given(c["login"]) for c in top if c["login"] in ids))
-    return contact_network(d["user"]["login"], [{"login": c["login"], "group": c["group"]} for c in top], given_by)
+    nodes = [{"login": c["login"], "group": c["group"]} for c in top]
+    split = {"all": lambda at: True, "student": lambda at: not start or (bool(at) and ts(at) >= ts(start)),
+             "piscine": lambda at: not start or (bool(at) and ts(at) < ts(start))}  # no kickoff: every period is everything
+    return {p: contact_network(d["user"]["login"], nodes, given_by, keep) for p, keep in split.items()}

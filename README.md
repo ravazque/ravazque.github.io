@@ -37,8 +37,10 @@ Five pages, rendered on the server; every choice (period, filters, views) lives 
 Requirements: Docker with the Compose plugin, `make`, `openssl` or `mkcert`. Node ≥ 22 and Python 3 for the tests and
 the site preview.
 
-1. **Register a 42 application** at https://profile.intra.42.fr/oauth/applications:
-   redirect URI `https://localhost/auth/callback`, website `https://localhost`, scope `public`.
+1. **Register the 42 applications** at https://profile.intra.42.fr/oauth/applications, scope `public`: one for `make dev`
+   (`FT_UID_2`, redirect URI `https://localhost/auth/callback`) and, to publish through the tunnel, one for production
+   (`FT_UID`, redirect URI `https://<tunnel>.trycloudflare.com/auth/callback`). A third (`FT_UID_3`) only adds
+   request budget and never signs anyone in.
 2. **Configure**: `make` copies `.env.example` to `.env` on the first run. Fill the required values (see below) and adapt the
    privacy policy texts (`policy.*` in the i18n files) to your deployment.
 3. **Certificates**: `make certs` creates `web/certs/`. With `mkcert` they are trusted at once; with `openssl`, import
@@ -51,14 +53,15 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `FT_UID`, `FT_SECRET` | yes | 42 application credentials |
-| `FT_UID_2`, `FT_SECRET_2`, `FT_UID_3`, `FT_SECRET_3` | no | More 42 apps: app-token requests are spread over them |
+| `FT_UID`, `FT_SECRET` | yes | 42 app that signs users in to production (`make prod`) |
+| `FT_UID_2`, `FT_SECRET_2` | for `make dev` | 42 app that signs users in to `make dev` |
+| `FT_UID_3`, `FT_SECRET_3` | no | 42 app that never signs anyone in; app-token requests are spread over all three |
 | `SESSION_SECRET` | yes | ≥ 32 characters (`openssl rand -hex 32`); keys session HMACs |
 | `CONTROLLER_NAME` | yes | Data controller named by the privacy policy |
 | `CONTACT_EMAIL` | yes | Contact for privacy requests, shown on the About and Privacy pages |
 | `OPTOUT_LOGINS` | no | Comma-separated logins of students who asked to be excluded: shown as "Hidden" everywhere |
 | `ISSUES_URL` | no | "Report an issue" link on every page, e.g. `https://github.com/<owner>/<repo>/issues/new/choose` |
-| `BASE_URL` | no | Public address, default `https://localhost` |
+| `BASE_URL` | no | Unused by `make dev` (always `https://localhost`) and `make prod` (the tunnel's URL); a fixed public address later |
 | `DEV_UID` | no | Local only: whose report `make build` saves and `make dev` serves (refused outside `https://localhost`) |
 | `OWNER_LOGIN`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_BRANCH` | no | Publishing; the button stays hidden unless `OWNER_LOGIN` and `GITHUB_TOKEN` are set |
 
@@ -67,11 +70,11 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | Command | Action |
 |---------|--------|
 | `make` | List the commands |
-| `make dev` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented from a fixed seed, never real people, never able to publish); live reload |
+| `make dev` / `make dev-down` / `make dev-logs` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented from a fixed seed, never real people, never able to publish); live reload; its own compose project, so it runs beside production / stop it / its logs |
 | `make build` | Build the images, refresh the saved report of `DEV_UID` (~120 requests, about 40 s with three apps) and the synthetic test profiles |
-| `make up` / `make down` | Start as built / stop (memory is cleared; browsers keep their reports) |
-| `make tunnel` / `make tunnel-stop` | Open / close a free Cloudflare quick tunnel for testers: prints the `*.trycloudflare.com` URL to set as `BASE_URL` and as a redirect URI of the 42 app, then `make up` (never `make dev`) |
-| `make logs`, `make ps` | Follow logs / list services |
+| `make prod` / `make prod-down` | Start production as built behind a free Cloudflare quick tunnel and print its `*.trycloudflare.com` URL (a new one on every tunnel start: add `<url>/auth/callback` to the `FT_UID` app) / stop it and the tunnel (memory is cleared; browsers keep their reports) |
+| `make down` | Stop both |
+| `make logs`, `make ps` | Follow production's logs / list the services of both |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
 | `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 120 requests) |
 | `make snapshot` | Write `site/data/42.json` from the preview data |
@@ -85,7 +88,8 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
   frozen accounts get a refusal page with the reason. Access is re-checked on every extraction.
 - **42 API budget**: 2 requests/s and 1200/h per application, shared by every user. A second and a third app
   (`FT_UID_2`/`FT_SECRET_2`, `FT_UID_3`/`FT_SECRET_3`) are optional: app-token requests are spread over all of them, each
-  within its own limits, while sign-in stays on the first. One extraction per user per hour (119 requests in 39 s
+  within its own limits. Production signs in with the first and `make dev` with the second; dev and production each
+  keep their own limiter, so running extractions in both at once can go over an app's 2 requests/s (retried). One extraction per user per hour (119 requests in 39 s
   measured with three apps, its independent
   lists fetched together), run inside the web process, one at a time, with a progress bar. When the hourly budget runs low, the job
   waits for the next hour. Every extraction logs its request count.
