@@ -7,7 +7,7 @@
     <p class="tagline">{{ t["site.tagline"] }}</p>
     <p class="pitch">{{ t["site.pitch"] }}</p>
     {% if error %}<p class="error" role="alert">{{ t["site.error_consent"] if error == "consent" else t["site.error_signin"] }}</p>{% endif %}
-    <form class="signin" method="get" action="/auth/login">
+    <form class="signin" method="get" action="/auth/login" data-accept-first="{{ t["landing.accept_first"] }}">
       <label class="consent"><input type="checkbox" name="accept" value="1" required>
         <span>{{ t["site.accept"].replace("{privacy}", '<a href="/privacy">' ~ t["site.accept_link"] ~ '</a>') | safe }}</span></label>
       <div class="signin-actions"><button class="btn primary" type="submit" data-busy="{{ t["landing.signing_in"] }}">{{ t["site.signin"] }}</button>

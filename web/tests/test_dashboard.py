@@ -585,3 +585,44 @@ def test_titles_and_expertises_come_before_quests(report):
     data = {**report, "periods": {**report["periods"], "all": {**D, "extras": X}}}
     misc = str(next(s for s in home(Page(Fmt("en"), data, "home", {"period": "all"})) if s["id"] == "activity")["misc"])
     assert misc.index("</b> T") < misc.index("</b> E") < misc.index("</b> Q")
+
+
+def test_the_projects_you_corrected_can_be_searched(report):
+    from app.dash.views import Page, corrected_table
+    name = report["periods"]["all"]["given"][0]["project"]
+    html = str(corrected_table(Page(Fmt("en"), report, "evaluations", {"period": "all", "dq": name[:4].upper()})))
+    assert f">{name}<" in html
+    assert "No project matches" in str(corrected_table(Page(Fmt("en"), report, "evaluations", {"period": "all", "dq": "zzzz-none"})))
+
+
+def test_a_long_or_several_line_comment_says_there_is_more_in_the_log(report):
+    import copy
+    from app.dash.views import Page, log_section
+    data = copy.deepcopy(report)
+    e = data["periods"]["all"]["received"][0]
+    e["comment"] = "short first line\nand a second one"
+    table = str(log_section(Page(Fmt("en"), data, "evaluations", {"period": "all"}))["table"])
+    assert 'class="preview">short first line…<' in table
+
+
+def test_feedback_comments_are_quoted_and_the_circle_tips_open_towards_the_middle(report):
+    net = {"nodes": [{"login": "me", "group": "me"}, {"login": "a", "group": "rank-01"}, {"login": "b", "group": "rank-01"}],
+           "links": [{"source": "a", "target": "me", "count": 1}, {"source": "b", "target": "me", "count": 1}]}
+    svg = graphs.ring(Fmt("en"), net, width=400, height=400, compact=False, uid="t")
+    assert 'class="net-node me-hit"' in svg.split('<g class="net-nodes">')[1]  # above the chords
+    assert set(re.findall(r'data-side="(\w+)"', svg)) <= {"left", "right"} and 'data-side="' in svg
+    from app.dash.views import Page, evaluations
+    fb = next(s for s in evaluations(Page(Fmt("en"), report, "evaluations", {"period": "all"})) if s["id"] == "feedback")
+    if 'class="note fb-quote"' in str(fb["low"]):
+        assert re.search(r'class="note fb-quote">“[^<]+”<', str(fb["low"]))
+
+
+async def test_the_landing_says_why_sign_in_waits(client):
+    assert 'data-accept-first="Accept the privacy policy first"' in (await client.get("/")).text
+
+
+def test_teammates_say_how_many_different_people(report):
+    from app.dash.views import Page, people
+    tm = next(s for s in people(Page(Fmt("en"), report, "people", {"period": "all"})) if s["id"] == "teammates")
+    n = len((report["periods"]["all"].get("insights") or {}).get("teammates") or [])
+    assert tm["count"] == (f"{n} person" if n == 1 else f"{n} people")

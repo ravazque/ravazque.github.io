@@ -54,7 +54,6 @@
 .landing .features-actions .btn { align-self: auto; }
 /* sign in and "What you'll see" side by side; the checkbox asks for attention when the dialog sent you to it */
 .signin-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.consent.ask { outline: 2px solid var(--accent-data); outline-offset: 6px; }
 
 /* About: the feature list and how it is built */
 .features-list { margin: 0 0 14px; padding-left: 1.2em; max-width: 70ch; }

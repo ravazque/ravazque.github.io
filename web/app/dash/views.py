@@ -690,7 +690,7 @@ def evaluations(pg: Page) -> list[dict]:
         "facts": facts([(f("depth.received_duration"), escape(dur(dp["received_duration"]))), (f("depth.given_duration"), escape(dur(dp["given_duration"]))),
                         (f("depth.lead"), escape("–" if dp.get("received_lead_h") is None else f("depth.hours", h=f.num(dp["received_lead_h"], 1)))),
                         (f("depth.streak"), f.num(dp.get("outstanding_streak")))]) if dp else "",
-        "depth": corrected_table(pg)})
+        "depth": corrected_table(pg), "dq": pg.q("dq", "")[:80]})
 
     st = D.get("stats")
     if st:
@@ -745,7 +745,7 @@ def evaluations(pg: Page) -> list[dict]:
         return (f'<li class="fb-item"><p class="fb-head"><span>{escape(f("feedback.by", login=x.get("by") or "?", project=x["project"]))}</span>'
                 f'<span class="when">{escape(x["begin"][:10])}</span></p>'
                 f'<dl class="fb-crit">{meter(f("feedback.overall"), x["rating"], 5)}{crit}</dl>'
-                + (f'<p class="note">{escape(x["comment"])}</p>' if x.get("comment") else "") + "</li>")
+                + (f'<p class="note fb-quote">“{escape(x["comment"].strip())}”</p>' if (x.get("comment") or "").strip() else "") + "</li>")
     low_items = "".join(low_item(x) for x in low)
     sections.append({"id": "feedback", "title": f("feedback.title"), "nav": f("nav.feedback"), "lede": f("feedback.lede"), "criteria": crit,
                      "low_note": f("feedback.low_note", low=len(low), ratings=f.plural(len(rated), "count.ratings")) if rated else "",
@@ -765,8 +765,11 @@ def corrected_table(pg: Page) -> Markup:
     """The projects you corrected in this period: how often, how many people, the marks you gave; each row opens on
     whom you evaluated and with which marks."""
     f, given = pg.f, pg.D["given"]
+    q = pg.q("dq", "")[:80].lower()
     by = {}
     for e in given:
+        if q and q not in e["project"].lower():
+            continue
         by.setdefault(e["project"], []).append(e)
     rows = []
     for name, evs in by.items():
@@ -796,7 +799,7 @@ def corrected_table(pg: Page) -> Markup:
         {"k": "avg", "t": f("col.avg_mark"), "num": True, "f": lambda r: f.num(r["avg"], 1) if r["avg"] is not None else "–"},
         {"k": "fails", "t": f("col.fails"), "num": True, "hide": True}, {"k": "outstanding", "t": f("col.outstanding"), "num": True, "hide": True},
         {"k": "first", "t": f("col.first"), "nw": True, "hide": True}, {"k": "last", "t": f("col.last"), "nw": True},
-    ], rows, label=f("depth.given_title"), sort=("times", -1), detail=detail, empty=f("empty.period"))
+    ], rows, label=f("depth.given_title"), sort=("times", -1), detail=detail, empty=f("empty.search_depth") if q else f("empty.period"))
 
 
 def log_section(pg: Page) -> dict:
@@ -830,7 +833,9 @@ def log_section(pg: Page) -> dict:
         n = len(e["feedbacks"])
         what = (f("log.comment_and_feedback", count=n, n=n) if e.get("comment") and n else f("log.comment_only") if e.get("comment")
                 else f("log.feedback_only", count=n, n=n))
-        preview = re.sub(r"\s+", " ", e.get("comment") or (e["feedbacks"][0].get("comment") if n else "") or "")[:140]
+        text = (e.get("comment") or (e["feedbacks"][0].get("comment") if n else "") or "").strip()
+        first = re.sub(r"\s+", " ", text.split("\n", 1)[0])
+        preview = first[:140] + ("…" if len(first) > 140 or "\n" in text else "")  # several lines: say there is more
         return f'<details><summary>{escape(what)}<span class="preview">{escape(preview)}</span></summary>{"".join(parts)}</details>'
 
     flag_col = {"k": "flag", "t": f("col.flag"), "nw": True, "sv": lambda e: 2 if e.get("outstanding") else 0 if e.get("negative_flag") else 1, "f": lambda e: flag_badge(f, e)}
@@ -975,7 +980,7 @@ def people(pg: Page) -> list[dict]:
                      "empty": f("network.empty")})
 
     tm = (D.get("insights") or {}).get("teammates") or []
-    sections.append({"id": "teammates", "title": f("teammates.title"), "nav": f("nav.teammates"), "table": table(f, [
+    sections.append({"id": "teammates", "title": f("teammates.title"), "nav": f("nav.teammates"), "count": f.plural(len(tm), "depth.whom"), "table": table(f, [
         {"k": "login", "t": f("col.login"), "nw": True}, {"k": "name", "t": f("col.name"), "hide": True, "f": lambda r: escape(r.get("name") or "")},
         {"k": "teams", "t": f("col.teams"), "num": True},
         {"k": "projects", "t": f("col.projects"), "sv": lambda r: len(r["projects"]),

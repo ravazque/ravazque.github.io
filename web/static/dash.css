@@ -52,9 +52,9 @@ details.best-wrap[open] .caret { transform: rotate(180deg); }
 .best-menu a span { display: flex; flex-direction: column; line-height: 1.2; padding: 6px 0; }
 .best-menu a small { color: var(--muted); font: 500 13px var(--type-font-text); }
 /* first visit: a note under the star, pointing at it */
-.tour { position: absolute; right: 0; top: calc(100% + 14px); z-index: 45; width: min(340px, calc(100vw - 32px)); padding: 16px 18px;
-  background: var(--accent); color: var(--on-accent); border: 2px solid var(--on-accent); border-top: 6px solid var(--star); font-size: 15px;
-  animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--on-accent); }
+.tour { position: absolute; right: 0; top: calc(100% + 28px); z-index: 45; width: min(340px, calc(100vw - 32px)); padding: 16px 18px;
+  background: color-mix(in oklab, var(--accent-data) 12%, var(--ground)); color: var(--ink); border: 2px solid var(--ink); border-top: 6px solid var(--star);
+  font-size: 15px; animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--ink); }
 .tour::before { content: ""; position: absolute; right: 26px; top: -14px; border: 8px solid transparent; border-top: 0; border-bottom-color: var(--star); }
 .tour p { margin: 0 0 8px; }
 .tour .btn { margin-top: 4px; }
@@ -345,25 +345,28 @@ html body [data-panel="low-feedback"]:only-child { grid-column: span 12; }
 [data-panel="points"] > .lchart, [data-panel="points"] > .empty { margin-block: auto; }
 
 /* your circle: the key and its counts on the left, the ring on the right; stacked on narrow screens */
-.net-wrap { display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); gap: 24px 40px; align-items: center; }
-.net-side { align-self: center; }
-.net-side h3 { margin: 14px 0 6px; font-size: 15px; }
+/* everything in the key is in em: its size is the one font-size below */
+.net-wrap { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 24px 40px; align-items: center; }
+.net-side { align-self: center; font-size: 17px; }
+.net-side h3 { margin: .9em 0 .4em; font-size: 1.05em; }
 .net-side ul { list-style: none; margin: 0; padding: 0; }
-.net-side li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 0;
-  border-bottom: 1px solid var(--rule); color: var(--text-2); font-size: var(--c-legend-font-size); }
-.net-side li .net-key { justify-self: center; }
+.net-side li { display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; align-items: center; gap: .5em; padding: .35em 0;
+  border-bottom: 1px solid var(--rule); color: var(--text-2); }
+.net-side li .net-key { justify-self: center; width: .9em; height: .9em; }
+.net-side li .arrow-key, .net-side li .dir-key { width: 2em; height: .7em; }
 .net-side li b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (max-width: 959.98px) {  /* the key above the ring, each group as one wrapping row */
   .net-wrap { grid-template-columns: minmax(0, 1fr); }
-  .net-side ul { display: flex; flex-wrap: wrap; gap: 0 20px; }
-  .net-side li { grid-template-columns: 30px auto auto; border-bottom: 0; padding: 3px 0; }
+  .net-side ul { display: flex; flex-wrap: wrap; gap: 0 1.2em; }
+  .net-side li { grid-template-columns: 2.2em auto auto; justify-content: start; border-bottom: 0; padding: .2em 0; }
 }
 
 /* a caveat that would interrupt the reading: an info mark beside the title, on its x-height, its text in the tooltip;
    nothing to press (hover, or keyboard focus) */
-.info { display: inline-flex; width: .8em; height: .8em; margin-left: .3em; vertical-align: -.06em; cursor: help; color: var(--muted); outline-offset: 2px; }
+h2:has(> .info), h3:has(> .info) { display: flex; align-items: center; gap: .3em; }  /* the mark on the middle of the line */
+.info { display: inline-flex; flex: none; width: .8em; height: .8em; cursor: help; color: var(--muted); outline-offset: 2px; }
 .info svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
-h2 .info { width: .42em; height: .42em; margin-left: .25em; vertical-align: .32em; }
+h2 .info { width: .42em; height: .42em; }
 .info:hover, .info:focus-visible { color: var(--ink); }
 
 /* a little air between a title, its note or key and the table or chart under it */
@@ -376,7 +379,7 @@ td.details .sub, td.details > span:first-child { max-width: 420px; }
 .marks { max-width: 420px; }
 
 /* your circle: the key and the ring as one centred group */
-.net-wrap { max-width: 1040px; margin: 0 auto; justify-content: center; }
+.net-wrap { max-width: 1200px; margin: 0 auto; justify-content: center; }
 
 /* a pressed choice stays as it is under the pointer */
 .theme button[aria-pressed="true"]:hover, .theme a[aria-pressed="true"]:hover { background: var(--ink); color: var(--ground); }
@@ -391,5 +394,22 @@ html body .seg > a[aria-pressed="true"]:hover, html body .seg button[aria-presse
 .graph .group-bg { fill: var(--sunken); }
 
 /* a chart in the middle of its panel when the panel beside it is taller */
-[data-panel="by-hour"] { display: flex; flex-direction: column; }
-[data-panel="by-hour"] > .centred { margin-block: auto; }
+[data-panel="by-hour"], [data-panel="coal-sources"] { display: flex; flex-direction: column; }
+[data-panel="by-hour"] > .centred, [data-panel="coal-sources"] > .centred { margin-block: auto; }
+
+/* connections: the key clear of the groups (the bubbles float in dash.js) */
+[data-panel="connections"] > .legend { margin-bottom: 16px; }
+
+/* your circle: the invisible double of your node that sits above the chords */
+.net .me-hit circle { fill: transparent; stroke: none; }
+.net .me-hit:hover circle { stroke: none; }
+/* connections: each bubble bobs in its place, slowly and out of step with its neighbours; a translate animation the
+   compositor runs, so the initials glide instead of snapping to pixels */
+.graph .bubble { animation: bob 5.5s ease-in-out infinite alternate; will-change: translate; }
+.graph .bubble:nth-child(4n + 1) { animation-duration: 6.5s; animation-delay: -2s; }
+.graph .bubble:nth-child(4n + 2) { animation-duration: 7s; animation-delay: -4.5s; }
+.graph .bubble:nth-child(4n + 3) { animation-duration: 6s; animation-delay: -1s; animation-direction: alternate-reverse; }
+.graph .bubble text { text-rendering: geometricPrecision; }
+@keyframes bob { from { translate: 0 1.5px; } to { translate: 0 -1.5px; } }
+@media (prefers-reduced-motion: reduce) { .graph .bubble { animation: none; } }
+.fb-quote { font-style: italic; }

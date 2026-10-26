@@ -17,17 +17,24 @@
     ev.preventDefault(); features.showModal();
   });
   features?.addEventListener("click", (ev) => { if (ev.target === features && !holding) features.close(); });  // the backdrop
-  // its sign-in button: straight in once the policy is accepted (the dialog stays until 42's page arrives), otherwise
-  // to the checkbox beside the real button
+  // both sign-in buttons wait for the policy to be accepted (without this script the checkbox is required instead);
+  // the dialog's goes straight in and the dialog stays until 42's page arrives
   const form = document.querySelector("form.signin"), accept = form?.querySelector('input[name="accept"]');
-  const go = features?.querySelector("[data-go-signin]");
+  const go = features?.querySelector("[data-go-signin]"), submit = form?.querySelector('button[type="submit"]');
+  function gate() {
+    for (const b of [submit, go]) {
+      if (!b || b.getAttribute("aria-busy")) continue;
+      b.disabled = !accept?.checked;
+      b.title = accept?.checked ? "" : form.dataset.acceptFirst || "";
+    }
+  }
+  accept?.addEventListener("change", gate);
+  gate();
   features?.addEventListener("cancel", (ev) => { if (holding) ev.preventDefault(); });
   go?.addEventListener("click", () => {
-    if (accept?.checked) { holding = true; if (closeBtn) closeBtn.disabled = true; busy(go); form.requestSubmit(); return; }
-    features.close();
-    if (accept) { accept.focus(); accept.closest(".consent")?.classList.add("ask"); }
+    if (!accept?.checked) return;
+    holding = true; if (closeBtn) closeBtn.disabled = true; busy(go); form.requestSubmit();
   });
-  accept?.addEventListener("change", () => accept.closest(".consent")?.classList.remove("ask"));
   // leaving the page: the button says so and a thin bar runs along the top until the next page arrives
   function busy(btn) {
     if (!btn) return;
@@ -45,6 +52,7 @@
     holding = false; if (closeBtn) closeBtn.disabled = false;
     document.documentElement.classList.remove("leaving");
     document.querySelectorAll("[aria-busy]").forEach((b) => { b.removeAttribute("aria-busy"); b.disabled = false; if (b.dataset.label) b.textContent = b.dataset.label; });
+    gate();
   });
 
   const plan = document.querySelector(".landing-plan");

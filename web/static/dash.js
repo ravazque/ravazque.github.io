@@ -68,8 +68,10 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     tip.style.left = tip.style.top = "0px";  // measured at the corner: near the right edge it would be squeezed narrower
     const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 10, edge = 8;
     let left, top = r.top + r.height / 2 - h / 2;
-    if (r.right + gap + w <= innerWidth - edge) left = r.right + gap;
-    else if (r.left - gap - w >= edge) left = r.left - gap - w;
+    const fitsRight = r.right + gap + w <= innerWidth - edge, fitsLeft = r.left - gap - w >= edge;
+    if (el.dataset.side === "left" && fitsLeft) left = r.left - gap - w;  // a mark that says where its tip should open
+    else if (fitsRight) left = r.right + gap;
+    else if (fitsLeft) left = r.left - gap - w;
     else {
       left = (x ?? r.left + r.width / 2) - w / 2;
       top = r.top - gap - h >= edge ? r.top - gap - h : r.bottom + gap;
@@ -261,6 +263,10 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
   }
   tour();
   document.body.addEventListener("htmx:afterSettle", tour);
+  document.addEventListener("click", (ev) => {  // make dev only: the settings bring the first-visit note back
+    if (!ev.target.closest?.("[data-tour-again]")) return;
+    store.set("tour:star", ""); closeSettings(); tour();
+  });
 
   // the period switch shows in the settings too while the page's own is not wholly in sight: scrolled away, under the
   // band, or under the open panel itself (measured with the copy shown, the panel's tallest)

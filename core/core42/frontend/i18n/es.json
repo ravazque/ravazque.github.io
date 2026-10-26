@@ -788,7 +788,6 @@
  "where.you": "Tú",
  "where.lede_seats": "El puesto de la otra persona se busca en las evaluaciones de los últimos {days} días: tu corrector aparece en {corrector} de {c_checked}, los estudiantes que evaluaste en {evaluated} de {e_checked}. Tu propio puesto se conoce en {me} de las {n} evaluaciones.",
  "best.label": "Destacado",
- "best.where": "Dónde te sentaste",
  "common.preview": "Vista previa",
  "domains.portfolio_title": "Portfolio",
  "preview.error": "No se ha podido cargar. Vuelve a intentarlo.",
@@ -828,5 +827,9 @@
  "col.fails": "Suspensos",
  "tour.star_title": "Lo destacado",
  "tour.star": "La estrella reúne las vistas destacadas de la web: dónde te sentaste, quién te evaluó, tu círculo, los proyectos que has corregido y el log completo.",
- "tour.ok": "Entendido"
+ "tour.ok": "Entendido",
+ "depth.search_placeholder": "Nombre del proyecto",
+ "tour.again": "Mostrar el aviso de primera visita (dev)",
+ "landing.accept_first": "Acepta primero la política de privacidad",
+ "empty.search_depth": "Ningún proyecto coincide con la búsqueda."
 }

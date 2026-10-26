@@ -214,7 +214,7 @@ def bubbles(f, people, mode, *, width, height, href) -> str:
     labels = "".join(f'<text class="group-label" text-anchor="middle" x="{c["x"]:.1f}" y="{c["top"] + 18:.1f}">'
                      f'{escape(f(f"groups.{g}"))} – {sum(1 for n in nodes if n["group"] == g)}</text>' for g, c in cells.items())
     # each group on its own grey ground, so the clusters read apart
-    grounds = "".join(f'<rect class="group-bg" x="{c["left"] + 3:.1f}" y="{c["top"] + 3:.1f}" width="{c["right"] - c["left"] - 6:.1f}"'
+    grounds = "".join(f'<rect class="group-bg" rx="14" x="{c["left"] + 3:.1f}" y="{c["top"] + 3:.1f}" width="{c["right"] - c["left"] - 6:.1f}"'
                       f' height="{c["bottom"] - c["top"] - 6:.1f}"/>' for c in cells.values())
     marks = []
     for n in nodes:
@@ -298,10 +298,14 @@ def ring(f, net, *, width, height, compact, uid="c") -> str:
             anchor = "start" if math.cos(n["a"]) > .15 else "end" if math.cos(n["a"]) < -.15 else "middle"
             text = (f'<text x="{(n["r"] + 6) * math.cos(n["a"]):.1f}" y="{(n["r"] + 6) * math.sin(n["a"]) + 4:.1f}"'
                     f' text-anchor="{anchor}">{escape(n["login"])}</text>')
+        side = "" if n["group"] == "me" else f' data-side="{"left" if n["x"] < cx else "right"}"'  # the tip opens outwards
         (centre if n["group"] == "me" else marks).append(
-            f'<g class="net-node {net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"'
+            f'<g class="net-node {net_class(n["group"])}" data-login="{escape(n["login"])}" data-cell role="img"{side}'
             f' aria-label="{escape(tip)}" data-tip="{escape(tip)}" transform="translate({n["x"]:.1f},{n["y"]:.1f})">'
             f'<title>{escape(tip)}</title><circle class="core" r="{n["r"]:.1f}"/>{text}</g>')
+        if n["group"] == "me":  # chords pass over you; over your circle the pointer still means you, not a chord
+            marks.append(f'<g class="net-node me-hit" data-login="{escape(n["login"])}" data-tip="{escape(tip)}"'
+                         f' transform="translate({n["x"]:.1f},{n["y"]:.1f})"><title>{escape(tip)}</title><circle r="{n["r"] + 2:.1f}"/></g>')
     defs = (f'<defs><marker id="{marker}" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse"'
             f' markerWidth="{8 if compact else 11}" markerHeight="{8 if compact else 11}" orient="auto-start-reverse">'
             f'<path d="M0,0 L10,5 L0,10 Z" class="arrowhead"/></marker></defs>')

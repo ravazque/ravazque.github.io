@@ -61,7 +61,7 @@ def base_ctx(request: Request, user: dict, status: dict, f: Fmt) -> dict:
     return {"lang": f.lang, "t": f, "csrf": user["csrf"], "sync": sync_ctx(f, status), "publish": publish_ctx(request, f, user, status),
             "coalition_color": user.get("coalition_color") or "", "accent": user.get("coalition_color") or "", "issues_url": s.issues_url,
             "here": request.url.path + (f"?{request.url.query}" if request.url.query else ""), "pages": list(PAGES), "page": None, "key": "",
-            "login": user["login"], "report_sig": ""}
+            "login": user["login"], "report_sig": "", "dev_mode": bool(s.dev_report)}
 
 
 async def _kick(request: Request, store: Store, uid, status: dict) -> dict:

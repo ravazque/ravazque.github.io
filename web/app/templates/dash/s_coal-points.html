@@ -5,7 +5,7 @@
     <div class="block" data-panel="coal-bonus"><div class="kpis">
       {% for k, v, subs in s.kpis %}<div><h3>{{ k }}</h3><p class="v">{{ v }}</p>{% for x in subs %}<p class="s">{{ x }}</p>{% endfor %}</div>{% endfor %}
     </div></div>
-    <div class="block" data-panel="coal-sources"><h3>{{ t("coal.sources") }}</h3><p class="lede">{{ s.total }}</p>{{ s.sources }}</div>
+    <div class="block" data-panel="coal-sources"><h3>{{ t("coal.sources") }}</h3><p class="lede">{{ s.total }}</p><div class="centred">{{ s.sources }}</div></div>
     <div class="block" data-panel="coal-months"><h3>{{ t("coal.months") }}</h3>{{ s.legend }}{{ s.months }}</div>
   </div>
 </section>

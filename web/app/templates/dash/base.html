@@ -29,10 +29,12 @@
     <details class="pop best-wrap">
       <summary class="best" aria-label="{{ t('best.label') }}" title="{{ t('best.label') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="star" d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5-4.8-4.5 6.5-.8z"/></svg><svg class="caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></summary>
       <nav class="best-menu" aria-label="{{ t('best.label') }}">
-        <a href="{{ page.url('campus') }}#where-plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>{{ t("best.where") }}<small>{{ t("pages.campus") }}</small></span></a>
+        <a href="{{ page.url('campus') }}#seats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>{{ t("seats.title") }}<small>{{ t("pages.campus") }}</small></span></a>
+        <a href="{{ page.url('campus') }}#days"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>{{ t("days.title") }}<small>{{ t("pages.campus") }}</small></span></a>
         <a href="{{ page.url('campus') }}#where-clusters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>{{ t("where.clusters_title") }}<small>{{ t("pages.campus") }}</small></span></a>
         <a href="{{ page.url('people') }}#who"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span>{{ t("who.title") }}<small>{{ t("pages.people") }}</small></span></a>
         <a href="{{ page.url('people') }}#circle"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span>{{ t("network.title") }}<small>{{ t("pages.people") }}</small></span></a>
+        <a href="{{ page.url('evaluations') }}#community"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>{{ t("community.title") }}<small>{{ t("pages.evaluations") }}</small></span></a>
         <a href="{{ page.url('evaluations') }}#in-depth"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>{{ t("depth.given_title") }}<small>{{ t("pages.evaluations") }}</small></span></a>
         <a href="{{ page.url('evaluations') }}#log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>{{ t("log.title") }}<small>{{ t("pages.evaluations") }}</small></span></a>
       </nav>
@@ -40,7 +42,7 @@
     <div class="tour-shade" hidden></div>
     <div class="tour" role="dialog" aria-labelledby="tour-t" hidden>
       <p id="tour-t"><b>{{ t("tour.star_title") }}</b></p><p>{{ t("tour.star") }}</p>
-      <button class="btn on-band" type="button" data-tour-ok>{{ t("tour.ok") }}</button>
+      <button class="btn secondary" type="button" data-tour-ok>{{ t("tour.ok") }}</button>
     </div>
     </div>
     {% endif %}
@@ -76,6 +78,7 @@
             {% if publish.note %}<p class="wait">{{ publish.note }}</p>{% endif %}
           </div>
           {% endif %}
+          {% if dev_mode %}<button class="link-btn" type="button" data-tour-again>{{ t("tour.again") }}</button>{% endif %}
           <div class="row-links">
             <a class="link-btn" href="/app/delete">{{ t("delete.button") }}</a>
             <form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link-btn" type="submit">{{ t("signout.button") }}</button></form>

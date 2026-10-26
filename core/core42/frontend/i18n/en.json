@@ -373,7 +373,7 @@
  "nav.projects_table": "Projects",
  "nav.correction_stats": "Correction stats",
  "nav.connections": "Connections",
- "boot.title": "Reading your 42 data",
+ "boot.title": "Reading your data",
  "boot.first": "The first time takes a few minutes. You can leave this page open.",
  "boot.failed": "The last extraction failed. Your previous data, if any, is still here.",
  "boot.retry": "Try again",
@@ -788,7 +788,6 @@
  "where.you": "You",
  "where.lede_seats": "The other side's seat is looked up for the evaluations of the last {days} days: your corrector was found for {corrector} of {c_checked}, the students you evaluated for {evaluated} of {e_checked}. Your own seat is known for {me} of all {n} evaluations.",
  "best.label": "Highlights",
- "best.where": "Where you sat",
  "common.preview": "Preview",
  "domains.portfolio_title": "Portfolio",
  "preview.error": "It could not be loaded. Try again.",
@@ -828,5 +827,9 @@
  "col.fails": "Failed",
  "tour.star_title": "The highlights",
  "tour.star": "The star gathers the site's standout views: where you sat, who evaluated you, your circle, the projects you corrected and the full log.",
- "tour.ok": "Got it"
+ "tour.ok": "Got it",
+ "depth.search_placeholder": "Project name",
+ "tour.again": "Show the first-visit note (dev)",
+ "landing.accept_first": "Accept the privacy policy first",
+ "empty.search_depth": "No project matches this search."
 }
