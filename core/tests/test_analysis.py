@@ -137,6 +137,30 @@ class ReportBuild(unittest.TestCase):
         self.assertEqual(r["profile"]["groups"], ["Peer tutor"])
         self.assertIsNone(Report(dataset(), now=NOW).build()["logtime"]["official_hours"])
 
+    def test_an_evaluation_paid_double_came_from_the_pool(self):
+        d = dataset()
+        long = scale_team(201, (1, "me"), [(2, "alice")], "2026-09-06T08:00:00Z", "2026-09-06T09:00:00Z", 100, "Ok", 98)
+        long["scale"] = {"duration": 3600}
+        d["evals_given"].append(long)
+        d["correction_points"] += [  # 30 min pays 1 and 60 min pays 2: twice that is the pool's
+            {"reason": "Earning after defense", "scale_team_id": 200, "sum": 2, "total": 7, "created_at": "2026-09-05T08:30:00Z"},
+            {"reason": "Earning after defense", "scale_team_id": 201, "sum": 2, "total": 9, "created_at": "2026-09-06T09:00:00Z"}]
+        r = Report(d, now=NOW).build()
+        self.assertEqual({e["id"]: e["pool_paid"] for e in r["given"]}, {200: True, 201: False})
+        self.assertEqual(r["correction_points"]["pool"], {"evals": 1, "extra": 1})
+
+    def test_an_evaluation_without_a_mark_says_why(self):
+        d = dataset()
+        def unfilled(id_, truant=None, closed=True, begin="2026-09-06T08:00:00Z"):
+            e = scale_team(id_, (1, "me"), [(2, "alice")], begin, None, None, "Ok", 97)
+            e["truant"] = {"login": truant} if truant else {}
+            e["team"]["closed?"] = closed
+            return e
+        d["evals_given"] += [unfilled(210, "alice"), unfilled(211, "me"), unfilled(212, closed=False),
+                             unfilled(213), unfilled(214, begin="2026-10-09T08:00:00Z")]
+        why = {e["id"]: e["no_mark"] for e in Report(d, now=NOW).build()["given"]}
+        self.assertEqual(why, {200: None, 210: "absent_them", 211: "absent_you", 212: "unfinished", 213: "closed", 214: "pending"})
+
     def test_evaluations_carry_the_project_slug(self):
         self.assertTrue(all(e["slug"] == "libft" for e in self.r["received"] + self.r["given"]))
 

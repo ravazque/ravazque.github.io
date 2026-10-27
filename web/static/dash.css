@@ -78,6 +78,10 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 @media (max-width: 519.98px) {  /* one row on a phone: the mark alone stands for the brand */
   .topbar .brand > span { display: none; }
   .topbar-end { gap: 8px; }
+  /* every menu hangs from the band's right edge: from its own button it would run off the left of a phone */
+  .topbar-end { position: relative; }
+  .topbar-end .best-anchor, .topbar-end details.pop { position: static; }
+  .tour::before { display: none; }
 }
 
 /* Preview: a download's table on screen */
@@ -128,6 +132,9 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 .axis-key.bar { left: -6px; width: 4px; }
 .axis-key.line { right: -6px; width: 4px; }
 .ch-col .peak { position: absolute; top: -4px; transform: translateY(-100%); white-space: nowrap; color: var(--ink); font: 700 14px var(--type-font-display); }
+/* a peak near an edge reads inwards instead of spilling past the chart */
+.ch-col:nth-child(-n+2) .peak { left: 0; }
+.ch-col:nth-last-child(-n+2) .peak { right: 0; }
 .ch-x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-left: var(--c-chart-axis-width); padding-top: 6px; }
 .has-line .ch-x { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
 .ch-x span { text-align: center; white-space: nowrap; overflow: visible; }
@@ -143,7 +150,8 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 @container (max-width: 480px) { .hb-extra { display: none; } }
 .hb-row { display: grid; grid-template-columns: var(--c-chart-row-label-width) minmax(0, 1fr); align-items: center; gap: 10px; min-height: var(--c-chart-row-height); }
 .hb-label { color: var(--text-2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hb-track { display: flex; align-items: center; min-width: 0; }
+/* the widest bar stops short of the edge so its figure still fits after it */
+.hb-track { display: flex; align-items: center; min-width: 0; padding-right: 5.5em; }
 .hb-track i { height: calc(var(--c-chart-row-height) - 8px); flex: none; border-radius: 1px; }
 .hb-track i + i { margin-left: 2px; }
 .hb-track i:first-child { border-radius: 2px 0 0 2px; }
@@ -282,7 +290,19 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 @media (prefers-reduced-motion: reduce) { .js .module:not(.in) .trend, .js .module:not(.in) .meter i { clip-path: none; } }
 @media (min-width: 640px) { .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+th .th-s { display: none; }
 @media (max-width: 599.98px) {
+  /* long column titles give way to their short form (the full one stays in the button's name and tooltip) */
+  th .th-l { display: none; }
+  th .th-s { display: inline; }
+  .phone-hide { display: none; }
+  table td.when { white-space: normal; }  /* beats the one-line rule further down */
+  table { font-size: var(--c-table-phone-font-size); }
+  td { padding-inline: var(--c-table-phone-cell-padding-x); }
+  th button { padding-inline: var(--c-table-phone-cell-padding-x); }
+  /* a list's date or count drops under the text when both don't fit side by side */
+  .list li { flex-wrap: wrap; gap: 2px 16px; }
+  .list li > :first-child { flex: 1 1 60%; min-width: 0; }
   .page-head .periods { justify-self: stretch; display: flex; }
   .page-head .periods > a { flex: 1; padding: 6px 8px; }
 }
@@ -297,12 +317,13 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
 [data-panel="skills"] { border-top: 0; padding-top: 0; }
 @media (max-width: 959.98px) { .toc { -webkit-mask-image: linear-gradient(to right, var(--mask) 82%, transparent); mask-image: linear-gradient(to right, var(--mask) 82%, transparent); } }
 .vchart { container-type: inline-size; }
+.vchart, .lchart { overflow-x: clip; }  /* an axis label a pixel too wide never widens the page; peaks above stay visible */
 @container (max-width: 520px) {
   .has-line .ch-plot, .has-line .ch-x { margin-left: var(--c-chart-axis-width); margin-right: 0; }
   .has-line .ch-y:not(.right) { left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
   .ch-y.right, .axis-key { display: none; }
   .ch-x span.alt { visibility: hidden; }
-  .ch-x span:last-child { text-align: right; }
+  .ch-x span:last-child { display: flex; justify-content: flex-end; }  /* wider than its column, it spills left, not off the chart */
   .line-end { display: block; }
 }
 
@@ -310,8 +331,11 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
 .hchart, .timeline { grid-template-columns: minmax(0, max-content) minmax(0, 1fr); column-gap: 12px; align-items: center; }
 .hchart .hb-row, .timeline .tl-row, .timeline .tl-axis { display: contents; }
 .hb-label, .tl-label { text-align: left; max-width: min(240px, 34vw); }
-.timeline { container-type: inline-size; }
-@container (max-width: 520px) { .tl-axis .ch-months span:nth-child(even) { visibility: hidden; } }
+.timeline, .lchart { container-type: inline-size; }
+@container (max-width: 520px) {
+  .tl-axis .ch-months span:nth-child(even), .lchart .ch-months span:nth-child(even) { visibility: hidden; }
+  .tl-axis .ch-months span:last-child, .lchart .ch-months span:last-child { transform: translateX(-100%); }  /* ends at the edge */
+}
 /* a panel's title with its key on the right */
 .block-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 24px; }
 .block-head h3 { margin-bottom: 0; }
@@ -323,6 +347,18 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
 .net .net-me .net-node.me .core { fill-opacity: .85; transition: opacity var(--motion-fast) ease-out; }
 .net.me-off .net-me { opacity: .3; }
 .focused .net-links path.hl { stroke-width: 2.5; }
+/* a table fades at each edge where more waits: below, and to either side while it scrolls sideways (dash.js sets the
+   classes); one whose first column stays put fades only on the right */
+.table-wrap { --fade-l: var(--mask); --fade-r: var(--mask); --fade-b: var(--mask); }
+.table-wrap.more { --fade-b: transparent; }
+.table-wrap.more-l:not(:has(> .sticky-first)) { --fade-l: transparent; }
+.table-wrap.more-r { --fade-r: transparent; }
+.table-wrap.more, .table-wrap.more-l, .table-wrap.more-r {
+  -webkit-mask-image: linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
+    linear-gradient(to bottom, var(--mask) calc(100% - 56px), var(--fade-b));
+  mask-image: linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
+    linear-gradient(to bottom, var(--mask) calc(100% - 56px), var(--fade-b));
+  -webkit-mask-composite: source-in; mask-composite: intersect; }
 .table-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-top: 12px; }
 .table-foot .note { margin: 0; }
 .table-foot .note b { color: var(--ink); }
@@ -426,6 +462,7 @@ html body .seg > a[aria-pressed="true"]:hover, html body .seg button[aria-presse
 
 /* never split a date and its time */
 .nw { white-space: nowrap; }
+td.when { white-space: nowrap; }
 
 /* connections: each group on its own grey ground */
 .graph .group-bg { fill: var(--sunken); }

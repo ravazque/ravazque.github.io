@@ -208,6 +208,11 @@ def seat_layout(hosts):
     return {c: {"rows": r, "seats": s} for c, (r, s) in sorted(out.items(), key=lambda kv: int(kv[0][1:]))}
 
 
+def base_points(planned: timedelta) -> int:
+    """Correction points an evaluation pays outside the pool: 2 for a scale of an hour or more, else 1."""
+    return 2 if planned >= timedelta(hours=1) else 1
+
+
 class Report:
     def __init__(self, d, now=None):
         self.d = d
@@ -219,6 +224,8 @@ class Report:
         self.teams = {t["id"]: t for t in d["teams"]}
         self.my_sessions = sorted(d["locations"], key=lambda s: s["begin_at"])
         self.feedback_details = d.get("feedbacks") or {}
+        self.earned = {c["scale_team_id"]: c["sum"] for c in d["correction_points"]
+                       if c.get("reason") == "Earning after defense" and c.get("scale_team_id")}
 
     # ---------- helpers ----------
     def project_name(self, pid):
@@ -250,6 +257,17 @@ class Report:
         return begin, end, planned
 
     # ---------- evaluations ----------
+    def no_mark(self, e, begin, filled, team):
+        """Why an evaluation has no mark: still ahead, someone did not show up, or the team's project still open or closed."""
+        if filled or e.get("final_mark") is not None:
+            return None
+        if begin > self.now:
+            return "pending"
+        truant = (e.get("truant") or {}).get("login")
+        if truant:
+            return "absent_you" if truant == self.login else "absent_them"
+        return "closed" if team.get("closed?") else "unfinished"
+
     def evaluation(self, e, role):
         begin, end, planned = self.window(e)
         created, filled = ts(e.get("created_at")), ts(e.get("filled_at"))
@@ -286,6 +304,9 @@ class Report:
             "negative_flag": bool(e.get("flag")) and not e["flag"].get("positive", True),
             "status": "pending" if not filled and begin > self.now else ("done" if filled else "not filled"),
             "truant": (e.get("truant") or {}).get("login"),
+            "no_mark": self.no_mark(e, begin, filled, team),
+            # inferred: an evaluation pays 1 point (2 from a 60 min scale); the pool's pay twice that
+            "pool_paid": role == "given" and self.earned.get(e["id"]) == 2 * base_points(planned),
             "comment": e.get("comment"),
             "feedback": e.get("feedback"),
             "feedbacks": fbs,
@@ -561,8 +582,9 @@ class Report:
         }
 
     # ---------- other datasets ----------
-    def correction_points_section(self):
+    def correction_points_section(self, given):
         rows = sorted(self.d["correction_points"], key=lambda c: c["created_at"])
+        pool = [e for e in given if e["pool_paid"]]
         reasons = defaultdict(lambda: {"count": 0, "sum": 0})
         for c in rows:
             reasons[c["reason"]]["count"] += 1
@@ -573,6 +595,7 @@ class Report:
             "earned": sum(c["sum"] for c in rows if c["sum"] > 0),
             "spent": -sum(c["sum"] for c in rows if c["sum"] < 0),
             "max": max((c["total"] for c in rows), default=0),
+            "pool": {"evals": len(pool), "extra": sum(base_points(timedelta(minutes=e["planned_min"])) for e in pool)},
         }
 
     def extras_section(self):
@@ -676,7 +699,7 @@ class Report:
             "when": self.when_section(received, given),
             "place": self.place_section(received, given),
             "logtime": logtime,
-            "correction_points": self.correction_points_section(),
+            "correction_points": self.correction_points_section(given),
             "extras": self.extras_section(),
         }
 

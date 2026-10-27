@@ -91,11 +91,8 @@ async def test_about_says_why_what_and_how_without_promises(client):
     assert "Coming soon" not in text and "FastAPI" in text and "not affiliated with" in text
 
 
-async def test_touch_only_devices_are_blocked_on_the_landing_but_can_read_about_and_privacy(client):
-    landing = (await client.get("/", headers={"Accept-Language": "en"})).text
-    block = landing[landing.index('class="touch-block"'):]
-    assert 'href="/about"' in block and 'href="/privacy"' in block
-    for path in ("/about", "/privacy"):
+async def test_phones_and_tablets_get_the_pages_without_a_block(client):
+    for path in ("/", "/about", "/privacy"):
         assert "touch-block" not in (await client.get(path)).text
 
 

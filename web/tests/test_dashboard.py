@@ -507,8 +507,8 @@ async def test_campuses_carry_no_current_badge(signed_in, report):
 
 
 @pytest.mark.parametrize("path", ["/app", "/app/people"])
-async def test_touch_only_devices_get_the_block_on_the_app(signed_in, report, path):
-    assert 'class="touch-block"' in (await signed_in.get(path)).text
+async def test_touch_devices_get_the_app_without_a_block(signed_in, report, path):
+    assert "touch-block" not in (await signed_in.get(path)).text
 
 
 def _with_seats(report):
@@ -534,9 +534,10 @@ def test_the_log_says_when_each_evaluation_ran_how_long_and_where_everyone_sat(r
         s = log_section(Page(Fmt("en"), data, "evaluations", {"period": "all", "log": role}))
         e = data["periods"]["all"][role][0]
         table = str(s["table"])
-        assert f'{e["begin"]} <span class="arr">➜</span> {e["filled"][11:]}' in table  # start and end, Madrid time
+        assert (f'<span class="nw">{e["begin"][:10]}</span> <span class="nw">{e["begin"][11:]} <span class="arr">➜</span> {e["filled"][11:]}</span>'
+                in table)  # start and end, Madrid time; a phone may break between the day and the hours
         assert other in table and "Your seat" in table and "min" in table
-        assert re.search(r'<th scope="col" class="num nowrap"[^>]*><button[^>]*>Duration', table)  # not hidden on narrow screens
+        assert re.search(r'<th scope="col" class="num nowrap"[^>]*><button[^>]*>(<span class="th-l">)?Duration', table)  # not hidden on narrow screens
 
 
 def test_where_shows_the_corrector_whom_you_evaluated_or_you(report):
@@ -662,3 +663,44 @@ async def test_an_htmx_request_without_a_session_takes_the_whole_page_to_the_lan
     r = await client.get("/app/people?mode=given", headers={"HX-Request": "true"})
     assert r.status_code == 200 and r.headers["HX-Redirect"] == "/"  # not a 303 that htmx would swap into a section
     assert (await client.get("/app/people")).status_code == 303
+
+
+async def test_long_column_titles_carry_a_short_one_for_phones(signed_in, report):
+    text = (await signed_in.get("/app/projects")).text
+    head = text[text.index('id="exams"'):]
+    head = head[head.index("<thead>"):head.index("</thead>")]
+    assert 'aria-label="Attempts"' in head and '<span class="th-l">Attempts</span><span class="th-s" aria-hidden="true">Att.</span>' in head
+
+
+def _given_twist(report, **change):
+    """The report with its first given evaluation changed: a pool payment or a missing mark."""
+    D = report["periods"]["all"]
+    first = {**D["given"][0], **change}
+    return {**report, "periods": {**report["periods"], "all": {**D, "given": [first, *D["given"][1:]]}}}, first
+
+
+def test_evaluations_paid_by_the_pool_are_counted_and_marked(report):
+    from app.dash.views import Page, evaluations, log_section
+    D = report["periods"]["all"]
+    data, first = _given_twist(report, pool_paid=True)
+    data["periods"]["all"] = {**data["periods"]["all"], "correction_points": {**D["correction_points"], "pool": {"evals": 3, "extra": 4}}}
+    points = next(s for s in evaluations(Page(Fmt("en"), data, "evaluations", {"period": "all"})) if s["id"] == "points")
+    assert "3 evaluations you gave paid double" in points["pool"]
+    log = str(log_section(Page(Fmt("en"), data, "evaluations", {"period": "all", "log": "given"}))["table"])
+    assert log.count('class="badge pool"') == 1
+
+
+def test_a_corrected_project_without_a_mark_says_why(report):
+    from app.dash.views import Page, corrected_table
+    data, first = _given_twist(report, mark=None, no_mark="absent_them")
+    pg = Page(Fmt("en"), data, "evaluations", {"period": "all", "dq": first["project"]})
+    text = str(corrected_table(pg))
+    assert "No-show" in text
+
+
+def test_older_reports_without_pool_or_reasons_still_render(report):
+    from app.dash.views import Page, corrected_table, evaluations
+    data, _ = _given_twist(report, mark=None)
+    pg = Page(Fmt("en"), data, "evaluations", {"period": "all"})
+    assert next(s for s in evaluations(pg) if s["id"] == "points")["pool"] == ""
+    assert "–" in str(corrected_table(pg))

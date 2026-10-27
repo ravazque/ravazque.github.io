@@ -296,10 +296,14 @@ if (typeof window !== "undefined" && document.body?.dataset.page) {
     $$("main > section[id]").forEach((s) => tocIO.observe(s));
   }
 
-  // scroll boxes fade their bottom edge while rows remain below
+  // scroll boxes fade their bottom edge while rows remain below, and a table its sides while columns wait there
   function hintScroll(root = document) {
     $$(".list, .table-wrap", root).forEach((box) => {
-      const update = () => box.classList.toggle("more", box.scrollHeight - box.scrollTop - box.clientHeight > 2);
+      const update = () => {
+        box.classList.toggle("more", box.scrollHeight - box.scrollTop - box.clientHeight > 2);
+        box.classList.toggle("more-r", box.scrollWidth - box.scrollLeft - box.clientWidth > 2);
+        box.classList.toggle("more-l", box.scrollLeft > 2);
+      };
       if (!box.dataset.hint) { box.dataset.hint = "1"; box.addEventListener("scroll", update, {passive: true}); }
       update();
     });

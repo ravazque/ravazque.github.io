@@ -97,7 +97,8 @@ def my_rank(extras) -> str | None:
 # ---------- tables ----------
 
 def table(f, cols, rows, *, label, sort=None, empty=None, sticky=False, detail=None, group=None, tid=None) -> Markup:
-    """cols: [{k, t, num, hide, nw, cls, f: row -> markup, sv: row -> sort value}]. The server sorts by sort=(k, dir);
+    """cols: [{k, t, s, num, hide, ph, nw, cls, f: row -> markup, sv: row -> sort value}] (s: the short title a phone shows).
+    The server sorts by sort=(k, dir);
     every cell carries its sort value so dash.js can re-sort without a request."""
     def sv(c, r):
         return c["sv"](r) if "sv" in c else r.get(c["k"])
@@ -110,7 +111,7 @@ def table(f, cols, rows, *, label, sort=None, empty=None, sticky=False, detail=N
         rows = sorted(rows, key=lambda r: group["order"].index(group["key"](r)) if group["key"](r) in group["order"] else 99)
 
     def cls(c, *extra):
-        return " ".join(x for x in ("num" if c.get("num") else "", "nowrap" if c.get("nw") else "", "narrow-hide" if c.get("hide") else "",
+        return " ".join(x for x in ("num" if c.get("num") else "", "nowrap" if c.get("nw") else "", "narrow-hide" if c.get("hide") else "", "phone-hide" if c.get("ph") else "",
                                     c.get("cls", ""), *extra) if x)
 
     def cell(c, r):
@@ -120,7 +121,10 @@ def table(f, cols, rows, *, label, sort=None, empty=None, sticky=False, detail=N
 
     def th(c):
         aria = f' aria-sort="{"ascending" if sort[1] > 0 else "descending"}"' if sort and c["k"] == sort[0] else ""
-        return f'<th scope="col" class="{cls(c)}"{aria}><button type="button" data-num="{1 if c.get("num") else 0}">{escape(c["t"])}</button></th>'
+        title = (f'<span class="th-l">{escape(c["t"])}</span><span class="th-s" aria-hidden="true">{escape(c["s"])}</span>' if c.get("s")
+                 else escape(c["t"]))
+        name = f' aria-label="{escape(c["t"])}" title="{escape(c["t"])}"' if c.get("s") else ""
+        return f'<th scope="col" class="{cls(c)}"{aria}><button type="button" data-num="{1 if c.get("num") else 0}"{name}>{title}</button></th>'
     head = "".join(th(c) for c in cols)
     line = lambda r: "<tr>" + "".join(cell(c, r) for c in cols) + "</tr>"  # noqa: E731
     if not rows:
@@ -147,6 +151,16 @@ ARROW = '<span class="arr">➜</span>'  # ranges and steps
 
 def badge(text, kind="") -> str:
     return f'<span class="badge{" " + kind if kind else ""}">{escape(text)}</span>'
+
+
+def pool_badge(f) -> str:
+    tip = escape(f("points.pool_tip"))
+    return f'<span class="badge pool" data-tip="{tip}" title="{tip}">{escape(f("points.pool_badge"))}</span>'
+
+
+def no_mark(f, e) -> str:
+    """What stands in for a missing mark: why there is none, when the report knows."""
+    return escape(f(f"no_mark.{e['no_mark']}")) if e.get("no_mark") else "–"
 
 
 def flag_badge(f, e) -> str:
@@ -579,10 +593,10 @@ def projects(pg: Page) -> list[dict]:
         {"k": "track", "t": f("col.track"), "nw": True, "hide": True, "f": lambda p: badge(f(f"track.{p['track']}"))},
         {"k": "status", "t": f("col.status"), "nw": True, "hide": True, "f": status},
         {"k": "mark", "t": f("col.final"), "num": True, "f": lambda p: escape(p["mark"]) if p.get("mark") is not None else "–"},
-        {"k": "attempts", "t": f("col.attempts"), "cls": "marks-col", "sv": lambda p: len(p["attempts"]),
+        {"k": "attempts", "t": f("col.attempts"), "s": f("abbr.attempts"), "cls": "marks-col", "sv": lambda p: len(p["attempts"]),
          "f": lambda p: '<span class="marks">' + "".join(mark_chip(f, a) if i == 0 else f'<span class="step">{ARROW}{mark_chip(f, a)}</span>'
                                                           for i, a in enumerate(p["attempts"])) + "</span>"},
-        {"k": "outstanding", "t": f("col.outstanding"), "num": True},
+        {"k": "outstanding", "t": f("col.outstanding"), "s": f("abbr.outstanding"), "num": True},
         {"k": "xp_earned", "t": f("col.xp"), "num": True, "nw": True,
          "f": lambda p: f'{f.num(p.get("xp_earned"))}<span class="sub">{escape(f("projects_table.xp_base", xp=f.num(p.get("xp_base"))))}</span>'},
         {"k": "first_ms", "t": f("col.started"), "nw": True, "hide": True, "f": lambda p: escape((p.get("registered") or "")[:10])},
@@ -597,9 +611,9 @@ def projects(pg: Page) -> list[dict]:
         {"k": "name", "t": f("col.exam"), "nw": True},
         {"k": "passed", "t": f("col.status"), "nw": True, "sv": lambda e: 1 if e.get("passed") else 0,
          "f": lambda e: badge(f("exams.passed" if e.get("passed") else "exams.pending"), "out" if e.get("passed") else "")},
-        {"k": "attempts", "t": f("col.attempts"), "num": True}, {"k": "best", "t": f("col.best"), "num": True},
-        {"k": "days_to_pass", "t": f("col.days_to_pass"), "num": True, "f": lambda e: escape(f.num(e.get("days_to_pass")))},
-        {"k": "tries", "t": f("col.tries"), "sv": lambda e: len(e["tries"]), "f": lambda e: '<span class="marks">' + "".join(
+        {"k": "attempts", "t": f("col.attempts"), "s": f("abbr.attempts"), "num": True}, {"k": "best", "t": f("col.best"), "num": True},
+        {"k": "days_to_pass", "t": f("col.days_to_pass"), "s": f("abbr.days_to_pass"), "num": True, "f": lambda e: escape(f.num(e.get("days_to_pass")))},
+        {"k": "tries", "t": f("col.tries"), "ph": True, "sv": lambda e: len(e["tries"]), "f": lambda e: '<span class="marks">' + "".join(
             f'<span class="mark {"pass" if x.get("passed") else "fail"}" title="{escape(f.day(x.get("date")))}">{escape(x["mark"] if x.get("mark") is not None else "–")}</span>'
             for x in e["tries"]) + "</span>"},
     ], exams_done, label=f("exams.title"), sort=("name", 1), empty=f("exams.none"))})
@@ -711,10 +725,10 @@ def evaluations(pg: Page) -> list[dict]:
                                          f'<p class="s">{escape(f("stats.recip_out", back=R["they_gave_back"], i_gave=R["i_gave"]))}</p></div>'),
                          "groups": table(f, [
                              {"k": "i", "t": f("col.group"), "f": lambda r: escape(f(f"groups.{r['g']}"))},
-                             {"k": "received", "t": f("col.received"), "num": True},
-                             {"k": "in_pct", "t": f("col.out_pct"), "num": True, "f": lambda r: "–" if r["in_pct"] is None else f"{f.num(r['in_pct'])}%"},
-                             {"k": "given", "t": f("col.given"), "num": True},
-                             {"k": "out_pct", "t": f("col.out_pct"), "num": True, "f": lambda r: "–" if r["out_pct"] is None else f"{f.num(r['out_pct'])}%"},
+                             {"k": "received", "t": f("col.received"), "s": f("abbr.received"), "num": True},
+                             {"k": "in_pct", "t": f("col.out_pct"), "s": f("abbr.out_pct"), "num": True, "f": lambda r: "–" if r["in_pct"] is None else f"{f.num(r['in_pct'])}%"},
+                             {"k": "given", "t": f("col.given"), "s": f("abbr.given"), "num": True},
+                             {"k": "out_pct", "t": f("col.out_pct"), "s": f("abbr.out_pct"), "num": True, "f": lambda r: "–" if r["out_pct"] is None else f"{f.num(r['out_pct'])}%"},
                          ], groups, label=f("stats.group_title"), sort=("i", 1)) if groups else "",
                          "roles": ch.legend(roles),
                          "by_hour": ch.vbars(f, [f"{x['hour']:02d}" for x in h], [(f("role.received"), [x["received"] for x in h], ch.S1),
@@ -756,7 +770,9 @@ def evaluations(pg: Page) -> list[dict]:
                      "low": Markup(low_items or f'<li class="note">{escape(f("feedback.all_max" if rated else "empty.ratings"))}</li>')})
 
     CP = D["correction_points"]
+    pool = CP.get("pool") or {}  # older saved reports have no pool figures
     sections.append({"id": "points", "title": f("points.title"), "nav": f("nav.points"),
+                     "pool": f("points.pool", n=pool["evals"], extra=pool["extra"]) if pool.get("evals") else "",
                      "lede": f("points.lede", earned=CP["earned"], spent=CP["spent"], max=CP["max"]) if CP["series"] else f("empty.points"),
                      "chart": ch.lines(f, [(f("points.balance"), CP["series"], ch.S1)], label=f("points.balance_title"), empty_text=f("empty.points")),
                      "table": table(f, [{"k": "reason", "t": f("col.reason")}, {"k": "count", "t": f("col.times"), "num": True}, {"k": "sum", "t": f("col.net"), "num": True}],
@@ -784,11 +800,12 @@ def corrected_table(pg: Page) -> Markup:
                 whom.setdefault(c.get("login") or "?", []).append(e)
         rows.append({"project": name, "times": len(evs), "people": len(whom), "avg": sum(marks) / len(marks) if marks else None,
                      "fails": sum(1 for e in evs if failed(e)), "outstanding": sum(1 for e in evs if e.get("outstanding")),
-                     "first": min(e["begin"] for e in evs)[:10], "last": max(e["begin"] for e in evs)[:10], "whom": whom})
+                     "first": min(e["begin"] for e in evs)[:10], "last": max(e["begin"] for e in evs)[:10], "whom": whom,
+                     "last_e": max(evs, key=lambda e: e["begin"])})
 
     def chip(e):
         state = "open" if e.get("mark") is None else "fail" if failed(e) else "pass"
-        return f'<span class="mark {state}" title="{escape(e["begin"][:10])}">{escape(e["mark"] if e.get("mark") is not None else "–")}</span>'
+        return f'<span class="mark {state}" title="{escape(e["begin"][:10])}">{escape(e["mark"]) if e.get("mark") is not None else no_mark(f, e)}</span>'
 
     def detail(r):
         people = sorted(r["whom"].items(), key=lambda kv: (-len(kv[1]), kv[0]))
@@ -800,8 +817,9 @@ def corrected_table(pg: Page) -> Markup:
     return table(f, [
         {"k": "project", "t": f("col.project"), "nw": True},
         {"k": "times", "t": f("col.times"), "num": True}, {"k": "people", "t": f("col.people"), "num": True},
-        {"k": "avg", "t": f("col.avg_mark"), "num": True, "f": lambda r: f.num(r["avg"], 1) if r["avg"] is not None else "–"},
-        {"k": "fails", "t": f("col.fails"), "num": True, "hide": True}, {"k": "outstanding", "t": f("col.outstanding"), "num": True, "hide": True},
+        {"k": "avg", "t": f("col.avg_mark"), "s": f("abbr.avg_mark"), "num": True,
+         "f": lambda r: f.num(r["avg"], 1) if r["avg"] is not None else no_mark(f, r["last_e"])},
+        {"k": "fails", "t": f("col.fails"), "s": f("abbr.fails"), "num": True, "hide": True}, {"k": "outstanding", "t": f("col.outstanding"), "s": f("abbr.outstanding"), "num": True, "hide": True},
         {"k": "first", "t": f("col.first"), "nw": True, "hide": True}, {"k": "last", "t": f("col.last"), "nw": True},
     ], rows, label=f("depth.given_title"), sort=("times", -1), detail=detail, empty=f("empty.search_depth") if q else f("empty.period"))
 
@@ -843,11 +861,13 @@ def log_section(pg: Page) -> dict:
         return f'<details><summary>{escape(what)}<span class="preview">{escape(preview)}</span></summary>{"".join(parts)}</details>'
 
     flag_col = {"k": "flag", "t": f("col.flag"), "nw": True, "sv": lambda e: 2 if e.get("outstanding") else 0 if e.get("negative_flag") else 1, "f": lambda e: flag_badge(f, e)}
-    min_col = {"k": "duration_min", "t": f("col.duration"), "num": True, "nw": True,
+    min_col = {"k": "duration_min", "t": f("col.duration"), "s": f("abbr.duration"), "num": True, "nw": True,
                "f": lambda e: f'{escape(f("unit.min", n=f.num(e.get("duration_min"))))}'
                               f'<span class="sub">{escape(" · ".join(x for x in [f("log.planned", n=e.get("planned_min")), f("log.booked_ahead", h=f.num(e["lead_h"], 1)) if e.get("lead_h") is not None else ""] if x))}</span>'}
     my_seat = lambda e: escape(e.get("my_host") or f("log.not_logged"))  # noqa: E731
-    when = {"k": "begin_ms", "t": f("col.when"), "nw": True, "f": lambda e: f'{escape(e["begin"])} {ARROW} {escape(e["filled"][11:])}' if e.get("filled") else escape(e["begin"])}
+    when = {"k": "begin_ms", "t": f("col.when"), "cls": "when",  # day and hours each in one piece: a phone breaks between them
+            "f": lambda e: f'<span class="nw">{escape(e["begin"][:10])}</span> <span class="nw">{escape(e["begin"][11:])}'
+                           + (f' {ARROW} {escape(e["filled"][11:])}' if e.get("filled") else "") + "</span>"}
 
     def person(p, checked):  # login with the seat they were at, when it was looked up
         seat = (f("log.at_seat", seat=p["host"]) if p.get("host") else f("log.not_logged")) if checked else ""
@@ -855,17 +875,18 @@ def log_section(pg: Page) -> dict:
     if role == "received":
         cols = [when,
                 {"k": "project", "t": f("col.project"), "nw": True, "f": lambda e: f'{escape(e["project"])}<span class="sub">{escape(f("projects.attempt", n=attempt_of.get(e.get("team_id"), "?")))}</span>'},
-                {"k": "corrector", "t": f("col.corrector"), "nw": True, "sv": lambda e: e["corrector"].get("login"),
+                {"k": "corrector", "t": f("col.corrector"), "s": f("abbr.corrector"), "nw": True, "sv": lambda e: e["corrector"].get("login"),
                  "f": lambda e: person(e["corrector"], e.get("other_host_checked"))},
                 {"k": "my_host", "t": f("col.your_seat"), "nw": True, "hide": True, "f": my_seat},
                 min_col, {"k": "mark", "t": f("col.mark"), "num": True}, flag_col, {"k": "fb_rating", "t": f("col.your_rating"), "num": True, "hide": True}]
     else:
         cols = [when,
                 {"k": "project", "t": f("col.project"), "nw": True},
-                {"k": "correcteds", "t": f("col.evaluated"), "nw": True, "sv": lambda e: ",".join(c.get("login", "") for c in e["correcteds"]),
+                {"k": "correcteds", "t": f("col.evaluated"), "s": f("abbr.evaluated"), "nw": True, "sv": lambda e: ",".join(c.get("login", "") for c in e["correcteds"]),
                  "f": lambda e: "<br>".join(person(c, e.get("other_host_checked")) for c in e["correcteds"])},
                 {"k": "my_host", "t": f("col.your_seat"), "nw": True, "hide": True, "f": my_seat},
-                min_col, {"k": "mark", "t": f("col.mark"), "num": True}, flag_col, {"k": "fb_rating", "t": f("col.their_rating"), "num": True, "hide": True}]
+                min_col, {"k": "mark", "t": f("col.mark"), "num": True, "f": lambda e: f'{escape(e["mark"] if e.get("mark") is not None else "")}{" " + pool_badge(f) if e.get("pool_paid") else ""}'},
+                flag_col, {"k": "fb_rating", "t": f("col.their_rating"), "num": True, "hide": True}]
     return {"id": "log", "title": f("log.title"), "nav": f("nav.log"), "lede": f("log.lede"), "role": role, "flag": flag, "project": proj,
             "projects": projects_all, "q": pg.q("q", "")[:80], "count": f.plural(len(rows), "count.evaluations"),
             "table": table(f, cols, rows, label=f("log.title"), sort=("begin_ms", -1), empty=f("empty.search_log"), sticky=True, detail=fb_text)}
@@ -929,10 +950,10 @@ def people(pg: Page) -> list[dict]:
             {"k": "name", "t": f("col.name"), "cls": "name", "hide": True, "f": lambda p: f'<span title="{escape(p.get("name") or "")}">{escape(p.get("name") or "")}</span>'},
             {"k": "group", "t": f("col.group"), "nw": True, "hide": True, "sv": lambda p: order.get(group_of.get(p["login"]), 99),
              "f": lambda p: escape(f(f"groups.{group_of[p['login']]}")) if p["login"] in group_of else "–"},
-            {"k": "evaluated_me", "t": f("col.evaluated_you"), "num": True}, {"k": "outstanding_to_me", "t": f("col.outstanding"), "num": True},
-            {"k": "avg_mark_to_me", "t": f("col.avg_mark"), "num": True, "hide": True, "f": lambda p: f.num(p.get("avg_mark_to_me"), 1)},
-            {"k": "evaluated_by_me", "t": f("col.you_evaluated"), "num": True}, {"k": "teammate", "t": f("col.teammate"), "num": True, "hide": True},
-            {"k": "my_rating_of_them", "t": f("col.ratings"), "num": True, "nw": True, "hide": True,
+            {"k": "evaluated_me", "t": f("col.evaluated_you"), "s": f("abbr.evaluated_you"), "num": True}, {"k": "outstanding_to_me", "t": f("col.outstanding"), "s": f("abbr.outstanding"), "num": True},
+            {"k": "avg_mark_to_me", "t": f("col.avg_mark"), "s": f("abbr.avg_mark"), "num": True, "hide": True, "f": lambda p: f.num(p.get("avg_mark_to_me"), 1)},
+            {"k": "evaluated_by_me", "t": f("col.you_evaluated"), "s": f("abbr.you_evaluated"), "num": True}, {"k": "teammate", "t": f("col.teammate"), "s": f("abbr.teammate"), "num": True, "hide": True},
+            {"k": "my_rating_of_them", "t": f("col.ratings"), "s": f("abbr.ratings"), "num": True, "nw": True, "hide": True,
              "f": lambda p: f"{f.num(p.get('my_rating_of_them'), 2)} / {f.num(p.get('their_rating_of_me'), 2)}"},
             {"k": "projects_on_me", "t": f("col.details"), "cls": "details", "hide": True, "sv": lambda p: len(p["projects_on_me"]), "f": details},
             {"k": "first", "t": f("col.first"), "nw": True, "hide": True, "f": lambda p: escape((p.get("first") or "–")[:10])},
@@ -1011,13 +1032,13 @@ def campus(pg: Page) -> list[dict]:
     part = lambda s, i: (m.group(i) if (m := re.fullmatch(r"c(\d+)r(\d+)s(\d+)", s["host"])) else None)  # noqa: E731
     seat_link = lambda s: f'<a class="code" href="#seat-{escape(s["host"])}" title="{escape(f("computers.show_on_plan", seat=s["host"]))}">{escape(s["host"])}</a>'  # noqa: E731
     computers = table(f, [
-        {"k": "host", "t": f("col.computer"), "f": seat_link},
+        {"k": "host", "t": f("col.computer"), "s": f("abbr.computer"), "f": seat_link},
         {"k": "cluster", "t": f("col.cluster"), "num": True, "hide": True, "sv": lambda s: int(part(s, 1) or 0), "f": lambda s: part(s, 1) or "–"},
         {"k": "row", "t": f("col.row"), "num": True, "hide": True, "sv": lambda s: int(part(s, 2) or 0), "f": lambda s: part(s, 2) or "–"},
         {"k": "seat", "t": f("col.seat"), "num": True, "hide": True, "sv": lambda s: int(part(s, 3) or 0), "f": lambda s: part(s, 3) or "–"},
         {"k": "hours", "t": f("col.hours"), "num": True, "nw": True,
          "f": lambda s: f'<span class="hbar" aria-hidden="true"><i style="width:{100 * s["hours"] / best:.1f}%"></i></span>{s["hours"]:.1f}'},
-        {"k": "sessions", "t": f("col.sessions"), "num": True},
+        {"k": "sessions", "t": f("col.sessions"), "s": f("abbr.sessions"), "num": True},
         {"k": "first", "t": f("col.first"), "nw": True, "hide": True}, {"k": "last", "t": f("col.last"), "nw": True, "hide": True},
     ], L["seats"], label=f("computers.table_aria"), sort=("hours", -1))
     keys = list(L["monthly"])
@@ -1051,10 +1072,10 @@ def campus(pg: Page) -> list[dict]:
     sections.append({"id": "sessions", "title": f("sessions.title"), "nav": f("nav.sessions"), "lede": f("sessions.lede"), "q": pg.q("sq", "")[:80],
                      "count": f("sessions.count", shown=f.num(len(log)), total=f.num(len(L["log"]))),
                      "table": table(f, [
-                         {"k": "begin_ms", "t": f("col.logged_in"), "nw": True, "f": lambda s: escape(s["begin"])},
-                         {"k": "seconds", "t": f("col.duration"), "num": True, "nw": True, "f": lambda s: f.hm(s["seconds"])},
-                         {"k": "host", "t": f("col.computer"), "f": seat_link},
-                         {"k": "end", "t": f("col.logged_out"), "nw": True, "hide": True, "f": lambda s: escape(s.get("end") or f("sessions.still_logged"))},
+                         {"k": "begin_ms", "t": f("col.logged_in"), "s": f("abbr.logged_in"), "nw": True, "f": lambda s: escape(s["begin"])},
+                         {"k": "seconds", "t": f("col.duration"), "s": f("abbr.duration"), "num": True, "nw": True, "f": lambda s: f.hm(s["seconds"])},
+                         {"k": "host", "t": f("col.computer"), "s": f("abbr.computer"), "f": seat_link},
+                         {"k": "end", "t": f("col.logged_out"), "s": f("abbr.logged_out"), "nw": True, "hide": True, "f": lambda s: escape(s.get("end") or f("sessions.still_logged"))},
                      ], log, label=f("sessions.table_aria"), sort=("begin_ms", -1), empty=f("empty.search_sessions") if sq else f("empty.sessions"))})
 
     PL, S = D["place"], D["summary"]

@@ -212,6 +212,8 @@
    "font-size": "16px",
    "cell-padding-y": "11px",
    "cell-padding-x": "10px",
+   "phone-font-size": "15px",
+   "phone-cell-padding-x": "7px",
    "head-rule": "2px",
    "radius": "0px",
    "max-height": "640px",
