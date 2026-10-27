@@ -457,12 +457,33 @@ async def test_the_latest_coalition_points_say_what_they_came_from(signed_in, re
     assert "+3,150" in panel and "Evaluated" in panel
 
 
-def test_bars_show_their_details_only_over_the_bar():
+def test_bars_show_their_details_over_the_right_target():
     f = Fmt("en")
+    # one series: the whole column (not just a short bar) carries the tip, so it is easy to hover
     v = str(charts.vbars(f, ["a", "b"], [("s", [3, 1], charts.S1)], label="L"))
-    assert 'class="ch-col" data-tip' not in v and v.count('data-tip="a · s 3"') == 1
+    assert v.count('class="ch-col" data-tip="a · s 3"') == 1 and v.count('data-tip="a · s 3"') == 1
+    # several series share a column: each bar keeps its own tip, the column has none
+    m = str(charts.vbars(f, ["a"], [("s", [3], charts.S1), ("t", [2], charts.S2)], label="L"))
+    assert 'class="ch-col" data-tip' not in m and m.count("data-tip=") == 2
     h = str(charts.hbars(f, ["a"], [("s", [3], charts.S1), ("t", [2], charts.S2)], label="L"))
     assert 'class="hb-row" data-tip' not in h and h.count("data-tip=") == 2
+
+
+async def test_the_stats_page_is_only_for_the_owner(app, signed_in, settings):
+    from dataclasses import replace
+    # no owner configured, or a different login: sent back to the dashboard
+    r = await signed_in.get("/app/stats")
+    assert r.status_code == 303 and r.headers["location"] == "/app"
+    # the owner sees the live metrics, and the active session is listed
+    app.state.settings = replace(settings, owner_login="ana")
+    r = await signed_in.get("/app/stats")
+    assert r.status_code == 200
+    for label in ("Server stats", "Requests total", "Extractions", "System", "Active sessions", "ana"):
+        assert label in r.text, label
+    # the owner's settings menu offers the page; a non-owner's does not
+    assert 'href="/app/stats"' in (await signed_in.get("/app")).text
+    app.state.settings = settings
+    assert 'href="/app/stats"' not in (await signed_in.get("/app")).text
 
 
 async def test_the_sync_bar_shows_only_the_progress_while_reading(signed_in, report, memory, settings):

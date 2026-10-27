@@ -82,6 +82,11 @@ class Fmt:
         t = datetime.fromtimestamp(ms / 1000, timezone.utc).astimezone(TZ)
         return f"{self.day(t.date().isoformat())}, {t:%H:%M}"
 
+    def stamp_num(self, ms: float) -> str:
+        """"27/10/2026, 14:05" in Madrid time."""
+        t = datetime.fromtimestamp(ms / 1000, timezone.utc).astimezone(TZ)
+        return f"{t:%d/%m/%Y, %H:%M}"
+
     def month_of(self, ms: float) -> str:
         t = datetime.fromtimestamp(ms / 1000, timezone.utc).astimezone(TZ)
         return self.month_label(f"{t:%Y-%m}")

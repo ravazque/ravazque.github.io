@@ -54,32 +54,43 @@ def vbars(f, labels, series, *, label, stacked=False, xtitle=None, peak=None, li
     top = nice_max(max(totals))
     every = every or max(1, math.ceil(len(labels) / 12))
     best = totals.index(max(totals))
+    # one series: the whole column (full height) opens the tip, so a short bar is still easy to hover
+    col_tip = len(series) == 1 and not stacked
     cols = []
     for i, lab in enumerate(labels):
         tip = tips[i] if tips else " · ".join([lab] + [f"{name} {fmt(vals[i] or 0)}" for name, vals, _ in series]
                                               + ([f"{line[0]} {fmt(line[1][i])}"] if line else []))
-        # the details belong to the bars, not to the column's empty space above them
-        bars = "".join(f'<i style="height:{_pct(vals[i] or 0, top)};background:{c}"' + (f' data-tip="{escape(tip)}" title="{escape(tip)}"' if vals[i] else "") + "></i>"
+        bars = "".join(f'<i style="height:{_pct(vals[i] or 0, top)};background:{c}"' + (f' data-tip="{escape(tip)}" title="{escape(tip)}"' if vals[i] and not col_tip else "") + "></i>"
                        for _, vals, c in series)
         cap = (f'<b class="peak">{escape(peak.format(v=fmt(totals[i]), label=lab))}</b>' if peak and i == best else "")
-        cols.append(f'<div class="ch-col{" stack" if stacked else ""}">{cap}{bars}</div>')
+        ct = f' data-tip="{escape(tip)}" title="{escape(tip)}"' if col_tip else ""
+        cols.append(f'<div class="ch-col{" stack" if stacked else ""}"{ct}>{cap}{bars}</div>')
     overlay = ""
     if line:
-        ltop = nice_max(max(line[1]) or 1)
+        # the line's scale ends just above its last value, at a clean step for its size (…25/50/75/00): tight and honest
+        m = max(line[1]) or 1
+        unit = 25 * 10 ** max(len(str(int(m))) - 3, 0)
+        ltop = math.ceil(m / unit) * unit
         pts = " ".join(f"{(i + .5) * 1000 / len(labels):.1f},{300 - 300 * v / ltop:.1f}" for i, v in enumerate(line[1]))
         overlay = (f'<svg class="ch-line" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">'
                    f'<polyline points="{pts}" pathLength="1" style="stroke:{line[2]}"/></svg>'
+                   # a dot per month, as HTML so the stretched SVG does not distort it
+                   + "".join(f'<i class="ch-dot" style="left:{(i + .5) * 100 / len(labels):.2f}%;bottom:{_pct(v, ltop)};background:{line[2]}"></i>'
+                             for i, v in enumerate(line[1]))
                    + '<div class="ch-y right" aria-hidden="true">' + "".join(
-                       f'<span style="bottom:{_pct(ltop * k / 4, ltop)}">{escape(_tick(f, ltop * k / 4, 2))}</span>' for k in range(5)) + "</div>"
+                       f'<span style="bottom:{_pct(ltop * k / 4, ltop)}">{escape(f.num(ltop) if k == 4 else _tick(f, ltop * k / 4, 2))}</span>' for k in range(5)) + "</div>"
                    # without the right axis (narrow charts) the line still says where it ends
                    + f'<b class="line-end" style="bottom:{_pct(line[1][-1] or 0, ltop)}">{escape(line[0])} {escape(fmt(line[1][-1] or 0))}</b>')
     # every second shown label is marked so narrow charts can drop it
     xs = "".join(f'<span{" class=\"alt\"" if (i // every) % 2 else ""}>{escape(lab)}</span>' if i % every == 0 else "<span></span>"
                  for i, lab in enumerate(labels))
+    # swatches that say which side is which: a bar shape over the left axis, a line over the right one
+    keys = (f'<span class="axis-key bar" style="background:{series[0][2]}" aria-hidden="true"></span>'
+            f'<span class="axis-key line" style="background:{line[2]}" aria-hidden="true"></span>') if line else ""
     summary = f"{label}: " + ", ".join(f"{lab} {fmt(totals[i])}" for i, lab in enumerate(labels) if totals[i])
     return Markup(
         f'<figure class="vchart{" has-line" if line else ""}" role="img" aria-label="{escape(summary)}">'
-        f'<div class="ch-plot">{_yaxis(f, top)}<div class="ch-cols" style="--n:{len(labels)}">{"".join(cols)}</div>{overlay}</div>'
+        f'<div class="ch-plot">{keys}{_yaxis(f, top)}<div class="ch-cols" style="--n:{len(labels)}">{"".join(cols)}</div>{overlay}</div>'
         f'<div class="ch-x" style="--n:{len(labels)}" aria-hidden="true">{xs}</div>'
         + (f'<figcaption class="ch-title">{escape(xtitle)}</figcaption>' if xtitle else "") + "</figure>")
 

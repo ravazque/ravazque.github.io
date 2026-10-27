@@ -147,11 +147,8 @@ def _radar_svg(f, items, label, compact) -> str:
 
 
 def radar(f, items, label) -> Markup:
-    """The wide radar with names, and the compact one with numbers and a key; CSS shows the one that fits."""
-    key = "".join(f'<li><span class="k">{i + 1}</span><span class="n">{escape(s["name"])}</span><span class="v">{f.num(s["level"], 2)}</span></li>'
-                  for i, s in enumerate(items))
-    return Markup(f'<div class="radar-wide">{_radar_svg(f, items, label, False)}</div>'
-                  f'<div class="radar-narrow">{_radar_svg(f, items, label, True)}<ol class="radar-key">{key}</ol></div>')
+    """The skills radar: a ringed polygon with the skill names around it; the bars beside it carry the values."""
+    return Markup(_radar_svg(f, items, label, False))
 
 
 LABEL_BAND = 28

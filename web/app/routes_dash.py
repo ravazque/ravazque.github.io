@@ -1,11 +1,14 @@
 """The dashboard: five pages rendered on the server, the boot screen, the sync bar and the account actions."""
 import hmac
+import json
+import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from . import consent
+from .dash.charts import S1, hbars
 from .dash.fmt import Fmt
 from .dash.views import BUILDERS, PAGES, Page, portfolio_csv, projects_csv
 from .i18n import pick_lang
@@ -38,10 +41,10 @@ def wait_text(f: Fmt, seconds: int) -> str:
 def sync_ctx(f: Fmt, status: dict) -> dict:
     busy = status["state"] in BUSY
     wait = (f(status["message"] or f"status.{status['state']}") if busy else f("status.failed") if status["state"] == "failed"
-            else wait_text(f, status["next_refresh_in"]) if status["next_refresh_in"] > 0 else "")
+            else f"[{wait_text(f, status['next_refresh_in'])}]" if status["next_refresh_in"] > 0 else "")
     last = _ms(status.get("last"))
     return {"busy": busy, "pct": round(100 * (status.get("progress") or 0)), "wait": wait,
-            "last": f("refresh.last", when=f.stamp(last)) if last else "", "disabled": busy or status["next_refresh_in"] > 0}
+            "last": f("refresh.last", when=f.stamp_num(last)) if last else "", "disabled": busy or status["next_refresh_in"] > 0}
 
 
 def publish_ctx(request: Request, f: Fmt, user: dict, status: dict) -> dict | None:
@@ -61,7 +64,12 @@ def base_ctx(request: Request, user: dict, status: dict, f: Fmt) -> dict:
     return {"lang": f.lang, "t": f, "csrf": user["csrf"], "sync": sync_ctx(f, status), "publish": publish_ctx(request, f, user, status),
             "coalition_color": user.get("coalition_color") or "", "accent": user.get("coalition_color") or "", "issues_url": s.issues_url,
             "here": request.url.path + (f"?{request.url.query}" if request.url.query else ""), "pages": list(PAGES), "page": None, "key": "",
-            "login": user["login"], "report_sig": "", "dev_mode": bool(s.dev_report)}
+            "login": user["login"], "report_sig": "", "dev_mode": bool(s.dev_report), "owner": is_owner(s, user)}
+
+
+def is_owner(settings, user: dict) -> bool:
+    """The one account allowed on the stats page: the configured owner login, nothing else."""
+    return bool(settings.owner_login) and user.get("login") == settings.owner_login
 
 
 async def _kick(request: Request, store: Store, uid, status: dict) -> dict:
@@ -236,7 +244,69 @@ async def publish(request: Request, user: dict = Depends(current_user)):
     if not await csrf_ok(request, user):
         return Response(status_code=403)
     code, payload = await run_publish(request, user)
+    if code == 200 and getattr(request.app.state, "stats", None):
+        request.app.state.stats.published()
     return await _confirm(request, user, "publish", {"ok": code == 200, **payload})
+
+
+def _dur(seconds: float) -> str:
+    """A compact duration: '3d 4h', '4h 12m' or '12m'."""
+    s = max(int(seconds), 0)
+    d, h, m = s // 86400, s % 86400 // 3600, s % 3600 // 60
+    return f"{d}d {h}h" if d else f"{h}h {m}m" if h else f"{m}m"
+
+
+async def build_stats(request: Request, f: Fmt) -> dict:
+    """Assemble the owner's stats from the live in-process counters and the current session/queue/budget state."""
+    app = request.app
+    st, mem, jobs, s = app.state.stats, app.state.memory, app.state.jobs, app.state.settings
+    now = time.time()
+    sessions = []
+    for key in await mem.keys("sess:*"):
+        raw = await mem.get(key)
+        if raw:
+            sessions.append(json.loads(raw))
+    sessions.sort(key=lambda d: d.get("created") or 0, reverse=True)
+    st.saw_sessions(len(sessions))
+
+    hour = st.last_hour()
+    labels, used, rem = [], [], []
+    for a in range(len(s.apps)):
+        r = await mem.get(f"rl:hourly:{a}")
+        labels.append(f("stats.app", n=a + 1))
+        used.append(hour[a] if a < len(hour) else 0)
+        rem.append(int(r) if r is not None else None)
+    api_chart = hbars(f, labels, [(f("stats.used"), used, S1)], label=f("stats.api_title"), end=lambda i, v: f.num(v),
+                      extra=lambda i: f("stats.left_n", n=f.num(rem[i])) if rem[i] is not None else None, big=True)
+    api_tiles = [(f("stats.requests_total"), f.num(st.requests_total)), (f("stats.requests_hour"), f.num(sum(hour)))]
+    n = st.extractions
+    ext_tiles = [(f("stats.ext_total"), f.num(n)), (f("stats.ext_running"), f.num(1 if jobs.running else 0)),
+                 (f("stats.ext_queued"), f.num(len(jobs.queued()))),
+                 (f("stats.ext_avg_req"), f.num(round(st.extraction_requests / n)) if n else "–"),
+                 (f("stats.ext_avg_time"), f("stats.secs", n=f.num(round(st.extraction_seconds / n))) if n else "–"),
+                 (f("stats.failed"), f.num(st.failed)), (f("stats.timeouts"), f.num(st.timeouts)),
+                 (f("stats.denied"), f.num(st.denied))]
+    sys_tiles = [(f("stats.uptime"), _dur(now - st.started_at)), (f("stats.memory"), f.num(mem.size())),
+                 (f("stats.peak"), f.num(st.peak_sessions))]
+    # dates are too long for a big figure tile, so they go on a small line below
+    sys_note = (f("stats.started") + " " + f.stamp_num(st.started_at * 1000) + " · " + f("stats.last_publish") + " "
+                + (f.stamp_num(st.last_publish * 1000) if st.last_publish else f("stats.never")))
+    return {"api_tiles": api_tiles, "api_chart": api_chart, "ext_tiles": ext_tiles, "sys_tiles": sys_tiles, "sys_note": sys_note,
+            "sessions": [{"login": d.get("login") or "–", "name": d.get("name") or "",
+                          "entered": f.stamp_num(d["created"] * 1000) if d.get("created") else "–"} for d in sessions]}
+
+
+@router.get("/app/stats")
+async def stats_page(request: Request, user: dict = Depends(current_user)):
+    """A live operations page for the owner login only; any other account is sent back to the dashboard."""
+    s = request.app.state.settings
+    if not is_owner(s, user):
+        return RedirectResponse("/app", status_code=303)
+    store = _store(request)
+    f = Fmt(pick_lang(request))
+    ctx = base_ctx(request, user, await store.status(user["id"]), f)
+    return templates.TemplateResponse(request, "dash/stats.html",
+                                      {**ctx, "title": f("stats.title"), "stats": await build_stats(request, f)}, headers=NO_STORE)
 
 
 @router.get("/app/consent")

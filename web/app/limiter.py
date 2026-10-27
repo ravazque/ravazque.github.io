@@ -9,9 +9,9 @@ HOURLY_KEY = "rl:hourly:{}"
 
 
 class RateLimiter:
-    def __init__(self, memory, apps: int = 1, per_second: int = 2, hourly_floor: int = 50, now=time.time, sleep=asyncio.sleep):
+    def __init__(self, memory, apps: int = 1, per_second: int = 2, hourly_floor: int = 50, now=time.time, sleep=asyncio.sleep, stats=None):
         self.memory, self.apps, self.per_second, self.hourly_floor = memory, max(apps, 1), per_second, hourly_floor
-        self.now, self.sleep = now, sleep
+        self.now, self.sleep, self.stats = now, sleep, stats
         self.turn = 0
 
     async def _has_budget(self, app: int) -> bool:
@@ -34,6 +34,8 @@ class RateLimiter:
                     await self.memory.expire(key, 2)
                 if count <= self.per_second:
                     self.turn = (a + 1) % self.apps
+                    if self.stats:
+                        self.stats.request(a)
                     return a
             await self.sleep(max(math.floor(t) + 1 - t, 0.01))
 

@@ -100,11 +100,14 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 /* the top value label sits on the top line: keep it clear of the title or note above, and the axis of what follows */
 .vchart, .lchart { margin: 16px 0 6px; }
 .ch-plot { position: relative; height: var(--c-chart-height); margin-left: var(--c-chart-axis-width); border-bottom: 2px solid var(--rule-strong); }
-.has-line .ch-plot { margin-right: var(--c-chart-axis-width); }
+/* a line chart has a scale on both sides: equal gutters, each number the same 6px from its colour bar */
+.has-line .ch-plot { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
 .ch-y { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
-.ch-y.right { left: auto; right: calc(-1 * var(--c-chart-axis-width)); text-align: left; }
+.has-line .ch-y:not(.right) { left: calc(-1 * (var(--c-chart-axis-width) + 36px)); width: calc(var(--c-chart-axis-width) + 24px); }
+.ch-y.right { left: calc(100% + 12px); right: auto; width: calc(var(--c-chart-axis-width) + 24px); text-align: left; }
 .ch-y span { position: absolute; right: 0; transform: translateY(50%); }
-.ch-y.right span { left: 6px; right: auto; }
+.ch-y.right span { left: 0; right: auto; }
+.ch-y span:first-child { transform: translateY(0); }  /* the 0 sits above the baseline, not on top of it */
 .ch-plot::before { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); opacity: .7; }
 .ch-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; }
@@ -114,9 +117,19 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 .ch-col.stack i { flex: none; width: 100%; max-width: var(--c-chart-bar-max); border-radius: 1px; }
 .ch-col.stack i[style^="height:0%"], .ch-col.stack i[style^="height:0.00%"] { display: none; }  /* empty segments add no gap */
 .ch-col i:hover, .hb-track i:hover { filter: brightness(1.12); }
+/* only the pace chart (the one with a total line) dims the rest to bring the hovered month forward;
+   other vbars (e.g. Over time) just brighten the hovered bar */
+.has-line .ch-cols:hover .ch-col:not(:hover) i { opacity: .35; }
+.has-line .ch-cols:hover ~ .ch-line, .has-line .ch-cols:hover ~ .ch-dot { opacity: .4; }
+.ch-line polyline { stroke-width: 3; }  /* the total line, a touch bolder than the plain line charts */
+.ch-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, 50%); z-index: 1; pointer-events: none; }
+/* which axis is which: a full-height bar beside the left scale (xp), a full-height line beside the right one (total xp) */
+.axis-key { position: absolute; top: 0; bottom: 0; z-index: 2; pointer-events: none; border-radius: 2px; }
+.axis-key.bar { left: -6px; width: 4px; }
+.axis-key.line { right: -6px; width: 4px; }
 .ch-col .peak { position: absolute; top: -4px; transform: translateY(-100%); white-space: nowrap; color: var(--ink); font: 700 14px var(--type-font-display); }
 .ch-x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-left: var(--c-chart-axis-width); padding-top: 6px; }
-.has-line .ch-x { margin-right: var(--c-chart-axis-width); }
+.has-line .ch-x { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
 .ch-x span { text-align: center; white-space: nowrap; overflow: visible; }
 .ch-title { text-align: center; margin-top: 4px; }
 .ch-line, .ch-lines { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
@@ -151,6 +164,30 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
   .radar-narrow, .graph-narrow { display: block; }
 }
 .radar-wide .radar, .radar-narrow .radar { display: block; width: 100%; height: auto; max-height: 460px; }
+/* skills: the radar beside a scrollable bar per skill; stacks on a narrow panel */
+/* owner stats page: equal modules, each a block of facts */
+.settings .row-links .btn.go { color: var(--good); border-color: var(--good); }
+.settings .row-links .btn.go:hover { background: color-mix(in oklab, var(--good) 12%, transparent); }
+/* owner stats page: sections split by a rule, big KPI figures, one budget chart, a session list */
+.stats-sec { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--rule-strong); }
+.stats-sec:first-of-type { margin-top: 12px; border-top: 0; padding-top: 0; }
+.stats-sec > h2 { margin: 0 0 4px; }
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px 28px; margin: 14px 0; }
+.stat { min-width: 0; }
+.stat .figure { display: block; font: 800 clamp(24px, 5vw, 38px)/1 var(--type-font-display); letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat .k { color: var(--text-2); font-size: 14px; }
+.stat-sessions { list-style: none; margin: 10px 0 0; padding: 0; }
+.stat-sessions li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.stat-sessions .when { color: var(--text-2); white-space: nowrap; }
+.radar-pair { display: flex; gap: 28px; align-items: center; margin-top: 10px; }
+.radar-fig { flex: 0 0 auto; width: min(100%, 480px); }
+.radar-fig .radar { display: block; width: 100%; height: auto; max-height: 480px; }
+.radar-bars { flex: 1 1 0; min-width: 0; max-height: 480px; overflow-y: auto; border-left: 1px solid var(--rule); padding-left: 28px; }
+@container (max-width: 620px) {
+  .radar-pair { flex-direction: column; }
+  .radar-fig { width: 100%; max-width: 400px; margin: 0 auto; }
+  .radar-bars { max-height: none; width: 100%; border-left: 0; border-top: 1px solid var(--rule); padding-left: 0; padding-top: 18px; }
+}
 .graph-wide .graph, .graph-narrow .graph { display: block; width: 100%; height: auto; }
 .graph a.bubble { cursor: pointer; }
 .graph a.bubble:focus-visible circle { stroke: var(--focus); stroke-width: var(--c-bubble-focus-width); }
@@ -200,14 +237,14 @@ details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--acc
 
 /* charts draw themselves the first time they scroll into view (dash.js adds .in); without it they are simply there */
 .js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: scale(0); }
-.vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease); }
+.vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease), opacity .14s; }
 .hchart .hb-track i { transform-origin: left; transition: transform .6s var(--motion-ease); }
 /* stacked marks grow one after the other: the bottom (or first) segment, then the one above it */
 .vchart .ch-col.stack i:nth-child(2), .hchart .hb-track i:nth-child(2) { transition-delay: .45s; }
 .vchart .ch-col.stack i:nth-child(3), .hchart .hb-track i:nth-child(3) { transition-delay: .9s; }
 /* lines wipe in from the left: a dash trick on a non-scaling stroke measures the wrong length and leaves lines cut short */
 .js .lchart:not(.in) .ch-lines, .js .vchart:not(.in) .ch-line { clip-path: inset(0 100% 0 0); }
-.lchart .ch-lines, .vchart .ch-line { clip-path: inset(0 0 0 0); transition: clip-path 1.1s var(--motion-ease); }
+.lchart .ch-lines, .vchart .ch-line { clip-path: inset(0 0 0 0); transition: clip-path 1.1s var(--motion-ease), opacity .14s; }
 @media (prefers-reduced-motion: reduce) {
   .js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: none; }
   .js .lchart:not(.in) .ch-lines, .js .vchart:not(.in) .ch-line { clip-path: none; }
@@ -261,8 +298,9 @@ section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom:
 @media (max-width: 959.98px) { .toc { -webkit-mask-image: linear-gradient(to right, var(--mask) 82%, transparent); mask-image: linear-gradient(to right, var(--mask) 82%, transparent); } }
 .vchart { container-type: inline-size; }
 @container (max-width: 520px) {
-  .has-line .ch-plot, .has-line .ch-x { margin-right: 0; }
-  .ch-y.right { display: none; }
+  .has-line .ch-plot, .has-line .ch-x { margin-left: var(--c-chart-axis-width); margin-right: 0; }
+  .has-line .ch-y:not(.right) { left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
+  .ch-y.right, .axis-key { display: none; }
   .ch-x span.alt { visibility: hidden; }
   .ch-x span:last-child { text-align: right; }
   .line-end { display: block; }

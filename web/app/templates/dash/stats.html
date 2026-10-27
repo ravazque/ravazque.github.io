@@ -1,0 +1,31 @@
+{% extends "dash/base.html" %}
+{% macro tiles(items) -%}
+<div class="stat-tiles">{% for k, v in items %}<div class="stat"><b class="figure">{{ v }}</b><span class="k">{{ k }}</span></div>{% endfor %}</div>
+{%- endmacro %}
+{% block body %}
+<main id="main">
+<section class="stats-sec">
+  <h2>{{ t("stats.api_title") }}</h2>
+  {{ tiles(stats.api_tiles) }}
+  {{ stats.api_chart }}
+</section>
+
+<section class="stats-sec">
+  <h2>{{ t("stats.ext_title") }}</h2>
+  {{ tiles(stats.ext_tiles) }}
+</section>
+
+<section class="stats-sec">
+  <h2>{{ t("stats.sys_title") }}</h2>
+  {{ tiles(stats.sys_tiles) }}
+  <p class="note">{{ stats.sys_note }}</p>
+</section>
+
+<section class="stats-sec">
+  <h2>{{ t("stats.sessions") }}<span class="count"><span class="sep"> · </span>{{ stats.sessions|length }}</span></h2>
+  {% if stats.sessions %}
+  <ul class="stat-sessions">{% for u in stats.sessions %}<li><span class="who">{{ u.login }}{% if u.name %} · {{ u.name }}{% endif %}</span><span class="when">{{ u.entered }}</span></li>{% endfor %}</ul>
+  {% else %}<p class="note">{{ t("stats.no_sessions") }}</p>{% endif %}
+</section>
+</main>
+{% endblock %}

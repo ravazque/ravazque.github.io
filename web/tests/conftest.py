@@ -23,12 +23,16 @@ class FakeJobs:
 
     def __init__(self):
         self.enqueued, self.kwargs, self.cancelled = [], [], []
+        self.running = None
 
     async def enqueue_job(self, name, *args, **kw):
         self.enqueued.append(name); self.kwargs.append(kw)
 
     def cancel(self, job_id):
         self.cancelled.append(job_id)
+
+    def queued(self):
+        return []
 
 
 @pytest.fixture

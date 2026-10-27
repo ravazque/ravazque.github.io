@@ -80,6 +80,7 @@
           {% endif %}
           {% if dev_mode %}<button class="link-btn" type="button" data-tour-again>{{ t("tour.again") }}</button>{% endif %}
           <div class="row-links">
+            {% if owner %}<a class="btn secondary go" href="/app/stats">{{ t("stats.button") }}</a>{% endif %}
             <form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn secondary" type="submit">{{ t("signout.button") }}</button></form>
             <a class="btn secondary danger" href="/app/delete">{{ t("delete.button") }}</a>
           </div>

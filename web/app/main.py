@@ -19,6 +19,7 @@ from .limiter import RateLimiter
 from .memory import Memory
 from .sessions import NoSession, no_session_handler
 from .settings import Settings
+from .stats import Stats
 from .store import Store, first_extraction
 from .worker import extract_job
 
@@ -60,9 +61,10 @@ def create_app(settings: Settings, memory: Memory, http: httpx.AsyncClient | Non
 
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.settings, app.state.memory, app.state.http = settings, memory, http
-    app.state.limiter = RateLimiter(memory, apps=len(settings.apps))
+    app.state.stats = Stats(len(settings.apps))
+    app.state.limiter = RateLimiter(memory, apps=len(settings.apps), stats=app.state.stats)
     app.state.api = Api42(settings, memory, http, app.state.limiter)
-    ctx = {"store": Store(memory, settings), "api": app.state.api}
+    ctx = {"store": Store(memory, settings), "api": app.state.api, "stats": app.state.stats}
     app.state.jobs = jobs or Jobs(lambda uid: extract_job(ctx, uid))
     app.state.on_signed_in = first_extraction
     app.add_exception_handler(NoSession, no_session_handler)

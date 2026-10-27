@@ -350,17 +350,19 @@ def home(pg: Page) -> list[dict]:
             "legend": ch.legend([(f("pace.xp"), ch.S1), (f("pace.cumulative"), ch.S2)])})
 
     cursus = pg.q("cursus", "C Piscine" if pg.period == "piscine" else "42cursus", ("42cursus", "C Piscine"))
-    view = pg.q("skills", "radar", ("radar", "bars"))
     items = (X.get("skills_by_cursus") or {}).get(cursus) or (X.get("skills", []) if cursus == "42cursus" else [])
-    if view == "radar":
-        skills = gr.radar(f, items, f("extras.skills_title")) if items else ch.empty(f("empty.period"))
+    if items:
+        # a bar only for skills with a level; the radar still shows every axis, the list scrolls when it is taller
+        graded = [s for s in items if s["level"] > 0]
+        rbars = ch.hbars(f, [s["name"] for s in graded],
+                         [(f("extras.level"), [s["level"] for s in graded], ch.S1)],
+                         label=f("extras.skills_title"), end=lambda i, v: f.num(v, 2), big=True)
+        skills = Markup(f'<div class="radar-pair"><div class="radar-fig">{gr.radar(f, items, f("extras.skills_title"))}</div>'
+                        f'<div class="radar-bars">{rbars}</div></div>')
     else:
-        bars = sorted((s for s in items if s["level"] > 0), key=lambda s: -s["level"])
-        skills = ch.hbars(f, [s["name"] for s in bars], [(f("extras.level"), [s["level"] for s in bars], ch.S1)],
-                          label=f("extras.skills_title"), end=lambda i, v: f.num(v, 2), empty_text=f("empty.period"), big=True)
+        skills = ch.empty(f("empty.period"))
     sections.append({"id": "skills", "title": f("extras.skills_title"), "nav": f("extras.skills_title"), "chart": skills,
-                     "switches": [pg.seg("cursus", [("42cursus", f("track.student")), ("C Piscine", f("track.piscine"))], cursus, label=f("skills.cursus"), target="skills"),
-                                  pg.seg("skills", [("radar", f("skills.radar")), ("bars", f("skills.bars"))], view, label=f("skills.view"), target="skills")]})
+                     "switches": [pg.seg("cursus", [("42cursus", f("track.student")), ("C Piscine", f("track.piscine"))], cursus, label=f("skills.cursus"), target="skills")]})
 
     C, promo = pg.data.get("coalitions") or [], pg.data.get("promo")
     if C or promo or recent_points(pg):
@@ -703,7 +705,7 @@ def evaluations(pg: Page) -> list[dict]:
         groups = [{"g": g, **v, "i": order.index(g) if g in order else 99, "in_pct": 100 * v["received_out"] / v["received"] if v.get("received") else None,
                    "out_pct": 100 * v["given_out"] / v["given"] if v.get("given") else None} for g, v in (st.get("by_group") or {}).items()]
         h = st.get("by_hour") or []
-        sections.append({"id": "correction-stats", "title": f("stats.title"), "nav": f("nav.correction_stats"), "lede": f("stats.lede"),
+        sections.append({"id": "correction-stats", "title": f("correction.title"), "nav": f("nav.correction_stats"), "lede": f("stats.lede"),
                          "rates": Markup(rate(st["failed_given"], "stats.failed_given") + rate(st["failed_received"], "stats.failed_received")
                                          + f'<div><h3>{escape(f("stats.reciprocity_title"))}</h3><p class="s">{escape(f("stats.recip_in", back=R["i_gave_back"], gave_me=R["gave_me"]))}</p>'
                                          f'<p class="s">{escape(f("stats.recip_out", back=R["they_gave_back"], i_gave=R["i_gave"]))}</p></div>'),
@@ -914,7 +916,7 @@ def people(pg: Page) -> list[dict]:
     order = {g: i for i, g in enumerate(gr.GROUPS)}
     sections = [{
         "id": "who", "title": f("who.title"), "nav": f("nav.who"),
-        "lede": f("who.lede", correctors=S["unique_correctors"], mutual=S["mutual"]) + (" " + f("who.lede_most", login=most["login"], n=most["outstanding_to_me"]) if most else ""),
+        "lede": f.html("who.lede", correctors=S["unique_correctors"], mutual=S["mutual"]) + (Markup(" <em>") + f.html("who.lede_most", login=most["login"], n=most["outstanding_to_me"]) + Markup("</em>") if most else Markup("")),
         "legend": ch.legend([(f("flag.other"), ch.S1), (f("flag.outstanding"), ch.GOOD)]),
         "chart": ch.hbars(f, [p["login"] for p in top], [(f("flag.other"), [p["evaluated_me"] - p["outstanding_to_me"] for p in top], ch.S1),
                                                          (f("flag.outstanding"), [p["outstanding_to_me"] for p in top], ch.GOOD)],

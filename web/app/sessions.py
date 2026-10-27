@@ -1,6 +1,7 @@
 """Server-side sessions in Redis. The browser only holds a random id in the __Host-session cookie."""
 import json
 import secrets
+import time
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -16,7 +17,7 @@ class SessionStore:
     async def create(self, user: dict) -> str:
         sid = secrets.token_urlsafe(32)
         data = {"id": user["id"], "login": user["login"], "name": user.get("name"), "image": user.get("image"),
-                "coalition_color": user.get("coalition_color"), "csrf": secrets.token_urlsafe(32)}
+                "coalition_color": user.get("coalition_color"), "csrf": secrets.token_urlsafe(32), "created": time.time()}
         await self.memory.set(KEY.format(sid), json.dumps(data), ex=self.settings.session_s)
         return sid
 

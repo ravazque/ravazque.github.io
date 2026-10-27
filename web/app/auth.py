@@ -67,6 +67,8 @@ async def callback(request: Request, code: str = "", state: str = ""):
     image = ((me.get("image") or {}).get("versions") or {}).get("medium") or (me.get("image") or {}).get("link")
     sid = await SessionStore(app.state.memory, s).create({"id": me["id"], "login": me["login"], "name": me.get("displayname"),
                                                          "image": image, "coalition_color": (coalition or {}).get("color")})
+    if getattr(app.state, "stats", None):
+        app.state.stats.saw_sessions(len(await app.state.memory.keys("sess:*")))
     store = Store(app.state.memory, s)
     await store.clear_refusal(me["id"])
     await consent.record(store, me["id"])
