@@ -1,7 +1,7 @@
 name: ravazque-info
 
-# Run through the root Makefile. This file alone is production (make prod: reached only through the tunnel, signs in
-# with FT_UID); with compose.dev.yaml it is make dev, a separate project on https://localhost that signs in with
+# Run through the root Makefile. This file alone is production (make production: https://ravazque.info through the tunnel,
+# signs in with FT_UID); with compose.dev.yaml it is make dev, a separate project on https://localhost that signs in with
 # FT_UID_2. Both can run at once. Every service reads the one root .env.
 # No database: sessions, report copies and limits live in the api's memory; the only file it writes is the
 # consent log in the consent volume.
@@ -21,17 +21,19 @@ services:
         required: false  # make clean / down / logs work before .env exists; make dev creates it first
     environment:
       CONSENT_LOG: /data/consent.log
-      BASE_URL: ${BASE_URL:-https://localhost}  # make prod passes the tunnel's
+      BASE_URL: https://ravazque.info
       OAUTH_APP: "1"
       GITHUB_TOKEN: ""  # production never publishes: the token only reaches make dev
     volumes: ["./core:/srv/core:ro", "consent:/data"]
     restart: unless-stopped
-  # make prod: a free Cloudflare quick tunnel to Caddy's internal port (random *.trycloudflare.com URL, new on every
-  # start). Only with the profile, so make dev never starts it.
+  # make production: the named Cloudflare tunnel that serves ravazque.info; its public hostname (ravazque.info ->
+  # http://caddy:8080) is set in Cloudflare's dashboard. Only with the profile, so make dev never starts it.
   tunnel:
     image: cloudflare/cloudflared:2026.10.3
     profiles: [tunnel]
-    command: ["tunnel", "--no-autoupdate", "--url", "http://caddy:8080"]
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     depends_on: [caddy]
     restart: "no"
 

@@ -1,48 +1,54 @@
 COMPOSE     := docker compose
 COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.yaml
+# build, test, preview and snapshot run in dev's project with its image: nothing but production's own targets
+# (production, prod-down, logs) ever touches production's containers, image or volumes
+COMPOSE_TOOLS := $(COMPOSE) -p ravazque-info-dev
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-down dev-logs prod prod-down logs build down ps test preview snapshot site certs clean fclean re
+.PHONY: help dev dev-down dev-fclean dev-logs production prod prod-down logs build down ps test preview snapshot site certs clean fclean re
 
 help: ## Show this help
-	@echo "ravazque.info — dev at https://localhost (signs in with FT_UID_2), production through the tunnel (FT_UID)"
-	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-10s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "ravazque.info — dev at https://localhost (signs in with FT_UID_2), production at https://ravazque.info (FT_UID)"
+	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-11s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 DEV_UID = $(shell sed -n 's/^DEV_UID=\([0-9][0-9]*\)$$/\1/p' .env 2>/dev/null)
-TUNNEL_URL = $(COMPOSE) logs tunnel 2>/dev/null | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1
 
-dev: .env web/Caddyfile.local ## Start dev at https://localhost with the last saved report; reloads on save; runs beside prod
+dev: .env web/Caddyfile.local ## Build and start dev at https://localhost (fetches the saved report only when there is none); reloads on save
+	@if [ ! -f web/preview/data.json ]; then $(MAKE) --no-print-directory build; fi
 	@mkdir -p web/preview
 	@$(COMPOSE_DEV) up -d --build
-	@if [ -f web/preview/data.json ]; then echo "Up at https://localhost — 'Dev · …' on the landing enters with the saved report"; \
-	  else echo "Up at https://localhost — no saved report yet: run 'make build' (needs DEV_UID in .env)"; fi
+	@if [ -f web/preview/data.json ]; then echo "Up at https://localhost — 'Dev · …' on the landing enters with the saved report (make build refreshes it)"; \
+	  else echo "Up at https://localhost — no saved report: set DEV_UID in .env and run 'make build'"; fi
 	@if ls web/preview/test-*.json >/dev/null 2>&1; then echo "Test profiles (synthetic): 'Test · …' on the landing"; fi
 	@echo "Real sign-in: the FT_UID_2 app needs the redirect URI https://localhost/auth/callback"
 
-dev-down: ## Stop dev (its sessions and server copies go; browsers keep theirs)
-	@$(COMPOSE_DEV) down
+dev-down: ## Stop dev and remove its containers (its sessions and server copies go; browsers keep theirs)
+	@$(COMPOSE_DEV) down --remove-orphans
+
+dev-fclean: ## dev-down + delete dev's image, volumes and saved reports (web/preview): make dev starts from scratch
+	@$(COMPOSE_DEV) down --volumes --rmi local --remove-orphans
+	@rm -rf web/preview
 
 dev-logs: ## Follow dev's logs
 	@$(COMPOSE_DEV) logs -f --tail=100
 
-prod: .env web/Caddyfile.local ## Start production as built behind a Cloudflare quick tunnel and print its public URL
-	@$(COMPOSE) --profile tunnel up -d tunnel
-	@for i in $$(seq 1 30); do url=$$($(TUNNEL_URL)); [ -n "$$url" ] && break; sleep 1; done; \
-	 if [ -z "$$url" ]; then echo "No tunnel URL yet: make logs"; exit 1; fi; \
-	 BASE_URL=$$url $(COMPOSE) up -d --build api caddy && \
-	 echo "Public: $$url" && \
-	 echo "The FT_UID app needs the redirect URI $$url/auth/callback (a new URL every time the tunnel starts)"
+production: .env web/Caddyfile.local ## Build and start production at https://ravazque.info through the Cloudflare tunnel
+	@grep -q '^TUNNEL_TOKEN=.' .env || { echo "TUNNEL_TOKEN is empty in .env: create the tunnel in Cloudflare first (README)"; exit 1; }
+	@$(COMPOSE) --profile tunnel up -d --build
+	@echo "Public: https://ravazque.info (the FT_UID app needs the redirect URI https://ravazque.info/auth/callback)"
 
-prod-down: ## Stop production and its tunnel
+prod: production
+
+prod-down: ## Stop production and its tunnel (its volumes, the consent log among them, stay)
 	@$(COMPOSE) --profile tunnel down
 
 logs: ## Follow production's logs
 	@$(COMPOSE) --profile tunnel logs -f --tail=100
 
-build: .env ## Build the images, refresh the saved report of DEV_UID (~120 requests, about 40 s with three apps) and the synthetic test profiles
-	@$(COMPOSE) build
-	@if [ -n "$(DEV_UID)" ]; then mkdir -p web/preview && $(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(DEV_UID); \
-	  else echo "DEV_UID is not set in .env: images built, saved report not refreshed"; fi
-	@mkdir -p web/preview && $(COMPOSE) run --rm -v ./web:/srv/web api python scripts/test_profiles.py
+build: .env ## Build dev's image, refresh the saved report of DEV_UID (~120 requests, about 40 s with three apps) and the synthetic test profiles
+	@$(COMPOSE_TOOLS) build
+	@if [ -n "$(DEV_UID)" ]; then mkdir -p web/preview && $(COMPOSE_TOOLS) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(DEV_UID); \
+	  else echo "DEV_UID is not set in .env: image built, saved report not refreshed"; fi
+	@mkdir -p web/preview && $(COMPOSE_TOOLS) run --rm -v ./web:/srv/web api python scripts/test_profiles.py
 
 down: dev-down prod-down ## Stop dev and production
 
@@ -50,16 +56,16 @@ ps: ## Show the services of both
 	@$(COMPOSE) --profile tunnel ps; $(COMPOSE_DEV) ps
 
 test: .env ## Run every test: web + core (pytest in the image) and JS (local node)
-	@$(COMPOSE) build -q api
-	@$(COMPOSE) run --rm --no-deps -v ./web/tests:/srv/web/tests:ro -v ./web/app:/srv/web/app:ro -v ./web/static:/srv/web/static:ro \
+	@$(COMPOSE_TOOLS) build -q api
+	@$(COMPOSE_TOOLS) run --rm --no-deps -v ./web/tests:/srv/web/tests:ro -v ./web/app:/srv/web/app:ro -v ./web/static:/srv/web/static:ro \
 	  api sh -c "python -m pytest -q -p no:cacheprovider && python -m pytest -q -p no:cacheprovider -o asyncio_default_fixture_loop_scope=function /srv/core/tests"
 	@node --test web/tests/js/*.test.mjs core/tests/js/*.test.mjs site/tests/*.test.mjs
 
 preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 120 requests)
-	@$(COMPOSE) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(UID)
+	@$(COMPOSE_TOOLS) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(UID)
 
 snapshot: .env ## Write site/data/42.json from web/preview/data.json (what the publish button would send)
-	@$(COMPOSE) run --rm --no-deps -v ./web:/srv/web -v ./site:/srv/site api python scripts/snapshot.py preview/data.json /srv/site/data/42.json
+	@$(COMPOSE_TOOLS) run --rm --no-deps -v ./web:/srv/web -v ./site:/srv/site api python scripts/snapshot.py preview/data.json /srv/site/data/42.json
 
 site: ## Build the GitHub Pages site into site/_build and serve it at http://localhost:8080
 	@sh site/build.sh site/_build
@@ -73,15 +79,12 @@ web/Caddyfile.local: web/Caddyfile.tmpl $(wildcard web/certs/localhost.pem)
 	@if [ -f web/certs/localhost.pem ]; then line='tls /certs/localhost.pem /certs/localhost-key.pem'; else line='tls internal'; fi; \
 	 sed "s|TLS_LINE|$$line|" web/Caddyfile.tmpl > $@
 
-clean: ## Stop dev and production and delete generated files (preview data, site/_build, Caddyfile.local)
-	@$(COMPOSE) --profile tunnel down --remove-orphans
-	@$(COMPOSE_DEV) down --remove-orphans
-	@rm -rf web/preview web/Caddyfile.local site/_build
+# clean and fclean never touch production: its containers, image, volumes (the consent log), Caddyfile.local and certs
+clean: dev-down ## dev-down + delete generated files (site/_build, __pycache__); production keeps running
+	@rm -rf site/_build
 	@find web core -name __pycache__ -type d -prune -exec rm -rf {} +
 
-fclean: clean ## clean + delete the images and volumes (the consent log too); keeps web/certs
-	@$(COMPOSE) --profile tunnel down --volumes --rmi local --remove-orphans
-	@$(COMPOSE_DEV) down --volumes --rmi local --remove-orphans
+fclean: clean dev-fclean ## clean + dev-fclean: everything but production and web/certs
 
 re: fclean dev ## fclean + dev
 

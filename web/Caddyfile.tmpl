@@ -23,7 +23,7 @@ localhost {
 	reverse_proxy api:8000
 }
 
-# make prod: Cloudflare's tunnel (cloudflared) reaches this port inside the compose network only; it is never
+# make production: Cloudflare's tunnel (cloudflared) reaches this port inside the compose network only; it is never
 # published on the host. Cloudflare serves HTTPS to the browser and sets Cf-Connecting-Ip, which a client cannot
 # forge through it, so that is the address the app sees (the sign-in limit is per person, not per tunnel).
 http://:8080 {

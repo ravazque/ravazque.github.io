@@ -38,14 +38,17 @@ Requirements: Docker with the Compose plugin, `make`, `openssl` or `mkcert`. Nod
 the site preview.
 
 1. **Register the 42 applications** at https://profile.intra.42.fr/oauth/applications, scope `public`: one for `make dev`
-   (`FT_UID_2`, redirect URI `https://localhost/auth/callback`) and, to publish through the tunnel, one for production
-   (`FT_UID`, redirect URI `https://<tunnel>.trycloudflare.com/auth/callback`). A third (`FT_UID_3`) only adds
+   (`FT_UID_2`, redirect URI `https://localhost/auth/callback`) and one for production at https://ravazque.info
+   (`FT_UID`, redirect URI `https://ravazque.info/auth/callback`). A third (`FT_UID_3`) only adds
    request budget and never signs anyone in.
 2. **Configure**: `make` copies `.env.example` to `.env` on the first run. Fill the required values (see below) and adapt the
    privacy policy texts (`policy.*` in the i18n files) to your deployment.
 3. **Certificates**: `make certs` creates `web/certs/`. With `mkcert` they are trusted at once; with `openssl`, import
    `web/certs/ca.pem` as a trusted authority. Without certificates Caddy uses its internal CA.
 4. **Start**: `make dev` and open https://localhost.
+5. **Production** (optional): the domain's DNS lives in Cloudflare. In Zero Trust → Networks → Tunnels create a
+   tunnel (connector: Docker), copy its token to `TUNNEL_TOKEN` in `.env` and give it the public hostname
+   `ravazque.info` → service `http://caddy:8080`. Then `make production`.
 
 ### Configuration
 
@@ -53,7 +56,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `FT_UID`, `FT_SECRET` | yes | 42 app that signs users in to production (`make prod`) |
+| `FT_UID`, `FT_SECRET` | yes | 42 app that signs users in to production (`make production`) |
 | `FT_UID_2`, `FT_SECRET_2` | for `make dev` | 42 app that signs users in to `make dev` |
 | `FT_UID_3`, `FT_SECRET_3` | no | 42 app that never signs anyone in; app-token requests are spread over all three |
 | `SESSION_SECRET` | yes | ≥ 32 characters (`openssl rand -hex 32`); keys session HMACs |
@@ -61,7 +64,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | `CONTACT_EMAIL` | yes | Contact for privacy requests, shown on the About and Privacy pages |
 | `OPTOUT_LOGINS` | no | Comma-separated logins of students who asked to be excluded: shown as "Hidden" everywhere |
 | `ISSUES_URL` | no | "Report an issue" link on every page, e.g. `https://github.com/<owner>/<repo>/issues/new/choose` |
-| `BASE_URL` | no | Unused by `make dev` (always `https://localhost`) and `make prod` (the tunnel's URL); a fixed public address later |
+| `TUNNEL_TOKEN` | for `make production` | Token of the Cloudflare tunnel that serves https://ravazque.info |
 | `DEV_UID` | no | Local only: whose report `make build` saves and `make dev` serves (refused outside `https://localhost`) |
 | `OWNER_LOGIN`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_BRANCH` | no | Publishing; the button stays hidden unless `OWNER_LOGIN` and `GITHUB_TOKEN` are set |
 
@@ -70,9 +73,9 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | Command | Action |
 |---------|--------|
 | `make` | List the commands |
-| `make dev` / `make dev-down` / `make dev-logs` | Start at https://localhost at once with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented from a fixed seed, never real people, never able to publish); live reload; its own compose project, so it runs beside production / stop it / its logs |
-| `make build` | Build the images, refresh the saved report of `DEV_UID` (~120 requests, about 40 s with three apps) and the synthetic test profiles |
-| `make prod` / `make prod-down` | Start production as built behind a free Cloudflare quick tunnel and print its `*.trycloudflare.com` URL (a new one on every tunnel start: add `<url>/auth/callback` to the `FT_UID` app) / stop it and the tunnel (memory is cleared; browsers keep their reports) |
+| `make dev` / `make dev-down` / `make dev-fclean` / `make dev-logs` | Build and start at https://localhost (runs `make build` first when there is no saved report) with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented from a fixed seed, never real people, never able to publish); live reload; its own compose project, so it runs beside production / stop it / also delete its image, volumes and saved reports / its logs |
+| `make build` | Build dev's image, refresh the saved report of `DEV_UID` (~120 requests, about 40 s with three apps) and the synthetic test profiles |
+| `make production` / `make prod-down` | Build and start production at https://ravazque.info through the Cloudflare tunnel (`make production` too) / stop it and the tunnel (memory is cleared; browsers keep their reports; its volumes, the consent log among them, stay) |
 | `make down` | Stop both |
 | `make logs`, `make ps` | Follow production's logs / list the services of both |
 | `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
@@ -80,7 +83,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | `make snapshot` | Write `site/data/42.json` from the preview data |
 | `make site` | Stage `site/` into `site/_build` and serve it at http://localhost:8080 |
 | `make certs` | Create the HTTPS certificates |
-| `make clean` / `make fclean` / `make re` | Remove generated files / also images and volumes / `fclean` + `dev` |
+| `make clean` / `make fclean` / `make re` | `dev-down` + generated files / `clean` + `dev-fclean` / `fclean` + `dev`. None of them touches production: only `make production`, `make prod-down` and `make logs` do |
 
 ## Behaviour
 
