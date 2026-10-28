@@ -153,11 +153,6 @@ def badge(text, kind="") -> str:
     return f'<span class="badge{" " + kind if kind else ""}">{escape(text)}</span>'
 
 
-def pool_badge(f) -> str:
-    tip = escape(f("points.pool_tip"))
-    return f'<span class="badge pool" data-tip="{tip}" title="{tip}">{escape(f("points.pool_badge"))}</span>'
-
-
 def no_mark(f, e) -> str:
     """What stands in for a missing mark: why there is none, when the report knows."""
     return escape(f(f"no_mark.{e['no_mark']}")) if e.get("no_mark") else "–"
@@ -288,6 +283,8 @@ def home(pg: Page) -> list[dict]:
     rank = my_rank(X)
     xp = sum(p.get("xp_earned") or 0 for p in D["projects"])
     finished = [p for p in D["projects"] if p.get("mark") is not None]
+    open_ = sum(1 for p in D["projects"] if p["status"] != "finished" and not p["validated"])  # a passed exam can stay "in_progress"
+    closed = sum(1 for p in D["projects"] if p["status"] == "finished" and p["validated"] is False)
     failed = (D.get("stats") or {}).get("failed_given")
     clusters = " · ".join(f"{c} {f.nb(h, 'h', 0)}" for c, h in L["clusters"].items())
     pc = (D.get("insights") or {}).get("pace") or {}
@@ -312,7 +309,8 @@ def home(pg: Page) -> list[dict]:
         {"key": "projects", "label": f("home.k_projects"), "aside": f("home.validated"),
          "value": num(S["validated"], 0, f" / {f.num(S['projects'])}"),
          "lines": [f("home.attempts", attempts=S["attempts"], retries=S["retries"]),
-                   f("home.avg_mark", mark=f.num(sum(p["mark"] for p in finished) / len(finished), 1)) if finished else ""],
+                   f("home.avg_mark", mark=f.num(sum(p["mark"] for p in finished) / len(finished), 1)) if finished else "",
+                   " · ".join(x for x in (f.plural(open_, "count.open") if open_ else "", f.plural(closed, "count.closed") if closed else "") if x)],
          "trend": ch.trend([m["validated"] for m in months], bars=True, last=True)},
         {"key": "evals", "label": f("home.k_evals"), "aside": f("home.received_given"),
          "value": num(S["received"], 0, f" · {f.num(S['given'])}"),
@@ -770,9 +768,7 @@ def evaluations(pg: Page) -> list[dict]:
                      "low": Markup(low_items or f'<li class="note">{escape(f("feedback.all_max" if rated else "empty.ratings"))}</li>')})
 
     CP = D["correction_points"]
-    pool = CP.get("pool") or {}  # older saved reports have no pool figures
     sections.append({"id": "points", "title": f("points.title"), "nav": f("nav.points"),
-                     "pool": f("points.pool", n=pool["evals"], extra=pool["extra"]) if pool.get("evals") else "",
                      "lede": f("points.lede", earned=CP["earned"], spent=CP["spent"], max=CP["max"]) if CP["series"] else f("empty.points"),
                      "chart": ch.lines(f, [(f("points.balance"), CP["series"], ch.S1)], label=f("points.balance_title"), empty_text=f("empty.points")),
                      "table": table(f, [{"k": "reason", "t": f("col.reason")}, {"k": "count", "t": f("col.times"), "num": True}, {"k": "sum", "t": f("col.net"), "num": True}],
@@ -885,7 +881,7 @@ def log_section(pg: Page) -> dict:
                 {"k": "correcteds", "t": f("col.evaluated"), "s": f("abbr.evaluated"), "nw": True, "sv": lambda e: ",".join(c.get("login", "") for c in e["correcteds"]),
                  "f": lambda e: "<br>".join(person(c, e.get("other_host_checked")) for c in e["correcteds"])},
                 {"k": "my_host", "t": f("col.your_seat"), "nw": True, "hide": True, "f": my_seat},
-                min_col, {"k": "mark", "t": f("col.mark"), "num": True, "f": lambda e: f'{escape(e["mark"] if e.get("mark") is not None else "")}{" " + pool_badge(f) if e.get("pool_paid") else ""}'},
+                min_col, {"k": "mark", "t": f("col.mark"), "num": True, "f": lambda e: escape(e["mark"] if e.get("mark") is not None else "")},
                 flag_col, {"k": "fb_rating", "t": f("col.their_rating"), "num": True, "hide": True}]
     return {"id": "log", "title": f("log.title"), "nav": f("nav.log"), "lede": f("log.lede"), "role": role, "flag": flag, "project": proj,
             "projects": projects_all, "q": pg.q("q", "")[:80], "count": f.plural(len(rows), "count.evaluations"),

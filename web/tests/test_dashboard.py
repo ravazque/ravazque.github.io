@@ -673,21 +673,10 @@ async def test_long_column_titles_carry_a_short_one_for_phones(signed_in, report
 
 
 def _given_twist(report, **change):
-    """The report with its first given evaluation changed: a pool payment or a missing mark."""
+    """The report with its first given evaluation changed: a missing mark."""
     D = report["periods"]["all"]
     first = {**D["given"][0], **change}
     return {**report, "periods": {**report["periods"], "all": {**D, "given": [first, *D["given"][1:]]}}}, first
-
-
-def test_evaluations_paid_by_the_pool_are_counted_and_marked(report):
-    from app.dash.views import Page, evaluations, log_section
-    D = report["periods"]["all"]
-    data, first = _given_twist(report, pool_paid=True)
-    data["periods"]["all"] = {**data["periods"]["all"], "correction_points": {**D["correction_points"], "pool": {"evals": 3, "extra": 4}}}
-    points = next(s for s in evaluations(Page(Fmt("en"), data, "evaluations", {"period": "all"})) if s["id"] == "points")
-    assert "3 evaluations you gave paid double" in points["pool"]
-    log = str(log_section(Page(Fmt("en"), data, "evaluations", {"period": "all", "log": "given"}))["table"])
-    assert log.count('class="badge pool"') == 1
 
 
 def test_a_corrected_project_without_a_mark_says_why(report):
@@ -698,9 +687,21 @@ def test_a_corrected_project_without_a_mark_says_why(report):
     assert "No-show" in text
 
 
-def test_older_reports_without_pool_or_reasons_still_render(report):
-    from app.dash.views import Page, corrected_table, evaluations
+def test_older_reports_without_reasons_still_render(report):
+    from app.dash.views import Page, corrected_table
     data, _ = _given_twist(report, mark=None)
     pg = Page(Fmt("en"), data, "evaluations", {"period": "all"})
-    assert next(s for s in evaluations(pg) if s["id"] == "points")["pool"] == ""
     assert "–" in str(corrected_table(pg))
+
+
+def test_the_projects_module_counts_the_open_and_the_closed_unvalidated(report):
+    from app.dash.views import Page, home
+    D = report["periods"]["all"]
+    twist = [{**D["projects"][0], "status": "in_progress", "validated": None, "mark": None},
+             {**D["projects"][1], "status": "creating_group", "validated": None, "mark": None},
+             {**D["projects"][0], "status": "finished", "validated": False, "mark": 0},
+             {**D["projects"][0], "status": "in_progress", "validated": True, "mark": 100}]  # an exam passed, still "in progress"
+    data = {**report, "periods": {**report["periods"], "all": {**D, "projects": twist}}}
+    for lang, want in (("en", "2 open · 1 closed unvalidated"), ("es", "2 abiertos · 1 cerrado sin validar")):
+        kpis = next(s for s in home(Page(Fmt(lang), data, "home", {"period": "all"})) if s["id"] == "home-kpis")
+        assert want in next(m for m in kpis["modules"] if m["key"] == "projects")["lines"]
