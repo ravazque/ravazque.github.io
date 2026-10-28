@@ -23,9 +23,9 @@ node_modules/
 .idea/
 *.swp
 *.egg-info/
-# v1_old/: the first version (Python), archived as it was on GitHub at bd7e5d4; its local parts stay out
-v1_old/report-tool/
-v1_old/.golden/
+# .v1_old/: the first version (Python), archived as it was on GitHub at bd7e5d4; its local parts stay out
+.v1_old/report-tool/
+.v1_old/.golden/
 server/internal/web/dist/*
 !server/internal/web/dist/.gitkeep
 web/dist-offline/

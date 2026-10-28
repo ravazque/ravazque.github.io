@@ -1,4 +1,4 @@
-# Static analysis of the Go, TypeScript and workflow code (v1_old/, the archived first version, is left out).
+# Static analysis of the Go, TypeScript and workflow code (.v1_old/, the archived first version, is left out).
 name: CodeQL
 
 on:
@@ -39,6 +39,6 @@ jobs:
           config: |
             paths-ignore:
               - "**/vendor/**"
-              - v1_old
+              - .v1_old
               - server/core/testdata
       - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1

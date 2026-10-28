@@ -75,5 +75,5 @@ jobs:
         run: docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 git --redact --no-banner /repo
       - name: Files that must never be tracked
         run: |
-          bad=$(git ls-files | grep -E '(^|/)\.env$|(^|/)report-tool/|^\.claude/|^\.development/|(^|/)web/certs/.+\.(pem|key)$|(^|/)web/preview/|^v1_old/\.golden/|(^|/)node_modules/|^server/internal/web/dist/.+[^p]$' || true)
+          bad=$(git ls-files | grep -E '(^|/)\.env$|(^|/)report-tool/|^\.claude/|^\.development/|(^|/)web/certs/.+\.(pem|key)$|(^|/)web/preview/|^\.v1_old/\.golden/|(^|/)node_modules/|^server/internal/web/dist/.+[^p]$' || true)
           if [ -n "$bad" ]; then echo "Tracked files that must stay local:"; echo "$bad"; exit 1; fi

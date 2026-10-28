@@ -35,7 +35,7 @@ Five pages; every choice (period, filters, views) lives in the URL:
 |-----------|----------|
 | `server/` | Go (standard library only): the 42 API client and extraction (`api42/`), the analysis, sign-in rules, rank groups, the logtime bonus and the look of every page (`core/`, with `ui.json`, the i18n texts, skills, tracks and RNCP data in `core/data/`), and the web server (`internal/`): sign-in, the JSON API, an in-process job queue, memory with expiry. One binary that embeds the browser app. No database |
 | `web/` | The browser app: Vue 3 and TypeScript (Vite). Charts are its own SVG and HTML; Caddy (HTTPS) and Docker Compose files |
-| `v1_old/` | The first version (Python, FastAPI and htmx), archived as it was; not built or run |
+| `.v1_old/` | The first version (Python, FastAPI and htmx), archived as it was; not built or run |
 | `site/` | Static CV page with the published 42 snapshot, deployed by `.github/workflows/pages.yml` |
 
 ## Running it
