@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { fmt, loadSession, state } from "../state";
 import SiteLinks from "./SiteLinks.vue";
+import Mark from "./Mark.vue";
 
 const props = defineProps<{ page: "about" | "privacy" }>();
 const f = computed(() => fmt.value);
@@ -20,6 +21,7 @@ onMounted(() => { document.title = title.value; });
 </script>
 
 <template>
+  <header class="site-head"><RouterLink class="brand" to="/"><Mark /><span>{{ f.t("site.name") }}</span></RouterLink><SiteLinks :current="page" /></header>
   <main class="site-main reading">
     <h1>{{ heading }}</h1>
     <template v-if="page === 'about'">

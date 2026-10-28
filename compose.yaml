@@ -7,7 +7,7 @@ name: ravazque-info
 # consent log in the consent volume.
 services:
   caddy:
-    image: caddy:2.11
+    image: caddy:2.11@sha256:5e5286cb37d44086d651a5363f05f43a692ce4d649d88fb1bd844579f45fa9e8
     volumes:
       - ./web/Caddyfile.local:/etc/caddy/Caddyfile:ro
       - ./web/certs:/certs:ro
@@ -29,7 +29,7 @@ services:
   # make production: the named Cloudflare tunnel that serves ravazque.info; its public hostname (ravazque.info ->
   # http://caddy:8080) is set in Cloudflare's dashboard. Only with the profile, so make dev never starts it.
   tunnel:
-    image: cloudflare/cloudflared:2026.10.3
+    image: cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
     profiles: [tunnel]
     command: ["tunnel", "--no-autoupdate", "run"]
     environment:

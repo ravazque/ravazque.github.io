@@ -445,7 +445,7 @@
  "stats.no_sessions": "No active sessions.",
  "delete.button": "Delete my data",
  "delete.title": "Delete your data?",
- "delete.confirm": "Your report is removed now and you are signed out. You can sign in again later, after the hourly limit.",
+ "delete.confirm": "Your report is removed now and you are signed out on every device. You can sign in again at any time; a new extraction waits until an hour has passed since the last one.",
  "delete.yes": "Delete",
  "delete.no": "Cancel",
  "signout.button": "Sign out",
@@ -608,10 +608,10 @@
  "teammates.title": "Teammates",
  "teammates.none": "No team projects in this period.",
  "network.title": "Your circle",
- "network.lede": "You in the centre and the 30 people you evaluated with most. An arrow goes from the corrector to the one evaluated; a line with arrows at both ends means they evaluated each other. Thicker lines, more evaluations. With you in focus the arrows give way to colours.",
+ "network.lede": "You in the centre and up to 30 people you evaluated with most. An arrow goes from the corrector to the one evaluated; a line with arrows at both ends means they evaluated each other. Thicker lines, more evaluations. With you in focus the arrows give way to colours.",
  "network.empty": "Not enough evaluations yet to draw your circle.",
  "depth.title": "Evaluations in depth",
- "depth.minutes": "{avg} min on average · median {median} min",
+ "depth.minutes": "{avg} min on average · median {median} min",
  "depth.hours": "{h} h before",
  "depth.received_duration": "Evaluations you received last",
  "depth.given_duration": "Evaluations you gave last",
@@ -911,7 +911,7 @@
  "today.seats": {"one": "{n} seat", "other": "{n} seats"},
  "today.week": "Your last 7 days",
  "today.week_aria": "Your last seven days: {time} logged",
- "today.week_note": "Each bar is a session on a 0–24 h line; greyed parts leave the bonus window within a day.",
+ "today.week_note": "Each bar is a session on a 0–24 h line; greyed parts leave the bonus window within a day. A session still open is drawn up to the time of the data.",
  "today.leaving": "leaves the bonus window within a day",
  "today.next": "Next",
  "today.next_none": "No evaluation booked.",
@@ -938,5 +938,6 @@
  "today.points": {"one": "{n} evaluation point", "other": "{n} evaluation points"},
  "today.points_short": "points",
  "today.blackhole": {"one": "Blackhole in {n} day", "other": "Blackhole in {n} days"},
- "today.now_as_of": "as of {time}"
+ "today.now_as_of": "as of {time}",
+ "unit.eval": "eval"
 }

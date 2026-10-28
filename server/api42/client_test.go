@@ -175,3 +175,22 @@ func TestAvatarOnlyFromTheCDN(t *testing.T) {
 		t.Fatal(b, ct, err)
 	}
 }
+
+func TestRetryAfterIsCapped(t *testing.T) {
+	var waited []time.Duration
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/oauth/token" {
+			tokenOK(w, "T")
+			return
+		}
+		w.Header().Set("Retry-After", "86400")
+		w.WriteHeader(429)
+	})
+	c.sleep = func(ctx context.Context, d time.Duration) error { waited = append(waited, d); return nil }
+	c.Get(context.Background(), "/v2/me", nil)
+	for _, d := range waited {
+		if d > time.Minute {
+			t.Fatalf("waited %v", d)
+		}
+	}
+}

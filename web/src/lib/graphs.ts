@@ -84,9 +84,13 @@ export function calendar(f: Fmt, days: string[], hours: number[]): [string, stri
     const nOf = (iso: string) => dayNo(iso) - jan1 + offset;
     const skip = crop ? Math.floor(nOf(items[0][0]) / 7) : 0;
     const pos = (iso: string): [number, number] => [Math.max(1, Math.floor(nOf(iso) / 7) + 1 - skip), (nOf(iso) % 7) + 2];
-    const months = Array.from({ length: 12 }, (_, i) => i + 1)
+    // a month's label spans 4 columns: one whose start is pulled onto the first column (the data begins later) or
+    // that would touch the previous label gives way to the next
+    const starts = Array.from({ length: 12 }, (_, i) => i + 1)
       .filter((m) => items.some(([d]) => d.slice(0, 7) === `${y}-${String(m).padStart(2, "0")}`))
-      .map((m) => `<span class="m" style="grid-area:1/${pos(`${y}-${String(m).padStart(2, "0")}-01`)[0]}/2/span 4">${esc(f.months[m - 1])}</span>`).join("");
+      .map((m) => ({ m, col: pos(`${y}-${String(m).padStart(2, "0")}-01`)[0] }));
+    const kept = starts.filter((x, i) => !starts[i + 1] || starts[i + 1].col - x.col >= 4);
+    const months = kept.map(({ m, col }) => `<span class="m" style="grid-area:1/${col}/2/span 4">${esc(f.months[m - 1])}</span>`).join("");
     const cells = items.map(([d, v]) => {
       const [c, r] = pos(d);
       const label = `${f.day(d, true)} · ${v ? `${f.num(v, 1)} h` : f.t("calendar.not_logged")}`;
@@ -293,8 +297,8 @@ export function ring(f: Fmt, net: Net, o: { width: number; height: number; compa
     const d = degree[n.login] || 0;
     const tip = n.group === "me" ? n.login : [n.login, f.t(`groups.${n.group}`), f.t("network.tip", { count: d, n: d })].join(" · ");
     let text = "";
-    if (n.group === "me") text = `<text y="${(n.r + 18).toFixed(1)}" text-anchor="middle">${esc(n.login)}</text>`;
-    else if (!o.compact) {
+    const meText = n.group === "me" ? `<text y="${(n.r + 18).toFixed(1)}" text-anchor="middle">${esc(n.login)}</text>` : "";
+    if (n.group !== "me" && !o.compact) {
       const anchor = Math.cos(n.a) > 0.15 ? "start" : Math.cos(n.a) < -0.15 ? "end" : "middle";
       text = `<text x="${((n.r + 6) * Math.cos(n.a)).toFixed(1)}" y="${((n.r + 6) * Math.sin(n.a) + 4).toFixed(1)}" text-anchor="${anchor}">${esc(n.login)}</text>`;
     }
@@ -303,7 +307,8 @@ export function ring(f: Fmt, net: Net, o: { width: number; height: number; compa
       + ` aria-label="${esc(tip)}" data-tip="${esc(tip)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})">`
       + `<title>${esc(tip)}</title><circle class="core" r="${n.r.toFixed(1)}"/>${text}</g>`);
     if (n.group === "me") // chords pass over you; over your circle the pointer still means you
-      marks.push(`<g class="net-node me-hit" data-login="${esc(n.login)}" data-tip="${esc(tip)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><title>${esc(tip)}</title><circle r="${(n.r + 2).toFixed(1)}"/></g>`);
+      // your name is drawn over the chords, on the layer that catches the pointer
+      marks.push(`<g class="net-node me-hit" data-login="${esc(n.login)}" data-tip="${esc(tip)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><title>${esc(tip)}</title><circle r="${(n.r + 2).toFixed(1)}"/>${meText}</g>`);
   }
   const defs = `<defs><marker id="${marker}" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="${o.compact ? 8 : 11}" markerHeight="${o.compact ? 8 : 11}" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" class="arrowhead"/></marker></defs>`;
   return `<svg class="graph net" data-me="${esc(meLogin || "")}" viewBox="0 0 ${o.width} ${o.height}"${roving(f, f.t("network.title"))}>${defs}`

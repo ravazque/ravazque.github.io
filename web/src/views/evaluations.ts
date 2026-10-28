@@ -78,11 +78,11 @@ export function evaluations(pg: Page): Section[] {
         + `<div><h3>${esc(f.t("stats.reciprocity_title"))}</h3><p class="s">${esc(f.t("stats.recip_in", { back: R.i_gave_back, gave_me: R.gave_me }))}</p>`
         + `<p class="s">${esc(f.t("stats.recip_out", { back: R.they_gave_back, i_gave: R.i_gave }))}</p></div></div>`),
       groups.length ? `<div class="block" data-panel="by-group"><h3>${esc(f.t("stats.group_title"))} ${info(f.t("stats.group_note"))}</h3><div class="table-wrap">${table(f, [
-        { k: "i", t: f.t("col.group"), f: (r) => esc(f.t(`groups.${r.g}`)) },
-        { k: "received", t: f.t("col.received"), s: f.t("abbr.received"), num: true },
-        { k: "in_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, f: (r) => pctCell(r.in_pct) },
-        { k: "given", t: f.t("col.given"), s: f.t("abbr.given"), num: true },
-        { k: "out_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, f: (r) => pctCell(r.out_pct) },
+        { k: "i", t: f.t("col.group"), nw: true, f: (r) => esc(f.t(`groups.${r.g}`)) },
+        { k: "received", t: f.t("col.received"), s: f.t("abbr.received"), num: true, nw: true },
+        { k: "in_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, nw: true, f: (r) => pctCell(r.in_pct) },
+        { k: "given", t: f.t("col.given"), s: f.t("abbr.given"), num: true, nw: true },
+        { k: "out_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, nw: true, f: (r) => pctCell(r.out_pct) },
       ], groups, { label: f.t("stats.group_title"), sort: ["i", 1] })}</div></div>` : "",
       block("by-hour", `<div class="centred">${legend(roles)}${vbars(f, h.map((x: any) => String(x.hour).padStart(2, "0")),
         [[f.t("role.received"), h.map((x: any) => x.received), S1], [f.t("role.given"), h.map((x: any) => x.given), S2]],

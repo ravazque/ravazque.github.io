@@ -445,7 +445,7 @@
  "stats.no_sessions": "No hay sesiones activas.",
  "delete.button": "Borrar mis datos",
  "delete.title": "¿Borrar tus datos?",
- "delete.confirm": "Tu informe se borra ahora y se cierra tu sesión. Puedes volver a entrar más tarde, pasado el límite de una hora.",
+ "delete.confirm": "Tu informe se borra ahora y se cierra tu sesión en todos tus dispositivos. Puedes volver a entrar cuando quieras; una nueva extracción espera a que pase una hora desde la anterior.",
  "delete.yes": "Borrar",
  "delete.no": "Cancelar",
  "signout.button": "Cerrar sesión",
@@ -608,10 +608,10 @@
  "teammates.title": "Compañeros",
  "teammates.none": "No hay proyectos en equipo en este periodo.",
  "network.title": "Tu círculo",
- "network.lede": "Tú en el centro y las 30 personas con las que más has evaluado. La flecha va del corrector al evaluado; una línea con flecha en los dos extremos significa que se han evaluado mutuamente. Cuanto más gruesa, más evaluaciones. Contigo en foco, las flechas dejan paso a colores.",
+ "network.lede": "Tú en el centro y hasta 30 personas con las que más has evaluado. La flecha va del corrector al evaluado; una línea con flecha en los dos extremos significa que se han evaluado mutuamente. Cuanto más gruesa, más evaluaciones. Contigo en foco, las flechas dejan paso a colores.",
  "network.empty": "Aún no hay evaluaciones suficientes para dibujar tu círculo.",
  "depth.title": "Evaluaciones a fondo",
- "depth.minutes": "{avg} min de media · mediana {median} min",
+ "depth.minutes": "{avg} min de media · mediana {median} min",
  "depth.hours": "{h} h antes",
  "depth.received_duration": "Duración de las que recibes",
  "depth.given_duration": "Duración de las que das",
@@ -911,7 +911,7 @@
  "today.seats": {"one": "{n} puesto", "other": "{n} puestos"},
  "today.week": "Tus últimos 7 días",
  "today.week_aria": "Tus últimos siete días: {time} conectado",
- "today.week_note": "Cada barra es una sesión sobre una línea de 0 a 24 h; en gris, lo que sale de la ventana del bonus en menos de un día.",
+ "today.week_note": "Cada barra es una sesión sobre una línea de 0 a 24 h; en gris, lo que sale de la ventana del bonus en menos de un día. Una sesión aún abierta se dibuja hasta la hora de los datos.",
  "today.leaving": "sale de la ventana del bonus en menos de un día",
  "today.next": "Lo siguiente",
  "today.next_none": "No tienes evaluaciones reservadas.",
@@ -938,5 +938,6 @@
  "today.points": {"one": "{n} punto de evaluación", "other": "{n} puntos de evaluación"},
  "today.points_short": "puntos",
  "today.blackhole": {"one": "Blackhole en {n} día", "other": "Blackhole en {n} días"},
- "today.now_as_of": "datos de las {time}"
+ "today.now_as_of": "datos de las {time}",
+ "unit.eval": "eval"
 }

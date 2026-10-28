@@ -84,14 +84,14 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
 
 type HOpts = {
   label: string; end?: (i: number, v: number) => string; extra?: (i: number) => string | null | undefined;
-  tips?: string[]; emptyText?: string; big?: boolean;
+  tips?: string[]; emptyText?: string; big?: boolean; min?: number; // min: the scale never ends below it (a few small values stay short)
 };
 
 /** Horizontal stacked bars, one row per label, the total at the bar's end. */
 export function hbars(f: Fmt, labels: string[], series: Series[], o: HOpts): string {
   if (!labels.length) return empty(o.emptyText || "");
   const totals = labels.map((_, i) => series.reduce((s, [, v]) => s + (v[i] || 0), 0));
-  const top = (Math.max(...totals) || 1) * 1.3; // the longest bar leaves room for its end label
+  const top = Math.max((Math.max(...totals) || 1) * 1.3, o.min || 0); // the longest bar leaves room for its end label
   const end = o.end || ((_: number, v: number) => f.num(v, Number.isInteger(v) ? 0 : 2));
   const rows = labels.map((lab, i) => {
     const tip = o.tips ? o.tips[i] : [lab, ...series.flatMap(([n, v]) => (v[i] ? [`${n} ${f.num(v[i], 2)}`] : []))].join(" · ");
@@ -107,7 +107,8 @@ export function hbars(f: Fmt, labels: string[], series: Series[], o: HOpts): str
 function monthTicks(f: Fmt, lo: number, hi: number) {
   const span = hi - lo, out: string[] = [];
   const step = Math.max(1, Math.round(span / 864e5 / 30 / 8)) * 30 * 864e5;
-  for (let t = lo + step / 2; t < hi; t += step) out.push(`<span style="left:${((100 * (t - lo)) / span).toFixed(2)}%">${esc(f.monthOf(t))}</span>`);
+  // a tick too close to the right edge would be cut: it is left out
+  for (let t = lo + step / 2; t < hi && (t - lo) / span < 0.95; t += step) out.push(`<span style="left:${((100 * (t - lo)) / span).toFixed(2)}%">${esc(f.monthOf(t))}</span>`);
   return out.join("");
 }
 

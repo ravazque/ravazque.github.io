@@ -186,8 +186,8 @@ func (c *Client) do(ctx context.Context, path string, params url.Values, userTok
 				return nil, nil, &Error{r.StatusCode, path}
 			}
 			wait := time.Duration(1<<attempt) * time.Second
-			if s, err := strconv.ParseFloat(r.Header.Get("Retry-After"), 64); err == nil {
-				wait = time.Duration(s * float64(time.Second))
+			if s, err := strconv.ParseFloat(r.Header.Get("Retry-After"), 64); err == nil && s >= 0 {
+				wait = min(time.Duration(s*float64(time.Second)), time.Minute) // an odd header never holds a job for hours
 			}
 			if err := c.sleep(ctx, wait); err != nil {
 				return nil, nil, err

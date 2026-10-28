@@ -142,7 +142,9 @@ function where(pg: Page): Section {
   else if (role === "evaluated") { evs = D.given.filter((e: any) => e.other_host_checked); theirs = evs.flatMap((e) => e.correcteds.map((c: any) => c.host)); who = f.t("where.tip_evaluated"); }
   const values: Record<string, number> = {};
   if (role !== "mine") for (const h of theirs) if (h) values[h] = (values[h] || 0) + 1;
-  const [wplan, wscale] = seatPlan(f, layout, role !== "mine" ? values : PL.my_eval_hosts, { unit: f.t("unit.evals"), detail: (h, v) => `${h} · ${f.plural(v, "count.evaluations")} · ${who}` });
+  const shown: Record<string, number> = role !== "mine" ? values : PL.my_eval_hosts;
+  const unit = Math.max(0, ...Object.values(shown)) === 1 ? f.t("unit.eval") : f.t("unit.evals"); // "up to 1 eval"
+  const [wplan, wscale] = seatPlan(f, layout, shown, { unit, detail: (h, v) => `${h} · ${f.plural(v, "count.evaluations")} · ${who}` });
   const count = (xs: (string | null)[]) => { const o: Record<string, number> = {}; for (const x of xs) o[clus(x)] = (o[clus(x)] || 0) + 1; return o; };
   const series: [string, Record<string, number>, string][] = role === "mine"
     ? [[f.t("where.you_evaluated"), PL.received_my_cluster, S1], [f.t("where.you_evaluating"), PL.given_my_cluster, S2]]

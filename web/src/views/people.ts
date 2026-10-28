@@ -44,7 +44,7 @@ export function people(pg: Page): Section[] {
   out.push({ id: "who", nav: f.t("nav.who"), html: section("who", f.t("who.title"), cols(
     `<div class="block" data-panel="correctors"><div class="block-head"><h3>${esc(f.t("who.top_title"))}</h3>${legend([[f.t("flag.other"), S1], [f.t("flag.outstanding"), GOOD]])}</div>`
     + hbars(f, top.map((p: any) => p.login), [[f.t("flag.other"), top.map((p: any) => p.evaluated_me - p.outstanding_to_me), S1], [f.t("flag.outstanding"), top.map((p: any) => p.outstanding_to_me), GOOD]],
-      { label: f.t("who.top_title"), tips: top.map(tip), emptyText: f.t("empty.period"), end: (_i, v) => String(v),
+      { label: f.t("who.top_title"), tips: top.map(tip), emptyText: f.t("empty.period"), end: (_i, v) => String(v), min: 8,
         extra: (i) => (top[i].outstanding_to_me ? `${top[i].outstanding_to_me} ${f.t("flag.outstanding")}` : "") }) + "</div>",
     `<div class="block" data-panel="table-people"><h3>${esc(f.t("who.people_title"))} ${info(f.t("who.people_note"))}</h3>`
     + filters("who", search("q", q, f.t("common.search"), f.t("who.search_placeholder")))
@@ -105,7 +105,7 @@ export function people(pg: Page): Section[] {
       : `<p class="note">${esc(f.t("network.empty"))}</p>`) + "</div>"), { lede: esc(f.t("network.lede")) }) });
 
   const tm = D.insights?.teammates || [];
-  out.push({ id: "teammates", nav: f.t("nav.teammates"), html: section("teammates", f.t("teammates.title"), cols(block("teammates", `<div class="table-wrap">${table(f, [
+  out.push({ id: "teammates", nav: f.t("nav.teammates"), html: section("teammates", f.t("teammates.title"), cols(block("teammates", !tm.length ? `<p class="note">${esc(f.t("teammates.none"))}</p>` : `<div class="table-wrap">${table(f, [
     { k: "login", t: f.t("col.login"), nw: true }, { k: "name", t: f.t("col.name"), hide: true, f: (r) => esc(r.name || "") },
     { k: "teams", t: f.t("col.teams"), num: true },
     { k: "projects", t: f.t("col.projects"), sv: (r) => Object.keys(r.projects || {}).length,

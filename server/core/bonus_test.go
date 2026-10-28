@@ -148,3 +148,4 @@ func TestActiveWeeksNeverExceedTheSpan(t *testing.T) {
 		t.Fatalf("got %v", got)
 	}
 }
+
