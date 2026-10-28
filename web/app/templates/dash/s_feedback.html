@@ -1,8 +1,0 @@
-<section id="feedback">
-  <h2>{{ s.title }}</h2>
-  <p class="lede">{{ s.lede }}</p>
-  <div class="cols" data-grid>
-    {% if s.criteria %}<div class="block" data-panel="table-feedback"><h3>{{ t("feedback.criteria_title") }}</h3><p class="note">{{ t("feedback.criteria_note") }}</p><div class="table-wrap">{{ s.criteria }}</div></div>{% endif %}
-    <div class="block" data-panel="low-feedback"><h3>{{ t("feedback.low_title") }}</h3>{% if s.low_note %}<p class="note">{{ s.low_note }}</p>{% endif %}<ul class="list">{{ s.low }}</ul></div>
-  </div>
-</section>

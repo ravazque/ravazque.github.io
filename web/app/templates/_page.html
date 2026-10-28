@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block title %}{{ heading }} · {{ t["site.name"] }}{% endblock %}
-{% block body %}
-<main class="site-main reading">
-  <h1>{{ heading }}</h1>
-  {% block content %}{% endblock %}
-</main>
-<footer class="reading-foot"><a class="back" href="{{ back or '/' }}">{{ t["site.back"] }}</a>{% include "_links.html" %}</footer>
-{% endblock %}

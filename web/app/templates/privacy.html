@@ -1,9 +1,0 @@
-{% extends "_page.html" %}
-{% block content %}
-{% for sec in t["policy.sections"] %}
-<h2>{{ t["policy." ~ sec ~ ".title"] }}</h2>
-{% if t.get("policy." ~ sec ~ ".list") %}<ul>{% for item in t["policy." ~ sec ~ ".list"] %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
-{% for p in t.get("policy." ~ sec ~ ".body", []) %}<p>{{ p.replace("{controller}", controller).replace("{email}", email) }}</p>{% endfor %}
-{% endfor %}
-<p class="note">{{ t["policy.version"].replace("{version}", version|string).replace("{updated}", updated) }}</p>
-{% endblock %}
