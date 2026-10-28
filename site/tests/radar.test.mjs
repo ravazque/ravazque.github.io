@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { radarMax, radarPoints } = require("../../core42/frontend/radar.js");
+const { radarMax, radarPoints } = require("../shared/radar.js");
 
 test("the scale rounds the highest level up to a step of 5, never below 5", () => {
   assert.equal(radarMax([13.36, 2]), 15);
@@ -24,7 +24,7 @@ test("a level of 0 sits on the centre and a full level on the rim", () => {
 });
 
 test("the compact key lists number, name and level", () => {
-  const { radarKey } = require("../../core42/frontend/radar.js");
+  const { radarKey } = require("../shared/radar.js");
   const el = { innerHTML: "" };
   radarKey(el, [{ name: "Unix", level: 2.5 }, { name: "Rigor", level: 0 }], { fmt: (v) => v.toFixed(1) });
   assert.equal(el.innerHTML, '<li><span class="k">1</span><span class="n">Unix</span><span class="v">2.5</span></li><li><span class="k">2</span><span class="n">Rigor</span><span class="v">0.0</span></li>');

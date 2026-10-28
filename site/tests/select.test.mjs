@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { selectReducer } = require("../../core42/frontend/controls.js");
+const { selectReducer } = require("../shared/controls.js");
 
 const base = { open: false, index: 0, committed: 0, labels: ["All flags", "Outstanding only", "Negative flags", "Ok only"] };
 

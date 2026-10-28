@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { accentTokens, contrast, INTRA } = require("../../core42/frontend/accent.js");
+const { accentTokens, contrast, INTRA } = require("../shared/accent.js");
 
 for (const hex of ["#e39f0b", "#ffe9a8", "#0b1a40", "#7a1f2b", "#3ecf8e", "#ffffff", "#000000", null, "not-a-colour"]) {
   test(`accent ${hex} meets contrast`, () => {
