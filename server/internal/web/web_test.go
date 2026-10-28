@@ -389,3 +389,89 @@ func TestDevLoginOnlyInDevMode(t *testing.T) {
 	var buf bytes.Buffer
 	buf.WriteString("")
 }
+
+func TestBrowserCopyHidesOptedOutStudents(t *testing.T) {
+	e := newEnv(t, func(s *app.Settings) { s.OptoutLogins = []string{"peer03"} })
+	e.signIn(t)
+	e.s.Jobs.Drain()
+	e.seed(t, 990002, "../../core/testdata/golden/mid.report.json")
+	r := e.do(t, "GET", "/api/me/report.json", nil, nil)
+	raw, sig := readAll(r), r.Header.Get("X-Report-Sig")
+	if strings.Contains(raw, `"peer03"`) || strings.Contains(raw, "Peer 03") {
+		t.Fatal("the browser's copy carries an opted-out student")
+	}
+	e.s.Store.DropReport(990002)
+	if r := e.do(t, "POST", "/api/me/report", strings.NewReader(raw), map[string]string{"X-Report-Sig": sig}); r.StatusCode != 204 {
+		t.Fatalf("the hidden copy comes back: %d", r.StatusCode)
+	}
+}
+
+func TestDeleteEndsEverySessionAndRefusesOldCopies(t *testing.T) {
+	e := newEnv(t, nil)
+	e.signIn(t)
+	e.s.Jobs.Drain()
+	e.seed(t, 990002, "../../core/testdata/golden/new.report.json")
+	other := newEnvSharing(t, e) // a second device signed in as the same user
+	r := other.do(t, "GET", "/api/me/report.json", nil, nil)
+	raw, sig := readAll(r), r.Header.Get("X-Report-Sig")
+	if r := e.do(t, "POST", "/api/me/delete", nil, nil); r.StatusCode != 204 {
+		t.Fatal(r.StatusCode)
+	}
+	if r := other.do(t, "GET", "/api/me/status", nil, nil); r.StatusCode != 401 {
+		t.Fatalf("the other device's session survived: %d", r.StatusCode)
+	}
+	sid := e.s.Sessions.Create(app.Session{ID: 990002, Login: "tmidway"})
+	_ = sid
+	u, _ := e.s.Sessions.Get(sid)
+	req, _ := http.NewRequest("POST", e.srv.URL+"/api/me/report", strings.NewReader(raw))
+	req.Header.Set("X-Report-Sig", sig)
+	req.Header.Set("X-CSRF-Token", u.CSRF)
+	req.AddCookie(&http.Cookie{Name: app.SessionCookie, Value: sid})
+	res, _ := http.DefaultClient.Do(req)
+	if res.StatusCode != 400 {
+		t.Fatalf("a copy from before the deletion was taken back: %d", res.StatusCode)
+	}
+	for _, k := range e.s.M.Keys("*") {
+		if strings.HasPrefix(k, "sess:") {
+			raw, _ := e.s.M.Get(k)
+			if strings.Contains(string(raw), "tmidway") && !strings.Contains(k, sid) {
+				t.Fatalf("a session naming the user is left: %s", k)
+			}
+		}
+	}
+}
+
+func TestAvatarIsCachedAndOnlyAnImage(t *testing.T) {
+	var cdn atomic.Int64
+	e := newEnv(t, nil)
+	cdnSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cdn.Add(1)
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte("<script>x</script>"))
+	}))
+	defer cdnSrv.Close()
+	e.s.API.CDN = cdnSrv.URL + "/"
+	sid := e.s.Sessions.Create(app.Session{ID: 5, Login: "tnova", Image: cdnSrv.URL + "/users/x.jpg"})
+	e.jar.SetCookies(mustURL(e.srv.URL), []*http.Cookie{{Name: app.SessionCookie, Value: sid, Path: "/"}})
+	for range 3 {
+		r := e.do(t, "GET", "/avatar/me", nil, nil)
+		if ct := r.Header.Get("Content-Type"); ct != "image/jpeg" {
+			t.Fatalf("content type %q", ct)
+		}
+		readAll(r)
+	}
+	if cdn.Load() != 1 {
+		t.Fatalf("the CDN was asked %d times", cdn.Load())
+	}
+}
+
+func mustURL(s string) *url.URL { u, _ := url.Parse(s); return u }
+
+// newEnvSharing: another browser against the same server, signed in as the same user.
+func newEnvSharing(t *testing.T, e *env) *env {
+	t.Helper()
+	jar, _ := cookiejar.New(nil)
+	o := &env{srv: e.srv, s: e.s, f: e.f, jar: jar, hc: &http.Client{Jar: jar, CheckRedirect: e.hc.CheckRedirect}}
+	o.signIn(t)
+	return o
+}

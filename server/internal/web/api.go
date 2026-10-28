@@ -1,7 +1,7 @@
 package web
 
 import (
-	"crypto/hmac"
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -55,7 +55,7 @@ func (s *Server) refresh(w http.ResponseWriter, r *http.Request, si signedIn) {
 func (s *Server) deleteMe(w http.ResponseWriter, r *http.Request, si signedIn) {
 	app.DeleteEverything(s.Store, s.Jobs, si.u.ID)
 	s.M.Delete("published:" + s.Store.Digest(si.u.ID))
-	s.Sessions.Delete(si.sid)
+	s.Sessions.DeleteUser(si.u.ID)
 	s.setCookie(w, app.SessionCookie, "", -1)
 	w.Header().Set("Clear-Site-Data", `"storage"`) // the browser's copy goes too
 	w.WriteHeader(http.StatusNoContent)
@@ -82,28 +82,45 @@ func (s *Server) load(w http.ResponseWriter, si signedIn) (*core.OMap, bool) {
 		writeJSON(w, 404, errBody("no-data"))
 		return nil, false
 	}
+	if h := s.hidden(raw); h != nil {
+		raw = h
+	}
 	data, err := core.ParseOrdered(raw)
 	if err != nil {
 		writeJSON(w, 500, errBody("report"))
 		return nil, false
 	}
-	if len(s.S.OptoutLogins) > 0 {
-		own := ""
-		for _, p := range data.Obj("periods").Keys() {
-			own = data.Obj("periods").Obj(p).Obj("profile").S("login")
-			break
-		}
-		hidden := map[string]bool{}
-		for _, l := range s.S.OptoutLogins {
-			if l != strings.ToLower(own) {
-				hidden[l] = true
-			}
-		}
-		if len(hidden) > 0 {
-			data = hide(data, hidden, own).(*core.OMap)
+	return data, true
+}
+
+// hidden is the report with every opted-out student turned into a label (the viewer never is); nil when nobody is.
+func (s *Server) hidden(raw []byte) []byte {
+	if len(s.S.OptoutLogins) == 0 {
+		return nil
+	}
+	data, err := core.ParseOrdered(raw)
+	if err != nil {
+		return nil
+	}
+	own := ""
+	for _, p := range data.Obj("periods").Keys() {
+		own = data.Obj("periods").Obj(p).Obj("profile").S("login")
+		break
+	}
+	logins := map[string]bool{}
+	for _, l := range s.S.OptoutLogins {
+		if l != strings.ToLower(own) {
+			logins[l] = true
 		}
 	}
-	return data, true
+	if len(logins) == 0 {
+		return nil
+	}
+	out, err := json.Marshal(hide(data, logins, own))
+	if err != nil {
+		return nil
+	}
+	return out
 }
 
 // view is everything the pages show for one period: the period's report, the figures derived from it, and the parts
@@ -148,10 +165,13 @@ func (s *Server) today(w http.ResponseWriter, r *http.Request, si signedIn) {
 
 // reportCopy is the stored report for the browser to keep, with the signature it must show to hand it back.
 func (s *Server) reportCopy(w http.ResponseWriter, r *http.Request, si signedIn) {
-	raw := s.Store.LoadRaw(si.u.ID)
-	if raw == nil {
-		writeJSON(w, 404, errBody("no-data"))
+	if _, ok := s.load(w, si); !ok { // the same opted-out students hidden as on the pages
 		return
+	}
+	raw := s.Store.LoadRaw(si.u.ID)
+	if hidden := s.hidden(raw); hidden != nil {
+		raw = hidden
+		s.Store.SaveRaw(si.u.ID, raw) // the server's copy and the browser's are the same bytes from now on
 	}
 	w.Header().Set("X-Report-Sig", s.Store.Sign(si.u.ID, raw))
 	w.Header().Set("Content-Type", "application/json")
@@ -163,7 +183,7 @@ func (s *Server) reportCopy(w http.ResponseWriter, r *http.Request, si signedIn)
 func (s *Server) reportBack(w http.ResponseWriter, r *http.Request, si signedIn) {
 	raw, err := io.ReadAll(io.LimitReader(r.Body, maxReport+1))
 	sig := r.Header.Get("X-Report-Sig")
-	if err != nil || len(raw) == 0 || len(raw) > maxReport || !hmac.Equal([]byte(sig), []byte(s.Store.Sign(si.u.ID, raw))) {
+	if err != nil || len(raw) == 0 || len(raw) > maxReport || !s.Store.Verify(si.u.ID, raw, sig) {
 		writeJSON(w, 400, errBody("signature"))
 		return
 	}
@@ -171,13 +191,33 @@ func (s *Server) reportBack(w http.ResponseWriter, r *http.Request, si signedIn)
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// imageTypes: what a photo may be served as from this origin; anything else goes out as a JPEG.
+var imageTypes = map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
+
+// avatar: the photo is fetched once an hour per user at most (each fetch spends the shared API budget).
 func (s *Server) avatar(w http.ResponseWriter, r *http.Request, si signedIn) {
 	if si.u.Image == "" {
 		w.WriteHeader(404)
 		return
 	}
-	b, ct, err := s.API.Avatar(r.Context(), si.u.Image)
-	if err != nil {
+	key := "avatar:" + s.Store.Digest(si.u.ID)
+	var b []byte
+	ct := ""
+	if cached, ok := s.M.Get(key); ok {
+		ct, b = string(cached[:bytes.IndexByte(cached, '\n')]), cached[bytes.IndexByte(cached, '\n')+1:]
+	} else {
+		var err error
+		if b, ct, err = s.API.Avatar(r.Context(), si.u.Image); err != nil {
+			s.M.Set(key, []byte("\n"), 10*time.Minute, false) // a missing photo is not asked for again at once
+			w.WriteHeader(404)
+			return
+		}
+		if !imageTypes[strings.TrimSpace(strings.Split(ct, ";")[0])] {
+			ct = "image/jpeg"
+		}
+		s.M.Set(key, append([]byte(ct+"\n"), b...), time.Hour, false)
+	}
+	if len(b) == 0 {
 		w.WriteHeader(404)
 		return
 	}

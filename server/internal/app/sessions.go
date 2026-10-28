@@ -1,9 +1,13 @@
 package app
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -36,12 +40,28 @@ func Token() string {
 
 func (ss *Sessions) ttl() time.Duration { return time.Duration(ss.settings.SessionS) * time.Second }
 
+// owner keys the index of a user's sessions by an HMAC of their id, so "Delete my data" can end them all.
+func (ss *Sessions) owner(uid int) string {
+	mac := hmac.New(sha256.New, []byte(ss.settings.SessionSecret))
+	mac.Write([]byte(strconv.Itoa(uid)))
+	return "usess:" + hex.EncodeToString(mac.Sum(nil)) + ":"
+}
+
 func (ss *Sessions) Create(u Session) string {
 	sid := Token()
 	u.CSRF, u.Created = Token(), float64(ss.m.now().Unix())
 	b, _ := json.Marshal(u)
 	ss.m.Set("sess:"+sid, b, ss.ttl(), false)
+	ss.m.Set(ss.owner(u.ID)+sid, []byte("1"), ss.ttl(), false)
 	return sid
+}
+
+// DeleteUser ends every session of the user, on every device.
+func (ss *Sessions) DeleteUser(uid int) {
+	prefix := ss.owner(uid)
+	for _, k := range ss.m.Keys(prefix + "*") {
+		ss.m.Delete(k, "sess:"+k[len(prefix):])
+	}
 }
 
 // Get renews a live session (sliding expiry).

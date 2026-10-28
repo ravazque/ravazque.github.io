@@ -117,7 +117,7 @@ export function people(pg: Page): Section[] {
   const recent = recentPoints(pg);
   if (C.length || promo || recent) {
     const best = Math.max(1, ...C.map((c: any) => c.score));
-    const coal = C.map((c: any) => `<li class="${c.mine ? "mine" : ""}"><span class="rank">${c.rank}</span><span class="name"><i style="background:${safeColor(c.color)}"></i>`
+    const coal = C.map((c: any) => `<li class="${c.mine ? "mine" : ""}"><span class="rank">${esc(c.rank)}</span><span class="name"><i style="background:${safeColor(c.color)}"></i>`
       + `${esc(c.name)}${c.mine ? " " + badge(f.t("standing.yours")) : ""}</span><span class="track"><b style="width:${((100 * c.score) / best).toFixed(1)}%;`
       + `background:${safeColor(c.color)}"></b></span><span class="num">${f.num(c.score)}</span></li>`).join("");
     const mineC = D.profile.coalition;

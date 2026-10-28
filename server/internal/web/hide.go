@@ -1,6 +1,7 @@
 package web
 
 import (
+	"strconv"
 	"strings"
 
 	"ravazque.info/server/core"
@@ -28,10 +29,14 @@ func hide(v any, logins map[string]bool, own string) any {
 		// objects keyed by login (evaluated sessions, a teammate's projects) lose the key too
 		for _, k := range out.Keys() {
 			if logins[strings.ToLower(k)] && k != own {
+				label := hidden // two hidden logins as keys of one object keep both entries
+				for n := 2; out.Has(label); n++ {
+					label = hidden + " " + strconv.Itoa(n)
+				}
 				renamed := core.NewOMap()
 				for _, kk := range out.Keys() {
 					if kk == k {
-						renamed.Set(hidden, out.V(kk))
+						renamed.Set(label, out.V(kk))
 					} else {
 						renamed.Set(kk, out.V(kk))
 					}

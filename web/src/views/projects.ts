@@ -181,9 +181,9 @@ export function projects(pg: Page): Section[] {
   const ach = [...X.achievements].reverse().map((a: any) => `<li><span><b>${esc(a.name)}</b>${a.tier && a.tier !== "none" ? " " + badge(a.tier) : ""}<br>`
     + `<span class="note">${esc(a.description || "")}</span></span><span class="when">${esc((a.at || "").slice(0, 10))}</span></li>`).join("");
   const evs = [...X.events].reverse().map((e: any) => `<li><span>${esc(e.name)}<br><span class="note">${esc(evKind(e.kind))}${e.location ? " · " + esc(e.location) : ""}`
-    + `${e.hours ? ` · ${e.hours} h` : ""}</span></span><span class="when">${esc(e.begin)}</span></li>`).join("");
+    + `${e.hours ? ` · ${esc(f.num(e.hours, 1))} h` : ""}</span></span><span class="when">${esc(e.begin)}</span></li>`).join("");
   const misc = [...X.titles.map((x: any) => `<li><span><b>${esc(f.t("extras.title_item"))}</b> ${esc(x.name)}${x.selected ? " " + badge(f.t("extras.selected")) : ""}</span><span class="when">${esc((x.at || "").slice(0, 10))}</span></li>`),
-    ...X.expertises.map((x: any) => `<li><span><b>${esc(f.t("extras.expertise"))}</b> ${esc(x.name)}</span><span class="when">${x.value} / 5</span></li>`),
+    ...X.expertises.map((x: any) => `<li><span><b>${esc(f.t("extras.expertise"))}</b> ${esc(x.name)}</span><span class="when">${esc(x.value)} / 5</span></li>`),
     ...X.quests.map((q: any) => `<li><span><b>${esc(f.t("extras.quest"))}</b> ${esc(q.name)}<br><span class="note">${esc(q.description || "")}</span></span><span class="when">${esc((q.validated || f.t("extras.in_progress")).slice(0, 10))}</span></li>`)].join("");
   const kinds = Object.entries(X.event_kinds || {}).map(([k, v]) => `${evKind(k)}: ${v}`).join(" · ");
   out.push({ id: "activity", nav: f.t("activity.title"), html: section("activity", f.t("activity.title"), cols(

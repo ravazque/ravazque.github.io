@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const out = fileURLToPath(new URL("../server/internal/web/dist", import.meta.url));
 const go = "http://localhost:8000";
 
-// "offline": the report-tool's single file (one script, one stylesheet, inlined by the tool)
+// "offline": a single-file export (one script and one stylesheet, to be inlined into one HTML page)
 export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),

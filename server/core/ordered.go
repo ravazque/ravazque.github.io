@@ -16,6 +16,8 @@ type OMap struct {
 
 func (m *OMap) Keys() []string { return m.keys }
 
+func (m *OMap) Has(k string) bool { _, ok := m.Get(k); return ok }
+
 func (m *OMap) Get(k string) (any, bool) {
 	if m == nil {
 		return nil, false

@@ -1,4 +1,4 @@
-// The local report-tool's single-file report: the views come embedded in the page (#offline-data) and the app reads
+// The single-file offline export: the views come embedded in the page (#offline-data) and the app reads
 // them instead of asking a server. Nothing is sent anywhere.
 export type OfflineData = { login: string; generated: string; views: Record<string, unknown>; default_period: string; today: unknown };
 

@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"ravazque.info/server/core"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -52,12 +53,40 @@ func (s *Store) DigestString(v string) string {
 func (s *Store) cooldownKey(uid int) string { return "cooldown:" + s.Digest(uid) }
 func (s *Store) deletedKey(uid int) string  { return "deleted:" + s.Digest(uid) }
 
-// Sign ties a report's exact bytes to one user: only this server, for this user, can produce it.
-func (s *Store) Sign(uid int, raw []byte) string {
+// copyLife: how long a browser's copy can be handed back; after that a fresh extraction is needed.
+const copyLife = 30 * 24 * time.Hour
+
+func (s *Store) mac(uid int, iat int64, raw []byte) string {
 	sum := sha256.Sum256(raw)
 	mac := hmac.New(sha256.New, []byte(s.settings.SessionSecret))
-	mac.Write(append([]byte(fmt.Sprintf("report:%d:", uid)), sum[:]...))
+	mac.Write(append([]byte(fmt.Sprintf("report:%d:%d:", uid, iat)), sum[:]...))
 	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// Sign ties a report's exact bytes to one user and the moment it was handed out ("<unix>.<hmac>"): only this server,
+// for this user, can produce it.
+func (s *Store) Sign(uid int, raw []byte) string {
+	iat := s.now().Unix()
+	return strconv.FormatInt(iat, 10) + "." + s.mac(uid, iat, raw)
+}
+
+// Verify accepts a copy signed for this user, less than copyLife ago and not before their last "Delete my data".
+func (s *Store) Verify(uid int, raw []byte, sig string) bool {
+	at, mac, ok := strings.Cut(sig, ".")
+	iat, err := strconv.ParseInt(at, 10, 64)
+	if !ok || err != nil || !hmac.Equal([]byte(mac), []byte(s.mac(uid, iat, raw))) {
+		return false
+	}
+	issued := time.Unix(iat, 0)
+	if s.now().Sub(issued) > copyLife || issued.After(s.now().Add(time.Minute)) {
+		return false
+	}
+	if v, ok := s.m.Get("epoch:" + s.Digest(uid)); ok {
+		if gone, _ := strconv.ParseInt(string(v), 10, 64); iat <= gone {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Store) cache() time.Duration { return time.Duration(s.settings.CacheS) * time.Second }
@@ -115,8 +144,10 @@ func (s *Store) Unlock(uid int) { s.m.Delete(lockKey(uid)) }
 
 // DeleteUser removes everything about the user; a running extraction finds the marker and saves nothing.
 func (s *Store) DeleteUser(uid int) {
-	s.m.Delete(dataKey(uid), statusKey(uid), lockKey(uid))
+	s.m.Delete(dataKey(uid), statusKey(uid), lockKey(uid), "avatar:"+s.Digest(uid))
 	s.m.Set(s.deletedKey(uid), []byte("1"), 15*time.Minute, false)
+	// copies handed out before now are refused from here on (keyed by the HMAC: it names nobody)
+	s.m.Set("epoch:"+s.Digest(uid), []byte(strconv.FormatInt(s.now().Unix(), 10)), copyLife, false)
 }
 
 func (s *Store) DropReport(uid int)   { s.m.Delete(dataKey(uid)) }

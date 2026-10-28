@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"net/url"
 	"os"
 	"slices"
 	"strconv"
@@ -69,7 +70,7 @@ func (s Settings) Check() error {
 	if s.ControllerName == "" {
 		return errors.New("CONTROLLER_NAME must be set: the privacy page names the data controller")
 	}
-	if s.DevReport != "" && !strings.HasPrefix(s.BaseURL, "https://localhost") {
+	if u, err := url.Parse(s.BaseURL); s.DevReport != "" && (err != nil || u.Scheme != "https" || u.Hostname() != "localhost") {
 		return errors.New("DEV_REPORT signs anyone in without 42: it only runs on https://localhost")
 	}
 	return nil

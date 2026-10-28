@@ -190,7 +190,7 @@ func TestStoreDeleteKeepsOnlyAnonymousKeys(t *testing.T) {
 	d := hex.EncodeToString(mac.Sum(nil))
 	keys := m.Keys("*")
 	slices.Sort(keys)
-	if !slices.Equal(keys, []string{"cooldown:" + d, "deleted:" + d}) {
+	if !slices.Equal(keys, []string{"cooldown:" + d, "deleted:" + d, "epoch:" + d}) {
 		t.Fatalf("keys %v", keys)
 	}
 	if m.TTL("deleted:"+d) > 900*time.Second {
@@ -200,8 +200,8 @@ func TestStoreDeleteKeepsOnlyAnonymousKeys(t *testing.T) {
 
 func TestSignTiesBytesToUser(t *testing.T) {
 	_, s := newStore(newClock())
-	a, b := s.Sign(1, []byte("x")), s.Sign(2, []byte("x"))
-	if a == b || a != s.Sign(1, []byte("x")) || s.Sign(1, []byte("y")) == a {
+	a := s.Sign(1, []byte("x"))
+	if !s.Verify(1, []byte("x"), a) || s.Verify(2, []byte("x"), a) || s.Verify(1, []byte("y"), a) || s.Verify(1, []byte("x"), "1."+a) {
 		t.Fatal("signature")
 	}
 }
@@ -392,5 +392,17 @@ func TestSettingsChecks(t *testing.T) {
 	s.OAuthApp = 2
 	if len(s.Apps()) != 3 || s.OAuthIndex() != 1 {
 		t.Fatalf("apps %v index %d", s.Apps(), s.OAuthIndex())
+	}
+}
+
+func TestDevReportOnlyOnLocalhostItself(t *testing.T) {
+	s := testSettings()
+	s.DevReport, s.BaseURL = "x.json", "https://localhost.example.com"
+	if s.Check() == nil {
+		t.Fatal("a look-alike host turns dev mode on")
+	}
+	s.BaseURL = "https://localhost"
+	if err := s.Check(); err != nil {
+		t.Fatal(err)
 	}
 }
