@@ -24,3 +24,5 @@ node_modules/
 *.swp
 *.egg-info/
 ravazqueinfo_v1/
+server/internal/web/dist/*
+!server/internal/web/dist/.gitkeep

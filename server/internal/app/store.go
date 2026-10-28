@@ -42,6 +42,13 @@ func (s *Store) Digest(uid int) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
+// DigestString keys other per-person counters (the sign-in limit per address) without storing the value.
+func (s *Store) DigestString(v string) string {
+	mac := hmac.New(sha256.New, []byte(s.settings.SessionSecret))
+	mac.Write([]byte("v:" + v))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
 func (s *Store) cooldownKey(uid int) string { return "cooldown:" + s.Digest(uid) }
 func (s *Store) deletedKey(uid int) string  { return "deleted:" + s.Digest(uid) }
 

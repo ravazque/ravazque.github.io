@@ -237,11 +237,14 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 	core.DropHiddenEvaluations(d)
 	met := core.PeopleIDs(d, uid)
 
+	// the second round reads d while it runs: results wait in these until every request is back
 	var groups map[string]string
 	var standing *core.OMap
+	var scores, people, projects []any
+	var corrSessions, evalSessions, fbs raw
 	g = &group{}
 	g.Go(func() error { // the points given to the main coalition feed the logtime bonus and the points by source
-		scores := []any{}
+		scores = []any{}
 		if len(cus) > 0 {
 			v, err := c.GetAll(ctx, "/v2/coalitions_users/"+idStr(cus[0]["id"])+"/scores", nil)
 			if err != nil {
@@ -251,7 +254,6 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 				scores = append(scores, pickFields(s, scoreFields))
 			}
 		}
-		set("coalition_scores", scores)
 		step()
 		return nil
 	})
@@ -260,11 +262,10 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 		if err != nil {
 			return err
 		}
-		people := []any{}
+		people = []any{}
 		for _, p := range objs(v) {
 			people = append(people, raw{"id": p["id"], "login": p["login"], "displayname": p["displayname"]})
 		}
-		set("people", people)
 		step()
 		return nil
 	})
@@ -273,11 +274,10 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 		if err != nil {
 			return err
 		}
-		ps := []any{}
+		projects = []any{}
 		for _, p := range objs(v) {
-			ps = append(ps, pickFields(p, projectFields))
+			projects = append(projects, pickFields(p, projectFields))
 		}
-		set("projects", ps)
 		step()
 		return nil
 	})
@@ -320,9 +320,7 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 		if e2 != nil {
 			return e2
 		}
-		set("corrector_sessions", corr)
-		set("evaluated_sessions", eval)
-		set("feedbacks", fb)
+		corrSessions, evalSessions, fbs = corr, eval, fb
 		step()
 		return nil
 	})
@@ -337,6 +335,8 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	d["coalition_scores"], d["people"], d["projects"] = scores, people, projects
+	d["corrector_sessions"], d["evaluated_sessions"], d["feedbacks"] = corrSessions, evalSessions, fbs
 
 	periods := core.NewOMap()
 	for _, p := range core.Periods {
