@@ -127,7 +127,9 @@ func ActiveWeeks(days []string, hours []float64) [2]int {
 	if len(on) == 0 {
 		return [2]int{0, 0}
 	}
-	return [2]int{len(weeks), int(on[len(on)-1].Sub(on[0]).Hours()/24)/7 + 1}
+	// the span counts calendar weeks too (v1 counted days/7, so a Sunday and the next Monday read "2 of 1")
+	monday := func(t time.Time) time.Time { return t.AddDate(0, 0, -((int(t.Weekday()) + 6) % 7)) }
+	return [2]int{len(weeks), int(monday(on[len(on)-1]).Sub(monday(on[0])).Hours()/24)/7 + 1}
 }
 
 // DaySplit is the share of logged hours in the morning (6–14 h), afternoon (14–20 h) and night (20–6 h), Madrid time.

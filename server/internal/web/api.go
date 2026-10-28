@@ -26,24 +26,29 @@ type statusOut struct {
 	HasReport bool   `json:"has_report"`
 	Consent   bool   `json:"consent"`
 	Published string `json:"published,omitempty"`
+	Frozen    bool   `json:"frozen,omitempty"` // make dev's saved reports: never extracted again
 }
 
 func (s *Server) statusOf(uid int) statusOut {
 	st := s.Store.Status(uid)
 	pub, _ := s.M.Get("published:" + s.Store.Digest(uid))
-	return statusOut{st, s.Store.LoadRaw(uid) != nil, app.ConsentCurrent(s.Store, uid), string(pub)}
+	return statusOut{st, s.Store.LoadRaw(uid) != nil, app.ConsentCurrent(s.Store, uid), string(pub), s.devFiles[uid] != ""}
 }
 
 // status also starts the extraction when nothing is stored, nothing is queued and the hour is over.
 func (s *Server) status(w http.ResponseWriter, r *http.Request, si signedIn) {
 	st := s.Store.Status(si.u.ID)
-	if st.State == "none" && st.NextRefreshIn == 0 && s.Store.LoadRaw(si.u.ID) == nil && r.URL.Query().Get("kick") == "1" {
+	if st.State == "none" && st.NextRefreshIn == 0 && s.Store.LoadRaw(si.u.ID) == nil && r.URL.Query().Get("kick") == "1" && s.devFiles[si.u.ID] == "" {
 		app.EnqueueExtraction(s.Store, s.Jobs, si.u.ID, s.Lim)
 	}
 	writeJSON(w, 200, s.statusOf(si.u.ID))
 }
 
 func (s *Server) refresh(w http.ResponseWriter, r *http.Request, si signedIn) {
+	if s.devFiles[si.u.ID] != "" { // make dev's saved reports are never extracted again from here
+		writeJSON(w, http.StatusConflict, s.Store.Status(si.u.ID))
+		return
+	}
 	st := app.EnqueueExtraction(s.Store, s.Jobs, si.u.ID, s.Lim)
 	code := http.StatusAccepted
 	if st.State != "queued" && st.State != "running" && st.NextRefreshIn > 0 {

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -35,5 +36,17 @@ func TestValidateUIClean(t *testing.T) {
 	errs := ValidateUI(bad)
 	if len(errs) != 2 || !strings.Contains(errs[0], "unknown reference @nope") || !strings.Contains(errs[1], "invalid value") {
 		t.Fatalf("errors = %v", errs)
+	}
+}
+
+func TestOrderedJSONRoundTripKeepsEmptyLists(t *testing.T) {
+	in := `{"a":[],"b":{"c":[[]],"d":null},"e":[1,{}]}`
+	m, err := ParseOrdered([]byte(in))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, _ := json.Marshal(m)
+	if string(out) != in {
+		t.Fatalf("got %s", out)
 	}
 }

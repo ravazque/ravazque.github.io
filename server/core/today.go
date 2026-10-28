@@ -88,6 +88,8 @@ type Today struct {
 	Next           *Next        `json:"next"`
 	InProgress     []InProgress `json:"in_progress"`
 	Month          Month        `json:"month"`
+	Points         int          `json:"points"`         // evaluation points now
+	BlackholeDays  *int         `json:"blackhole_days"` // nil when there is none
 }
 
 func localMidnight(t time.Time) time.Time {
@@ -95,8 +97,14 @@ func localMidnight(t time.Time) time.Time {
 	return time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, Madrid)
 }
 
+// hourOfDay is the local wall-clock hour (0–24) of t on the day that starts at midnight: on the 23 h and 25 h days of
+// a DST change the line still reads like the clock; the end of the day is 24.
 func hourOfDay(t, midnight time.Time) float64 {
-	return pyRound(totalSeconds(t.Sub(midnight))/3600, 2)
+	if !t.Before(midnight.AddDate(0, 0, 1)) {
+		return 24
+	}
+	l := t.In(Madrid)
+	return pyRound(float64(l.Hour())+float64(l.Minute())/60+float64(l.Second())/3600, 2)
 }
 
 func BuildToday(all *OMap, upcoming []UpcomingEval, now time.Time) Today {
@@ -184,6 +192,11 @@ func BuildToday(all *OMap, upcoming []UpcomingEval, now time.Time) Today {
 		td.InProgress = append(td.InProgress, InProgress{p.V("name"), int(now.Sub(reg).Hours() / 24), p.S("registered"), len(p.L("attempts"))})
 	}
 
+	td.Points = all.Obj("profile").I("correction_point")
+	if bh, ok := toFloat(all.Obj("insights").Obj("pace").V("blackhole_days")); ok {
+		n := int(bh)
+		td.BlackholeDays = &n
+	}
 	month := now.In(Madrid).Format("2006-01")
 	td.Month.Month = month
 	for _, m := range all.Obj("insights").Obj("pace").Os("months") {

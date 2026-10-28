@@ -90,3 +90,29 @@ details.settings-wrap[open] > .me-btn .me-photo, .me-btn:hover .me-photo { color
   .tp.span-2 { grid-column: span 2; }
   .tp.span-3 { grid-column: 1 / -1; }
 }
+
+/* ---------- the band: everything on one row at every width ---------- */
+/* the pages move into the menu while the band is too narrow for them, and the "updated" note gives way first */
+@media (max-width: 1399.98px) { .topbar .sync .last { display: none; } }
+@media (min-width: 960px) and (max-width: 1279.98px) {
+  .topbar .pages { display: none; }
+  .menu-wrap { display: block; }
+}
+@media (max-width: 419.98px) {
+  .topbar { gap: 8px; padding-left: 12px; padding-right: 12px; }
+  .topbar-end { gap: 6px; }
+  .topbar .btn.on-band { padding: 0 10px; }
+  .topbar .best { padding: 0 6px; gap: 2px; }
+}
+/* the settings panel scrolls inside itself on a short screen: its last buttons stay reachable */
+.settings { max-height: calc(100dvh - var(--c-topbar-height) - 20px); overflow-y: auto; overscroll-behavior: contain; }
+
+/* chart legends and scales wrap instead of pushing the page sideways */
+.scale .grp { white-space: normal; flex-wrap: wrap; }
+/* the tallest column's caption sits above the plot: room for it under the chart's title */
+.vchart:has(.peak) { margin-top: 34px; }
+/* month ticks under timelines and line charts: every other one on narrow phones, so neighbours never touch */
+@media (max-width: 479.98px) { .ch-months span:not(:nth-child(3n+1)) { display: none; } }
+@media (min-width: 1280px) and (max-width: 1599.98px) { .topbar .pages a { padding: 0 12px; } .topbar { gap: 20px; } }
+/* poster titles on a phone: as big as the screen allows, a long word never pushing the page sideways */
+@media (max-width: 419.98px) { .page-head h1 { font-size: 13vw; overflow-wrap: anywhere; } }

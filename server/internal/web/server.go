@@ -47,6 +47,7 @@ type Server struct {
 	publishMu sync.Mutex
 	devLogins map[string]devLogin
 	devOrder  []string
+	devFiles  map[int]string // the saved reports of make dev, by user id: never extracted from 42
 	stop      chan struct{}
 }
 

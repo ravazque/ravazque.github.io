@@ -11,18 +11,17 @@ export type Today = {
   now: { host: string | null; since: string } | null; today_s: number; yesterday_s: number; yesterday_seats: number;
   week: { date: string; seconds: number; parts: { from: number; to: number; host: string | null; leaving: boolean }[] }[];
   next: { at: string; project: string; role: string; more_this_week: number } | null;
-  in_progress: { name: string; day: number; registered: string; attempt: number }[];
+  in_progress: { name: string; day: number; registered: string; attempt: number }[]; points: number; blackhole_days: number | null;
   month: { month: string; xp: number; validated: number; evaluations: number; coalition_points: number };
 };
 
 const ms = (iso: string) => new Date(iso).getTime();
 
-/** "Thu 30, 09:00" (Madrid): the weekday when it is this week, the date otherwise. */
-function moment(f: Fmt, iso: string, now: number) {
-  const t = ms(iso), p = madridParts(t);
-  const days = Math.abs(t - now) / 864e5;
+/** "Thu 30 Oct, 09:00" (Madrid), always the same shape. */
+function moment(f: Fmt, iso: string) {
+  const p = madridParts(ms(iso));
   const wd = f.weekdays[(new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay() + 6) % 7];
-  return days < 6.5 ? `${wd} ${p.d}, ${p.hh}:${p.mm}` : `${f.day(p.iso, true)}, ${p.hh}:${p.mm}`;
+  return `${wd} ${p.d} ${f.months[p.m - 1]}, ${p.hh}:${p.mm}`;
 }
 
 function panel(key: string, label: string, body: string, o: { live?: boolean; span?: number; aside?: string } = {}) {
@@ -30,7 +29,7 @@ function panel(key: string, label: string, body: string, o: { live?: boolean; sp
     + `<h2 class="tab">${esc(label)}${o.aside ? `<span>${esc(o.aside)}</span>` : ""}</h2>${body}</article>`;
 }
 
-function bonus(f: Fmt, td: Today, now: number) {
+function bonus(f: Fmt, td: Today) {
   const [t50, t80] = td.bonus;
   if (!t50) return panel("bonus", f.t("today.bonus"), `<p class="line">${esc(f.t("today.bonus_none"))}</p>`, { span: 2 });
   const max = 80, w = td.window_h;
@@ -39,13 +38,13 @@ function bonus(f: Fmt, td: Today, now: number) {
     + `<div class="tticks" aria-hidden="true"><span style="left:0">0</span><span style="left:62.5%">50 h</span><span class="end">80 h</span></div>`;
   const tier = (t: Tier) => {
     let state: string;
-    if (t.state === "cooldown") state = f.t("today.tier_again", { time: moment(f, t.from!, now) });
+    if (t.state === "cooldown") state = f.t("today.tier_again", { time: moment(f, t.from!) });
     else if (t.state === "ready") state = f.t("today.tier_ready");
-    else state = t.until ? f.t("today.tier_short", { n: f.num(t.need_h, 1), time: moment(f, t.until, now) }) : f.t("today.tier_short_no", { n: f.num(t.need_h, 1) });
+    else state = t.until ? f.t("today.tier_short", { n: f.num(t.need_h, 1), time: moment(f, t.until) }) : f.t("today.tier_short_no", { n: f.num(t.need_h, 1) });
     const got = t.state === "cooldown" ? ` ${f.t("today.tier_got")}` : "";
     return `<div class="tier ${t.state}"><b>${esc(f.t("today.tier", { hours: t.hours, points: f.num(t.points) }))}${esc(got)}</b><p>${esc(state)}</p></div>`;
   };
-  const drops = td.drops.slice(0, 3).map((d) => `<li><span>${esc(f.t("today.drop", { time: moment(f, d.at, now), day: moment(f, d.session_begin, now).split(",")[0] }))}</span><b>−${esc(f.num(d.hours, 1))} h</b></li>`).join("");
+  const drops = td.drops.slice(0, 3).map((d) => `<li><span>${esc(f.t("today.drop", { time: moment(f, d.at), day: moment(f, d.session_begin).split(",")[0] }))}</span><b>−${esc(f.num(d.hours, 1))} h</b></li>`).join("");
   return panel("bonus", f.t("today.bonus"), `<p class="figure">${esc(f.num(w, 1))}<small> h</small></p>${meter}`
     + `<div class="tiers">${tier(t50)}${t80 ? tier(t80) : ""}</div>`
     + (drops ? `<h3 class="sub-h">${esc(f.t("today.drops"))}</h3><ul class="drops">${drops}</ul>` : `<p class="line">${esc(f.t("today.no_drops"))}</p>`)
@@ -63,6 +62,7 @@ function nowPanel(f: Fmt, td: Today) {
   }
   lines.push(f.t("today.today_h", { time: f.hm(td.today_s) }));
   lines.push(td.yesterday_s ? f.t("today.yesterday", { time: f.hm(td.yesterday_s), seats: f.plural(td.yesterday_seats, "today.seats") }) : f.t("today.yesterday_none"));
+  if (td.as_of) lines.push(f.t("today.now_as_of", { time: td.as_of.slice(11, 16) }));
   return panel("now", f.t("today.now"), figure + lines.map((l) => `<p class="line">${esc(l)}</p>`).join(""), { live: !!td.now });
 }
 
@@ -82,20 +82,23 @@ function week(f: Fmt, td: Today) {
     + `<p class="line note">${esc(f.t("today.week_note"))}</p>`, { span: 3, aside: f.hm(total) });
 }
 
-function next(f: Fmt, td: Today, now: number) {
-  if (!td.next) return panel("next", f.t("today.next"), `<p class="figure">–</p><p class="line">${esc(f.t("today.next_none"))}</p>`);
+function next(f: Fmt, td: Today) {
+  const points = `<p class="line">${esc(f.plural(td.points, "today.points"))}</p>`;
+  if (!td.next) return panel("next", f.t("today.next"), `<p class="figure">${esc(f.num(td.points))}<small> ${esc(f.t("today.points_short"))}</small></p>`
+    + `<p class="line">${esc(f.t("today.next_none"))}</p>`);
   const n = td.next;
-  return panel("next", f.t("today.next"), `<p class="figure">${esc(f.clock(ms(n.at)))}</p>`
-    + `<p class="line">${esc(f.t(n.role === "corrector" ? "today.next_corrector" : "today.next_corrected", { project: n.project || "?", when: moment(f, n.at, now) }))}</p>`
+  return panel("next", f.t("today.next"), `<p class="figure">${esc(f.clock(ms(n.at)))}</p>` + points
+    + `<p class="line">${esc(f.t(n.role === "corrector" ? "today.next_corrector" : "today.next_corrected", { project: n.project || "?", when: moment(f, n.at) }))}</p>`
     + (n.more_this_week ? `<p class="line">${esc(f.plural(n.more_this_week, "today.next_more"))}</p>` : ""), { live: true });
 }
 
 function progress(f: Fmt, td: Today) {
-  if (!td.in_progress.length) return panel("progress", f.t("today.progress"), `<p class="figure">–</p><p class="line">${esc(f.t("today.progress_none"))}</p>`);
+  const bh = td.blackhole_days !== null && td.blackhole_days !== undefined ? `<p class="line">${esc(f.plural(td.blackhole_days, "today.blackhole"))}</p>` : "";
+  if (!td.in_progress.length) return panel("progress", f.t("today.progress"), `<p class="figure">–</p><p class="line">${esc(f.t("today.progress_none"))}</p>` + bh);
   const [first, ...rest] = td.in_progress;
   return panel("progress", f.t("today.progress"), `<p class="figure name">${esc(first.name)}</p>`
     + `<p class="line">${esc(f.t("today.progress_day", { n: f.num(first.day), attempt: first.attempt }))}</p>`
-    + rest.slice(0, 2).map((p) => `<p class="line">${esc(`${p.name} · ${f.t("today.progress_day", { n: f.num(p.day), attempt: p.attempt })}`)}</p>`).join("")
+    + rest.slice(0, 2).map((p) => `<p class="line">${esc(`${p.name} · ${f.t("today.progress_day", { n: f.num(p.day), attempt: p.attempt })}`)}</p>`).join("") + bh
     + `<p class="line note"><a href="/app/projects#projects-table">${esc(f.t("today.progress_more"))}</a></p>`);
 }
 
@@ -106,7 +109,7 @@ function month(f: Fmt, td: Today) {
     + `<p class="line">${esc(f.t("today.month_coal", { n: f.num(m.coalition_points) }))}</p>`, { aside: `${f.months[+m.month.slice(5, 7) - 1]} ${m.month.slice(0, 4)}` });
 }
 
-export function home(f: Fmt, td: Today, now = Date.now()): Section[] {
+export function home(f: Fmt, td: Today): Section[] {
   return [{ id: "today", nav: f.t("today.title"), html: `<section id="today" class="today-wrap"><h2 class="visually-hidden">${esc(f.t("today.title"))}</h2>`
-    + `<div class="today">${bonus(f, td, now)}${nowPanel(f, td)}${week(f, td)}${next(f, td, now)}${progress(f, td)}${month(f, td)}</div></section>` }];
+    + `<div class="today">${bonus(f, td)}${nowPanel(f, td)}${week(f, td)}${next(f, td)}${progress(f, td)}${month(f, td)}</div></section>` }];
 }

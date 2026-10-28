@@ -10,7 +10,7 @@ export type SessionInfo = {
   dev: boolean; dev_logins: { label: string; href: string }[] | null;
 };
 export type Status = {
-  state: string; progress: number; message?: string; last?: string; next_refresh_in: number; has_report: boolean; consent: boolean; published?: string;
+  state: string; progress: number; message?: string; last?: string; next_refresh_in: number; has_report: boolean; consent: boolean; published?: string; frozen?: boolean;
 };
 
 const store = {

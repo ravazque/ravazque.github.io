@@ -4,10 +4,10 @@
 .site .lede { color: var(--text-2); font-size: var(--c-section-lede-size); }
 
 /* seat-grid logo, one lit seat */
-.mark { display: block; }
-.mark .tile { fill: var(--on-accent); }
-.mark .seat { fill: color-mix(in oklab, var(--accent) 38%, var(--on-accent)); }
-.mark .lit { fill: var(--accent); }
+body.site .mark { display: block; }
+body.site .mark .tile { fill: var(--on-accent); }
+body.site .mark .seat { fill: color-mix(in oklab, var(--accent) 38%, var(--on-accent)); }
+body.site .mark .lit { fill: var(--accent); }
 
 
 /* landing: logo panel beside the sign-in */
@@ -59,9 +59,9 @@
 .features-list { margin: 0 0 14px; padding-left: 1.2em; max-width: 70ch; }
 .features-list li { margin: 0 0 6px; padding-left: 4px; }
 .features-list li::marker { color: var(--accent-data); }
-.stack { margin: 0 0 14px; max-width: 70ch; display: grid; gap: 12px; }
-.stack dt { font: 700 17px var(--type-font-display); }
-.stack dd { margin: 2px 0 0; color: var(--text-2); }
+body.site .stack { margin: 0 0 14px; max-width: 70ch; display: grid; gap: 12px; }
+body.site .stack dt { font: 700 17px var(--type-font-display); }
+body.site .stack dd { margin: 2px 0 0; color: var(--text-2); }
 
 /* privacy consent: a native required checkbox drawn from ui.json */
 .consent { display: flex; align-items: flex-start; gap: 10px; font-size: var(--c-consent-font-size); color: var(--text-2); cursor: pointer; }
@@ -82,8 +82,8 @@
 .site-head .lang { border-color: var(--on-accent); }
 .site-head .lang button { color: var(--on-accent); }
 .site-head .lang button[aria-pressed="true"] { background: var(--on-accent); color: var(--accent); }
-.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 900 22px var(--type-font-display); letter-spacing: -.02em; }
-.brand .mark { width: var(--c-site-head-mark-size); height: var(--c-site-head-mark-size); }
+body.site .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 900 22px var(--type-font-display); letter-spacing: -.02em; }
+body.site .brand .mark { width: var(--c-site-head-mark-size); height: var(--c-site-head-mark-size); }
 .site-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
 .site-links a { color: var(--text-2); text-underline-offset: 4px; text-decoration-color: var(--rule); }
 .site-links a:hover, .site-links a[aria-current="page"] { color: var(--ink); text-decoration-color: var(--accent-data); }
@@ -100,10 +100,10 @@
   .reading-foot .site-links > a { display: none; }
   .reading-foot .back { flex: none; }
 }
-.back { display: inline-flex; align-items: center; min-height: var(--c-button-height); padding: 0 var(--c-button-padding-x);
+body.site .back { display: inline-flex; align-items: center; min-height: var(--c-button-height); padding: 0 var(--c-button-padding-x);
   border: var(--c-button-border-width) solid var(--rule-strong); border-radius: var(--c-button-radius); color: var(--ink); text-decoration: none;
   font: 700 var(--c-button-font-size) var(--type-font-display); transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
-.back:hover { background: var(--ink); color: var(--ground); }
+body.site .back:hover { background: var(--ink); color: var(--ground); }
 .site-main h1 { margin: 0 0 24px; padding-bottom: 12px; border-bottom: 6px solid var(--rule-strong); font: 900 var(--c-site-h1-size)/.95 var(--type-font-display); letter-spacing: -.04em; }
 .site-main h2 { margin: 40px 0 10px; font: 800 var(--c-site-h2-size) var(--type-font-display); letter-spacing: -.01em;
   padding-top: 10px; border-top: 2px solid var(--rule-strong); }

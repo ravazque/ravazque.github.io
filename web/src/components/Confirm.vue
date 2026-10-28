@@ -25,9 +25,8 @@ async function yes() {
     await forget(idbShelf, login);
     localStorage.removeItem(`copy:${login}`);
     await api("/api/me/delete", { method: "POST" }).catch(() => {});
-    state.session = null;
-    state.status = null;
-    return router.replace("/");
+    location.replace("/"); // a full load: nothing of this account stays in memory
+    return;
   }
   try {
     const r = await api<{ url: string }>("/api/me/publish", { method: "POST" });

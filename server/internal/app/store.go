@@ -137,6 +137,12 @@ func (s *Store) StartCooldown(uid int, startedAt time.Time) {
 	s.m.Set(s.cooldownKey(uid), []byte("1"), max(ttl, time.Second), false)
 }
 
+// failedWait: after a failed extraction the next one waits this long (a failure must not turn into a request storm).
+const failedWait = 5 * time.Minute
+
+// Hold makes the next extraction wait d (the same key as the hourly cooldown).
+func (s *Store) Hold(uid int, d time.Duration) { s.m.Set(s.cooldownKey(uid), []byte("1"), d, false) }
+
 func (s *Store) TryLock(uid int) bool {
 	return s.m.Set(lockKey(uid), []byte("1"), 15*time.Minute, true)
 }
@@ -202,6 +208,7 @@ func RunExtraction(ctx context.Context, s *Store, stats *Stats, uid int, extract
 				stats.Extraction(0, s.now().Sub(started), false, true)
 			}
 			s.update(uid, func(st *Status) { st.State, st.Message = "failed", "status.failed" })
+			s.Hold(uid, failedWait)
 		}
 		if s.Deleted(uid) {
 			s.ForgetStatus(uid)
@@ -231,6 +238,7 @@ func RunExtraction(ctx context.Context, s *Store, stats *Stats, uid int, extract
 			stats.Extraction(0, s.now().Sub(started), false, false)
 		}
 		s.SetStatus(uid, Status{State: "failed", Message: "status.failed"})
+		s.Hold(uid, failedWait)
 	default:
 		s.StartCooldown(uid, started)
 		if s.Deleted(uid) {

@@ -476,3 +476,32 @@ func newEnvSharing(t *testing.T, e *env) *env {
 	o.signIn(t)
 	return o
 }
+
+func TestTestProfilesNeverReachThe42API(t *testing.T) {
+	dir := t.TempDir()
+	var test map[string]any
+	traw, _ := os.ReadFile("../../core/testdata/golden/new.report.json")
+	json.Unmarshal(traw, &test)
+	test["test_profile"] = 990001
+	traw, _ = json.Marshal(test)
+	os.WriteFile(dir+"/test-new.json", traw, 0o600)
+	d := newEnv(t, func(s *app.Settings) { s.DevReport, s.DevUID = dir+"/data.json", 990002 })
+	d.do(t, "GET", "/dev/login?as=tnova", nil, nil)
+	var sess struct{ User struct{ CSRF string } }
+	json.Unmarshal([]byte(readAll(d.do(t, "GET", "/api/session", nil, nil))), &sess)
+	d.csrf = sess.User.CSRF
+	before := d.f.requests.Load()
+	d.do(t, "POST", "/api/me/refresh", nil, nil)
+	d.do(t, "POST", "/api/me/delete", nil, nil)
+	d.do(t, "GET", "/dev/login?as=tnova", nil, nil) // back after deleting: the profile is there again
+	json.Unmarshal([]byte(readAll(d.do(t, "GET", "/api/session", nil, nil))), &sess)
+	d.csrf = sess.User.CSRF
+	d.do(t, "GET", "/api/me/status?kick=1", nil, nil)
+	d.s.Jobs.Drain()
+	if n := d.f.requests.Load() - before; n != 0 {
+		t.Fatalf("a test profile sent %d requests to 42", n)
+	}
+	if r := d.do(t, "GET", "/api/me/view", nil, nil); r.StatusCode != 200 {
+		t.Fatalf("the test profile's report after deleting: %d", r.StatusCode)
+	}
+}

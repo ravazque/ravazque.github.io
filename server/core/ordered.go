@@ -84,7 +84,7 @@ func parseValue(dec *json.Decoder) (any, error) {
 			_, err := dec.Token()
 			return m, err
 		}
-		var a []any
+		a := []any{} // an empty list stays a list ([]), never null
 		for dec.More() {
 			v, err := parseValue(dec)
 			if err != nil {

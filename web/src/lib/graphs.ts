@@ -212,7 +212,7 @@ export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number
     return `<line class="link" x1="${n.x.toFixed(1)}" y1="${n.y.toFixed(1)}" x2="${g.x.toFixed(1)}" y2="${g.y.toFixed(1)}"/>`;
   }).join("");
   const labels = [...cells].map(([g, c]) => `<text class="group-label" text-anchor="middle" x="${c.x.toFixed(1)}" y="${(c.top + 18).toFixed(1)}">${esc(f.t(`groups.${g}`))}</text>`).join("");
-  const grounds = [...cells.values()].map((c) => `<rect class="group-bg" rx="14" x="${(c.left + 3).toFixed(1)}" y="${(c.top + 3).toFixed(1)}" width="${(c.right - c.left - 6).toFixed(1)}" height="${(c.bottom - c.top - 6).toFixed(1)}"/>`).join("");
+  const grounds = [...cells.values()].map((c) => `<rect class="group-bg" x="${(c.left + 3).toFixed(1)}" y="${(c.top + 3).toFixed(1)}" width="${(c.right - c.left - 6).toFixed(1)}" height="${(c.bottom - c.top - 6).toFixed(1)}"/>`).join("");
   // the heartbeat runs through each group from its biggest bubble to its smallest, the groups out of step
   const order = new Map<Bubble, [number, number]>();
   [...cells.keys()].forEach((g, gi) => nodes.filter((n) => n.group === g).sort((a, b) => b.r - a.r).forEach((n, k) => order.set(n, [gi, k])));

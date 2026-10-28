@@ -898,7 +898,7 @@
  "today.tier_ready": "Ya lo superas: llega en tu próximo logout",
  "today.tier_short": "Te faltan {n} h · lo antes posible el {time} si sigues conectado",
  "today.tier_short_no": "Te faltan {n} h",
- "today.drops": "Horas que salen de la ventana",
+ "today.drops": "Próximas horas que salen de la ventana",
  "today.drop": "{time} · empieza a salir la sesión del {day}",
  "today.no_drops": "En los próximos días no sale nada de la ventana.",
  "today.bonus_more": "Cómo se calcula y todos los bonus hasta hoy",
@@ -934,5 +934,9 @@
  "bonus.none": "Aún no tienes bonus de horas.",
  "user.menu": "Tu cuenta",
  "user.level": "Nivel {level}",
- "user.data": "Datos del {time}"
+ "user.data": "Datos del {time}",
+ "today.points": {"one": "{n} punto de evaluación", "other": "{n} puntos de evaluación"},
+ "today.points_short": "puntos",
+ "today.blackhole": {"one": "Blackhole en {n} día", "other": "Blackhole en {n} días"},
+ "today.now_as_of": "datos de las {time}"
 }

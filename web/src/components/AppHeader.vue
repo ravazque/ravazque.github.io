@@ -47,8 +47,8 @@ function pickAccent(a: "intra" | "coalition") { settings.set("accent", a); accen
 async function signOut() {
   if (user.value) await forget(idbShelf, user.value.login);
   await api("/auth/logout", { method: "POST" }).catch(() => {});
-  state.session = null;
-  router.replace("/");
+  // a full load, not a route change: nothing of this account stays in memory for Back to show
+  location.replace("/");
 }
 
 const photoOk = ref(true);
@@ -62,7 +62,7 @@ function go(path: string) { closePops(); router.push(path); }
 <template>
   <a class="skip" href="#main">{{ f.t("a11y.skip") }}</a>
   <header class="topbar">
-    <RouterLink class="brand" to="/app"><BrandMark /><span>{{ f.t("brand.name") }}</span></RouterLink>
+    <RouterLink class="brand" to="/app" :aria-label="f.t('brand.name')"><BrandMark /><span>{{ f.t("brand.name") }}</span></RouterLink>
     <nav v-if="page" class="pages" :aria-label="f.t('pages.label')">
       <RouterLink v-for="k in PAGES" :key="k" :to="href(k)" :aria-current="k === page ? 'page' : undefined">{{ label(k) }}</RouterLink>
     </nav>
@@ -71,7 +71,7 @@ function go(path: string) { closePops(); router.push(path); }
         <span v-if="lastText" class="last">{{ lastText }}</span>
         <span v-if="syncWait" :class="busy ? 'visually-hidden' : 'wait'">{{ syncWait }}</span>
         <div v-if="busy" class="progress"><i :style="{ width: Math.round(100 * (status.progress || 0)) + '%' }"></i></div>
-        <button class="btn on-band" type="button" :disabled="busy || status.next_refresh_in > 0" @click="refresh">{{ f.t("refresh.button") }}</button>
+        <button class="btn on-band" type="button" :disabled="busy || status.next_refresh_in > 0 || status.frozen" @click="refresh">{{ f.t("refresh.button") }}</button>
       </div>
       <div v-if="page" class="best-anchor">
         <details class="pop best-wrap" @toggle="($event.target as HTMLDetailsElement).open && tourDone()">

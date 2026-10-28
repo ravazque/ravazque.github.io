@@ -120,7 +120,28 @@ watch([key, () => params.value.period], () => { if (screen.value === "page" && (
 load();
 onBeforeUnmount(() => clearTimeout(poll));
 
-watch(sections, async () => { await nextTick(); if (main.value) settle(main.value); hideTip(); }, { flush: "post" });
+// the field being typed in survives the re-render its own input caused; a link's anchor is reached once drawn
+let typingIn: { form: string; name: string; start: number | null; end: number | null } | null = null;
+let anchored = "";
+watch(sections, async () => {
+  await nextTick();
+  if (!main.value) return;
+  settle(main.value);
+  hideTip();
+  if (typingIn) {
+    const el = main.value.querySelector<HTMLInputElement>(`form[data-filter="${typingIn.form}"] [name="${typingIn.name}"]`);
+    if (el && el.type !== "radio" && el.type !== "checkbox") {
+      el.focus({ preventScroll: true });
+      if (typingIn.start !== null && "setSelectionRange" in el && el.type === "search") el.setSelectionRange(typingIn.start, typingIn.end);
+    } else main.value.querySelector<HTMLElement>(`form[data-filter="${typingIn.form}"] .seg, form[data-filter="${typingIn.form}"]`)?.focus?.();
+    typingIn = null;
+  }
+  const hash = route.hash;
+  if (hash && hash !== anchored) {
+    anchored = hash;
+    document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+  }
+}, { flush: "post" });
 
 async function accept() {
   await api("/api/me/consent", { method: "POST", body: JSON.stringify({ accept: true }), headers: { "Content-Type": "application/json" } });
@@ -148,6 +169,8 @@ function onInput(ev: Event) {
   const form = (ev.target as Element).closest?.("form[data-filter]") as HTMLFormElement | null;
   if (!form) return;
   clearTimeout(typing);
+  const t = ev.target as HTMLInputElement;
+  typingIn = { form: form.dataset.filter || "", name: t.name, start: t.type === "search" ? t.selectionStart : null, end: t.type === "search" ? t.selectionEnd : null };
   const apply = () => {
     const q: Record<string, string> = { ...params.value };
     for (const el of Array.from(form.elements) as HTMLInputElement[]) {

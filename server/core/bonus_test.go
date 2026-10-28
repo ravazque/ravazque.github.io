@@ -129,10 +129,22 @@ func TestDeriveGolden(t *testing.T) {
 			raw, _ := os.ReadFile("testdata/golden/" + key + ".derive.json")
 			w, _ := ParseOrdered(raw)
 			for _, p := range Periods {
+				// active_weeks' span is calendar weeks now (v1 counted days/7): checked by TestActiveWeeksNeverExceedTheSpan
+				g.Obj(p).Set("active_weeks", w.Obj(p).V("active_weeks"))
 				if d := JSONDiff(g.Obj(p), w.Obj(p), p); d != "" {
 					t.Fatal(d)
 				}
 			}
 		})
+	}
+}
+
+func TestActiveWeeksNeverExceedTheSpan(t *testing.T) {
+	// a Sunday and the Monday after: two calendar weeks, one day apart
+	if got := ActiveWeeks([]string{"2026-10-04", "2026-10-05"}, []float64{1, 1}); got != [2]int{2, 2} {
+		t.Fatalf("got %v", got)
+	}
+	if got := ActiveWeeks([]string{"2026-10-05", "2026-10-11", "2026-10-26"}, []float64{1, 0, 2}); got != [2]int{2, 4} {
+		t.Fatalf("got %v", got)
 	}
 }

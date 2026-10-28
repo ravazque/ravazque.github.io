@@ -65,7 +65,7 @@ export function campus(pg: Page): Section[] {
   const part = (s: any, i: number) => /^c(\d+)r(\d+)s(\d+)$/.exec(s.host || "")?.[i] ?? null;
   const seatLink = (s: any) => `<a class="code" href="#seat-${esc(s.host)}" title="${esc(f.t("computers.show_on_plan", { seat: s.host }))}">${esc(s.host)}</a>`;
   const computers = table(f, [
-    { k: "host", t: f.t("col.computer"), s: f.t("abbr.computer"), f: seatLink },
+    { k: "host", t: f.t("col.computer"), s: f.t("abbr.computer"), f: seatLink, sv: (s) => seatOrder(s.host) },
     { k: "cluster", t: f.t("col.cluster"), num: true, hide: true, sv: (s) => +(part(s, 1) || 0), f: (s) => part(s, 1) || "–" },
     { k: "row", t: f.t("col.row"), num: true, hide: true, sv: (s) => +(part(s, 2) || 0), f: (s) => part(s, 2) || "–" },
     { k: "seat", t: f.t("col.seat"), num: true, hide: true, sv: (s) => +(part(s, 3) || 0), f: (s) => part(s, 3) || "–" },
@@ -107,7 +107,7 @@ export function campus(pg: Page): Section[] {
     + cols(block("table-sessions", `<div class="table-wrap">${table(f, [
       { k: "begin_ms", t: f.t("col.logged_in"), s: f.t("abbr.logged_in"), nw: true, f: (s) => esc(s.begin) },
       { k: "seconds", t: f.t("col.duration"), s: f.t("abbr.duration"), num: true, nw: true, f: (s) => f.hm(s.seconds) },
-      { k: "host", t: f.t("col.computer"), s: f.t("abbr.computer"), f: seatLink },
+      { k: "host", t: f.t("col.computer"), s: f.t("abbr.computer"), f: seatLink, sv: (s) => seatOrder(s.host) },
       { k: "end", t: f.t("col.logged_out"), s: f.t("abbr.logged_out"), nw: true, hide: true, f: (s) => esc(s.end || f.t("sessions.still_logged")) },
     ], log, { label: f.t("sessions.table_aria"), sort: ["begin_ms", -1], empty: f.t(sq ? "empty.search_sessions" : "empty.sessions") })}</div>`)) + "</div>",
   { lede: esc(f.t("sessions.lede")) }) });
@@ -122,6 +122,12 @@ export function campus(pg: Page): Section[] {
   }).join("")}</ul>`))) });
   return out;
 }
+
+/** c1r2s3 sorts before c1r10s1: cluster, row and seat as numbers; other hosts after, by name. */
+const seatOrder = (h: string) => {
+  const m = /^c(\d+)r(\d+)s(\d+)$/.exec(h || "");
+  return m ? +m[1] * 1e6 + +m[2] * 1e3 + +m[3] : 9e9;
+};
 
 const capital = (s: string) => s.slice(0, 1).toUpperCase() + s.slice(1);
 

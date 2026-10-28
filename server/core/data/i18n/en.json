@@ -898,7 +898,7 @@
  "today.tier_ready": "Over the line: it comes at your next logout",
  "today.tier_short": "{n} h to go · earliest {time} if you stay connected",
  "today.tier_short_no": "{n} h to go",
- "today.drops": "Hours leaving the window",
+ "today.drops": "Next hours leaving the window",
  "today.drop": "{time} · the {day} session starts to leave",
  "today.no_drops": "Nothing leaves the window in the next days.",
  "today.bonus_more": "How it is computed and every bonus so far",
@@ -934,5 +934,9 @@
  "bonus.none": "No logtime bonus yet.",
  "user.menu": "Your account",
  "user.level": "Level {level}",
- "user.data": "Data from {time}"
+ "user.data": "Data from {time}",
+ "today.points": {"one": "{n} evaluation point", "other": "{n} evaluation points"},
+ "today.points_short": "points",
+ "today.blackhole": {"one": "Blackhole in {n} day", "other": "Blackhole in {n} days"},
+ "today.now_as_of": "as of {time}"
 }

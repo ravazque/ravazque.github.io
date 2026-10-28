@@ -235,6 +235,7 @@ func TestRetryAfterFailureRunsAgain(t *testing.T) {
 	if f.s.Status(7).State != "failed" {
 		t.Fatal(f.s.Status(7))
 	}
+	f.m.Delete(f.m.Keys("cooldown:*")...) // the wait after a failure is over
 	if st := EnqueueExtraction(f.s, f.jobs, 7, f.lim); st.State != "queued" {
 		t.Fatal(st)
 	}
@@ -404,5 +405,17 @@ func TestDevReportOnlyOnLocalhostItself(t *testing.T) {
 	s.BaseURL = "https://localhost"
 	if err := s.Check(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestFailedExtractionWaitsBeforeTheNextTry(t *testing.T) {
+	f := setup(t, failing, time.Minute)
+	EnqueueExtraction(f.s, f.jobs, 7, f.lim)
+	f.jobs.Drain()
+	if st := f.s.Status(7); st.State != "failed" || st.NextRefreshIn < 60 || st.NextRefreshIn > 300 {
+		t.Fatalf("%+v", st)
+	}
+	if st := EnqueueExtraction(f.s, f.jobs, 7, f.lim); len(f.jobs.Queued()) != 0 || st.State != "failed" {
+		t.Fatal("a failed run was retried at once")
 	}
 }

@@ -113,3 +113,32 @@ func TestTodayEmpty(t *testing.T) {
 		t.Fatalf("today = %+v", td)
 	}
 }
+
+func TestDayStripsUseTheWallClockOnDSTDays(t *testing.T) {
+	// 2026-10-25 lasts 25 h in Madrid: a session 22:00–23:30 local sits at 22–23.5 on the day's 0–24 line
+	all := Analyze(emptyRaw(), "all", goldenNow)
+	b := time.Date(2026, 10, 25, 22, 0, 0, 0, Madrid)
+	all.Obj("logtime").Set("log", []any{M("begin_ms", float64(b.UnixMilli()), "seconds", 5400.0, "end", "2026-10-25 23:30", "host", "c1r1s1")})
+	td := BuildToday(all, nil, time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC))
+	var parts []Part
+	for _, d := range td.Week {
+		if d.Date == "2026-10-25" {
+			parts = d.Parts
+		}
+	}
+	if len(parts) != 1 || parts[0].From != 22 || parts[0].To != 23.5 {
+		t.Fatalf("parts %+v", parts)
+	}
+}
+
+func TestTodayCarriesPointsAndBlackhole(t *testing.T) {
+	all := storedAll(t, "mid").Obj("periods").Obj("all")
+	td := BuildToday(all, nil, goldenNow)
+	if td.Points != all.Obj("profile").I("correction_point") {
+		t.Fatalf("points %d", td.Points)
+	}
+	all.Obj("insights").Obj("pace").Set("blackhole_days", 42)
+	if td := BuildToday(all, nil, goldenNow); td.BlackholeDays == nil || *td.BlackholeDays != 42 {
+		t.Fatalf("blackhole %v", td.BlackholeDays)
+	}
+}
