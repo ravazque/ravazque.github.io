@@ -1,0 +1,97 @@
+/* Base and custom controls shared by every page (report pages and public pages). Values come from ui.json. */
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { accent-color: var(--accent); scrollbar-color: var(--c-scrollbar-thumb) var(--c-scrollbar-track); }
+::selection { background: var(--accent); color: var(--on-accent); }
+a { color: inherit; text-underline-offset: 3px; }
+:focus-visible { outline: var(--c-focus-width) solid var(--focus); outline-offset: var(--c-focus-offset); }
+button, input, select { font: inherit; color: inherit; }
+h1, h2, h3, p, dl, dd, figure { margin: 0; }
+[hidden] { display: none !important; }
+.skip { position: absolute; left: -9999px; top: 8px; z-index: 50; background: var(--accent); color: var(--on-accent); padding: 8px 14px; border-radius: var(--radius-m); font-weight: 600; }
+.skip:focus { left: 8px; }
+
+/* custom scrollbars everywhere: page, tables, lists, calendar */
+::-webkit-scrollbar { width: var(--c-scrollbar-size); height: var(--c-scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--c-scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--c-scrollbar-thumb); border-radius: var(--c-scrollbar-radius); border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--c-scrollbar-thumb-hover); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 var(--type-size-body) / var(--type-line-body) var(--type-font-text); }
+
+/* ---------- controls ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin-top: 14px; }
+.field { position: relative; display: flex; flex-direction: column; gap: 4px; font-size: var(--c-input-label-size); font-weight: 600; color: var(--text-2); flex: 1 1 200px; }
+input[type=search], .select-btn {
+  min-height: var(--c-input-height); padding: 6px var(--c-input-padding-x); border-radius: var(--c-input-radius);
+  border: var(--c-input-border-width) solid var(--c-input-border); background: var(--c-input-bg); color: var(--c-input-fg);
+  font-size: var(--c-input-font-size); font-weight: 400; min-width: var(--c-input-min-width); width: 100%; caret-color: var(--c-input-caret);
+}
+input[type=search]:focus-visible, .select-btn:focus-visible { border-color: var(--c-input-border-focus); outline-offset: 0; }
+input[type=search]::placeholder { color: var(--c-input-placeholder); }
+
+/* custom select: a button and a listbox; the native <select> stays hidden and keeps the value */
+.select-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; text-align: left; }
+.select-btn::after { content: ""; flex: none; border: var(--c-select-arrow-size) solid transparent; border-top-color: currentColor; margin-top: var(--c-select-arrow-size); }
+.select-btn[aria-expanded="true"]::after { border-top-color: transparent; border-bottom-color: currentColor; margin-top: calc(-1 * var(--c-select-arrow-size)); }
+.select-list {
+  position: absolute; z-index: 25; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px 0; list-style: none;
+  max-height: var(--c-select-list-max-height); overflow: auto; background: var(--c-select-list-bg);
+  border: 2px solid var(--c-select-list-border); border-radius: var(--c-input-radius); box-shadow: var(--c-select-list-shadow);
+}
+.select-list [role=option] { padding: var(--c-select-option-padding-y) var(--c-select-option-padding-x); cursor: pointer; color: var(--ink); font-weight: 400; font-size: var(--c-input-font-size); }
+.select-list [role=option].active { background: var(--c-select-option-bg-active); }
+.select-list [role=option][aria-selected="true"] { color: var(--c-select-option-fg-selected); font-weight: 600; }
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--c-button-height); padding: 0 var(--c-button-padding-x);
+  border-radius: var(--c-button-radius); border: var(--c-button-border-width) solid transparent; cursor: pointer; text-decoration: none;
+  font: 700 var(--c-button-font-size) var(--type-font-display);
+  transition: background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out;
+}
+.btn:disabled, .btn[aria-disabled="true"] { opacity: var(--c-button-disabled-opacity); cursor: not-allowed; }
+.btn.primary { background: var(--c-button-primary-bg); color: var(--c-button-primary-fg); border-color: var(--c-button-primary-border); }
+.btn.primary:hover:not(:disabled) { border-color: var(--c-button-primary-border-hover); }
+.btn.secondary { background: var(--c-button-secondary-bg); color: var(--c-button-secondary-fg); border-color: var(--c-button-secondary-border); }
+.btn.secondary:hover:not(:disabled) { background: var(--c-button-secondary-bg-hover); }
+.btn.ghost { background: var(--c-button-ghost-bg); color: var(--c-button-ghost-fg); border-color: var(--c-button-ghost-border); }
+.btn.ghost:hover:not(:disabled) { color: var(--c-button-ghost-fg-hover); background: var(--c-button-ghost-bg-hover); }
+.btn.on-band { background: transparent; color: var(--on-accent); border-color: var(--on-accent); }
+.btn.on-band:hover:not(:disabled) { background: var(--on-accent); color: var(--accent); }
+
+/* on/off switch: role="switch" button with a drawn track and knob */
+.switch { display: inline-flex; align-items: center; gap: var(--c-switch-gap); border: 0; background: none; padding: 4px 0; cursor: pointer; font-size: var(--c-switch-font-size); color: inherit; }
+.switch .track { position: relative; flex: none; width: var(--c-switch-track-width); height: var(--c-switch-track-height); border-radius: 999px; background: var(--c-switch-off-bg); transition: background-color var(--motion-fast) ease-out; }
+.switch .knob { position: absolute; top: 50%; left: calc((var(--c-switch-track-height) - var(--c-switch-knob-size)) / 2); width: var(--c-switch-knob-size); height: var(--c-switch-knob-size);
+  border-radius: 50%; background: var(--c-switch-knob); transform: translateY(-50%); transition: left var(--motion-fast) var(--motion-ease); }
+.switch[aria-checked="true"] .track { background: var(--c-switch-on-bg); }
+.switch[aria-checked="true"] .knob { left: calc(var(--c-switch-track-width) - var(--c-switch-knob-size) - (var(--c-switch-track-height) - var(--c-switch-knob-size)) / 2); }
+
+.seg { display: inline-flex; border: var(--c-segmented-border-width) solid var(--c-segmented-border); border-radius: var(--c-segmented-radius); overflow: hidden; }
+.seg button { min-height: var(--c-segmented-height); border: 0; padding: 6px var(--c-segmented-padding-x); background: transparent; cursor: pointer;
+  font: 700 var(--c-segmented-font-size) var(--type-font-display); color: var(--c-segmented-fg); }
+.seg button:hover { color: var(--c-segmented-fg-hover); }
+.seg button[aria-pressed="true"] { background: var(--c-segmented-bg-active); color: var(--c-segmented-fg-active); }
+#tip {
+  position: fixed; pointer-events: none; z-index: 30; display: none; max-width: var(--c-tooltip-max-width);
+  background: var(--c-tooltip-bg); color: var(--c-tooltip-fg); font-size: var(--c-tooltip-font-size); font-weight: 500; line-height: 1.4;
+  padding: var(--c-tooltip-padding-y) var(--c-tooltip-padding-x); border-radius: var(--c-tooltip-radius); box-shadow: var(--c-tooltip-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) { .btn, .switch .track, .switch .knob { transition: none; } }
+
+/* modal confirmations (delete my data) */
+dialog { border: 2px solid var(--ink); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); padding: 24px; max-width: min(92vw, 460px); box-shadow: var(--list-shadow); }
+dialog h2 { margin: 0 0 10px; font: 800 26px var(--type-font-display); letter-spacing: -.02em; }
+dialog::backdrop { background: color-mix(in oklab, var(--ink) 45%, transparent); }
+/* a button that stays pressed (e.g. Group by rank) */
+.btn.toggle[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+
+/* going to another page: a thin bar runs along the top until it arrives; the page stays as it is meanwhile */
+html.leaving body::after { content: ""; position: fixed; z-index: 2000; top: 0; left: 0; width: 100%; height: 3px; background: var(--ink);
+  transform-origin: left; animation: leaving 1.4s cubic-bezier(.2, .7, .3, 1) both; pointer-events: none; }
+@keyframes leaving { from { transform: scaleX(0); } to { transform: scaleX(.9); } }
+@media (prefers-reduced-motion: reduce) { html.leaving body::after { animation: none; transform: scaleX(.6); } }
