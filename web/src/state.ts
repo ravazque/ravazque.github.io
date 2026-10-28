@@ -2,6 +2,7 @@
 // to the server (session cookie; the CSRF token on every change).
 import { reactive, shallowRef } from "vue";
 import { Fmt, type Lang } from "./fmt";
+import { offline, offlineAnswer } from "./offline";
 
 export type User = { login: string; name: string; has_image: boolean; coalition_color: string; csrf: string; owner: boolean; can_publish: boolean };
 export type SessionInfo = {
@@ -44,6 +45,11 @@ export class HttpError extends Error {
 }
 
 export async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {
+  if (offline) {
+    const answer = init.method && init.method !== "GET" ? null : offlineAnswer(path);
+    if (answer === null) throw new HttpError(404, { error: "offline" });
+    return answer as T;
+  }
   const headers = new Headers(init.headers);
   if (init.method && init.method !== "GET" && state.session?.user) headers.set("X-CSRF-Token", state.session.user.csrf);
   const r = await fetch(path, { credentials: "same-origin", ...init, headers });

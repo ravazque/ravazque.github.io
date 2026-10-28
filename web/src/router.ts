@@ -1,9 +1,10 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory, createWebHistory } from "vue-router";
+import { offline } from "./offline";
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: offline ? createWebHashHistory() : createWebHistory(), // a file opened from disk has no server behind it
   routes: [
-    { path: "/", component: () => import("./components/Landing.vue") },
+    { path: "/", component: () => import("./components/Landing.vue"), beforeEnter: () => (offline ? "/app" : true) },
     { path: "/about", component: () => import("./components/Reading.vue"), props: { page: "about" } },
     { path: "/privacy", component: () => import("./components/Reading.vue"), props: { page: "privacy" } },
     { path: "/refused", component: () => import("./components/Refused.vue") },

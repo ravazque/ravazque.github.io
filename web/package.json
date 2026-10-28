@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "build:offline": "vite build --mode offline",
     "test": "vitest run"
   },
   "dependencies": {
