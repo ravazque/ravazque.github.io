@@ -1,0 +1,16 @@
+# make dev: the source is mounted over the image and the API reloads on every save. The last report saved by
+# make build (web/preview/data.json) is served at once and "Dev · <login>" on the landing signs in as its owner.
+# Its own project (ravazque-info-dev), so it runs beside make production; only it publishes ports on the host.
+services:
+  caddy:
+    ports: ["80:80", "443:443"]
+  api:
+    environment:
+      DEV_REPORT: /srv/web/preview/data.json
+      BASE_URL: https://localhost
+      OAUTH_APP: "2"
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    volumes: ["./core:/srv/core:ro", "./web/app:/srv/web/app:ro", "./web/static:/srv/web/static:ro", "./web/preview:/srv/web/preview:ro",
+              "consent:/data"]
+    command: ["uvicorn", "app.main:build", "--factory", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers",
+              "--forwarded-allow-ips=*", "--reload", "--reload-dir", "/srv/web/app", "--reload-dir", "/srv/core/core42"]

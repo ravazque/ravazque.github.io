@@ -7,7 +7,7 @@ import (
 )
 
 // hidden is how an opted-out student appears: a label with no name, photo or seat.
-const hidden = "hidden"
+const hidden = "Hidden"
 
 // hide copies the report with every opted-out student turned into a nameless, photoless label; the viewer never is.
 func hide(v any, logins map[string]bool, own string) any {

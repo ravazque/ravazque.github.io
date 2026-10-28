@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raúl Vázquez Pérez · Data Engineer & Software Developer</title>
+<meta name="description" content="Raúl Vázquez Pérez (ravazque), data engineer and software developer trained at 42 Madrid: experience, projects, 42cursus level, skills and education.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="controls.css">
+<link rel="stylesheet" href="site.css">
+<script>try { const theme = localStorage.getItem("theme"); if (theme) document.documentElement.dataset.theme = theme; } catch (e) {}</script>
+</head>
+<body>
+<header class="cv-head">
+  <div class="cv-band">
+    <p class="login">ravazque<span id="title"></span></p>
+    <nav class="links" id="links" aria-label="Links"></nav>
+    <div class="controls-band">
+      <div class="seg-band" role="group" aria-label="Language" id="langToggle"><button type="button" data-v="en">EN</button><button type="button" data-v="es">ES</button></div>
+      <div class="seg-band" role="group" aria-label="Theme" id="themeToggle"><button type="button" data-v="auto" data-t="auto">Auto</button><button type="button" data-v="light" data-t="light">Light</button><button type="button" data-v="dark" data-t="dark">Dark</button></div>
+    </div>
+  </div>
+  <div class="cv-hero">
+    <h1 class="name" id="name">Raúl Vázquez Pérez</h1>
+    <p class="headline" id="headline">Data Engineer &amp; Software Developer</p>
+  </div>
+</header>
+
+<main>
+  <section id="about" aria-labelledby="h-about">
+    <h2 id="h-about" data-t="about">About</h2>
+    <p class="lead" id="lead"></p>
+    <div class="island now" id="now">
+      <h3 data-t="now">Right now</h3>
+      <p id="nowText"></p>
+      <div id="nowList"></div>
+    </div>
+  </section>
+
+  <section id="experience" aria-labelledby="h-exp">
+    <h2 id="h-exp" data-t="experience">Experience</h2>
+    <div class="entries" id="experienceList"></div>
+  </section>
+
+  <section id="highlights" aria-labelledby="h-high">
+    <h2 id="h-high" data-t="highlights">Selected projects</h2>
+    <div class="entries two" id="highlightList"></div>
+  </section>
+
+  <section id="cursus" aria-labelledby="h-cursus">
+    <h2 id="h-cursus" data-t="cursus">42 Madrid</h2>
+    <div class="island"><dl class="facts" id="facts"></dl></div>
+    <p class="note" id="unavailable" data-t="unavailable" hidden>The 42 snapshot could not be loaded right now.</p>
+  </section>
+
+  <section id="skills" aria-labelledby="h-skills" hidden>
+    <h2 id="h-skills" data-t="skills">Skills</h2>
+    <div class="island">
+      <div class="panel-head">
+        <div class="seg" id="skillSet" role="group" aria-label="Cursus"><button type="button" data-v="student" aria-pressed="true" data-t="student">Student</button><button type="button" data-v="piscine" aria-pressed="false" data-t="piscine">Piscine</button></div>
+        <div class="seg" id="skillView" role="group" aria-label="View"><button type="button" data-v="radar" aria-pressed="true" data-t="radar">Radar</button><button type="button" data-v="bars" aria-pressed="false" data-t="bars">Bars</button></div>
+      </div>
+      <svg class="radar" id="skillRadar"></svg>
+      <ol class="radar-key" id="skillKey" hidden></ol>
+      <ul class="skill-list" id="skillBars" hidden></ul>
+    </div>
+  </section>
+
+  <section id="projects" aria-labelledby="h-projects" hidden>
+    <h2 id="h-projects" data-t="projects">42 projects</h2>
+    <div class="controls">
+      <div class="seg" id="projTrack" role="group" aria-label="Track"><button type="button" data-v="student" aria-pressed="true" data-t="student">Student</button><button type="button" data-v="piscine" aria-pressed="false" data-t="piscine">Piscine</button><button type="button" data-v="all" aria-pressed="false" data-t="all">All</button></div>
+      <label class="field"><span data-t="search">Search</span><input type="search" id="projSearch" data-t-placeholder="search_ph" placeholder="Project name"></label>
+      <label class="field"><span data-t="marks">Mark</span><select id="projMarks"><option value="all" data-t="marks_all">Any mark</option><option value="bonus" data-t="marks_bonus">With bonus (over 100)</option><option value="max" data-t="marks_max">125 only</option></select></label>
+      <label class="field"><span data-t="year">Year</span><select id="projYear"><option value="all" data-t="year_all">Every year</option></select></label>
+      <button type="button" class="btn secondary toggle" id="projGroup" aria-pressed="false" data-t="group_by">Group by rank</button>
+      <span class="note" id="projCount"></span>
+    </div>
+    <div class="island table">
+      <table id="projTable">
+        <thead id="projHead"><tr>
+          <th scope="col" data-k="name"><button type="button" data-t="project">Project</button></th>
+          <th scope="col" class="wide" data-t="group">Group</th>
+          <th scope="col" class="num" data-k="mark"><button type="button" data-t="mark">Mark</button></th>
+          <th scope="col" class="num wide" data-k="xp"><button type="button" data-t="xp">XP</button></th>
+          <th scope="col" class="num" data-k="date"><button type="button" data-t="date">Validated</button></th>
+        </tr></thead>
+      </table>
+    </div>
+  </section>
+
+  <section id="evaluations" aria-labelledby="h-evals" hidden>
+    <h2 id="h-evals" data-t="evaluations">Evaluations</h2>
+    <div class="island table">
+      <table>
+        <thead><tr><th scope="col"><span class="sr" data-t="evaluations">Evaluations</span></th><th scope="col" class="num" data-t="count">Total</th>
+          <th scope="col" class="num" data-t="outstanding">Outstanding</th><th scope="col" class="num" data-t="avg">Average mark</th></tr></thead>
+        <tbody id="evalBody"></tbody>
+      </table>
+    </div>
+    <p class="note" data-t="evals_note">Since the 42cursus kickoff.</p>
+  </section>
+
+  <section id="education" aria-labelledby="h-edu">
+    <h2 id="h-edu" data-t="education">Education</h2>
+    <div class="entries" id="educationList"></div>
+  </section>
+
+  <section id="more" class="two-cols">
+    <div>
+      <h2 data-t="languages">Languages</h2>
+      <ul class="languages" id="languageList"></ul>
+    </div>
+    <div>
+      <h2 data-t="stack">Stack</h2>
+      <dl class="stack" id="stackList"></dl>
+    </div>
+  </section>
+
+  <footer class="updated" id="updated"></footer>
+</main>
+<script src="accent.js"></script>
+<script src="controls.js"></script>
+<script src="radar.js"></script>
+<script src="projects.js"></script>
+<script src="site.js"></script>
+</body>
+</html>

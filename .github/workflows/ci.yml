@@ -14,26 +14,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  python:
+  go:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: server
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          python-version: "3.15"
-      - run: pip install -r web/requirements.txt -e core pip-audit==2.10.1
-      - name: Web tests
-        working-directory: web
-        run: python -m pytest -q -p no:cacheprovider
-      - name: Core tests
-        run: python -m pytest -q -p no:cacheprovider -o asyncio_default_fixture_loop_scope=function core/tests
-      - name: Known vulnerabilities in dependencies
-        run: pip-audit -r web/requirements.txt
+          go-version-file: server/go.mod
+          cache: false
+      - run: go vet ./...
+      - name: Tests (race detector on)
+        run: go test -race ./...
+      - name: Known vulnerabilities in the Go code and its standard library
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
-  node:
+  web:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -42,9 +43,16 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version: 26
           package-manager-cache: false
-      - run: node --test web/tests/js/*.test.mjs core/tests/js/*.test.mjs site/tests/*.test.mjs
+      - name: Browser app
+        working-directory: web
+        run: npm ci --no-audit --no-fund && npx vue-tsc --noEmit && npx vitest run && npm run build
+      - name: Known vulnerabilities in the browser app's dependencies
+        working-directory: web
+        run: npm audit --audit-level=high
+      - name: The site's scripts
+        run: node --test site/tests/*.test.mjs
 
   image:
     runs-on: ubuntu-latest
@@ -53,7 +61,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: docker build -f web/Dockerfile -t web:ci .
+      - run: docker build -t ravazque-info:ci .
 
   secrets:
     runs-on: ubuntu-latest
@@ -67,5 +75,5 @@ jobs:
         run: docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 git --redact --no-banner /repo
       - name: Files that must never be tracked
         run: |
-          bad=$(git ls-files | grep -E '(^|/)\.env$|^report-tool/|^\.claude/|^\.development/|^web/certs/.+\.(pem|key)$|^web/preview/' || true)
+          bad=$(git ls-files | grep -E '(^|/)\.env$|(^|/)report-tool/|^\.claude/|^\.development/|(^|/)web/certs/.+\.(pem|key)$|(^|/)web/preview/|^v1_old/\.golden/|(^|/)node_modules/|^server/internal/web/dist/.+[^p]$' || true)
           if [ -n "$bad" ]; then echo "Tracked files that must stay local:"; echo "$bad"; exit 1; fi

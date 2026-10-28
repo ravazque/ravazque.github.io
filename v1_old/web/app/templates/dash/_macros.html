@@ -1,0 +1,28 @@
+{% macro section(s, extra_title="") -%}
+<section id="{{ s.id }}">
+  <h2>{{ s.title }}{% if extra_title %}<span class="count"><span class="sep"> · </span>{{ extra_title }}</span>{% endif %}</h2>
+  {% if s.lede %}<p class="lede">{{ s.lede }}</p>{% endif %}
+  {{ caller() }}
+</section>
+{%- endmacro %}
+
+{% macro block(panel, title="", note="") -%}
+<div class="block" data-panel="{{ panel }}">{% if title %}<h3>{{ title }}</h3>{% endif %}{% if note %}<p class="note">{{ note }}</p>{% endif %}{{ caller() }}</div>
+{%- endmacro %}
+
+{% macro info(text) -%}
+<span class="info" tabindex="0" role="note" data-tip="{{ text }}" title="{{ text }}" aria-label="{{ text }}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 7.2v4.3M8 4.6v.1"/></svg></span>
+{%- endmacro %}
+
+{% macro search(name, value, label, placeholder) -%}
+<label class="field"><span>{{ label }}</span><input type="search" name="{{ name }}" value="{{ value }}" placeholder="{{ placeholder }}" autocomplete="off"></label>
+{%- endmacro %}
+
+{% macro filters(action, target, keep) -%}
+<form class="controls" method="get" action="{{ action }}#{{ target }}" hx-get="{{ action }}" hx-target="#{{ target }}-results" hx-select="#{{ target }}-results"
+  hx-swap="outerHTML show:none" hx-push-url="true" hx-trigger="input changed delay:300ms from:find input[type=search], change">
+  {% for k, v in keep.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  {{ caller() }}
+  <button class="btn secondary no-js" type="submit">OK</button>
+</form>
+{%- endmacro %}

@@ -1,0 +1,13 @@
+<section id="profile" aria-label="{{ s.title }}">
+  <div class="id-card">
+    <div class="avatar-lg"><span aria-hidden="true">{{ s.head.initials }}</span>{% if s.head.image %}<img src="{{ s.head.image }}" alt="">{% endif %}</div>
+    <div class="id-text">
+      <p class="name">{{ s.head.name }}</p>
+      <p>{{ s.head.login }}{% if s.head.campus %} · {{ s.head.campus }}{% endif %}</p>
+      <p class="coal">{{ s.head.coalition }}{% if s.grade %} <span class="badge">{{ s.grade }}</span>{% endif %}</p>
+      {% if s.head.groups %}<p class="groups">{% for g in s.head.groups %}<span class="badge">{{ g }}</span>{% endfor %}</p>{% endif %}
+    </div>
+    <dl class="id-facts">{% for k, v in s.facts %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}</dl>
+    <p class="id-now">{{ s.head.now }} · {{ s.head.generated }}</p>
+  </div>
+</section>

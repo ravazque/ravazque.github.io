@@ -1,9 +1,10 @@
-# The images only need core/ and web/; .env, certs and local data stay out
+# The image only needs web/ and server/; .env, certs, local data and builds stay out
 *
-!core
 !web
+!server
+web/node_modules
 web/certs
 web/preview
 web/Caddyfile.local
-**/__pycache__
-**/.pytest_cache
+server/internal/web/dist/*
+!server/internal/web/dist/.gitkeep

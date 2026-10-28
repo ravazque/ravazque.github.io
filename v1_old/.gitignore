@@ -1,0 +1,25 @@
+# Secrets: only .env.example is committed
+.env
+web/certs/*
+!web/certs/.gitkeep
+
+# Local tools and their data (other students' data) are never published
+report-tool/
+.venv/
+
+# Generated
+web/Caddyfile.local
+web/preview/
+site/_build/
+_site/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+
+# Editors and desktop files
+.directory
+.vscode/
+.idea/
+*.swp
+*.egg-info/

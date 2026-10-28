@@ -1,0 +1,20 @@
+<section id="log">
+  <h2>{{ s.title }}</h2>
+  <p class="lede">{{ s.lede }}</p>
+  {% call m.filters("/app/evaluations", "log", {"period": page.period, "role": page.q("role")}) %}
+    <div class="seg" role="radiogroup" aria-label="{{ t('log.role_label') }}">
+      {% for v in ["received", "given"] %}<label><input type="radio" name="log" value="{{ v }}"{% if s.role == v %} checked{% endif %}><span>{{ t("log." ~ v) }}</span></label>{% endfor %}
+    </div>
+    <label class="field"><span>{{ t("log.flag") }}</span><select name="flag">
+      {% for v, k in [("", "all"), ("out", "out"), ("bad", "bad"), ("ok", "ok")] %}<option value="{{ v }}"{% if s.flag == v %} selected{% endif %}>{{ t("log.flag_" ~ k) }}</option>{% endfor %}
+    </select></label>
+    <label class="field"><span>{{ t("log.project") }}</span><select name="project">
+      <option value="">{{ t("log.project_all") }}</option>{% for p in s.projects %}<option{% if s.project == p %} selected{% endif %}>{{ p }}</option>{% endfor %}
+    </select></label>
+    {{ m.search("q", s.q, t("common.search"), t("log.search_placeholder")) }}
+  {% endcall %}
+  <div id="log-results">
+    <p class="controls-after"><span class="note">{{ s.count }}</span></p>
+    <div class="cols" data-grid><div class="block" data-panel="table-log"><div class="table-wrap tall">{{ s.table }}</div></div></div>
+  </div>
+</section>

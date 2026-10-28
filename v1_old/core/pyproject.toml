@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "core42"
+version = "0.1.0"
+license = "AGPL-3.0-or-later"
+description = "42 API analysis, profile rules and the shared report frontend of ravazque.info"
+requires-python = ">=3.11"
+
+[tool.setuptools]
+packages = ["core42"]
+
+[tool.setuptools.package-data]
+core42 = ["frontend/*", "frontend/**/*", "tracks.json", "rncp.json", "skills.json"]

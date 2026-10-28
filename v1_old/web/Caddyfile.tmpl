@@ -1,0 +1,34 @@
+{
+	auto_https disable_redirects
+}
+
+(secure) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self' https://*.42.fr"
+		X-Frame-Options DENY
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		-Server
+	}
+}
+
+http://localhost {
+	redir https://localhost{uri} 308
+}
+
+localhost {
+	TLS_LINE
+	import secure
+	reverse_proxy api:8000
+}
+
+# make production: Cloudflare's tunnel (cloudflared) reaches this port inside the compose network only; it is never
+# published on the host. Cloudflare serves HTTPS to the browser and sets Cf-Connecting-Ip, which a client cannot
+# forge through it, so that is the address the app sees (the sign-in limit is per person, not per tunnel).
+http://:8080 {
+	import secure
+	reverse_proxy api:8000 {
+		header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+	}
+}

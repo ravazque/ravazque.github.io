@@ -1,0 +1,25 @@
+{% extends "dash/base.html" %}
+{% import "dash/_macros.html" as m %}
+{% block body %}
+<main id="main">
+<header class="page-head">
+  <h1>{{ head.title }}</h1>
+  {% if head.periods %}
+  <nav class="seg periods" aria-label="{{ t('rail.period') }}" hx-boost="true" hx-swap="innerHTML show:none">
+    {% for p in head.periods %}<a href="{{ p.href }}" role="button" aria-pressed="{{ 'true' if p.on else 'false' }}">{{ p.label }}</a>{% endfor %}
+  </nav>
+  {% else %}
+  <p class="periods only"><b>{{ t("rail.cursus_only") }}</b> {{ t("rail.cursus_only_note") }}</p>
+  {% endif %}
+</header>
+<nav class="toc" aria-label="{{ t('rail.sections') }}">{% for s in sections %}<a href="#{{ s.id }}">{{ s.nav }}</a>{% endfor %}</nav>
+
+{% for s in sections %}{% include "dash/s_" ~ s.id ~ ".html" %}
+{% endfor %}
+<footer class="site-foot">
+  {% include "dash/_credit.html" %}
+  <nav class="foot-links"><a href="/about">{{ t("site.about") }}</a><a href="/privacy">{{ t("site.privacy") }}</a>{% if issues_url %}<a href="{{ issues_url }}" rel="noopener" target="_blank">{{ t("site.issues") }}</a>{% endif %}</nav>
+  <p class="foot-note">{{ foot.note }}</p>
+</footer>
+</main>
+{% endblock %}

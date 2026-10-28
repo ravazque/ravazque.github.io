@@ -1,0 +1,10 @@
+{% extends "dash/base.html" %}
+{% block body %}
+<noscript><meta http-equiv="refresh" content="0; url=/app?fresh=1"></noscript>
+<main id="main" class="solo">
+  <div class="boot-panel" data-restore="{{ login }}" data-fresh="{{ here.split('?')[0] }}?fresh=1">
+    <h2>{{ t("boot.title") }}</h2>
+    <p>{{ t("restore.lede") }}</p>
+  </div>
+</main>
+{% endblock %}

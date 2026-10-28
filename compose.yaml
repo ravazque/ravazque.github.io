@@ -15,7 +15,7 @@ services:
     depends_on: [api]
     restart: unless-stopped
   api:
-    build: {context: ., dockerfile: web/Dockerfile}
+    build: {context: ., dockerfile: Dockerfile}
     env_file:
       - path: .env
         required: false  # make clean / down / logs work before .env exists; make dev creates it first
@@ -24,7 +24,7 @@ services:
       BASE_URL: https://ravazque.info
       OAUTH_APP: "1"
       GITHUB_TOKEN: ""  # production never publishes: the token only reaches make dev
-    volumes: ["./core:/srv/core:ro", "consent:/data"]
+    volumes: ["consent:/data"]
     restart: unless-stopped
   # make production: the named Cloudflare tunnel that serves ravazque.info; its public hostname (ravazque.info ->
   # http://caddy:8080) is set in Cloudflare's dashboard. Only with the profile, so make dev never starts it.

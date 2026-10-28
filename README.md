@@ -12,15 +12,20 @@ snapshot published from the app.
 
 ## Features
 
-Five pages, rendered on the server; every choice (period, filters, views) lives in the URL:
+Five pages; every choice (period, filters, views) lives in the URL:
 
-- **Home**: key numbers, pace and blackhole, skills (radar or bars, 42cursus or C Piscine), coalitions and promo,
-  achievements, events, quests and titles.
-- **Projects**: every project with filters, rank groups and CSV export, the attempt timeline, cumulative retries, exams.
-- **Evaluations**: received and given over time, marks, when (weekday × hour, duration, booking lead, per project),
-  correction statistics, feedback, correction points, the full evaluation log with search.
-- **People**: top correctors and everyone you crossed paths with, Connections as bubbles or as your circle, teammates.
-- **Campus**: seat plan with every computer, hours per month, calendar, weekday × hour, sessions, where evaluations happen.
+- **Today** (home): only what changes day to day. The coalition logtime bonus (hours in the rolling seven days against
+  50 h and 80 h, when each one is available again, the earliest logout that earns it, and the sessions about to leave
+  the window), where you are sitting now, your last seven days hour by hour, your next evaluation, the projects you have
+  open and this month. You (photo, login, level, coalition, wallet, points) live on the band, in your menu.
+- **Projects**: level, pace and blackhole, skills (radar and bars, 42cursus or C Piscine), every project with filters,
+  rank groups and CSV export, exams, technical domains, the attempt timeline, achievements, events, quests and titles.
+- **Evaluations**: what you give back, received and given over time, marks, when (weekday × hour, duration, booking
+  lead, per project), correction statistics, feedback, correction points, the full evaluation log with search.
+- **People**: top correctors and everyone you crossed paths with, Connections as bubbles, your circle, teammates, the
+  campus coalitions and your promo, and the points you gave your coalition.
+- **Campus**: rhythm, the logtime bonus in detail with every bonus so far, the seat plan with every computer, hours per
+  month, calendar, weekday × hour, sessions, where evaluations happen and your campuses.
 - **Publish** (optional, one account only): commits a whitelisted snapshot of that account's profile to a GitHub Pages
   repository.
 
@@ -28,14 +33,15 @@ Five pages, rendered on the server; every choice (period, filters, views) lives 
 
 | Directory | Contents |
 |-----------|----------|
-| `web/` | FastAPI app rendering every page with Jinja (htmx for partial updates, a small `dash.js` for tooltips and sorting), an in-process job queue, Caddy (HTTPS), in Docker Compose. No database |
-| `core/` | `core42`: 42 API analysis, sign-in rules, rank groups and the shared frontend assets (CSS, `ui.json`, i18n, controls, accent, radar) |
+| `server/` | Go (standard library only): the 42 API client and extraction (`api42/`), the analysis, sign-in rules, rank groups, the logtime bonus and the look of every page (`core/`, with `ui.json`, the i18n texts, skills, tracks and RNCP data in `core/data/`), and the web server (`internal/`): sign-in, the JSON API, an in-process job queue, memory with expiry. One binary that embeds the browser app. No database |
+| `web/` | The browser app: Vue 3 and TypeScript (Vite). Charts are its own SVG and HTML; Caddy (HTTPS) and Docker Compose files |
+| `v1_old/` | The first version (Python, FastAPI and htmx), archived as it was; not built or run |
 | `site/` | Static CV page with the published 42 snapshot, deployed by `.github/workflows/pages.yml` |
 
 ## Running it
 
-Requirements: Docker with the Compose plugin, `make`, `openssl` or `mkcert`. Node ≥ 22 and Python 3 for the tests and
-the site preview.
+Requirements: Docker with the Compose plugin, `make`, `openssl` or `mkcert`. Go ≥ 1.27 and Node ≥ 26 for the tests and
+the dev tools; Python 3 only to serve the site preview.
 
 1. **Register the 42 applications** at https://profile.intra.42.fr/oauth/applications, scope `public`: one for `make dev`
    (`FT_UID_2`, redirect URI `https://localhost/auth/callback`) and one for production at https://ravazque.info
@@ -73,12 +79,12 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 | Command | Action |
 |---------|--------|
 | `make` | List the commands |
-| `make dev` / `make dev-down` / `make dev-fclean` / `make dev-logs` | Build and start at https://localhost (runs `make build` first when there is no saved report) with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented from a fixed seed, never real people, never able to publish); live reload; its own compose project, so it runs beside production / stop it / also delete its image, volumes and saved reports / its logs |
+| `make dev` / `make dev-down` / `make dev-fclean` / `make dev-logs` | Build and start at https://localhost (runs `make build` first when there is no saved report) with the last saved report (`Dev · <login>` on the landing signs in without 42) and three synthetic test profiles (`Test · …`: a new student, one halfway through the Common Core, an alumni; invented, moved to today's date, never real people, never able to publish); a change to the code needs `make dev` again; its own compose project, so it runs beside production / stop it / also delete its image, volumes and saved reports / its logs |
 | `make build` | Build dev's image, refresh the saved report of `DEV_UID` (~120 requests, about 40 s with three apps) and the synthetic test profiles |
 | `make production` / `make prod-down` | Build and start production at https://ravazque.info through the Cloudflare tunnel (`make production` too) / stop it and the tunnel (memory is cleared; browsers keep their reports; its volumes, the consent log among them, stay) |
 | `make down` | Stop both |
 | `make logs`, `make ps` | Follow production's logs / list the services of both |
-| `make test` | Python tests (web, core) in the image and JS tests (web, core, site) with local Node |
+| `make test` | Go tests (server), type check and tests of the browser app (web) and the site's scripts |
 | `make preview UID=…` | Save a real extraction to `web/preview/data.json` (about 120 requests) |
 | `make snapshot` | Write `site/data/42.json` from the preview data |
 | `make site` | Stage `site/` into `site/_build` and serve it at http://localhost:8080 |
@@ -103,7 +109,7 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
 ## Privacy and security
 
 - **No database.** Sessions, report copies, cooldowns and rate limits live in the web process's memory (one process,
-  `web/app/memory.py`) and vanish on restart. The browser holds only a random id in a `__Host-` cookie (`Secure`,
+  `server/internal/app/memory.go`) and vanish on restart. The browser holds only a random id in a `__Host-` cookie (`Secure`,
   `HttpOnly`, `SameSite=Lax`); state-changing requests carry a CSRF token.
 - The user's 42 token is used once to identify them and then discarded. API tokens never reach the browser.
 - **The report lives in the user's browser** (IndexedDB). The server keeps a copy in memory for an hour after its last
@@ -117,21 +123,22 @@ Everything lives in one `.env` (mode `600`, never committed), read by Docker Com
   hourly limit survives as an anonymous HMAC so deleting cannot bypass it.
 - Sign-in callbacks are rate-limited per address; avatars are fetched only from the intra CDN; Caddy sends HSTS, a
   strict CSP (`script-src 'self'`, no frames), `nosniff` and `same-origin` referrer headers.
-- The published snapshot (`web/app/publish.py`) is a field-by-field whitelist: never contact data, seats, logged hours,
+- The published snapshot (`server/internal/web/publish.go`) is a field-by-field whitelist: never contact data, seats, logged hours,
   ids, tokens, photos or anything about other students.
 
 Signing in requires accepting the privacy policy; the acceptance is recorded as a keyed hash of the 42 id, the policy
-version and the date for two years, and a new version asks everyone to accept it again (`web/app/consent.py`).
+version and the date for two years, and a new version asks everyone to accept it again (`server/internal/app/consent.go`).
 
 Report vulnerabilities privately through GitHub Security Advisories on this repository, not in public issues.
 
 ## Customising
 
-- `core/core42/frontend/ui.json`: colours (light and dark), type, spacing, breakpoints and panel layout for every page,
-  served as `/ui.css` and reloaded on change. `"@name"` references another token.
-- `core/core42/frontend/i18n/{en,es}.json`: every text; both files must have the same keys (enforced by a test).
-- `core/core42/skills.json`, `core/core42/tracks.json`: skill order per cursus and Common Core rank of each project.
-- `core/core42/rncp.json`: the projects behind each RNCP tag, as the intra lists them (the technical areas).
+- `server/core/data/ui.json`: colours (light and dark), type, spacing, breakpoints and panel layout for every page,
+  served as `/ui.css` (built into the binary: restart after a change). `"@name"` references another token.
+- `server/core/data/i18n/{en,es}.json`: every text; both files must have the same keys, and every key the app uses must
+  exist (enforced by tests).
+- `server/core/data/skills.json`, `server/core/data/tracks.json`: skill order per cursus and Common Core rank of each project.
+- `server/core/data/rncp.json`: the projects behind each RNCP tag, as the intra lists them (the technical areas).
 - Accent: 42 blue `#00BABC` by default, coalition colour on request, contrast-adjusted for both themes.
 
 ## Publishing to GitHub Pages
@@ -145,8 +152,9 @@ Report vulnerabilities privately through GitHub Security Advisories on this repo
 
 ## Tests
 
-`make test`. Python in `web/tests/` and `core/tests/`; JS in `web/tests/js/`, `core/tests/js/` and `site/tests/`
-(`node --test`). Fixtures are anonymised.
+`make test`. Go next to its code in `server/` (the analysis and the extraction are checked against golden files that
+the first version produced from the same anonymised and synthetic data, key order included); the browser app's tests
+in `web/src/` (Vitest); the site's in `site/tests/` (`node --test`). Fixtures are anonymised or synthetic.
 
 ## License
 

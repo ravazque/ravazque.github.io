@@ -1,0 +1,14 @@
+name: Idea or request
+description: Suggest a view, a change or a missing piece of data.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are public. Do not include other students' data.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like and why
+    validations:
+      required: true

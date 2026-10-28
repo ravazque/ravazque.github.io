@@ -1,0 +1,9 @@
+<div class="sync" id="sync" aria-live="polite"{% if sync.busy %} hx-get="/app/sync" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  {% if sync.last %}<span class="last">{{ sync.last }}</span>{% endif %}
+  {% if sync.wait %}<span class="{{ 'visually-hidden' if sync.busy else 'wait' }}">{{ sync.wait }}</span>{% endif %}
+  {% if sync.busy %}<div class="progress"><i style="width:{{ sync.pct }}%"></i></div>{% endif %}
+  <form method="post" action="/app/refresh" hx-post="/app/refresh" hx-target="#sync" hx-swap="outerHTML">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="next" value="{{ here }}">
+    <button class="btn on-band" type="submit"{% if sync.disabled %} disabled{% endif %}>{{ t("refresh.button") }}</button>
+  </form>
+</div>

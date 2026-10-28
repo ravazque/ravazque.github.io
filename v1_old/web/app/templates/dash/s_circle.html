@@ -1,0 +1,11 @@
+<section id="circle">
+  <h2>{{ s.title }}</h2>
+  <p class="lede">{{ s.lede }}</p>
+  <div class="cols" data-grid><div class="block" data-panel="network">
+    {% if s.wide %}<div class="net-wrap">
+      <aside class="net-side" aria-label="{{ t('network.key_who') }}">{{ s.side }}</aside>
+      <div class="net-plot graph-panel"><div class="graph-wide">{{ s.wide }}</div><div class="graph-narrow">{{ s.narrow }}</div></div>
+    </div>
+    {% else %}<p class="note">{{ s.empty }}</p>{% endif %}
+  </div></div>
+</section>

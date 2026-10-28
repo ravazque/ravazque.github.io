@@ -1,0 +1,327 @@
+"""The dashboard: five pages rendered on the server, the boot screen, the sync bar and the account actions."""
+import hmac
+import json
+import time
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
+
+from . import consent
+from .dash.charts import S1, hbars
+from .dash.fmt import Fmt
+from .dash.views import BUILDERS, PAGES, Page, portfolio_csv, projects_csv
+from .i18n import pick_lang
+from .pages import safe_next, templates
+from .publish import can_publish
+from .routes_api import run_publish
+from .sessions import COOKIE, SessionStore, csrf_ok, current_user
+from .store import Store, delete_everything, enqueue_extraction
+
+router = APIRouter()
+BUSY = ("queued", "running")
+NO_STORE = {"Cache-Control": "no-store"}
+
+
+def _store(request: Request) -> Store:
+    return Store(request.app.state.memory, request.app.state.settings)
+
+
+def _ms(iso: str | None) -> float | None:
+    try:
+        return datetime.fromisoformat(iso).timestamp() * 1000 if iso else None
+    except ValueError:
+        return None
+
+
+def wait_text(f: Fmt, seconds: int) -> str:
+    return f("refresh.wait_s", count=max(1, seconds)) if seconds < 60 else f("refresh.wait", count=-(-seconds // 60))
+
+
+def sync_ctx(f: Fmt, status: dict) -> dict:
+    busy = status["state"] in BUSY
+    wait = (f(status["message"] or f"status.{status['state']}") if busy else f("status.failed") if status["state"] == "failed"
+            else f"[{wait_text(f, status['next_refresh_in'])}]" if status["next_refresh_in"] > 0 else "")
+    last = _ms(status.get("last"))
+    return {"busy": busy, "pct": round(100 * (status.get("progress") or 0)), "wait": wait,
+            "last": f("refresh.last", when=f.stamp_num(last)) if last else "", "disabled": busy or status["next_refresh_in"] > 0}
+
+
+def publish_ctx(request: Request, f: Fmt, user: dict, status: dict) -> dict | None:
+    s = request.app.state.settings
+    if not can_publish(s, user):
+        return None
+    last = _ms(status.get("last"))
+    fresh = last is not None and datetime.now(timezone.utc).timestamp() * 1000 - last < s.cooldown_s * 1000
+    ready = status["state"] not in BUSY and fresh
+    published = _ms(status.get("published"))
+    note = f("publish.stale") if not fresh and status["state"] not in BUSY else f("publish.last", when=f.stamp(published)) if published else ""
+    return {"ready": ready, "note": note}
+
+
+def base_ctx(request: Request, user: dict, status: dict, f: Fmt) -> dict:
+    s = request.app.state.settings
+    return {"lang": f.lang, "t": f, "csrf": user["csrf"], "sync": sync_ctx(f, status), "publish": publish_ctx(request, f, user, status),
+            "coalition_color": user.get("coalition_color") or "", "accent": user.get("coalition_color") or "", "issues_url": s.issues_url,
+            "here": request.url.path + (f"?{request.url.query}" if request.url.query else ""), "pages": list(PAGES), "page": None, "key": "",
+            "login": user["login"], "report_sig": "", "dev_mode": bool(s.dev_report), "owner": is_owner(s, user)}
+
+
+def is_owner(settings, user: dict) -> bool:
+    """The one account allowed on the stats page: the configured owner login, nothing else."""
+    return bool(settings.owner_login) and user.get("login") == settings.owner_login
+
+
+async def _kick(request: Request, store: Store, uid, status: dict) -> dict:
+    """Nothing stored, nothing queued and the hour is over: start the extraction from here."""
+    if status["state"] == "none" and status["next_refresh_in"] <= 0:
+        return await enqueue_extraction(store, request.app.state.jobs, uid, request.app.state.limiter)
+    return status
+
+
+def _boot_ctx(f: Fmt, status: dict) -> dict:
+    view = ("error" if status["state"] == "failed" else
+            "wait" if status["next_refresh_in"] > 0 and status["state"] in ("none", "done") else "progress")
+    return {"view": view, "pct": round(100 * (status.get("progress") or 0)), "wait": wait_text(f, status["next_refresh_in"]),
+            "message": f(status["message"] or f"status.{status['state']}")}
+
+
+async def dashboard(request: Request, key: str, user: dict):
+    store = _store(request)
+    status = await store.status(user["id"])
+    if status["state"] == "refused":
+        return RedirectResponse(f"/app/refused?reason={status['message'] or 'campus'}", status_code=303)
+    f = Fmt(pick_lang(request))
+    ctx = {**base_ctx(request, user, status, f), "key": key}
+    if not await consent.is_current(store, user["id"]):
+        return templates.TemplateResponse(request, "dash/consent.html", {**ctx, "title": f("privacy.title"), "version": consent.VERSION,
+                                                                         "error": request.query_params.get("error") == "consent"}, headers=NO_STORE)
+    data = await store.load_report(user["id"])
+    if data is None and status["state"] not in BUSY and request.query_params.get("fresh") != "1":
+        # the server's copy is gone (an hour unused, or a restart): the browser hands its own back, or asks for a fresh one
+        return templates.TemplateResponse(request, "dash/restore.html", {**ctx, "title": f("boot.title")}, headers=NO_STORE)
+    if data is None:
+        status = await _kick(request, store, user["id"], status)
+        return templates.TemplateResponse(request, "dash/boot.html", {**ctx, "boot": _boot_ctx(f, status), "title": f("boot.title")}, headers=NO_STORE)
+    page = Page(f, data, key, {k: v for k, v in request.query_params.items() if k != "fresh"}, request.app.state.settings.optout_logins)
+    ctx["report_sig"] = (await store.raw_report(user["id"]) or (b"", ""))[1]
+    sections = BUILDERS[key](page)
+    return templates.TemplateResponse(request, "dash/page.html", {
+        **ctx, "key": key, "page": page, "sections": sections, "head": page.head(), "foot": page.footer(), "title": f(f"pages.{key}")}, headers=NO_STORE)
+
+
+def _route(key: str):
+    async def view(request: Request, user: dict = Depends(current_user)):
+        return await dashboard(request, key, user)
+    return view
+
+
+for _key, _path in PAGES.items():
+    router.add_api_route(_path, _route(_key), methods=["GET"], response_class=HTMLResponse)
+
+
+@router.get("/app/corrections")
+async def old_corrections(request: Request):
+    return RedirectResponse("/app/evaluations", status_code=301)
+
+
+@router.get("/app/sync")
+async def sync(request: Request, user: dict = Depends(current_user)):
+    """The top bar's sync state, polled while an extraction runs; the page reloads once it is over."""
+    store = _store(request)
+    status = await store.status(user["id"])
+    if status["state"] == "refused":
+        return Response(headers={"HX-Redirect": f"/app/refused?reason={status['message'] or 'campus'}"})
+    f = Fmt(pick_lang(request))
+    headers = {**NO_STORE, **({} if status["state"] in BUSY else {"HX-Refresh": "true"})}
+    return templates.TemplateResponse(request, "dash/_sync.html", base_ctx(request, user, status, f), headers=headers)
+
+
+@router.get("/app/boot")
+async def boot(request: Request, user: dict = Depends(current_user)):
+    """The first-visit screen's state, polled until the report exists."""
+    store = _store(request)
+    status = await store.status(user["id"])
+    if status["state"] == "refused":
+        return Response(headers={"HX-Redirect": f"/app/refused?reason={status['message'] or 'campus'}"})
+    if await store.load_report(user["id"]) is not None:
+        return Response(headers={"HX-Refresh": "true"})
+    status = await _kick(request, store, user["id"], status)
+    f = Fmt(pick_lang(request))
+    return templates.TemplateResponse(request, "dash/_boot.html", {**base_ctx(request, user, status, f), "boot": _boot_ctx(f, status)}, headers=NO_STORE)
+
+
+@router.post("/app/refresh")
+async def refresh(request: Request, user: dict = Depends(current_user)):
+    if not await csrf_ok(request, user):
+        return Response(status_code=403)
+    store = _store(request)
+    status = await enqueue_extraction(store, request.app.state.jobs, user["id"], request.app.state.limiter)
+    if request.headers.get("hx-request"):
+        f = Fmt(pick_lang(request))
+        return templates.TemplateResponse(request, "dash/_sync.html", base_ctx(request, user, status, f), headers=NO_STORE)
+    return RedirectResponse(safe_next((await request.form()).get("next", "/app")), status_code=303)
+
+
+@router.get("/app/report.json")
+async def report_copy(request: Request, user: dict = Depends(current_user)):
+    """The report for the browser to keep, with the signature it must show to hand it back."""
+    found = await _store(request).raw_report(user["id"])
+    if found is None:
+        return Response(status_code=404)
+    return Response(found[0], media_type="application/json", headers={"X-Report-Sig": found[1], **NO_STORE})
+
+
+MAX_REPORT = 16 * 1024 * 1024
+
+
+@router.post("/app/report")
+async def report_back(request: Request, user: dict = Depends(current_user)):
+    """The browser returns its copy; only the exact bytes this server signed for this user are taken."""
+    if not await csrf_ok(request, user):
+        return Response(status_code=403)
+    raw = await request.body()
+    store = _store(request)
+    sig = request.headers.get("x-report-sig", "")
+    if not raw or len(raw) > MAX_REPORT or not hmac.compare_digest(sig, store.sign(user["id"], raw)):
+        return Response(status_code=400)
+    await store.save_raw(user["id"], raw)
+    return Response(status_code=204)
+
+
+@router.get("/app/projects.csv")
+async def csv_export(request: Request, user: dict = Depends(current_user)):
+    data = await _store(request).load_report(user["id"])
+    if data is None:
+        return Response(status_code=404)
+    page = Page(Fmt(pick_lang(request)), data, "projects", dict(request.query_params), request.app.state.settings.optout_logins)
+    return Response(projects_csv(page), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="projects-{page.q("track", "student", ("student", "piscine", "all"))}.csv"', **NO_STORE})
+
+
+@router.get("/app/portfolio.csv")
+async def portfolio_export(request: Request, user: dict = Depends(current_user)):
+    data = await _store(request).load_report(user["id"])
+    if data is None:
+        return Response(status_code=404)
+    page = Page(Fmt(pick_lang(request)), data, "projects", {}, request.app.state.settings.optout_logins)
+    return Response(portfolio_csv(page), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="portfolio-{user["login"]}.csv"', **NO_STORE})
+
+
+async def _confirm(request: Request, user: dict, kind: str, result: dict | None = None):
+    status = await _store(request).status(user["id"])
+    f = Fmt(pick_lang(request))
+    return templates.TemplateResponse(request, "dash/confirm.html", {**base_ctx(request, user, status, f), "kind": kind, "result": result,
+                                                                     "title": f(f"{kind}.title")}, headers=NO_STORE)
+
+
+@router.get("/app/delete")
+async def delete_confirm(request: Request, user: dict = Depends(current_user)):
+    return await _confirm(request, user, "delete")
+
+
+@router.post("/app/delete")
+async def delete(request: Request, user: dict = Depends(current_user)):
+    if not await csrf_ok(request, user):
+        return Response(status_code=403)
+    await delete_everything(_store(request), request.app.state.jobs, user["id"])
+    await SessionStore(request.app.state.memory, request.app.state.settings).delete(request.state.sid)
+    response = RedirectResponse("/", status_code=303, headers={"Clear-Site-Data": '"storage"'})  # the browser's copy goes too
+    response.delete_cookie(COOKIE, path="/", secure=request.app.state.settings.secure_cookies, httponly=True, samesite="lax")
+    return response
+
+
+@router.get("/app/publish")
+async def publish_confirm(request: Request, user: dict = Depends(current_user)):
+    if not can_publish(request.app.state.settings, user):
+        return RedirectResponse("/app", status_code=303)
+    return await _confirm(request, user, "publish")
+
+
+@router.post("/app/publish")
+async def publish(request: Request, user: dict = Depends(current_user)):
+    if not await csrf_ok(request, user):
+        return Response(status_code=403)
+    code, payload = await run_publish(request, user)
+    if code == 200 and getattr(request.app.state, "stats", None):
+        request.app.state.stats.published()
+    return await _confirm(request, user, "publish", {"ok": code == 200, **payload})
+
+
+def _dur(seconds: float) -> str:
+    """A compact duration: '3d 4h', '4h 12m' or '12m'."""
+    s = max(int(seconds), 0)
+    d, h, m = s // 86400, s % 86400 // 3600, s % 3600 // 60
+    return f"{d}d {h}h" if d else f"{h}h {m}m" if h else f"{m}m"
+
+
+async def build_stats(request: Request, f: Fmt) -> dict:
+    """Assemble the owner's stats from the live in-process counters and the current session/queue/budget state."""
+    app = request.app
+    st, mem, jobs, s = app.state.stats, app.state.memory, app.state.jobs, app.state.settings
+    now = time.time()
+    sessions = []
+    for key in await mem.keys("sess:*"):
+        raw = await mem.get(key)
+        if raw:
+            sessions.append(json.loads(raw))
+    sessions.sort(key=lambda d: d.get("created") or 0, reverse=True)
+    st.saw_sessions(len(sessions))
+
+    hour = st.last_hour()
+    labels, used, rem = [], [], []
+    for a in range(len(s.apps)):
+        r = await mem.get(f"rl:hourly:{a}")
+        labels.append(f("stats.app", n=a + 1))
+        used.append(hour[a] if a < len(hour) else 0)
+        rem.append(int(r) if r is not None else None)
+    api_chart = hbars(f, labels, [(f("stats.used"), used, S1)], label=f("stats.api_title"), end=lambda i, v: f.num(v),
+                      extra=lambda i: f("stats.left_n", n=f.num(rem[i])) if rem[i] is not None else None, big=True)
+    api_tiles = [(f("stats.requests_total"), f.num(st.requests_total)), (f("stats.requests_hour"), f.num(sum(hour)))]
+    n = st.extractions
+    ext_tiles = [(f("stats.ext_total"), f.num(n)), (f("stats.ext_running"), f.num(1 if jobs.running else 0)),
+                 (f("stats.ext_queued"), f.num(len(jobs.queued()))),
+                 (f("stats.ext_avg_req"), f.num(round(st.extraction_requests / n)) if n else "–"),
+                 (f("stats.ext_avg_time"), f("stats.secs", n=f.num(round(st.extraction_seconds / n))) if n else "–"),
+                 (f("stats.failed"), f.num(st.failed)), (f("stats.timeouts"), f.num(st.timeouts)),
+                 (f("stats.denied"), f.num(st.denied))]
+    sys_tiles = [(f("stats.uptime"), _dur(now - st.started_at)), (f("stats.memory"), f.num(mem.size())),
+                 (f("stats.peak"), f.num(st.peak_sessions))]
+    # dates are too long for a big figure tile, so they go on a small line below
+    sys_note = (f("stats.started") + " " + f.stamp_num(st.started_at * 1000) + " · " + f("stats.last_publish") + " "
+                + (f.stamp_num(st.last_publish * 1000) if st.last_publish else f("stats.never")))
+    return {"api_tiles": api_tiles, "api_chart": api_chart, "ext_tiles": ext_tiles, "sys_tiles": sys_tiles, "sys_note": sys_note,
+            "sessions": [{"login": d.get("login") or "–", "name": d.get("name") or "",
+                          "entered": f.stamp_num(d["created"] * 1000) if d.get("created") else "–"} for d in sessions]}
+
+
+@router.get("/app/stats")
+async def stats_page(request: Request, user: dict = Depends(current_user)):
+    """A live operations page for the owner login only; any other account is sent back to the dashboard."""
+    s = request.app.state.settings
+    if not is_owner(s, user):
+        return RedirectResponse("/app", status_code=303)
+    store = _store(request)
+    f = Fmt(pick_lang(request))
+    ctx = base_ctx(request, user, await store.status(user["id"]), f)
+    return templates.TemplateResponse(request, "dash/stats.html",
+                                      {**ctx, "title": f("stats.title"), "stats": await build_stats(request, f)}, headers=NO_STORE)
+
+
+@router.get("/app/consent")
+async def consent_page(request: Request, user: dict = Depends(current_user)):
+    return await dashboard(request, "home", user)
+
+
+@router.post("/app/consent")
+async def accept(request: Request, user: dict = Depends(current_user)):
+    """Accepting the current policy while signed in (after it changed)."""
+    if not await csrf_ok(request, user):
+        return Response(status_code=403)
+    form = await request.form()
+    target = safe_next(form.get("next", "/app"))
+    if form.get("accept") != "1":
+        return RedirectResponse("/app/consent?error=consent", status_code=303)
+    await consent.record(_store(request), user["id"])
+    return RedirectResponse(target, status_code=303)

@@ -127,3 +127,6 @@ func (l *Limiter) BudgetOK() bool {
 	}
 	return false
 }
+
+// PerSecond changes the per-app rate (the dev tools' fake API has no limit).
+func (l *Limiter) PerSecond(n int) { l.mu.Lock(); l.perSecond = n; l.mu.Unlock() }

@@ -3,6 +3,9 @@ COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.ya
 # build, test, preview and snapshot run in dev's project with its image: nothing but production's own targets
 # (production, prod-down, logs) ever touches production's containers, image or volumes
 COMPOSE_TOOLS := $(COMPOSE) -p ravazque-info-dev
+# the dev tools run here (Go); fetch reads the 42 apps from .env without printing them
+DEVTOOLS := cd server && go run ./cmd/devtools
+ENV := set -a && . ./.env && set +a &&
 .DEFAULT_GOAL := help
 .PHONY: help dev dev-down dev-fclean dev-logs production prod prod-down logs build down ps test preview snapshot site certs clean fclean re
 
@@ -12,9 +15,10 @@ help: ## Show this help
 
 DEV_UID = $(shell sed -n 's/^DEV_UID=\([0-9][0-9]*\)$$/\1/p' .env 2>/dev/null)
 
-dev: .env web/Caddyfile.local ## Build and start dev at https://localhost (fetches the saved report only when there is none); reloads on save
+dev: .env web/Caddyfile.local ## Build and start dev at https://localhost (fetches the saved report only when there is none)
 	@if [ ! -f web/preview/data.json ]; then $(MAKE) --no-print-directory build; fi
 	@mkdir -p web/preview
+	@if ! ls web/preview/test-*.json >/dev/null 2>&1; then $(DEVTOOLS) profiles $(CURDIR)/web/preview; fi
 	@$(COMPOSE_DEV) up -d --build
 	@if [ -f web/preview/data.json ]; then echo "Up at https://localhost — 'Dev · …' on the landing enters with the saved report (make build refreshes it)"; \
 	  else echo "Up at https://localhost — no saved report: set DEV_UID in .env and run 'make build'"; fi
@@ -45,27 +49,27 @@ logs: ## Follow production's logs
 	@$(COMPOSE) --profile tunnel logs -f --tail=100
 
 build: .env ## Build dev's image, refresh the saved report of DEV_UID (~120 requests, about 40 s with three apps) and the synthetic test profiles
-	@$(COMPOSE_TOOLS) build
-	@if [ -n "$(DEV_UID)" ]; then mkdir -p web/preview && $(COMPOSE_TOOLS) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(DEV_UID); \
+	@$(COMPOSE_TOOLS) -f compose.yaml -f compose.dev.yaml build
+	@mkdir -p web/preview
+	@if [ -n "$(DEV_UID)" ]; then $(ENV) $(DEVTOOLS) fetch $(DEV_UID) $(CURDIR)/web/preview/data.json; \
 	  else echo "DEV_UID is not set in .env: image built, saved report not refreshed"; fi
-	@mkdir -p web/preview && $(COMPOSE_TOOLS) run --rm -v ./web:/srv/web api python scripts/test_profiles.py
+	@$(DEVTOOLS) profiles $(CURDIR)/web/preview
 
 down: dev-down prod-down ## Stop dev and production
 
 ps: ## Show the services of both
 	@$(COMPOSE) --profile tunnel ps; $(COMPOSE_DEV) ps
 
-test: .env ## Run every test: web + core (pytest in the image) and JS (local node)
-	@$(COMPOSE_TOOLS) build -q api
-	@$(COMPOSE_TOOLS) run --rm --no-deps -v ./web/tests:/srv/web/tests:ro -v ./web/app:/srv/web/app:ro -v ./web/static:/srv/web/static:ro \
-	  api sh -c "python -m pytest -q -p no:cacheprovider && python -m pytest -q -p no:cacheprovider -o asyncio_default_fixture_loop_scope=function /srv/core/tests"
-	@node --test web/tests/js/*.test.mjs core/tests/js/*.test.mjs site/tests/*.test.mjs
+test: ## Run every test: Go (server), the browser app (web) and the site's scripts
+	@cd server && go vet ./... && go test ./...
+	@cd web && npm ci --no-audit --no-fund --silent && npx vue-tsc --noEmit && npx vitest run
+	@node --test site/tests/*.test.mjs
 
 preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 120 requests)
-	@$(COMPOSE_TOOLS) run --rm -v ./web:/srv/web api python scripts/preview.py --fetch $(UID)
+	@mkdir -p web/preview && $(ENV) $(DEVTOOLS) fetch $(UID) $(CURDIR)/web/preview/data.json
 
-snapshot: .env ## Write site/data/42.json from web/preview/data.json (what the publish button would send)
-	@$(COMPOSE_TOOLS) run --rm --no-deps -v ./web:/srv/web -v ./site:/srv/site api python scripts/snapshot.py preview/data.json /srv/site/data/42.json
+snapshot: ## Write site/data/42.json from web/preview/data.json (what the publish button would send)
+	@$(DEVTOOLS) snapshot $(CURDIR)/web/preview/data.json $(CURDIR)/site/data/42.json
 
 site: ## Build the GitHub Pages site into site/_build and serve it at http://localhost:8080
 	@sh site/build.sh site/_build
@@ -80,11 +84,12 @@ web/Caddyfile.local: web/Caddyfile.tmpl $(wildcard web/certs/localhost.pem)
 	 sed "s|TLS_LINE|$$line|" web/Caddyfile.tmpl > $@
 
 # clean and fclean never touch production: its containers, image, volumes (the consent log), Caddyfile.local and certs
-clean: dev-down ## dev-down + delete generated files (site/_build, __pycache__); production keeps running
+clean: dev-down ## dev-down + delete generated files (site/_build, the app's build); production keeps running
 	@rm -rf site/_build
-	@find web core -name __pycache__ -type d -prune -exec rm -rf {} +
+	@find server/internal/web/dist -mindepth 1 ! -name .gitkeep -exec rm -rf {} +
 
-fclean: clean dev-fclean ## clean + dev-fclean: everything but production and web/certs
+fclean: clean dev-fclean ## clean + dev-fclean + web/node_modules: everything but production and web/certs
+	@rm -rf web/node_modules
 
 re: fclean dev ## fclean + dev
 
