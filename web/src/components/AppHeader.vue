@@ -9,6 +9,7 @@ import { closePops } from "../lib/behave";
 import { forget, idbShelf } from "../lib/copy";
 import { PAGES, PATHS, type PageKey } from "../views/page";
 import BrandMark from "./BrandMark.vue";
+import { offline } from "../offline";
 
 const props = defineProps<{ page?: PageKey; period?: string; profile?: any; level?: number | null; grade?: string | null; facts?: [string, string][] }>();
 const emit = defineEmits<{ refreshed: [] }>();
@@ -53,7 +54,7 @@ async function signOut() {
 const photoOk = ref(true);
 const avatarUrl = "/avatar/me";
 const tour = ref(false);
-onMounted(() => { tour.value = !settings.get("tour:star") && props.page !== undefined; });
+onMounted(() => { tour.value = !offline && !settings.get("tour:star") && props.page !== undefined; });
 function tourDone() { tour.value = false; settings.set("tour:star", "1"); }
 function go(path: string) { closePops(); router.push(path); }
 </script>
@@ -66,7 +67,7 @@ function go(path: string) { closePops(); router.push(path); }
       <RouterLink v-for="k in PAGES" :key="k" :to="href(k)" :aria-current="k === page ? 'page' : undefined">{{ label(k) }}</RouterLink>
     </nav>
     <div class="topbar-end">
-      <div v-if="status" class="sync" aria-live="polite">
+      <div v-if="status && !offline" class="sync" aria-live="polite">
         <span v-if="lastText" class="last">{{ lastText }}</span>
         <span v-if="syncWait" :class="busy ? 'visually-hidden' : 'wait'">{{ syncWait }}</span>
         <div v-if="busy" class="progress"><i :style="{ width: Math.round(100 * (status.progress || 0)) + '%' }"></i></div>
@@ -121,6 +122,7 @@ function go(path: string) { closePops(); router.push(path); }
           <div class="theme" role="group" :aria-label="f.t('settings.language')">
             <button type="button" :aria-pressed="f.lang === 'en'" @click="setLang('en')">EN</button><button type="button" :aria-pressed="f.lang === 'es'" @click="setLang('es')">ES</button>
           </div>
+          <template v-if="!offline">
           <p class="s-label">{{ f.t("settings.account") }}</p>
           <div v-if="user?.can_publish" class="publish">
             <a class="btn primary" href="/app/publish" :aria-disabled="!fresh || busy" @click.prevent="fresh && !busy && go('/app/publish')">{{ f.t("publish.button") }}</a>
@@ -132,6 +134,7 @@ function go(path: string) { closePops(); router.push(path); }
             <button class="btn secondary" type="button" @click="signOut">{{ f.t("signout.button") }}</button>
             <a class="btn secondary danger" href="/app/delete" @click.prevent="go('/app/delete')">{{ f.t("delete.button") }}</a>
           </div>
+          </template>
         </div>
       </details>
       <details v-if="page" class="pop menu-wrap">

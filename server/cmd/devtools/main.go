@@ -34,6 +34,7 @@ var profiles = []struct {
 }{{"new", 990001}, {"mid", 990002}, {"alumni", 990003}}
 
 func main() {
+	loadEnv("../.env") // make runs this from server/
 	if len(os.Args) < 3 {
 		usage()
 	}

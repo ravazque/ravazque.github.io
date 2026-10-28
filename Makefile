@@ -3,9 +3,8 @@ COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.ya
 # build, test, preview and snapshot run in dev's project with its image: nothing but production's own targets
 # (production, prod-down, logs) ever touches production's containers, image or volumes
 COMPOSE_TOOLS := $(COMPOSE) -p ravazque-info-dev
-# the dev tools run here (Go); fetch reads the 42 apps from .env without printing them
+# the dev tools run here (Go); fetch reads the 42 apps from the root .env itself, without printing them
 DEVTOOLS := cd server && go run ./cmd/devtools
-ENV := set -a && . ./.env && set +a &&
 .DEFAULT_GOAL := help
 .PHONY: help dev dev-down dev-fclean dev-logs production prod prod-down logs build down ps test preview snapshot site certs clean fclean re
 
@@ -51,7 +50,7 @@ logs: ## Follow production's logs
 build: .env ## Build dev's image, refresh the saved report of DEV_UID (~120 requests, about 40 s with three apps) and the synthetic test profiles
 	@$(COMPOSE_TOOLS) -f compose.yaml -f compose.dev.yaml build
 	@mkdir -p web/preview
-	@if [ -n "$(DEV_UID)" ]; then $(ENV) $(DEVTOOLS) fetch $(DEV_UID) $(CURDIR)/web/preview/data.json; \
+	@if [ -n "$(DEV_UID)" ]; then $(DEVTOOLS) fetch $(DEV_UID) $(CURDIR)/web/preview/data.json; \
 	  else echo "DEV_UID is not set in .env: image built, saved report not refreshed"; fi
 	@$(DEVTOOLS) profiles $(CURDIR)/web/preview
 
@@ -66,7 +65,7 @@ test: ## Run every test: Go (server), the browser app (web) and the site's scrip
 	@node --test site/tests/*.test.mjs
 
 preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 120 requests)
-	@mkdir -p web/preview && $(ENV) $(DEVTOOLS) fetch $(UID) $(CURDIR)/web/preview/data.json
+	@mkdir -p web/preview && $(DEVTOOLS) fetch $(UID) $(CURDIR)/web/preview/data.json
 
 snapshot: ## Write site/data/42.json from web/preview/data.json (what the publish button would send)
 	@$(DEVTOOLS) snapshot $(CURDIR)/web/preview/data.json $(CURDIR)/site/data/42.json

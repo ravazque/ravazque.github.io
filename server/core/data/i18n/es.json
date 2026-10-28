@@ -927,7 +927,7 @@
  "today.month_coal": "+{n} puntos para tu coalición",
  "today.validated": {"one": "{n} validado", "other": "{n} validados"},
  "bonus.title": "Bonus de horas",
- "bonus.lede": "En cada logout la intra suma tus últimos siete días móviles de conexión (las sesiones en dos ordenadores a la vez cuentan una vez): 50 h dan +500 a tu coalición y 80 h +1000, cada uno como mucho una vez cada siete días desde que se dio. Las horas de hace más de siete días salen de la ventana con el tiempo.",
+ "bonus.lede": "En cada logout la intra suma tus últimos siete días móviles de conexión (las sesiones en dos ordenadores a la vez cuentan una vez): 50 h dan +500 a tu coalición y 80 h +1000, cada uno como mucho una vez cada siete días desde que se dio. Las horas de hace más de siete días salen de la ventana con el tiempo. Es nuestra lectura de la regla, que 42 no publica: comprobada el 28 oct 2026 con los bonus reales de 11 estudiantes durante 12 días, cada bonus llegó en el logout que indica la regla, al minuto; en 2 de 11 casos la regla esperaba un bonus que no llegó.",
  "bonus.history": "Todos los bonus hasta hoy",
  "bonus.history_note": "{n} · {points} puntos",
  "bonus.got": "Bonus de {hours} h",
