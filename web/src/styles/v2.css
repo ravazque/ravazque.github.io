@@ -26,7 +26,7 @@ details.settings-wrap[open] > .me-btn .me-photo, .me-btn:hover .me-photo { color
 
 /* ---------- Home: what changes today, on the Swiss grid ---------- */
 .today-wrap { padding-top: 8px; }
-.today { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; }
+.today { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: row dense; column-gap: 48px; }
 .tp { min-width: 0; display: flex; flex-direction: column; padding: 0 0 22px; container-type: inline-size; }
 .tp .tab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 20px 0 0; padding-top: 10px;
   border-top: 2px solid var(--rule-strong); font: 700 16px var(--type-font-display); }

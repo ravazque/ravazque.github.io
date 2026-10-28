@@ -888,7 +888,7 @@
  "empty.search_depth": "Ningún proyecto coincide con la búsqueda.",
  "today.title": "Hoy",
  "today.head": "Hoy, {date}",
- "today.as_of": "Datos de las {time}",
+ "today.as_of": "Datos del {time}",
  "today.bonus": "Bonus de horas",
  "today.bonus_aside": "últimos 7 días móviles",
  "today.bonus_none": "Sin coalición: no hay bonus de horas que seguir.",
@@ -934,5 +934,5 @@
  "bonus.none": "Aún no tienes bonus de horas.",
  "user.menu": "Tu cuenta",
  "user.level": "Nivel {level}",
- "user.data": "Datos de las {time}"
+ "user.data": "Datos del {time}"
 }
