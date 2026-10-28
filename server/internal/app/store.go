@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"ravazque.info/server/core"
 	"strconv"
 	"time"
 )
@@ -152,11 +153,6 @@ func EnqueueExtraction(s *Store, jobs *Jobs, uid int, lim *Limiter) Status {
 	return s.Status(uid)
 }
 
-// AccessRefused: the profile no longer meets the access rule; Reason is campus, staff, piscine, blackholed or frozen.
-type AccessRefused struct{ Reason string }
-
-func (e AccessRefused) Error() string { return "access refused: " + e.Reason }
-
 // RunExtraction is the extraction job: extract returns the report's JSON. It keeps the old report on failure, saves
 // nothing after "Delete my data", and never leaves the status on "running".
 func RunExtraction(ctx context.Context, s *Store, stats *Stats, uid int, extract func(context.Context, func(float64)) ([]byte, error)) error {
@@ -179,7 +175,7 @@ func RunExtraction(ctx context.Context, s *Store, stats *Stats, uid int, extract
 			s.update(uid, func(st *Status) { st.Progress = float64(int(f*1000)) / 1000 })
 		}
 	})
-	var refused AccessRefused
+	var refused core.AccessRefused
 	switch {
 	case errors.As(err, &refused):
 		if stats != nil {

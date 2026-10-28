@@ -279,3 +279,8 @@ func DropHiddenEvaluations(d Raw) Raw {
 	}
 	return d
 }
+
+// AccessRefused: the profile no longer meets the access rule; Reason is campus, staff, piscine, blackholed or frozen.
+type AccessRefused struct{ Reason string }
+
+func (e AccessRefused) Error() string { return "access refused: " + e.Reason }

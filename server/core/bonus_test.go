@@ -129,7 +129,7 @@ func TestDeriveGolden(t *testing.T) {
 			raw, _ := os.ReadFile("testdata/golden/" + key + ".derive.json")
 			w, _ := ParseOrdered(raw)
 			for _, p := range Periods {
-				if d := jsonDiff(g.Obj(p), w.Obj(p), p); d != "" {
+				if d := JSONDiff(g.Obj(p), w.Obj(p), p); d != "" {
 					t.Fatal(d)
 				}
 			}
