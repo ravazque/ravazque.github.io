@@ -245,10 +245,11 @@ func TestRetryAfterFailureRunsAgain(t *testing.T) {
 }
 
 func TestSameExtractionNeverQueuedTwice(t *testing.T) {
-	block := make(chan struct{})
-	f := setup(t, func(ctx context.Context, f *fixture, uid int) error { <-block; return nil }, time.Minute)
+	block, busy := make(chan struct{}), make(chan struct{}, 1)
+	f := setup(t, func(ctx context.Context, f *fixture, uid int) error { busy <- struct{}{}; <-block; return nil }, time.Minute)
 	defer close(block)
 	f.jobs.Enqueue(JobID(1), 1, 0) // keeps the worker busy
+	<-busy
 	EnqueueExtraction(f.s, f.jobs, 7, f.lim)
 	if f.jobs.Enqueue(JobID(7), 7, 0) || !slices.Equal(f.jobs.Queued(), []string{JobID(7)}) {
 		t.Fatalf("queued %v", f.jobs.Queued())
