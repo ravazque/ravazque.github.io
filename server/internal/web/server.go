@@ -138,6 +138,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.Set("X-Frame-Options", "DENY")
 	h.Set("X-Content-Type-Options", "nosniff")
 	h.Set("Referrer-Policy", "same-origin")
+	h.Set("Cross-Origin-Opener-Policy", "same-origin")
+	h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
 	s.mux.ServeHTTP(w, r)
 }
 

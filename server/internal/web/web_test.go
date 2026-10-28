@@ -141,7 +141,8 @@ func TestHealthUICSSAndSPA(t *testing.T) {
 		if body := readAll(r); r.StatusCode != 200 || !strings.Contains(body, "<title>spa") {
 			t.Fatalf("%s: %d %s", p, r.StatusCode, body)
 		}
-		if csp := r.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self'") || r.Header.Get("X-Frame-Options") != "DENY" {
+		if csp := r.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self'") || r.Header.Get("X-Frame-Options") != "DENY" ||
+			r.Header.Get("Cross-Origin-Opener-Policy") != "same-origin" || !strings.Contains(r.Header.Get("Permissions-Policy"), "camera=()") {
 			t.Fatalf("%s: headers %v", p, r.Header)
 		}
 	}
