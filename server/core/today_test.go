@@ -142,3 +142,15 @@ func TestTodayCarriesPointsAndBlackhole(t *testing.T) {
 		t.Fatalf("blackhole %v", td.BlackholeDays)
 	}
 }
+
+func TestDropsNameTheRealStartOfASessionOlderThanTheWindow(t *testing.T) {
+	now := time.Date(2026, 10, 28, 12, 0, 0, 0, time.UTC)
+	b := now.Add(-8 * 24 * time.Hour) // began 8 days ago, ended 6 days ago: it is leaving the window now
+	all := Analyze(emptyRaw(), "all", now)
+	all.Obj("logtime").Set("log", []any{M("begin_ms", float64(b.UnixMilli()), "seconds", 48*3600.0, "end", "x", "host", "c1r1s1")})
+	all.Set("logtime_bonus", BonusWindow([]Raw{{"begin_at": pyISO(b), "end_at": pyISO(b.Add(48 * time.Hour))}}, nil, now))
+	td := BuildToday(all, nil, now)
+	if len(td.Drops) != 1 || !td.Drops[0].SessionBegin.Equal(b) {
+		t.Fatalf("drops %+v, want the session's start %v", td.Drops, b)
+	}
+}

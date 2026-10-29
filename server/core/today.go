@@ -140,6 +140,14 @@ func BuildToday(all *OMap, upcoming []UpcomingEval, now time.Time) Today {
 		}
 		sessions = append(sessions, sess{b, e, l.V("host")})
 	}
+	// the window keeps sessions cut at its edge; a drop names the day the session really began
+	for i, d := range td.Drops {
+		for _, x := range sessions {
+			if !x.b.After(d.SessionBegin) && x.e.After(d.SessionBegin) && x.b.Before(td.Drops[i].SessionBegin) {
+				td.Drops[i].SessionBegin = x.b
+			}
+		}
+	}
 	today := localMidnight(now)
 	for i := 6; i >= 0; i-- {
 		start := today.AddDate(0, 0, -i)
