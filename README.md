@@ -1,5 +1,3 @@
-<p align="right"><b>English</b> · <a href="docs/README.es.md">Español</a></p>
-
 # ravazque.info
 
 Statistics for **42 Madrid** students, built on the 42 API. Sign in with your 42 account and see your own history in
@@ -11,6 +9,8 @@ Live at **https://ravazque.info**. An independent project: not made, run or endo
 
 This repository also holds the owner's public CV page (`site/`, served at https://ravazque.github.io), which shows a
 small 42 snapshot published from the app.
+
+*<p align="left"> <c>Language selector for README.md ➜</c> <a href="docs/README.es.md">Español</a> · <b>English</b></p>*
 
 ## What you see
 

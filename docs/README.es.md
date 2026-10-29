@@ -1,5 +1,3 @@
-<p align="right"><a href="../README.md">English</a> · <b>Español</b></p>
-
 # ravazque.info
 
 Estadísticas para estudiantes de **42 Madrid**, construidas sobre la API de 42. Inicia sesión con tu cuenta de 42 y
@@ -12,6 +10,8 @@ ni por 42 Madrid.
 
 Este repositorio también contiene la página pública con el CV del autor (`site/`, servida en
 https://ravazque.github.io), que muestra un pequeño resumen de 42 publicado desde la aplicación.
+
+*<p align="left"> <c>Selector de idioma del README.md ➜</c> <b>Español</b> · <a href="../README.md">English</a></p>*
 
 ## Qué ves
 
