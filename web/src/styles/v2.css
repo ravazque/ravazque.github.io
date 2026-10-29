@@ -159,3 +159,15 @@
   :where(body:not(.site)) .pf-stacks dl > div { padding: 8px 0; border-bottom: 1px solid var(--rule); }
   :where(body:not(.site)) .pf-stacks dd { font-size: 19px; }
 }
+
+/* Achievements of one series: the highest level shows, the earlier ones open underneath */
+:where(body:not(.site)) .ach-more > summary { display: flex; align-items: center; gap: 6px; width: fit-content; min-height: 32px; cursor: pointer;
+  list-style: none; color: var(--text-2); font-size: 14px; }
+:where(body:not(.site)) .ach-more > summary::-webkit-details-marker { display: none; }
+:where(body:not(.site)) .ach-more > summary:hover { color: var(--ink); }
+:where(body:not(.site)) .ach-more ul { margin: 2px 0 4px; padding: 0 0 0 12px; list-style: none; border-left: 2px solid var(--rule); }
+:where(body:not(.site)) .list .ach-more li { padding: 4px 0; border-bottom: 0; gap: 12px; }
+:where(body:not(.site)) [data-panel="achievements"] .list > li { flex-wrap: wrap; }
+:where(body:not(.site)) [data-panel="achievements"] .list > li > span:first-child { flex: 1 1 60%; min-width: 0; }
+:where(body:not(.site)) .list li > .ach-more { flex: 1 0 100%; margin-top: -6px; }
+:where(body:not(.site)) .list .ach-more li { justify-content: space-between; }

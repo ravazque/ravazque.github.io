@@ -952,5 +952,6 @@
  "home.promo_short": "#{rank} of {size}",
  "profile.track_c": "C track",
  "profile.track_python": "Python track",
- "profile.paused_short": "Paused"
+ "profile.paused_short": "Paused",
+ "extras.ach_more": {"one": "Show the previous level", "other": "Show the {n} previous levels"}
 }

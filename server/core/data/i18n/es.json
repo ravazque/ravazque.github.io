@@ -577,7 +577,7 @@
  "skills.radar": "Radar",
  "skills.bars": "Barras",
  "nav.standing": "Coaliciones y promo",
- "nav.pace": "Ritmo",
+ "nav.pace": "Avance",
  "nav.exams": "Exámenes",
  "nav.teammates": "Compañeros",
  "nav.network": "Tu círculo",
@@ -758,7 +758,7 @@
  "home.season": "{n} puntos esta temporada",
  "home.no_coalition": "Aún sin coalición",
  "home.points_total": "{n} puntos en total",
- "home.k_pace": "Ritmo",
+ "home.k_pace": "Avance",
  "home.since_kickoff": "desde el inicio",
  "home.xp_month_unit": "XP/mes",
  "home.k_bonus": "Bonus de horas",
@@ -952,5 +952,6 @@
  "home.promo_short": "{rank}.º de {size}",
  "profile.track_c": "Curso de C",
  "profile.track_python": "Curso de Python",
- "profile.paused_short": "En pausa"
+ "profile.paused_short": "En pausa",
+ "extras.ach_more": {"one": "Ver el nivel anterior", "other": "Ver los {n} niveles anteriores"}
 }

@@ -60,6 +60,18 @@ const csvButtons = (pg: Page, kind: string, title: string, button: string) =>
   `<span class="head-actions"><button class="btn secondary" type="button" data-preview="${kind}" data-title="${esc(title)}" aria-haspopup="dialog">${esc(pg.f.t("common.preview"))}</button>`
   + `<button class="btn secondary" type="button" data-download="${kind}">${esc(button)}</button></span>`;
 
+/** The level an achievement's description names ("Attended 21 events." → 21, "1.000 points" → 1000); 0 when none. */
+const achLevel = (a: any) => +((/\d{1,3}(?:[.,]\d{3})+|\d+/.exec(a.description || "") || ["0"])[0].replace(/[.,]/g, ""));
+
+/** Achievements of one series (same name) as one entry: the highest level on top, the others below it, highest
+ * first; series ordered by when their top level was earned, newest first. */
+export function achievementSeries(list: any[]): { top: any; rest: any[] }[] {
+  const by = new Map<string, any[]>();
+  for (const a of list) by.set(a.name, [...(by.get(a.name) || []), a]);
+  return [...by.values()].map((xs) => xs.sort((a, b) => achLevel(b) - achLevel(a) || String(b.at || "").localeCompare(String(a.at || ""))))
+    .map(([top, ...rest]) => ({ top, rest })).sort((a, b) => String(b.top.at || "").localeCompare(String(a.top.at || "")));
+}
+
 export function projects(pg: Page): Section[] {
   const f = pg.f, D = pg.D, X = D.extras, dv = pg.v.derive || {};
   const out: Section[] = [];
@@ -179,8 +191,11 @@ export function projects(pg: Page): Section[] {
   // what 42 gave you along the way
   const none = `<li class="note">${esc(f.t("empty.period"))}</li>`;
   const evKind = (k: string) => (f.has(`event.${k}`) ? f.t(`event.${k}`) : String(k).replace(/_/g, " "));
-  const ach = [...X.achievements].reverse().map((a: any) => `<li><span><b>${esc(a.name)}</b>${a.tier && a.tier !== "none" ? " " + badge(f.has(`tier.${a.tier}`) ? f.t(`tier.${a.tier}`) : a.tier) : ""}<br>`
-    + `<span class="note">${esc(a.description || "")}</span></span><span class="when">${esc(f.day(a.at))}</span></li>`).join("");
+  const tier = (a: any) => (a.tier && a.tier !== "none" ? " " + badge(f.has(`tier.${a.tier}`) ? f.t(`tier.${a.tier}`) : a.tier) : "");
+  const ach = achievementSeries(X.achievements).map(({ top, rest }) => `<li><span><b>${esc(top.name)}</b>${tier(top)}<br>`
+    + `<span class="note">${esc(top.description || "")}</span></span><span class="when">${esc(f.day(top.at))}</span>`
+    + (rest.length ? `<details class="ach-more"><summary>${esc(f.plural(rest.length, "extras.ach_more"))}</summary><ul>${rest.map((a) =>
+      `<li><span class="note">${esc(a.description || "")}${tier(a)}</span><span class="when">${esc(f.day(a.at))}</span></li>`).join("")}</ul></details>` : "") + "</li>").join("");
   const evs = [...X.events].reverse().map((e: any) => `<li><span>${esc(e.name)}<br><span class="note">${esc(evKind(e.kind))}${e.location ? " · " + esc(e.location) : ""}`
     + `${e.hours ? ` · ${esc(f.num(e.hours, 1))} h` : ""}</span></span><span class="when">${esc(f.day(e.begin))}</span></li>`).join("");
   const misc = [...X.titles.map((x: any) => `<li><span><b>${esc(f.t("extras.title_item"))}</b> ${esc(x.name)}${x.selected ? " " + badge(f.t("extras.selected")) : ""}</span><span class="when">${esc(f.day(x.at))}</span></li>`),
