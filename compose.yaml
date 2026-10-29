@@ -29,7 +29,7 @@ services:
   # make production: the named Cloudflare tunnel that serves ravazque.info; its public hostname (ravazque.info ->
   # http://caddy:8080) is set in Cloudflare's dashboard. Only with the profile, so make dev never starts it.
   tunnel:
-    image: cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
+    image: cloudflare/cloudflared:2026.10.4@sha256:c6c7ae1d5dfdcb094ad344ed68ccffc26635c9c6be80965664c33baf064b0515
     profiles: [tunnel]
     command: ["tunnel", "--no-autoupdate", "run"]
     environment:
