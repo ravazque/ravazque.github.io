@@ -1,0 +1,3 @@
+# Test fixtures: a fake HMAC key in the Go tests, not a secret.
+b04176b620b630ff078a36a7ed9fc15ddd5bc08b:server/internal/web/web_test.go:generic-api-key:21
+a6bd7dcaec9f736817b4b51770c1892734dff15f:server/internal/app/app_test.go:generic-api-key:39

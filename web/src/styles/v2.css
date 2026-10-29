@@ -136,7 +136,7 @@
 :where(body:not(.site)) .pf .pf-photo { width: 132px; height: 132px; border-radius: 20px; font-size: 34px; background: var(--sunken); }
 :where(body:not(.site)) .pf-name { color: var(--ink); font: 900 40px/1 var(--type-font-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
 :where(body:not(.site)) .pf-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 8px 0 14px; color: var(--text-2); font-size: 15px; line-height: 1.5; }
-:where(body:not(.site)) .pf-sub > span { display: inline-flex; align-items: center; gap: 4px; }
+:where(body:not(.site)) .pf-sub > span { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
 :where(body:not(.site)) .pf-sub .dot { display: inline-block; width: 9px; height: 9px; margin-right: 2px; }
 :where(body:not(.site)) .pf-stacks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
 :where(body:not(.site)) .pf-stacks dl { display: grid; align-content: start; gap: 10px; margin: 0; padding: 10px 18px 0; border-left: 1px solid var(--rule); }

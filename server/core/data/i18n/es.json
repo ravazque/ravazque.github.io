@@ -951,5 +951,6 @@
  "tier.hard": "difícil",
  "home.promo_short": "{rank}.º de {size}",
  "profile.track_c": "Curso de C",
- "profile.track_python": "Curso de Python"
+ "profile.track_python": "Curso de Python",
+ "profile.paused_short": "En pausa"
 }

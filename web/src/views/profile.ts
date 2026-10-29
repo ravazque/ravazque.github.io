@@ -33,7 +33,7 @@ function card(pg: Page): string {
     [main ? [f.t("home.k_level"), f.num(main.level, 2)] : null, promo ? [f.t("standing.promo"), f.t("home.promo_short", { rank: f.num(promo.rank), size: f.num(promo.size) })] : null],
     [has(P.wallet) ? [f.t("head.wallet"), `${f.num(P.wallet)} ₳`] : null, has(P.correction_point) ? [f.t("head.points"), f.num(P.correction_point)] : null],
     [main?.begin ? [f.t("profile.kickoff"), f.day(main.begin)] : null, piscine?.begin ? [f.t("profile.piscine"), month(piscine.begin)] : null,
-      dv.alumni_due ? [f.t("profile.alumni"), dv.alumni_due === "paused" ? f.t("profile.paused") : f.day(dv.alumni_due)] : null],
+      dv.alumni_due ? [f.t("profile.alumni"), dv.alumni_due === "paused" ? f.t("profile.paused_short") : f.day(dv.alumni_due)] : null],
   ].map((st) => st.filter(Boolean) as [string, string][]).filter((st) => st.length));
   const sub = [esc(P.login) + (P.campus_current ? ` · ${esc(P.campus_current)}` : ""),
     coal ? `<span><i class="dot" style="background:${safeColor(coal.color)}"></i>${esc(coal.name)}${coal.rank ? ` · ${esc(f.t("home.nth", { n: coal.rank }))}` : ""}</span>` : "",
@@ -44,7 +44,7 @@ function card(pg: Page): string {
   return `<section id="profile" aria-label="${esc(f.t("profile.title"))}"><div class="pf">`
     + `<div class="avatar-lg pf-photo"><span aria-hidden="true">${esc(initials(P.name || P.login))}</span>${P.image ? `<img src="${esc(P.image)}" alt="">` : ""}</div>`
     + `<div class="pf-main"><p class="pf-name">${esc(P.name || P.login)}</p><p class="pf-sub">${sub}</p>`
-    + `<div class="pf-stacks">${stacks.map((st) => `<dl>${st.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`).join("")}</div>`
+    + `<div class="pf-stacks">${stacks.map((st) => `<dl>${st.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd${v === f.t("profile.paused_short") ? ` title="${esc(f.t("profile.paused"))}" data-tip="${esc(f.t("profile.paused"))}"` : ""}>${esc(v)}</dd></div>`).join("")}</dl>`).join("")}</div>`
     + `<p class="pf-now">${P.location ? '<i class="live" aria-hidden="true"></i>' : ""}${esc(now)} · ${esc(f.t("head.generated", { when: f.dayTime(D.generated) }))}</p></div></div></section>`;
 }
 
