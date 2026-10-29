@@ -12,6 +12,8 @@ updates:
     directory: /web
     schedule: {interval: weekly}
     groups: {npm: {patterns: ["*"]}}
+    # vue-tsc does not run on TypeScript 7 yet: lift this once it does
+    ignore: [{dependency-name: typescript, versions: [">=6"]}]
   - package-ecosystem: docker
     directory: /
     schedule: {interval: weekly}
