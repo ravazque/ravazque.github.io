@@ -1,5 +1,5 @@
 {
- "_notes": "Projects of the 42 Madrid Common Core by rank (circle), by API slug: the C track and the Python track (42Next, slugs 42next-*, python-module-*), which share cursus 21 and the rank quests. Any other 42cursus project counts as Outer Core; C Piscine projects (cursus 9) are Piscine. Move or add slugs if 42 changes the curriculum.",
+ "_notes": "Projects of the 42 Madrid Fundación Telefónica Common Core by rank (circle), by API slug: the C track and the Python track (42Next, slugs 42next-*, python-module-*), which share cursus 21 and the rank quests. Any other 42cursus project counts as Outer Core; C Piscine projects (cursus 9) are Piscine. Move or add slugs if 42 changes the curriculum.",
  "common_core": {
   "rank-00": [
    "42cursus-libft",

@@ -199,7 +199,7 @@ const periodHref = (p: string) => router.resolve({ query: { ...params.value, per
 </script>
 
 <template>
-  <AppHeader :page="key" :period="view?.period" @refreshed="watchSync" />
+  <AppHeader :page="key" :period="view?.period" :periods="periods" @refreshed="watchSync" />
   <main v-if="screen === 'page'" id="main" ref="main" :data-page="`web-${key}`" @click="onClick" @input="onInput" @change="onInput" @submit.prevent>
     <header class="page-head">
       <h1>{{ title }}</h1>

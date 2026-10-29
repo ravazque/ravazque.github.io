@@ -423,7 +423,7 @@
 :where(body:not(.site)) .net-node.me circle { fill: var(--accent); stroke: var(--ink); }
 :where(body:not(.site)) .net-node.rank circle { fill: color-mix(in oklab, var(--accent-data) var(--bubble-fill), var(--surface)); stroke: var(--accent-data); }
 :where(body:not(.site)) .net-node.outer circle { fill: color-mix(in oklab, var(--slate) var(--bubble-fill), var(--surface)); stroke: var(--slate); }
-:where(body:not(.site)) .net-node.alumni circle { fill: var(--ink); stroke: var(--ink); }
+:where(body:not(.site)) .net-node.alumni circle { fill: var(--alumni); stroke: var(--alumni-edge); }
 :where(body:not(.site)) .net-node.none circle { fill: var(--surface); stroke: var(--neutral); }
 :where(body:not(.site)) .net-node.dead circle { fill: color-mix(in oklab, var(--critical) 22%, var(--surface)); stroke: var(--critical); stroke-dasharray: 2 2; }
 :where(body:not(.site)) .net-node text { fill: var(--text-2); font: 500 13px var(--type-font-text); paint-order: stroke; stroke: var(--c-island-bg); stroke-width: 3px; }

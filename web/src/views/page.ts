@@ -109,5 +109,12 @@ export function myTrack(extras: any): "c" | "python" | null {
   return (extras.quests || []).some((q: any) => q.name === "42Next" && q.validated) ? "python" : "c";
 }
 
+/** 42 renames an account it erased to "3b3-NNNNN": nobody can tell who it was. */
+export const erased = (login?: string | null) => /^3b3-\d+$/.test(login || "");
+
+/** A login as shown: an erased account reads "Deleted account", the original in its tip. */
+export const shownLogin = (f: Fmt, login: string) =>
+  erased(login) ? `<span class="erased" title="${esc(login)}">${esc(f.t("who.erased"))}</span>` : esc(login);
+
 /** An ISO instant (any offset) as epoch milliseconds. */
 export const msOf = (iso: string) => new Date(iso).getTime();

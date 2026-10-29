@@ -364,7 +364,8 @@ func (r *report) person(ref Raw) *OMap {
 	} else if s := Str(p, "login"); s != "" {
 		login = s
 	}
-	return M("login", login, "name", nilIfEmpty(p, "displayname"), "staff", Bool(p, "staff?"),
+	kind := Str(p, "kind")
+	return M("login", login, "name", nilIfEmpty(p, "displayname"), "staff", Bool(p, "staff?") || (kind != "" && kind != "student"),
 		"image", nilIfEmpty(Obj(Obj(p, "image"), "versions"), "small"))
 }
 
@@ -469,9 +470,9 @@ func (r *report) evaluation(e Raw, role string) *OMap {
 		negative = has && !pos
 	}
 	pid := nilIfEmpty(team, "project_id")
-	var slug any
+	var slug, cursus any
 	if f, ok := pid.(float64); ok && r.projects[f] != nil {
-		slug = r.projects[f]["slug"]
+		slug, cursus = r.projects[f]["slug"], r.projects[f]["cursus"]
 	}
 	fbScores := NewOMap()
 	for _, k := range feedbackKinds {
@@ -489,7 +490,7 @@ func (r *report) evaluation(e Raw, role string) *OMap {
 		"status", status, "truant", nilIfEmpty(Obj(e, "truant"), "login"), "no_mark", r.noMark(e, begin, filled, team),
 		"comment", e["comment"], "feedback", e["feedback"], "feedbacks", list(fbs),
 		"fb_rating", scores.V("rating"), "fb_scores", fbScores,
-		"my_host", SessionHost(r.mySessions, begin, end, r.now),
+		"my_host", SessionHost(r.mySessions, begin, end, r.now), "cursus", cursus,
 	)
 	// the other side's seat, looked up for recent evaluations only; it rides on the person so a hidden one loses it
 	if role == "received" {
@@ -560,10 +561,12 @@ func (r *report) projectsSection(received []*OMap) []*OMap {
 					}
 				}
 			}
-			members := []any{}
+			members, leader := []any{}, false
 			for _, u := range Objs(full, "users") {
 				if Str(u, "login") != r.login {
 					members = append(members, u["login"])
+				} else {
+					leader, _ = u["leader"].(bool)
 				}
 			}
 			moulinette := []any{}
@@ -587,7 +590,7 @@ func (r *report) projectsSection(received []*OMap) []*OMap {
 				"mark", full["final_mark"], "validated", full["validated?"], "start", fmtT(start), "start_ms", msT(start),
 				"locked", fmtT(tsAny(full["locked_at"])), "closed", fmtT(tsAny(full["closed_at"])), "end_ms", endMs, "days", days,
 				"moulinette", moulinette, "evals", ids, "outstanding", sumBools(evs, "outstanding"), "correctors", correctors,
-				"evaluations", evals))
+				"evaluations", evals, "leader", leader))
 		}
 		var all []*OMap
 		for _, t := range teams {

@@ -6,6 +6,9 @@ import { esc } from "../lib/h";
 import { table } from "../lib/table";
 import { Page, Section, block, cols, filters, info, kpis, msOf, search, section } from "./page";
 
+/** Two facts on one line of a description, split by a light rule. */
+const pair = (a: string, b: string) => `${esc(a)}<span class="sep" aria-hidden="true"> | </span>${esc(b)}`;
+
 const when = (pg: Page, iso: string) => `<span class="nw">${esc(pg.f.stamp(msOf(iso)))}</span>`;
 
 export function campus(pg: Page): Section[] {
@@ -55,24 +58,15 @@ export function campus(pg: Page): Section[] {
 
   const topSeat = L.seats[0];
   const overlap = L.seats.reduce((s: number, x: any) => s + x.seconds, 0) - L.total_seconds;
-  const lede = topSeat ? f.t(pg.period === "all" ? "seats.lede_all" : "seats.lede_period", { total: f.hm(L.total_seconds), computers: f.plural(L.seats.length, "count.computers"),
-    clusters: f.plural(Object.keys(L.clusters).length, "count.clusters") }) + " " + f.t("seats.lede_top", { seat: topSeat.host, hours: f.nb(topSeat.hours, "h"), sessions: f.plural(topSeat.sessions, "count.sessions") })
-    + (overlap >= 60 ? " " + f.t("seats.lede_overlap", { overlap: f.hm(overlap) }) : "") : f.t("empty.sessions");
+  const lede = topSeat ? [pair(f.t("seats.lede_total", { total: f.hm(L.total_seconds), computers: f.plural(L.seats.length, "count.computers"),
+    clusters: f.plural(Object.keys(L.clusters).length, "count.clusters") }),
+  f.t("seats.lede_top", { seat: topSeat.host, hours: f.nb(topSeat.hours, "h"), sessions: f.plural(topSeat.sessions, "count.sessions") })),
+  esc(f.t("seats.lede_sum")), ...(overlap >= 60 ? [`<b>${esc(f.t("common.exception"))}</b> ${esc(f.t("seats.lede_overlap", { overlap: f.hm(overlap) }))}`] : [])].join("<br>") : esc(f.t("empty.sessions"));
   const info_ = new Map<string, any>(L.seats.map((s: any) => [s.host, s]));
+  const hm = (sec: number) => { const m = Math.floor(sec / 60); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} h`; };
   const [plan, sc] = seatPlan(f, layout, Object.fromEntries(L.seats.map((s: any) => [s.host, s.seconds])), { unit: "h", toUnit: (v) => v / 3600, anchor: true,
-    detail: (h) => { const s = info_.get(h); return `${h} · ${f.nb(s.hours, "h")} · ${f.plural(s.sessions, "count.sessions")} · ${f.day(s.first)} ➜ ${f.day(s.last)}`; } });
-  const best = topSeat ? Math.max(topSeat.hours, 1e-9) : 1;
-  const part = (s: any, i: number) => /^c(\d+)r(\d+)s(\d+)$/.exec(s.host || "")?.[i] ?? null;
+    detail: (h) => { const s = info_.get(h); return [`${h} · ${hm(s.seconds)}`, f.plural(s.sessions, "count.sessions"), f.t("plan.first", { date: f.day(s.first) }), f.t("plan.last", { date: f.day(s.last) })].join("\n"); } });
   const seatLink = (s: any) => `<a class="code" href="#seat-${esc(s.host)}" title="${esc(f.t("computers.show_on_plan", { seat: s.host }))}">${esc(s.host)}</a>`;
-  const computers = table(f, [
-    { k: "host", t: f.t("col.computer"), s: f.t("abbr.computer"), f: seatLink, sv: (s) => seatOrder(s.host) },
-    { k: "cluster", t: f.t("col.cluster"), num: true, hide: true, sv: (s) => +(part(s, 1) || 0), f: (s) => part(s, 1) || "–" },
-    { k: "row", t: f.t("col.row"), num: true, hide: true, sv: (s) => +(part(s, 2) || 0), f: (s) => part(s, 2) || "–" },
-    { k: "seat", t: f.t("col.seat"), num: true, hide: true, sv: (s) => +(part(s, 3) || 0), f: (s) => part(s, 3) || "–" },
-    { k: "hours", t: f.t("col.hours"), num: true, nw: true, f: (s) => `<span class="hbar" aria-hidden="true"><i style="width:${((100 * s.hours) / best).toFixed(1)}%"></i></span>${s.hours.toFixed(1)}` },
-    { k: "sessions", t: f.t("col.sessions"), s: f.t("abbr.sessions"), num: true },
-    { k: "first", t: f.t("col.first"), nw: true, hide: true }, { k: "last", t: f.t("col.last"), nw: true, hide: true },
-  ], L.seats, { label: f.t("computers.table_aria"), sort: ["hours", -1] });
   const keys = Object.keys(L.monthly || {});
   let daily = false, labels: string[] = [], values: number[] = [];
   if (keys.length) {
@@ -86,18 +80,21 @@ export function campus(pg: Page): Section[] {
     labels = daily ? L.days.map((d: string) => `${+d.slice(8)} ${f.months[+d.slice(5, 7) - 1]}`) : months.map((m) => f.monthLabel(m));
     values = daily ? L.hours : months.map((m) => L.monthly[m] || 0);
   }
+  const peakAt = values.length && Math.max(...values) > 0 ? values.indexOf(Math.max(...values)) : -1;
   out.push({ id: "seats", nav: f.t("nav.seats"), html: section("seats", f.t("seats.title"), cols(
-    `<div class="block" data-panel="seat-plan">${plan}${sc}<details class="graph-table"><summary>${esc(f.t("computers.title"))}</summary><div class="table-wrap">${computers}</div></details></div>`,
-    block("hours-month", vbars(f, labels, [[f.t("unit.hours"), values, S1]], { label: f.t("seats.month_aria"), peak: "{v} h · {label}", fmt: (v) => f.num(v, 1), emptyText: f.t("empty.sessions") }),
-      f.t(daily ? "seats.day_title" : "seats.month_title"))), { count: f.plural(L.seats.length, "count.computers"), lede: esc(lede) }) });
+    `<div class="block" data-panel="seat-plan">${plan}${sc}</div>`,
+    `<div class="block" data-panel="hours-month"><div class="block-head"><h3>${esc(f.t(daily ? "seats.day_title" : "seats.month_title"))}</h3>`
+    + (peakAt >= 0 ? `<span class="head-figure">${esc(f.t("seats.peak", { v: f.num(values[peakAt], 1), label: labels[peakAt] }))}</span>` : "") + "</div>"
+    + vbars(f, labels, [[f.t("unit.hours"), values, S1]], { label: f.t("seats.month_aria"), fmt: (v) => f.num(v, 1), emptyText: f.t("empty.sessions") }) + "</div>"), { count: f.plural(L.seats.length, "count.computers"), lede }) });
 
   const busiest = L.days.length ? L.days.map((d: string, i: number) => [d, L.hours[i]] as [string, number]).reduce((a: any, b: any) => (b[1] > a[1] ? b : a)) : null;
   const [cal, calScale] = calendar(f, L.days, L.hours);
   out.push({ id: "days", nav: f.t("nav.days"), html: section("days", f.t("days.title"), cols(
     block("calendar", `<div class="cal-scroll">${cal}</div>${calScale}`, f.t("days.calendar_title")),
-    block("heat-presence", `<div class="heat-wide">${heat(f, L.heat, ACCENT, "h")}</div>`, f.t("days.heat_title"), f.t("days.heat_note"))),
-  { lede: esc(L.days_present && busiest ? f.t("days.lede", { days: f.plural(L.days_present, "count.days"), first: f.day(L.first_day), last: f.day(L.last_day),
-    avg: f.hm(L.total_seconds / L.days_present), longest: f.nb(L.longest_session_h, "h"), busiest: f.day(busiest[0], true), busiest_h: f.nb(busiest[1], "h") }) : f.t("empty.sessions")) }) });
+    block("heat-presence", `<div class="heat-wide">${heat(f, L.heat, ACCENT, "h")}</div>`, f.t("days.heat_title"))),
+  { lede: L.days_present && busiest ? [pair(f.t("days.l_span", { days: f.plural(L.days_present, "count.days"), first: f.day(L.first_day), last: f.day(L.last_day) }),
+    f.t("days.l_avg", { avg: f.hm(L.total_seconds / L.days_present) })), pair(f.t("days.l_longest", { longest: f.nb(L.longest_session_h, "h") }),
+    f.t("days.l_busiest", { busiest: f.day(busiest[0], true), busiest_h: f.nb(busiest[1], "h") }))].join("<br>") : esc(f.t("empty.sessions")) }) });
 
   const sq = pg.q("sq", "").slice(0, 80);
   const log = L.log.filter((s: any) => !sq || `${s.begin} ${s.end} ${s.host}`.toLowerCase().includes(sq.toLowerCase()));
@@ -110,7 +107,7 @@ export function campus(pg: Page): Section[] {
       { k: "host", t: f.t("col.computer"), s: f.t("abbr.computer"), f: seatLink, sv: (s) => seatOrder(s.host) },
       { k: "end", t: f.t("col.logged_out"), s: f.t("abbr.logged_out"), nw: true, hide: true, f: (s) => esc(s.end || f.t("sessions.still_logged")) },
     ], log, { label: f.t("sessions.table_aria"), sort: ["begin_ms", -1], empty: f.t(sq ? "empty.search_sessions" : "empty.sessions") })}</div>`)) + "</div>",
-  { lede: esc(f.t("sessions.lede")) }) });
+  { lede: `${esc(f.t("sessions.lede"))}<br><b>${esc(f.t("common.exception"))}</b> ${esc(f.t("sessions.lede_overlap"))}` }) });
 
   out.push(where(pg));
 
@@ -131,34 +128,41 @@ const seatOrder = (h: string) => {
 
 const capital = (s: string) => s.slice(0, 1).toUpperCase() + s.slice(1);
 
+/** The seat plan of "Where · evaluations": off, its code kept. */
+const WHERE_PLAN = false;
+
 function where(pg: Page): Section {
   const f = pg.f, D = pg.D, PL = D.place, S = D.summary, layout = pg.v.layout || {};
-  const looked = { corrector: D.received.some((e: any) => e.other_host_checked), evaluated: D.given.some((e: any) => e.other_host_checked) };
-  const roles = ["mine", ...(["corrector", "evaluated"] as const).filter((r) => pg.seats && looked[r])];
-  const role = pg.q("where", "mine", roles);
+  // one set of evaluations at a time: the ones you received or the ones you gave; in each, where you were and, for the
+  // last SeatDays days only, where the other side was
+  const role = pg.q("where", "received", ["received", "given"]);
+  const recv = role === "received";
+  const checked = (recv ? D.received : D.given).filter((e: any) => e.other_host_checked);
+  const theirs: (string | null)[] = recv ? checked.map((e: any) => e.other_host) : checked.flatMap((e: any) => e.correcteds.map((c: any) => c.host));
   const clus = (h: string | null) => (h && h.startsWith("c") && h.includes("r") ? h.split("r")[0] : h || "not logged");
-  let evs: any[] = [], theirs: (string | null)[] = [], who = f.t("where.tip_mine");
-  if (role === "corrector") { evs = D.received.filter((e: any) => e.other_host_checked); theirs = evs.map((e) => e.other_host); who = f.t("where.tip_corrector"); }
-  else if (role === "evaluated") { evs = D.given.filter((e: any) => e.other_host_checked); theirs = evs.flatMap((e) => e.correcteds.map((c: any) => c.host)); who = f.t("where.tip_evaluated"); }
-  const values: Record<string, number> = {};
-  if (role !== "mine") for (const h of theirs) if (h) values[h] = (values[h] || 0) + 1;
-  const shown: Record<string, number> = role !== "mine" ? values : PL.my_eval_hosts;
-  const unit = Math.max(0, ...Object.values(shown)) === 1 ? f.t("unit.eval") : f.t("unit.evals"); // "up to 1 eval"
-  const [wplan, wscale] = seatPlan(f, layout, shown, { unit, detail: (h, v) => `${h} · ${f.plural(v, "count.evaluations")} · ${who}` });
   const count = (xs: (string | null)[]) => { const o: Record<string, number> = {}; for (const x of xs) o[clus(x)] = (o[clus(x)] || 0) + 1; return o; };
-  const series: [string, Record<string, number>, string][] = role === "mine"
-    ? [[f.t("where.you_evaluated"), PL.received_my_cluster, S1], [f.t("where.you_evaluating"), PL.given_my_cluster, S2]]
-    : [[f.t(`where.series_${role}`), count(theirs), S1], [f.t("where.you"), count(evs.map((e) => e.my_host)), S2]];
+  const series: [string, Record<string, number>, string][] = [[f.t("where.s_you"), recv ? PL.received_my_cluster : PL.given_my_cluster, S1]];
+  if (pg.seats && checked.length) series.push([f.t(recv ? "where.s_corrector" : "where.s_evaluated"), count(theirs), S2]);
   const ckeys = [...new Set(series.flatMap(([, v]) => Object.keys(v)))].sort((a, b) => Number(a === "not logged") - Number(b === "not logged") || a.localeCompare(b));
   const lab = (k: string) => (k === "not logged" ? f.t("log.not_logged") : k);
-  const lede = roles.length > 1
-    ? f.t("where.lede_seats", { days: pg.seats ?? "", corrector: PL.corrector_located, c_checked: PL.corrector_checked || 0, evaluated: PL.evaluated_located || 0,
-      e_checked: PL.evaluated_checked || 0, me: PL.me_located_received + PL.me_located_given, n: S.received + S.given })
-    : f.t(pg.seats ? "where.lede_none_recent" : "where.lede_light", { days: pg.seats ?? "", me: PL.me_located_received, n: S.received, given: PL.me_located_given, total_given: S.given });
-  const sw = roles.length > 1 ? pg.seg("where", roles.map((r) => [r, f.t(`where.role_${r}`)]), role, f.t("where.role_label"), "where") : "";
+  // group evaluations happen at the leader's computer: how many of the received ones you led
+  const led = D.projects.flatMap((p: any) => p.attempts).filter((a: any) => a.leader && (a.members || []).length).reduce((n: number, a: any) => n + (a.evals || []).length, 0);
+  const tips = ckeys.map((k) => [lab(k), ...series.map(([n, v]) => `${n}: ${f.num(v[k] || 0)}`),
+    ...(k === "not logged" && recv ? [f.plural(led, "where.leader")] : [])].join("\n"));
+  // the seat plan of evaluations is kept but not drawn (WHERE_PLAN): the cluster chart says it more plainly
+  const shown: Record<string, number> = {};
+  for (const h of theirs) if (h) shown[h] = (shown[h] || 0) + 1;
+  const [wplan, wscale] = WHERE_PLAN ? seatPlan(f, layout, shown, { unit: f.t("unit.evals"), detail: (h, v) => `${h}\n${f.plural(v, "count.evaluations")}` }) : ["", ""];
+  const total = recv ? S.received : S.given;
+  const lede = [f.t("where.cov_me", { me: recv ? PL.me_located_received : PL.me_located_given, n: total }),
+    !pg.seats ? f.t("where.cov_light") : checked.length || (recv ? PL.corrector_checked : PL.evaluated_checked)
+      ? f.t("where.cov_other", { x: recv ? PL.corrector_located : PL.evaluated_located, y: recv ? PL.corrector_checked : PL.evaluated_checked })
+      : f.t("where.cov_none")].map(esc).join("<br>") + (pg.seats ? ` <b>${esc(f.t("where.cov_window", { days: pg.seats }))}</b>` : "");
+  const sw = pg.seg("where", [["received", f.t("where.role_received")], ["given", f.t("where.role_given")]], role, f.t("where.role_label"), "where");
   return { id: "where", nav: f.t("nav.where"), html: section("where", "", cols(
-    `<div class="block" data-panel="where-plan" id="where-plan">${wplan}${wscale}</div>`,
-    `<div class="block" data-panel="where-clusters" id="where-clusters"><h3>${esc(f.t("where.clusters_title"))}</h3>${legend(series.map(([n, , c]) => [n, c]))}`
-    + vbars(f, ckeys.map(lab), series.map(([n, v, c]) => [n, ckeys.map((k) => v[k] || 0), c]), { label: f.t("where.clusters_title"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }) + "</div>"),
-  { head: `<div class="panel-head"><h2>${esc(f.t("where.title"))} ${info(f.t("where.inferred_note"))}</h2>${sw}</div>`, lede: esc(lede) }) };
+    ...(WHERE_PLAN ? [`<div class="block" data-panel="where-plan" id="where-plan">${wplan}${wscale}</div>`] : []),
+    `<div class="block" data-panel="where-clusters" id="where-clusters"><h3>${esc(f.t(`where.title_${role}`))}</h3><p class="note">${[f.t(`where.note_${role}`), ...(recv ? [f.t("where.note_not_logged")] : []), ...(series.length > 1 ? [f.t(`where.note_other_${role}`)] : [])].map((l) => `· ${esc(l)}`).join("<br>")}</p>`
+    + vbars(f, ckeys.map(lab), series.map(([n, v, c]) => [n, ckeys.map((k) => v[k] || 0), c]), { label: f.t(`where.title_${role}`), fmt: (v) => f.num(v), tips, barTips: true, emptyText: f.t("empty.period") })
+    + legend(series.map(([n, , c]) => [n, c])) + "</div>"),
+  { head: `<div class="panel-head"><h2>${esc(f.t("where.title"))} ${info(f.t("where.inferred_note"))}</h2>${sw}</div>`, lede }) };
 }

@@ -18,7 +18,7 @@ const (
 // CommonCoreQuests place someone in the Common Core: "Common Core" and "Common Core Rank 00"…"05" (checked 2026-10-25).
 var CommonCoreQuests = []int{37, 44, 45, 46, 47, 48, 49}
 
-// MainCoalitions are the 42 Madrid main cursus coalitions, in the order that wins when a user has several.
+// MainCoalitions are the 42 Madrid Fundación Telefónica main cursus coalitions, in the order that wins when a user has several.
 var MainCoalitions = []string{"zefiria", "marventis", "ignisaria", "tiamant"}
 
 var Madrid = mustZone("Europe/Madrid")

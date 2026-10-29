@@ -118,7 +118,7 @@ func Snapshot(report *core.OMap, updated string) *core.OMap {
 		}
 		return out
 	}
-	return core.M("schema", 1, "updated", updated, "login", profile.V("login"), "name", profile.V("name"), "campus", "42 Madrid",
+	return core.M("schema", 1, "updated", updated, "login", profile.V("login"), "name", profile.V("name"), "campus", "42 Madrid Fundación Telefónica",
 		"title", title, "coalition", coalition, "cursus", cursus,
 		"skills", core.M("student", skills("42cursus"), "piscine", skills("C Piscine")),
 		"projects", core.M("validated", validated, "list", listOf(projects), "in_progress", listOf(progress)), "evaluations", evals)

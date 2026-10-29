@@ -81,6 +81,10 @@ input[type=search]::placeholder { color: var(--c-input-placeholder); }
   padding: var(--c-tooltip-padding-y) var(--c-tooltip-padding-x); border-radius: var(--c-tooltip-radius); box-shadow: var(--c-tooltip-shadow);
 }
 
+#tip b, #tip span { display: block; }
+#tip b { font-weight: 700; margin-bottom: 2px; }
+#tip span + span { margin-top: 1px; }
+
 @media (prefers-reduced-motion: reduce) { .btn, .switch .track, .switch .knob { transition: none; } }
 
 /* modal confirmations (delete my data) */

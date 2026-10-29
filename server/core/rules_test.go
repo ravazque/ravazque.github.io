@@ -225,3 +225,59 @@ func TestTrackNamesTellCAndPythonApart(t *testing.T) {
 		t.Errorf("TrackNames = %v, want %v", got, want)
 	}
 }
+
+// Every attempt says whether the student led its team (group evaluations happen at the leader's computer).
+func TestAttemptsSayWhoLed(t *testing.T) {
+	r := Analyze(loadRaw(t, "testdata/api/fixture.json"), "all", goldenNow)
+	found := false
+	for _, p := range r.Os("projects") {
+		for _, a := range p.Os("attempts") {
+			if a.I("team_id") == 7000148 {
+				found = true
+				if a.V("leader") != true || len(a.L("members")) == 0 {
+					t.Errorf("group attempt 7000148: leader %v, members %v", a.V("leader"), a.L("members"))
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatal("attempt 7000148 missing")
+	}
+}
+
+// Staff accounts have no cursus: the API's kind (admin, external) marks them even when "staff?" is false.
+func TestPersonIsStaffByKind(t *testing.T) {
+	r := &report{people: map[float64]Raw{1: {"id": 1.0, "login": "boss", "staff?": false, "kind": "admin"}, 2: {"id": 2.0, "login": "pal", "kind": "student"}}}
+	if !r.person(Raw{"id": 1.0}).B("staff") {
+		t.Error("kind admin is staff")
+	}
+	if r.person(Raw{"id": 2.0}).B("staff") {
+		t.Error("a student is not staff")
+	}
+}
+
+// Each evaluation carries the cursus of its project, so Discovery piscines can be told from the 42cursus.
+func TestEvaluationsCarryTheirProjectsCursus(t *testing.T) {
+	d := loadRaw(t, "testdata/api/fixture.json")
+	for _, p := range Objs(d, "projects") {
+		p["cursus"] = []any{"42cursus"}
+	}
+	r := Analyze(d, "all", goldenNow)
+	evs := append(r.Os("received"), r.Os("given")...)
+	if len(evs) == 0 {
+		t.Fatal("no evaluations")
+	}
+	withProject := 0
+	for _, e := range evs {
+		if e.V("slug") == nil { // a project the API did not return: nothing to read its cursus from
+			continue
+		}
+		withProject++
+		if c := e.L("cursus"); len(c) != 1 || c[0] != "42cursus" {
+			t.Fatalf("evaluation %v: cursus %v", e.V("id"), e.V("cursus"))
+		}
+	}
+	if withProject == 0 {
+		t.Fatal("no evaluation with a project")
+	}
+}

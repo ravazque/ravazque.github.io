@@ -311,7 +311,7 @@
 :where(body:not(.site)) section > .panel-head { border-bottom: var(--c-section-h2-rule) solid var(--rule-strong); padding-bottom: 12px; margin-bottom: var(--c-section-h2-gap); }
 :where(body:not(.site)) section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
 :where(body:not(.site)) [data-panel]:has(> .kpis, > .rates) { border-top: 0; padding-top: 0; }
-:where(body:not(.site)) .toc + section { padding-top: 40px; }
+:where(body:not(.site)) .toc + section, :where(body:not(.site)) .toc + .sec > section:first-child { padding-top: 40px; }
 :where(body:not(.site)) .toc + .modules-wrap { padding-top: 0; }
 :where(body:not(.site)) .line-end { display: none; position: absolute; right: 0; transform: translateY(-120%); padding: 1px 4px; background: var(--ground); color: var(--ink); font: 700 12px var(--type-font-display); white-space: nowrap; }
 :where(body:not(.site)) [data-panel="skills"] { border-top: 0; padding-top: 0; }

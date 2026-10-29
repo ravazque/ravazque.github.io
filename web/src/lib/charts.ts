@@ -33,7 +33,7 @@ function yaxis(f: Fmt, top: number) {
 }
 
 type VOpts = {
-  label: string; stacked?: boolean; xtitle?: string; peak?: string; line?: [string, number[], string];
+  label: string; stacked?: boolean; xtitle?: string; peak?: string; line?: [string, number[], string]; barTips?: boolean;
   fmt?: (v: number) => string; every?: number; tips?: string[]; emptyText?: string;
 };
 
@@ -46,7 +46,7 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
   const top = niceMax(Math.max(...totals));
   const every = o.every || Math.max(1, Math.ceil(labels.length / 12));
   const best = totals.indexOf(Math.max(...totals));
-  const colTip = series.length === 1 && !o.stacked; // one series: the whole column opens the tip
+  const colTip = series.length === 1 && !o.stacked && !o.barTips; // one series: the whole column opens the tip
   const line = o.line;
   const cols = labels.map((lab, i) => {
     const tip = o.tips ? o.tips[i]

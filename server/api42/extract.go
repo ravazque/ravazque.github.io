@@ -257,14 +257,14 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 		step()
 		return nil
 	})
-	g.Go(func() error { // other people: only id, login and name are kept
+	g.Go(func() error { // other people: only id, login, name and whether they are staff are kept
 		v, err := c.batched(ctx, "/v2/users", "filter[id]", met, nil)
 		if err != nil {
 			return err
 		}
 		people = []any{}
 		for _, p := range objs(v) {
-			people = append(people, raw{"id": p["id"], "login": p["login"], "displayname": p["displayname"]})
+			people = append(people, raw{"id": p["id"], "login": p["login"], "displayname": p["displayname"], "staff?": p["staff?"], "kind": p["kind"]})
 		}
 		step()
 		return nil
@@ -276,7 +276,13 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 		}
 		projects = []any{}
 		for _, p := range objs(v) {
-			projects = append(projects, pickFields(p, projectFields))
+			pp := pickFields(p, projectFields)
+			var cursus []any // only the names: they tell a Discovery piscine from the 42cursus
+			for _, c := range core.Objs(p, "cursus") {
+				cursus = append(cursus, core.Str(c, "name"))
+			}
+			pp["cursus"] = cursus
+			projects = append(projects, pp)
 		}
 		step()
 		return nil

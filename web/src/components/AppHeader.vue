@@ -11,7 +11,7 @@ import { PAGES, PATHS, type PageKey } from "../views/page";
 import BrandMark from "./BrandMark.vue";
 import { offline } from "../offline";
 
-const props = defineProps<{ page?: PageKey; period?: string }>();
+const props = defineProps<{ page?: PageKey; period?: string; periods?: string[] }>();
 const emit = defineEmits<{ refreshed: [] }>();
 const router = useRouter();
 const f = computed(() => fmt.value);
@@ -41,6 +41,7 @@ async function refresh() {
   emit("refreshed");
 }
 
+function pickPeriod(p: string) { closePops(); router.push({ query: { ...router.currentRoute.value.query, period: p } }); }
 function pickTheme(t: Theme) { theme.value = t; setTheme(t); accent.value = applyAccentChoice(settings.get("accent"), user.value?.coalition_color); }
 function pickAccent(a: "intra" | "coalition") { settings.set("accent", a); accent.value = applyAccentChoice(a, user.value?.coalition_color); }
 
@@ -80,7 +81,7 @@ function go(path: string) { closePops(); router.push(path); }
           <nav class="best-menu" :aria-label="f.t('best.label')">
             <a v-for="b in [['/app#today', 'today.bonus', 'today.title'], ['/app/campus#seats', 'seats.title', 'pages.campus'], ['/app/campus#days', 'days.title', 'pages.campus'],
                             ['/app/people#who', 'who.title', 'pages.people'], ['/app/people#circle', 'network.title', 'pages.people'],
-                            ['/app/evaluations#in-depth', 'depth.given_title', 'pages.evaluations'], ['/app/evaluations#log', 'log.title', 'pages.evaluations']]"
+                            ['/app#in-depth', 'depth.given_title', 'pages.home'], ['/app#log', 'log.title', 'pages.evaluations']]"
                :key="b[0]" :href="b[0]" @click.prevent="go(b[0])">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /></svg>
               <span>{{ f.t(b[1]) }}<small>{{ f.t(b[2]) }}</small></span>
@@ -109,6 +110,12 @@ function go(path: string) { closePops(); router.push(path); }
           <div class="theme" role="group" :aria-label="f.t('theme.label')">
             <button v-for="t in (['auto', 'light', 'dark'] as Theme[])" :key="t" type="button" :aria-pressed="theme === t" @click="pickTheme(t)">{{ f.t(`theme.${t}`) }}</button>
           </div>
+          <template v-if="periods?.length">
+          <p class="s-label">{{ f.t("rail.period") }}</p>
+          <div class="theme" role="group" :aria-label="f.t('rail.period')">
+            <button v-for="p in periods" :key="p" type="button" :aria-pressed="p === period" @click="pickPeriod(p)">{{ f.t(`period.${p}`) }}</button>
+          </div>
+          </template>
           <p class="s-label">{{ f.t("settings.language") }}</p>
           <div class="theme" role="group" :aria-label="f.t('settings.language')">
             <button type="button" :aria-pressed="f.lang === 'en'" @click="setLang('en')">EN</button><button type="button" :aria-pressed="f.lang === 'es'" @click="setLang('es')">ES</button>

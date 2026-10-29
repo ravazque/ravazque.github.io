@@ -1,11 +1,11 @@
 # ravazque.info
 
-Statistics for **42 Madrid** students, built on the 42 API. Sign in with your 42 account and see your own history in
+Statistics for **42 Madrid Fundación Telefónica** students, built on the 42 API. Sign in with your 42 account and see your own history in
 one place: the hours you logged and where you sat, every project and retry, your exams, every evaluation you gave and
 received, the people you crossed paths with, your promo and your coalition. English and Spanish, light and dark, in
 the 42 blue or your coalition's colour.
 
-Live at **https://ravazque.info**. An independent project: not made, run or endorsed by 42 or 42 Madrid.
+Live at **https://ravazque.info**. An independent project: not made, run or endorsed by 42 or 42 Madrid Fundación Telefónica.
 
 This repository also holds the owner's public CV page (`site/`, served at https://ravazque.github.io), which shows a
 small 42 snapshot published from the app.
@@ -21,22 +21,30 @@ Five pages. Every choice (period, filters, views) lives in the address, so any v
   bonus (hours in the rolling seven days against 50 h and 80 h, when each one is due, which sessions are about to
   leave the window), where you are sitting, your last seven days hour by hour, your next evaluation and the projects
   you have open. Below: six summary modules, your rhythm, pace and blackhole, skills, coalitions and promo, the bonus
-  in detail, the points you gave your coalition, achievements, titles and quests, and your campuses.
+  in detail, the points you gave your coalition, achievements (one line per series, the earlier levels folded),
+  titles and quests, your campuses, everyone you crossed paths with, the projects you corrected and the full
+  evaluation log with search.
 - **Projects**: every project and attempt with filters, grouped by milestone (0 = Libft … 6) for the C and the Python
-  Common Core, CSV export, exams, technical domains (the intra's RNCP tags) and a timeline of every attempt.
-- **Evaluations**: what you give back, received and given over time, when they happen (weekday × hour, duration, how
-  far ahead they were booked), correction statistics, your feedback, correction points and the full log with search.
-- **People**: who evaluated you most, the connections between the people closest to you, your circle and your
-  teammates.
-- **Campus**: the seat plan with every computer you used, days and hours, sessions, and where evaluations happen.
+  Common Core (a project done in both tracks says which), CSV export, exams, technical domains (the intra's RNCP tags)
+  and a timeline of every attempt.
+- **Evaluations**: what you give back (hours, people, rating, how many ended below 50, Outstanding both ways, by the
+  other person's milestone), received and given over time, when they happen (weekday × hour, by hour of the day,
+  duration, how far ahead they were booked), your feedback (as a student, only the 42cursus counts; Discovery
+  piscines are set apart) and correction points.
+- **People**: who evaluated you most, your connections grouped by where they are today, your circle and your
+  teammates. Accounts that 42 erased are left out of the graphs (a note says how many) and read "Deleted account" in
+  tables; staff get a group of their own.
+- **Campus**: the seat plan with every computer you used (computers outside the clusters noted apart), days and
+  hours (the first year in full, your first day marked), the sessions log, and where evaluations happen: the ones you
+  received or gave, by cluster, with the other side's cluster for the last 60 days.
 
 Things worth trying:
 
 - The **period switch**: everything, the 42cursus only, or the C Piscine only.
 - The **star** in the band: a shortcut to the best views (where you sat, who evaluated you, your circle…).
 - **Refresh** your data once an hour; the extraction runs in the background with a progress bar.
-- **Settings** (the gear): language, theme (system, light or dark) and accent (42 blue or your coalition's colour,
-  adjusted for contrast in both themes).
+- **Settings** (the gear): accent (the default 42 blue or your coalition's colour, adjusted for contrast in both
+  themes), theme (system, light or dark), period and language.
 - **Delete my data**: removes everything the server holds about you, at once.
 
 Some figures are inferences, and the app says so where they appear: the logtime bonus rule (inferred from the
@@ -65,7 +73,7 @@ awards: the intra does not publish it, checked against 11 students over 12 days)
 
 ## Who can sign in
 
-Students, transcenders and alumni whose main campus is 42 Madrid. Staff, pisciners, blackholed and frozen accounts see
+Students, transcenders and alumni whose main campus is 42 Madrid Fundación Telefónica. Staff, pisciners, blackholed and frozen accounts see
 a page with the reason. Access is checked again on every refresh.
 
 ## Your data
@@ -73,7 +81,8 @@ a page with the reason. Access is checked again on every refresh.
 - **No database.** Your report lives in your browser (IndexedDB). The server keeps a signed copy in memory for one hour
   after its last use, and accepts the browser's copy back only with its own signature for your account.
 - Your 42 token is used once to know who you are and then dropped; tokens never reach the browser.
-- About other students the app keeps only login, name and milestone. Of the feedback you received, only yours.
+- About other students the app keeps only login, name, milestone and whether they are staff. Of the feedback you
+  received, only yours.
 - The only file the server writes is the consent record: a keyed hash of your 42 id, the policy version and the date,
   kept for two years.
 - *Delete my data* clears the server's copy, cancels a pending refresh and tells your browser to clear its storage.
@@ -157,6 +166,20 @@ GITHUB_REPO, GITHUB_BRANCH   #   and GITHUB_TOKEN are set)
   Cloudflare tunnel (Zero Trust → Networks → Tunnels: a Docker connector whose public hostname points to
   `http://caddy:8080`; its token goes in `TUNNEL_TOKEN`). Dev and production are separate Compose projects and can run
   side by side.
+
+### Updating production
+
+```
+git pull --rebase    # the new code (and anything the publish button committed)
+make prod-down       # optional: stops the containers; the volumes (the consent log) stay
+make production      # rebuilds the image from the code you have and starts it again
+```
+
+`make production` alone also works: it rebuilds and replaces only what changed, with a few seconds offline. Never
+add `-v` to a `down` by hand: that deletes the volumes, consent log included. What a restart clears is the memory:
+everyone signs in again, and their reports come back from their browsers (the server's signature still matches while
+`SESSION_SECRET` stays the same). Data that a new version adds to the report appears after each person's next
+refresh.
 
 ### The 42 API budget
 

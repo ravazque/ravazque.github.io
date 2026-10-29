@@ -17,6 +17,8 @@
  "tokens": {
   "light": {
    "ground": "#f7f8f8",
+   "alumni": "#f3eee3",
+   "alumni-edge": "#9c8a64",
    "surface": "#f7f8f8",
    "sunken": "#eceeef",
    "ink": "#111417",
@@ -48,6 +50,8 @@
   },
   "dark": {
    "ground": "#0f1214",
+   "alumni": "#ebe6db",
+   "alumni-edge": "#a39374",
    "surface": "#0f1214",
    "sunken": "#1a1f22",
    "ink": "#eef1f2",

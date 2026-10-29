@@ -1,5 +1,5 @@
 {
- "_notes": "Requirements of the RNCP titles as the intra lists them for 42 Madrid (2026-10). Every requirement of an option must be met; one option is enough. \"projects\": validated projects whose name is in tags[tag]; \"xp\": XP of those validated projects (the site's own estimate, the intra may differ); \"group\": validated projects done in a team; \"events\": events attended; \"level\": 42cursus level.",
+ "_notes": "Requirements of the RNCP titles as the intra lists them for 42 Madrid Fundación Telefónica (2026-10). Every requirement of an option must be met; one option is enough. \"projects\": validated projects whose name is in tags[tag]; \"xp\": XP of those validated projects (the site's own estimate, the intra may differ); \"group\": validated projects done in a team; \"events\": events attended; \"level\": 42cursus level.",
  "tags": {
   "suite": [
    "Inception-of-Things",

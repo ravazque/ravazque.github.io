@@ -9,11 +9,12 @@ import { Page, type Section, myRank, myTrack, msOf } from "./page";
 import { projects } from "./projects";
 import { people } from "./people";
 import { campus } from "./campus";
+import { evaluations } from "./evaluations";
 
 /** Ids each page leaves to Profile (the v1 Home panels), in Profile's order. */
 export const PROFILE_FROM = {
   campus: ["rhythm"], projects: ["pace", "skills"], people: ["standing"], campusBonus: ["bonus"], peopleCoal: ["coal-points"],
-  projectsActivity: ["activity"], campusPlaces: ["campuses"],
+  projectsActivity: ["activity"], campusPlaces: ["campuses"], peopleCrossed: ["crossed"], evaluationsLater: ["corrected", "log"],
 };
 export const ON_PROFILE = new Set(Object.values(PROFILE_FROM).flat());
 
@@ -116,7 +117,7 @@ function bonusModule(pg: Page, dv: any) {
 export function profile(pg: Page, td: Today | null): Section[] {
   const f = pg.f;
   const pick = (from: Section[], ids: string[]) => ids.flatMap((id) => from.filter((s) => s.id === id));
-  const P = projects(pg), Pe = people(pg), C = campus(pg);
+  const P = projects(pg), Pe = people(pg), C = campus(pg), Ev = evaluations(pg);
   const today = td ? home(f, td) : [];
   return [
     { id: "profile", nav: f.t("profile.title"), html: card(pg) },
@@ -125,5 +126,7 @@ export function profile(pg: Page, td: Today | null): Section[] {
     ...pick(C, PROFILE_FROM.campus), ...pick(P, PROFILE_FROM.projects), ...pick(Pe, PROFILE_FROM.people),
     ...pick(C, PROFILE_FROM.campusBonus), ...pick(Pe, PROFILE_FROM.peopleCoal), ...pick(P, PROFILE_FROM.projectsActivity),
     ...pick(C, PROFILE_FROM.campusPlaces),
+    ...pick(Pe, PROFILE_FROM.peopleCrossed),
+    ...pick(Ev, PROFILE_FROM.evaluationsLater),
   ];
 }

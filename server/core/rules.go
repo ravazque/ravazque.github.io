@@ -174,7 +174,7 @@ func ProfileKind(user Raw, now time.Time) Kind {
 
 var refusal = map[Kind]string{Staff: "staff", Pisciner: "piscine", Blackholed: "blackholed", Frozen: "frozen"}
 
-// Access says whether someone may use the app: 42 Madrid as primary campus, and only students, transcenders, alumni.
+// Access says whether someone may use the app: 42 Madrid Fundación Telefónica as primary campus, and only students, transcenders, alumni.
 func Access(user Raw, now time.Time) (bool, string) {
 	var primary Raw
 	for _, c := range Objs(user, "campus_users") {

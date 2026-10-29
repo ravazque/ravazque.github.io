@@ -33,7 +33,10 @@ const tipEl = () => document.getElementById("tip") as HTMLElement | null;
 function placeTip(el: HTMLElement, x: number | null = null) {
   const tip = tipEl();
   if (!tip || (tipFor === el && tip.style.display === "block")) return;
-  tip.textContent = el.dataset.tip || "";
+  const text = el.dataset.tip || "";
+  // one fact per line, the first one as its heading: tips with their own breaks keep them, others split at " · "
+  const lines = (text.includes("\n") ? text.split("\n") : text.split(" · ")).map((l) => l.trim()).filter(Boolean);
+  tip.replaceChildren(...lines.map((l, i) => Object.assign(document.createElement(i ? "span" : "b"), { textContent: l })));
   tip.style.display = "block";
   tipFor = el;
   tip.style.left = tip.style.top = "0px";

@@ -1,12 +1,12 @@
 # ravazque.info
 
-Estadísticas para estudiantes de **42 Madrid**, construidas sobre la API de 42. Inicia sesión con tu cuenta de 42 y
+Estadísticas para estudiantes de **42 Madrid Fundación Telefónica**, construidas sobre la API de 42. Inicia sesión con tu cuenta de 42 y
 ve tu historia en un solo sitio: las horas que has logueado y dónde te sentaste, cada proyecto y cada reintento, tus
 exámenes, cada evaluación que hiciste y recibiste, la gente con la que coincidiste, tu promo y tu coalición. En
 español e inglés, claro y oscuro, en el azul de 42 o en el color de tu coalición.
 
 En marcha en **https://ravazque.info**. Es un proyecto independiente: no está hecho, gestionado ni respaldado por 42
-ni por 42 Madrid.
+ni por 42 Madrid Fundación Telefónica.
 
 Este repositorio también contiene la página pública con el CV del autor (`site/`, servida en
 https://ravazque.github.io), que muestra un pequeño resumen de 42 publicado desde la aplicación.
@@ -23,25 +23,30 @@ guardar o compartir.
   hoy: el bonus de horas de la coalición (horas en los últimos siete días frente a 50 h y 80 h, cuándo toca cada uno y
   qué sesiones están a punto de salir de la ventana), dónde estás sentado, tus últimos siete días hora a hora, tu
   próxima evaluación y los proyectos que tienes abiertos. Debajo: seis módulos de resumen, tu ritmo, el avance y el
-  blackhole, skills, coaliciones y promo, el bonus en detalle, los puntos que diste a tu coalición, logros, títulos y
-  quests, y tus campus.
+  blackhole, skills, coaliciones y promo, el bonus en detalle, los puntos que diste a tu coalición, logros (una línea
+  por serie, con los niveles anteriores plegados), títulos y quests, tus campus, todas las personas con las que
+  coincidiste, los proyectos que has corregido y el registro completo de evaluaciones con búsqueda.
 - **Proyectos**: cada proyecto e intento con filtros, agrupados por milestone (0 = Libft … 6) para el Common Core de
-  C y el de Python, exportación a CSV, exámenes, dominios técnicos (las etiquetas RNCP de la intra) y una línea de
-  tiempo con todos los intentos.
-- **Evaluaciones**: lo que devuelves, recibidas y hechas a lo largo del tiempo, cuándo ocurren (día × hora, duración,
-  con cuánta antelación se reservaron), estadísticas de corrección, tu feedback, puntos de corrección y el registro
-  completo con búsqueda.
-- **Personas**: quién te evaluó más, las conexiones entre la gente más cercana a ti, tu círculo y tus compañeros de
-  equipo.
-- **Campus**: el plano con cada ordenador que usaste, días y horas, sesiones y dónde ocurren las evaluaciones.
+  C y el de Python (un proyecto hecho en los dos cursos dice cuál es cuál), exportación a CSV, exámenes, dominios
+  técnicos (las etiquetas RNCP de la intra) y una línea de tiempo con todos los intentos.
+- **Evaluaciones**: lo que devuelves (horas, personas, valoración, cuántas acabaron por debajo de 50, Outstanding en
+  los dos sentidos, según el milestone de la otra persona), recibidas y hechas a lo largo del tiempo, cuándo ocurren
+  (día × hora, por hora del día, duración, con cuánta antelación se reservaron), tu feedback (como estudiante solo
+  cuenta el 42cursus; las piscinas Discovery van aparte) y los puntos de corrección.
+- **Personas**: quién te evaluó más, tus conexiones agrupadas por dónde están hoy, tu círculo y tus compañeros de
+  equipo. Las cuentas que 42 borró no aparecen en los gráficos (una nota dice cuántas) y en las tablas salen como
+  "Cuenta borrada"; el staff tiene su propio grupo.
+- **Campus**: el plano con cada ordenador que usaste (los que están fuera de los clústeres, aparte), días y horas (el
+  primer año completo, con tu primer día marcado), el registro de sesiones y dónde ocurren las evaluaciones: las que
+  recibiste o hiciste, por clúster, con el clúster de la otra persona en los últimos 60 días.
 
 Cosas que merece la pena probar:
 
 - El **selector de periodo**: todo, solo el 42cursus o solo la piscina.
 - La **estrella** de la barra: un atajo a las mejores vistas (dónde te sentaste, quién te evaluó, tu círculo…).
 - **Actualizar** tus datos una vez por hora; la extracción va en segundo plano con una barra de progreso.
-- **Ajustes** (el engranaje): idioma, tema (sistema, claro u oscuro) y acento (azul de 42 o el color de tu coalición,
-  ajustado para que se lea bien en los dos temas).
+- **Ajustes** (el engranaje): acento (el azul de 42 por defecto o el color de tu coalición, ajustado para que se lea
+  bien en los dos temas), tema (sistema, claro u oscuro), periodo e idioma.
 - **Borrar mis datos**: elimina al momento todo lo que el servidor guarda de ti.
 
 Algunas cifras son deducciones, y la aplicación lo indica donde aparecen: la regla del bonus de horas (deducida de los
@@ -71,7 +76,7 @@ dominio.
 
 ## Quién puede entrar
 
-Estudiantes, transcenders y alumni cuyo campus principal es 42 Madrid. El staff, los piscineros y las cuentas en
+Estudiantes, transcenders y alumni cuyo campus principal es 42 Madrid Fundación Telefónica. El staff, los piscineros y las cuentas en
 blackhole o congeladas ven una página con el motivo. El acceso se comprueba de nuevo en cada actualización.
 
 ## Tus datos
@@ -79,7 +84,8 @@ blackhole o congeladas ven una página con el motivo. El acceso se comprueba de 
 - **Sin base de datos.** Tu informe vive en tu navegador (IndexedDB). El servidor guarda una copia firmada en memoria
   durante una hora desde su último uso, y solo acepta la copia del navegador si lleva su propia firma para tu cuenta.
 - Tu token de 42 se usa una vez para saber quién eres y se descarta; los tokens nunca llegan al navegador.
-- De otros estudiantes solo se guarda login, nombre y milestone. Del feedback que recibiste, solo el tuyo.
+- De otros estudiantes solo se guarda login, nombre, milestone y si son staff. Del feedback que recibiste, solo el
+  tuyo.
 - El único fichero que escribe el servidor es el registro de aceptación: un hash con clave de tu id de 42, la versión
   de la política y la fecha, que se conserva dos años.
 - *Borrar mis datos* elimina la copia del servidor, cancela una actualización pendiente y le pide a tu navegador que
@@ -166,6 +172,20 @@ GITHUB_REPO, GITHUB_BRANCH   #   y GITHUB_TOKEN estén definidos)
   de Cloudflare con nombre (Zero Trust → Networks → Tunnels: un conector Docker cuyo hostname público apunta a
   `http://caddy:8080`; su token va en `TUNNEL_TOKEN`). Dev y producción son proyectos de Compose distintos y pueden
   funcionar a la vez.
+
+### Actualizar producción
+
+```
+git pull --rebase    # el código nuevo (y lo que haya subido el botón de publicar)
+make prod-down       # opcional: para los contenedores; los volúmenes (el registro de aceptación) se quedan
+make production      # reconstruye la imagen con el código que tienes y la vuelve a arrancar
+```
+
+`make production` solo también sirve: reconstruye y sustituye solo lo que cambió, con unos segundos sin servicio.
+Nunca añadas `-v` a un `down` a mano: eso borra los volúmenes, también el registro de aceptación. Lo que se pierde al
+reiniciar es la memoria: todo el mundo vuelve a iniciar sesión y su informe vuelve desde su navegador (la firma del
+servidor sigue valiendo mientras `SESSION_SECRET` no cambie). Los datos nuevos que añade una versión al informe
+aparecen tras la siguiente actualización de cada persona.
 
 ### El presupuesto de la API de 42
 
