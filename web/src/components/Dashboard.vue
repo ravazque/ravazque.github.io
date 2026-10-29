@@ -31,11 +31,13 @@ let poll = 0;
 const params = computed(() => Object.fromEntries(Object.entries(route.query).map(([k, v]) => [k, String(Array.isArray(v) ? v[0] : v ?? "")])));
 const pg = computed(() => (view.value ? new Page(f.value, view.value, key.value, params.value) : null));
 
+const BUILDERS = new Map<PageKey, (pg: Page) => Section[]>([["projects", projects], ["evaluations", evaluations], ["people", people], ["campus", campus]]);
 const sections = computed<Section[]>(() => {
   if (!pg.value) return [];
   if (key.value === "home") return profileSections(pg.value, today.value);
   // the panels v1's Home held live on Profile again: the other pages leave them out
-  return { projects, evaluations, people, campus }[key.value as Exclude<PageKey, "home">](pg.value).filter((s) => !ON_PROFILE.has(s.id));
+  const build = BUILDERS.get(key.value);
+  return build ? build(pg.value).filter((s) => !ON_PROFILE.has(s.id)) : [];
 });
 
 const profile = computed(() => view.value?.report.profile);
