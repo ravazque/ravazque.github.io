@@ -5,8 +5,8 @@
   "es": "Data Engineer y desarrollador de software"
  },
  "about": {
-  "en": "Software developer trained at 42 Madrid, now specialising in data engineering. I design relational databases, process data with Python and run it on containerised, automated infrastructure (Docker, Kubernetes, CI/CD). I have co-built two freelance products in small teams, from the database to the screen.",
-  "es": "Desarrollador de software formado en 42 Madrid y especializándome en ingeniería de datos. Diseño bases de datos relacionales, proceso datos con Python y los pongo en marcha sobre infraestructura en contenedores y automatizada (Docker, Kubernetes, CI/CD). He co-desarrollado dos productos freelance en equipos pequeños, de la base de datos a la pantalla."
+  "en": "Software developer trained at 42 Madrid Fundación Telefónica, now specialising in data engineering. I design relational databases, process data with Python and run it on containerised, automated infrastructure (Docker, Kubernetes, CI/CD). I have co-built two freelance products in small teams, from the database to the screen.",
+  "es": "Desarrollador de software formado en 42 Madrid Fundación Telefónica y especializándome en ingeniería de datos. Diseño bases de datos relacionales, proceso datos con Python y los pongo en marcha sobre infraestructura en contenedores y automatizada (Docker, Kubernetes, CI/CD). He co-desarrollado dos productos freelance en equipos pequeños, de la base de datos a la pantalla."
  },
  "now": {
   "en": "Working toward the RNCP Level 7 (master's level) in database architecture and data at 42.",

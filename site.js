@@ -5,7 +5,7 @@
 const STRINGS = {
   en: {
     about: "About", now: "Right now", in_progress: "In progress at 42", experience: "Experience", highlights: "Selected projects",
-    cursus: "42 Madrid", level: "Level", to_next: "{pct}% of the way to level {next}", stage: "Stage",
+    cursus: "42 Madrid Fundación Telefónica", level: "Level", to_next: "{pct}% of the way to level {next}", stage: "Stage",
     "stage.rank": "Common Core · Rank {n}", "stage.outer-core": "Outer Core", "stage.alumni": "Alumni",
     common_core: "Common Core validated {when}", coalition: "Coalition", kickoff: "42cursus since",
     evaluations: "Evaluations", evals_note: "Since the 42cursus kickoff.", given: "Given", received: "Received", count: "Total",
@@ -22,7 +22,7 @@ const STRINGS = {
   },
   es: {
     about: "Sobre mí", now: "Ahora mismo", in_progress: "En curso en 42", experience: "Experiencia", highlights: "Proyectos destacados",
-    cursus: "42 Madrid", level: "Nivel", to_next: "{pct}% hacia el nivel {next}", stage: "Etapa",
+    cursus: "42 Madrid Fundación Telefónica", level: "Nivel", to_next: "{pct}% hacia el nivel {next}", stage: "Etapa",
     "stage.rank": "Common Core · Rango {n}", "stage.outer-core": "Outer Core", "stage.alumni": "Alumni",
     common_core: "Common Core validado el {when}", coalition: "Coalición", kickoff: "En el 42cursus desde",
     evaluations: "Evaluaciones", evals_note: "Desde el kickoff del 42cursus.", given: "Dadas", received: "Recibidas", count: "Total",
@@ -134,7 +134,7 @@ if (typeof window !== "undefined" && document.getElementById("cursus")) {
         <p>${esc(pick(x.text, lang))}</p>${tags(x.stack)}</article>`).join("");
       $("#experience").hidden = !(cv?.experience || []).length;
       $("#highlightList").innerHTML = (cv?.projects || []).map((x) => `<article class="island entry">
-        <header><h3>${esc(x.name)}</h3><p class="meta">42 Madrid · ${esc(x.year)}</p></header>
+        <header><h3>${esc(x.name)}</h3><p class="meta">42 Madrid Fundación Telefónica · ${esc(x.year)}</p></header>
         <p>${esc(pick(x.text, lang))}</p>${tags(x.keywords)}</article>`).join("");
       $("#highlights").hidden = !(cv?.projects || []).length;
       $("#educationList").innerHTML = (cv?.education || []).map((x) => `<article class="island entry">
