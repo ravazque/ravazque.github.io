@@ -21,7 +21,7 @@ const theme = ref<Theme>(applyTheme(settings.get("theme")));
 const accent = ref(applyAccentChoice(settings.get("accent"), user.value?.coalition_color));
 watch(() => user.value?.coalition_color, (c) => { accent.value = applyAccentChoice(settings.get("accent"), c); });
 
-const label = (k: PageKey) => (k === "home" ? f.value.t("today.title") : f.value.t(`pages.${k}`));
+const label = (k: PageKey) => f.value.t(`pages.${k}`);
 const href = (k: PageKey) => PATHS[k] + (props.period && k !== "home" ? `?period=${props.period}` : "");
 
 const busy = computed(() => ["queued", "running"].includes(status.value?.state || ""));

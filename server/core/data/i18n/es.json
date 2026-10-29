@@ -939,5 +939,11 @@
  "today.points_short": "puntos",
  "today.blackhole": {"one": "Blackhole en {n} día", "other": "Blackhole en {n} días"},
  "today.now_as_of": "datos de las {time}",
- "unit.eval": "eval"
+ "unit.eval": "eval",
+ "home.streak_days": "días seguidos",
+ "home.weeks": "{n} de {total} semanas con tiempo en el campus",
+ "home.mostly": "{pct}% de tus horas por la {part}",
+ "home.more_rhythm": "Tu ritmo en detalle",
+ "home.titles": "Títulos y logros",
+ "home.more_activity": "Todos los logros, títulos y quests"
 }

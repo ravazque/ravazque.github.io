@@ -2,8 +2,8 @@
 // next, what is open and this month. Built from /api/me/today (computed at request time from the stored report).
 import type { Fmt } from "../fmt";
 import { madridParts } from "../fmt";
-import { esc } from "../lib/h";
-import type { Section } from "./page";
+import { badge, esc, initials, safeColor } from "../lib/h";
+import { type Page, type Section, myRank } from "./page";
 
 export type Tier = { hours: number; points: number; window_h: number; need_h: number; last: string | null; from: string | null; state: string; until: string | null };
 export type Today = {
@@ -109,7 +109,60 @@ function month(f: Fmt, td: Today) {
     + `<p class="line">${esc(f.t("today.month_coal", { n: f.num(m.coalition_points) }))}</p>`, { aside: `${f.months[+m.month.slice(5, 7) - 1]} ${m.month.slice(0, 4)}` });
 }
 
-export function home(f: Fmt, td: Today): Section[] {
-  return [{ id: "today", nav: f.t("today.title"), html: `<section id="today" class="today-wrap"><h2 class="visually-hidden">${esc(f.t("today.title"))}</h2>`
-    + `<div class="today">${bonus(f, td)}${nowPanel(f, td)}${week(f, td)}${next(f, td)}${progress(f, td)}${month(f, td)}</div></section>` }];
+/** Who you are on 42 and what the intra keeps on your profile, then where you are now (v1's profile card). */
+function profile(pg: Page): string {
+  const f = pg.f, D = pg.D, P = D.profile, X = D.extras, dv = pg.v.derive || {};
+  const cursus = new Map<string, any>((X.cursus || []).map((c: any) => [c.name, c]));
+  const main = cursus.get("42cursus"), piscine = cursus.get("C Piscine");
+  const coal = P.coalition, promo = pg.v.promo, rank = myRank(X);
+  const month = (s: string) => `${f.months[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;
+  const facts = ([
+    main ? [f.t("home.k_level"), f.num(main.level, 2)] : null,
+    promo ? [f.t("standing.promo"), `${f.num(promo.rank)} / ${f.num(promo.size)}`] : null,
+    P.wallet !== null && P.wallet !== undefined ? [f.t("head.wallet"), `${f.num(P.wallet)} ₳`] : null,
+    P.correction_point !== null && P.correction_point !== undefined ? [f.t("head.points"), f.num(P.correction_point)] : null,
+    piscine?.begin ? [f.t("profile.piscine"), month(piscine.begin)] : null,
+    main?.begin ? [f.t("profile.kickoff"), f.day(main.begin)] : null,
+    dv.alumni_due ? [f.t("profile.alumni"), dv.alumni_due === "paused" ? f.t("profile.paused") : f.day(dv.alumni_due)] : null,
+    coal ? [f.t("home.k_coalition"), coal.rank ? `${coal.name} · ${f.t("home.nth", { n: coal.rank })}` : coal.name] : null,
+  ].filter(Boolean) as [string, string][]);
+  const coalLine = (coal ? `<i class="dot" style="background:${safeColor(coal.color)}"></i>${esc(coal.name)} · ` : "")
+    + esc(rank ? f.t(`groups.${rank}`) : f.t("home.no_cursus")) + (main?.grade ? ` ${badge(main.grade)}` : "");
+  const now = P.location ? f.t("rail.now_at", { seat: P.location }) : f.t("rail.not_logged");
+  return `<section id="profile" aria-label="${esc(f.t("profile.title"))}"><div class="id-card">`
+    + `<div class="avatar-lg"><span aria-hidden="true">${esc(initials(P.name || P.login))}</span>${P.image ? `<img src="${esc(P.image)}" alt="">` : ""}</div>`
+    + `<div class="id-text"><p class="name">${esc(P.name || P.login)}</p><p>${esc(P.login)}${P.campus_current ? ` · ${esc(P.campus_current)}` : ""}</p>`
+    + `<p class="coal">${coalLine}</p>${(P.groups || []).length ? `<p class="groups">${P.groups.map((g: string) => badge(g)).join("")}</p>` : ""}</div>`
+    + `<dl class="id-facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`
+    + `<p class="id-now">${esc(now)} · ${esc(f.t("head.generated", { when: D.generated ? `${f.day(D.generated)}, ${D.generated.slice(11, 16)}` : "" }))}</p></div></section>`;
+}
+
+/** The last row: your rhythm, your campuses, and your titles and latest achievements. */
+function more(pg: Page): string {
+  const f = pg.f, D = pg.D, X = D.extras, dv = pg.v.derive || {};
+  const [weeks, span] = dv.active_weeks || [0, 0];
+  const split = (dv.day_split || {}) as Record<string, number>;
+  const part = Object.entries(split).reduce((a, b) => (b[1] > a[1] ? b : a), ["", 0])[0];
+  const rhythm = `<p class="figure">${esc(f.num(dv.streak || 0))}<small> ${esc(f.t("home.streak_days"))}</small></p>`
+    + `<p class="line">${esc(f.t("home.weeks", { n: f.num(weeks), total: f.num(span) }))}</p>`
+    + (part && split[part] ? `<p class="line">${esc(f.t("home.mostly", { pct: split[part], part: f.t(`rhythm.${part}`) }))}</p>` : "")
+    + `<p class="line note"><a href="/app/campus#rhythm">${esc(f.t("home.more_rhythm"))}</a></p>`;
+  const campuses = (D.campuses || []).map((c: any) => `<li><span><b>${esc(c.name || "?")}</b>${c.city ? ` <span class="note">${esc(c.city)}</span>` : ""}</span>`
+    + `<span class="when">${c.sessions ? esc(f.nb(c.hours, "h")) : "–"}</span></li>`).join("") || `<li class="note">${esc(f.t("empty.period"))}</li>`;
+  const titles = (X.titles || []).filter((t: any) => t.selected).map((t: any) => `<li><span><b>${esc(t.name)}</b></span><span class="when">${esc(f.t("extras.selected"))}</span></li>`);
+  const ach = [...(X.achievements || [])].reverse().slice(0, 4).map((a: any) => `<li><span>${esc(a.name)}</span><span class="when">${esc((a.at || "").slice(0, 10))}</span></li>`);
+  const list = [...titles, ...ach].join("") || `<li class="note">${esc(f.t("empty.period"))}</li>`;
+  const tp = (key: string, label: string, body: string) =>
+    `<article class="tp" data-today="${key}"><h2 class="tab">${esc(label)}</h2>${body}</article>`;
+  return `<div class="today">${tp("rhythm", f.t("rhythm.title"), rhythm)}${tp("campuses", f.t("foot.campuses"), `<ul class="list">${campuses}</ul>`)}`
+    + tp("titles", f.t("home.titles"), `<ul class="list">${list}</ul><p class="line note"><a href="/app/projects#activity">${esc(f.t("home.more_activity"))}</a></p>`) + "</div>";
+}
+
+export function home(f: Fmt, td: Today, pg: Page): Section[] {
+  const date = f.day(madridParts(Date.now()).iso, true).split(" ").slice(0, 3).join(" ");
+  return [
+    { id: "profile", nav: f.t("profile.title"), html: profile(pg) },
+    { id: "today", nav: f.t("today.title"), html: `<section id="today" class="today-wrap"><h2>${esc(f.t("today.head", { date }))}</h2>`
+      + `<div class="today">${bonus(f, td)}${nowPanel(f, td)}${week(f, td)}${next(f, td)}${progress(f, td)}${month(f, td)}</div>${more(pg)}</section>` },
+  ];
 }

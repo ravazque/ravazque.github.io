@@ -129,3 +129,4 @@
   :where(body:not(.site)) table a.code { display: inline-block; padding: 10px 0; }
   :where(body:not(.site)) td details > summary { min-height: 40px; display: flex; flex-wrap: wrap; align-items: center; }
 }
+:where(body:not(.site)) #today > h2 { margin-top: 40px; }

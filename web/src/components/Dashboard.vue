@@ -4,7 +4,6 @@
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { HttpError, api, fmt, loadSession, state, type Status } from "../state";
-import { madridParts } from "../fmt";
 import { closePops, hideTip, settle } from "../lib/behave";
 import { idbShelf, keepCopy, restore } from "../lib/copy";
 import { esc } from "../lib/h";
@@ -33,7 +32,7 @@ const pg = computed(() => (view.value ? new Page(f.value, view.value, key.value,
 
 const sections = computed<Section[]>(() => {
   if (!pg.value) return [];
-  if (key.value === "home") return today.value ? home(f.value, today.value) : [];
+  if (key.value === "home") return today.value ? home(f.value, today.value, pg.value) : [];
   return { projects, evaluations, people, campus }[key.value as Exclude<PageKey, "home">](pg.value);
 });
 
@@ -56,7 +55,7 @@ const facts = computed<[string, string][]>(() => {
 
 const title = computed(() => {
   if (key.value !== "home") return f.value.t(`pages.${key.value}`);
-  return f.value.t("today.head", { date: f.value.day(madridParts(Date.now()).iso, true).split(" ").slice(0, 3).join(" ") });
+  return f.value.t("profile.title");
 });
 watch([title, () => f.value], () => { document.title = `${title.value} · ${f.value.t("site.name")}`; }, { immediate: true });
 
@@ -95,7 +94,7 @@ async function load() {
 }
 
 async function fetchView() {
-  const period = params.value.period || "";
+  const period = key.value === "home" ? "all" : params.value.period || ""; // Home shows the whole profile
   const [v, td] = await Promise.all([
     api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`),
     key.value === "home" ? api<Today>("/api/me/today") : Promise.resolve(null),
@@ -116,7 +115,7 @@ async function watchSync() {
   await fetchView();
 }
 
-watch([key, () => params.value.period], () => { if (screen.value === "page" && (key.value === "home" ? !today.value : true)) fetchView(); else load(); });
+watch([key, () => params.value.period], () => { if (screen.value === "page") fetchView(); else load(); });
 load();
 onBeforeUnmount(() => clearTimeout(poll));
 
