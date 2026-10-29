@@ -200,3 +200,28 @@ func TestDropHidden(t *testing.T) {
 		t.Fatalf("PeopleIDs = %v", got)
 	}
 }
+
+// The Python track (42Next) shares cursus 21 and the rank quests but places some projects on other circles.
+func TestGroupOfPythonTrack(t *testing.T) {
+	for slug, want := range map[string]string{"42cursus-libft": "rank-00", "42cursus-ft_printf": "rank-01", "42next-push_swap": "rank-01",
+		"42next-born2beroot": "rank-02", "python-module-00": "rank-02", "python-module-06-bis": "rank-02", "a-maze-ing": "rank-02",
+		"42next-exam-rank-02": "rank-02", "call-me-maybe": "rank-03", "codexion": "rank-03", "fly-in": "rank-03", "42next-exam-rank-03": "rank-03",
+		"pac-man": "rank-04", "rag-against-the-machine": "rank-04", "42next-exam-rank-04": "rank-04", "agent-smith": "rank-05", "tree_nity": "rank-05",
+		"the-answer-protocol": "rank-05", "42next-exam-rank-05": "rank-05", "42next-exam-rank-06": "rank-06", "push_swap": "rank-02", "born2beroot": "rank-01"} {
+		if got := GroupOf(pu(slug, 21)); got != want {
+			t.Errorf("GroupOf(%s) = %s, want %s", slug, got, want)
+		}
+	}
+}
+
+// A student who switched tracks has two projects with one name (push_swap, Exam Rank 02): each says its track.
+func TestTrackNamesTellCAndPythonApart(t *testing.T) {
+	rows := []*OMap{M("name", "Exam Rank 02", "slug", "exam-rank-02"), M("name", "Exam Rank 02", "slug", "42next-exam-rank-02"),
+		M("name", "Libft", "slug", "42cursus-libft"), M("name", "push_swap", "slug", "42next-push_swap")}
+	TrackNames(rows)
+	got := []string{rows[0].S("name"), rows[1].S("name"), rows[2].S("name"), rows[3].S("name")}
+	want := []string{"Exam Rank 02 (C)", "Exam Rank 02 (Python)", "Libft", "push_swap"}
+	if !slices.Equal(got, want) {
+		t.Errorf("TrackNames = %v, want %v", got, want)
+	}
+}

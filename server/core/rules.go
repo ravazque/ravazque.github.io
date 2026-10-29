@@ -6,6 +6,7 @@ import (
 	"math"
 	"regexp"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 )
@@ -284,3 +285,21 @@ func DropHiddenEvaluations(d Raw) Raw {
 type AccessRefused struct{ Reason string }
 
 func (e AccessRefused) Error() string { return "access refused: " + e.Reason }
+
+// TrackNames tells the C and Python (42Next, slugs 42next-*) versions of one project apart when a student has both:
+// those rows get " (C)" or " (Python)" after the name.
+func TrackNames(rows []*OMap) {
+	tracks := map[string]map[bool]bool{}
+	for _, p := range rows {
+		n := p.S("name")
+		if tracks[n] == nil {
+			tracks[n] = map[bool]bool{}
+		}
+		tracks[n][strings.HasPrefix(p.S("slug"), "42next-")] = true
+	}
+	for _, p := range rows {
+		if len(tracks[p.S("name")]) == 2 {
+			p.Set("name", p.S("name")+map[bool]string{false: " (C)", true: " (Python)"}[strings.HasPrefix(p.S("slug"), "42next-")])
+		}
+	}
+}

@@ -643,6 +643,7 @@ func (r *report) projectsSection(received []*OMap) []*OMap {
 	}
 	firstMs := func(o *OMap) float64 { return o.F("first_ms") }
 	sort.SliceStable(rows, func(i, j int) bool { return firstMs(rows[i]) < firstMs(rows[j]) })
+	TrackNames(rows)
 	return rows
 }
 

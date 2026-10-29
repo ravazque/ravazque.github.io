@@ -1,5 +1,5 @@
 {
- "_notes": "Projects of the 42 Madrid Common Core by rank (circle), by API slug. Any other 42cursus project counts as Outer Core; C Piscine projects (cursus 9) are Piscine. Move or add slugs if 42 changes the curriculum.",
+ "_notes": "Projects of the 42 Madrid Common Core by rank (circle), by API slug: the C track and the Python track (42Next, slugs 42next-*, python-module-*), which share cursus 21 and the rank quests. Any other 42cursus project counts as Outer Core; C Piscine projects (cursus 9) are Piscine. Move or add slugs if 42 changes the curriculum.",
  "common_core": {
   "rank-00": [
    "42cursus-libft",
@@ -10,7 +10,8 @@
    "get_next_line",
    "42cursus-ft_printf",
    "ft_printf",
-   "born2beroot"
+   "born2beroot",
+   "42next-push_swap"
   ],
   "rank-02": [
    "42cursus-push_swap",
@@ -25,14 +26,34 @@
    "42cursus-fdf",
    "42cursus-fract-ol",
    "fract-ol",
-   "exam-rank-02"
+   "exam-rank-02",
+   "42next-born2beroot",
+   "python-module-00",
+   "python-module-01",
+   "python-module-02",
+   "python-module-03",
+   "python-module-04",
+   "python-module-05",
+   "python-module-06",
+   "python-module-07",
+   "python-module-08",
+   "python-module-09",
+   "python-module-10",
+   "python-module-05-bis",
+   "python-module-06-bis",
+   "a-maze-ing",
+   "42next-exam-rank-02"
   ],
   "rank-03": [
    "42cursus-philosophers",
    "philosophers",
    "42cursus-minishell",
    "minishell",
-   "exam-rank-03"
+   "exam-rank-03",
+   "call-me-maybe",
+   "codexion",
+   "fly-in",
+   "42next-exam-rank-03"
   ],
   "rank-04": [
    "cub3d",
@@ -46,7 +67,10 @@
    "cpp-module-02",
    "cpp-module-03",
    "cpp-module-04",
-   "exam-rank-04"
+   "exam-rank-04",
+   "pac-man",
+   "rag-against-the-machine",
+   "42next-exam-rank-04"
   ],
   "rank-05": [
    "cpp-module-05",
@@ -60,12 +84,17 @@
    "42cursus-webserv",
    "ft_irc",
    "42cursus-ft_irc",
-   "exam-rank-05"
+   "exam-rank-05",
+   "agent-smith",
+   "tree_nity",
+   "the-answer-protocol",
+   "42next-exam-rank-05"
   ],
   "rank-06": [
    "ft_transcendence",
    "42cursus-ft_transcendence",
-   "exam-rank-06"
+   "exam-rank-06",
+   "42next-exam-rank-06"
   ]
  }
 }
