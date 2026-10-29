@@ -16,12 +16,11 @@ let stop: (() => void) | undefined;
 
 onMounted(async () => {
   document.title = f.value.t("site.name");
-  document.body.classList.add("site");
   if (plan.value) stop = startLanding(plan.value);
   const s = await loadSession().catch(() => null);
   if (s?.user) router.replace("/app");
 });
-onBeforeUnmount(() => { stop?.(); document.body.classList.remove("site"); });
+onBeforeUnmount(() => stop?.());
 
 function signIn() {
   if (!accept.value) return;

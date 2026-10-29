@@ -1,497 +1,497 @@
 /* Dashboard rendered on the server: charts, link and radio switches, the settings disclosure, wide/narrow graphs. */
 
-.js .no-js { display: none; }
-main.solo { display: grid; place-items: center; min-height: 70vh; }
-.boot-panel { width: 100%; max-width: var(--c-boot-max-width); display: grid; gap: 14px; }
-.boot-panel .bar { height: var(--c-boot-bar-height); border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
-.boot-panel .bar i { display: block; height: 100%; background: var(--accent-data); transition: width var(--motion-settle) var(--motion-ease); }
-.controls-after { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; }
-section { scroll-margin-top: 80px; }
+:where(body:not(.site)) .js .no-js { display: none; }
+:where(body:not(.site)) main.solo { display: grid; place-items: center; min-height: 70vh; }
+:where(body:not(.site)) .boot-panel { width: 100%; max-width: var(--c-boot-max-width); display: grid; gap: 14px; }
+:where(body:not(.site)) .boot-panel .bar { height: var(--c-boot-bar-height); border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
+:where(body:not(.site)) .boot-panel .bar i { display: block; height: 100%; background: var(--accent-data); transition: width var(--motion-settle) var(--motion-ease); }
+:where(body:not(.site)) .controls-after { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; }
+:where(body:not(.site)) section { scroll-margin-top: 80px; }
 
 /* switches: links (aria-pressed) and radios behave like the segmented buttons */
-.seg > a, .seg > label { display: inline-flex; align-items: center; justify-content: center; min-height: var(--c-segmented-height); padding: 6px var(--c-segmented-padding-x);
+:where(body:not(.site)) .seg > a, :where(body:not(.site)) .seg > label { display: inline-flex; align-items: center; justify-content: center; min-height: var(--c-segmented-height); padding: 6px var(--c-segmented-padding-x);
   font: 700 var(--c-segmented-font-size) var(--type-font-display); white-space: nowrap;
   color: var(--c-segmented-fg); text-decoration: none; cursor: pointer; position: relative; }
-.seg > a:hover, .seg > label:hover { color: var(--c-segmented-fg-hover); }
-.seg > a[aria-pressed="true"], .seg > label:has(input:checked) { background: var(--c-segmented-bg-active); color: var(--c-segmented-fg-active); }
-.seg > label input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.seg > label:has(input:focus-visible) { outline: var(--c-focus-width, 2px) solid var(--focus); outline-offset: -3px; }
-.toggle-check { display: inline-flex; align-items: center; position: relative; }
-.toggle-check input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.toggle-check span { display: inline-flex; align-items: center; min-height: var(--c-button-height); padding: 0 var(--c-button-padding-x);
+:where(body:not(.site)) .seg > a:hover, :where(body:not(.site)) .seg > label:hover { color: var(--c-segmented-fg-hover); }
+:where(body:not(.site)) .seg > a[aria-pressed="true"], :where(body:not(.site)) .seg > label:has(input:checked) { background: var(--c-segmented-bg-active); color: var(--c-segmented-fg-active); }
+:where(body:not(.site)) .seg > label input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+:where(body:not(.site)) .seg > label:has(input:focus-visible) { outline: var(--c-focus-width, 2px) solid var(--focus); outline-offset: -3px; }
+:where(body:not(.site)) .toggle-check { display: inline-flex; align-items: center; position: relative; }
+:where(body:not(.site)) .toggle-check input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+:where(body:not(.site)) .toggle-check span { display: inline-flex; align-items: center; min-height: var(--c-button-height); padding: 0 var(--c-button-padding-x);
   border-radius: var(--c-button-radius); border: var(--c-button-border-width) solid var(--c-button-secondary-border);
   font: 700 var(--c-button-font-size) var(--type-font-display); color: var(--c-button-secondary-fg); }
-.toggle-check:has(input:checked) span { background: var(--ink); color: var(--ground); border-color: var(--ink); }
-.toggle-check:has(input:focus-visible) span { outline: 2px solid var(--focus); outline-offset: 2px; }
-.panel-head h2 { margin-right: auto; }
+:where(body:not(.site)) .toggle-check:has(input:checked) span { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+:where(body:not(.site)) .toggle-check:has(input:focus-visible) span { outline: 2px solid var(--focus); outline-offset: 2px; }
+:where(body:not(.site)) .panel-head h2 { margin-right: auto; }
 
 /* settings as a disclosure */
-details.pop > summary { list-style: none; cursor: pointer; }
-details.pop > summary::-webkit-details-marker { display: none; }
-details.pop > summary::marker { content: ""; }
-details.pop > summary::before { content: none; }  /* report.css draws a disclosure marker on every summary */
-details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
-details.pop { position: relative; }
+:where(body:not(.site)) details.pop > summary { list-style: none; cursor: pointer; }
+:where(body:not(.site)) details.pop > summary::-webkit-details-marker { display: none; }
+:where(body:not(.site)) details.pop > summary::marker { content: ""; }
+:where(body:not(.site)) details.pop > summary::before { content: none; }  /* report.css draws a disclosure marker on every summary */
+:where(body:not(.site)) details.settings-wrap[open] > summary svg { transform: rotate(60deg); }
+:where(body:not(.site)) details.pop { position: relative; }
 
 /* the best stats: a star drawn like the band's other buttons; it turns gold, on a dark tile that reads on any coalition
    colour, under the pointer or while its menu is open */
-.best { display: inline-flex; align-items: center; gap: 4px; min-height: 48px; padding: 0 10px 0 12px; background: transparent; color: var(--on-accent);
+:where(body:not(.site)) .best { display: inline-flex; align-items: center; gap: 4px; min-height: 48px; padding: 0 10px 0 12px; background: transparent; color: var(--on-accent);
   border: 2px solid var(--on-accent); border-radius: var(--radius-m);
   transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out; }
-.best:hover, details.best-wrap[open] > .best { background: var(--star-bg); color: var(--star); border-color: var(--star-bg); }
-.best svg { width: 22px; height: 22px; }
-.best .star { fill: currentColor; }
-.best .caret { width: 10px; height: 6px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+:where(body:not(.site)) .best:hover, :where(body:not(.site)) details.best-wrap[open] > .best { background: var(--star-bg); color: var(--star); border-color: var(--star-bg); }
+:where(body:not(.site)) .best svg { width: 22px; height: 22px; }
+:where(body:not(.site)) .best .star { fill: currentColor; }
+:where(body:not(.site)) .best .caret { width: 10px; height: 6px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
   transition: transform var(--motion-fast) ease-out; }
-details.best-wrap[open] .caret { transform: rotate(180deg); }
-.best-menu, .menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 40; min-width: 260px; display: flex; flex-direction: column;
+:where(body:not(.site)) details.best-wrap[open] .caret { transform: rotate(180deg); }
+:where(body:not(.site)) .best-menu, :where(body:not(.site)) .menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 40; min-width: 260px; display: flex; flex-direction: column;
   padding: 10px; background: var(--ground); color: var(--ink); border: 2px solid var(--ink); animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--ink); }
-.best-menu { border-top: 6px solid var(--star); }
-.best-anchor { position: relative; }
-.best-menu a svg { flex: none; width: 18px; height: 18px; margin-right: 12px; fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.best-menu a span { display: flex; flex-direction: column; line-height: 1.2; padding: 6px 0; }
-.best-menu a small { color: var(--muted); font: 500 13px var(--type-font-text); }
+:where(body:not(.site)) .best-menu { border-top: 6px solid var(--star); }
+:where(body:not(.site)) .best-anchor { position: relative; }
+:where(body:not(.site)) .best-menu a svg { flex: none; width: 18px; height: 18px; margin-right: 12px; fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+:where(body:not(.site)) .best-menu a span { display: flex; flex-direction: column; line-height: 1.2; padding: 6px 0; }
+:where(body:not(.site)) .best-menu a small { color: var(--muted); font: 500 13px var(--type-font-text); }
 /* first visit: a note under the star, pointing at it */
-.tour { position: absolute; right: 0; top: calc(100% + 28px); z-index: 45; width: min(340px, calc(100vw - 32px)); padding: 16px 18px;
+:where(body:not(.site)) .tour { position: absolute; right: 0; top: calc(100% + 28px); z-index: 45; width: min(340px, calc(100vw - 32px)); padding: 16px 18px;
   background: color-mix(in oklab, var(--accent-data) 12%, var(--ground)); color: var(--ink); border: 2px solid var(--ink); border-top: 6px solid var(--star);
   font-size: 15px; animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--ink); }
-.tour::before { content: ""; position: absolute; right: 26px; top: -14px; border: 8px solid transparent; border-top: 0; border-bottom-color: var(--star); }
-.tour p { margin: 0 0 8px; }
-.tour .btn { margin-top: 4px; }
+:where(body:not(.site)) .tour::before { content: ""; position: absolute; right: 26px; top: -14px; border: 8px solid transparent; border-top: 0; border-bottom-color: var(--star); }
+:where(body:not(.site)) .tour p { margin: 0 0 8px; }
+:where(body:not(.site)) .tour .btn { margin-top: 4px; }
 /* the page under the band dims while the note is up, as behind the landing's dialog */
-.tour-shade { position: fixed; inset: 0; z-index: 25; background: color-mix(in oklab, var(--ink) 55%, transparent); animation: fade var(--motion-settle) ease-out; }
+:where(body:not(.site)) .tour-shade { position: fixed; inset: 0; z-index: 25; background: color-mix(in oklab, var(--ink) 55%, transparent); animation: fade var(--motion-settle) ease-out; }
 @keyframes fade { from { opacity: 0; } }
-.best-menu a, .menu a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink); text-decoration: none; font: 600 16px var(--type-font-text); }
-.best-menu a:hover, .menu a:hover { background: var(--sunken); }
-.menu a[aria-current="page"] { background: var(--ink); color: var(--ground); }
+:where(body:not(.site)) .best-menu a, :where(body:not(.site)) .menu a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink); text-decoration: none; font: 600 16px var(--type-font-text); }
+:where(body:not(.site)) .best-menu a:hover, :where(body:not(.site)) .menu a:hover { background: var(--sunken); }
+:where(body:not(.site)) .menu a[aria-current="page"] { background: var(--ink); color: var(--ground); }
 /* narrow windows: the pages move into a menu behind the bars */
-.menu-wrap { display: none; }
-.menu-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.menu-btn .shut, details.menu-wrap[open] .menu-btn .open { display: none; }
-details.menu-wrap[open] .menu-btn .shut { display: block; }
-details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--accent); }
+:where(body:not(.site)) .menu-wrap { display: none; }
+:where(body:not(.site)) .menu-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+:where(body:not(.site)) .menu-btn .shut, :where(body:not(.site)) details.menu-wrap[open] .menu-btn .open { display: none; }
+:where(body:not(.site)) details.menu-wrap[open] .menu-btn .shut { display: block; }
+:where(body:not(.site)) details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--accent); }
 @media (max-width: 959.98px) {
-  .topbar .pages { display: none; }
-  .menu-wrap { display: block; }
-  .menu, .best-menu { min-width: 0; width: min(320px, calc(100vw - 24px)); }
+  :where(body:not(.site)) .topbar .pages { display: none; }
+  :where(body:not(.site)) .menu-wrap { display: block; }
+  :where(body:not(.site)) .menu, :where(body:not(.site)) .best-menu { min-width: 0; width: min(320px, calc(100vw - 24px)); }
 }
 @media (max-width: 519.98px) {  /* one row on a phone: the mark alone stands for the brand */
-  .topbar .brand > span { display: none; }
-  .topbar-end { gap: 8px; }
+  :where(body:not(.site)) .topbar .brand > span { display: none; }
+  :where(body:not(.site)) .topbar-end { gap: 8px; }
   /* every menu hangs from the band's right edge: from its own button it would run off the left of a phone */
-  .topbar-end { position: relative; }
-  .topbar-end .best-anchor, .topbar-end details.pop { position: static; }
-  .tour::before { display: none; }
+  :where(body:not(.site)) .topbar-end { position: relative; }
+  :where(body:not(.site)) .topbar-end .best-anchor, :where(body:not(.site)) .topbar-end details.pop { position: static; }
+  :where(body:not(.site)) .tour::before { display: none; }
 }
 
 /* Preview: a download's table on screen */
-.head-actions { display: inline-flex; flex-wrap: wrap; gap: 10px; }
-.btn[aria-busy="true"] { cursor: progress; opacity: .6; }
-.preview { width: min(1200px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); padding: 20px 22px; border-radius: 0; box-shadow: none;
+:where(body:not(.site)) .head-actions { display: inline-flex; flex-wrap: wrap; gap: 10px; }
+:where(body:not(.site)) .btn[aria-busy="true"] { cursor: progress; opacity: .6; }
+:where(body:not(.site)) .preview { width: min(1200px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); padding: 20px 22px; border-radius: 0; box-shadow: none;
   background: var(--ground); }
-.preview-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 10px; border-bottom: 6px solid var(--rule-strong); }
-.preview-head h2 { margin: 0; border: 0; padding: 0; font: 800 28px var(--type-font-display); }
-.preview-head form { margin: 0; }
-.preview .table-wrap { max-height: calc(100dvh - 160px); }
-.preview th { padding: 10px 12px; font: 700 14px var(--type-font-display); color: var(--text-2); white-space: nowrap; }
-.preview td { white-space: nowrap; }
-.block[id] { scroll-margin-top: calc(var(--c-topbar-height) + 64px); }
-.settings form.theme { margin: 0; }
-.settings .publish .btn { width: 100%; }
+:where(body:not(.site)) .preview-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 10px; border-bottom: 6px solid var(--rule-strong); }
+:where(body:not(.site)) .preview-head h2 { margin: 0; border: 0; padding: 0; font: 800 28px var(--type-font-display); }
+:where(body:not(.site)) .preview-head form { margin: 0; }
+:where(body:not(.site)) .preview .table-wrap { max-height: calc(100dvh - 160px); }
+:where(body:not(.site)) .preview th { padding: 10px 12px; font: 700 14px var(--type-font-display); color: var(--text-2); white-space: nowrap; }
+:where(body:not(.site)) .preview td { white-space: nowrap; }
+:where(body:not(.site)) .block[id] { scroll-margin-top: calc(var(--c-topbar-height) + 64px); }
+:where(body:not(.site)) .settings form.theme { margin: 0; }
+:where(body:not(.site)) .settings .publish .btn { width: 100%; }
 
 /* charts */
-.vchart, .lchart, .hchart, .timeline { margin: 10px 0 0; font-size: var(--c-chart-font-size); color: var(--muted); }
+:where(body:not(.site)) .vchart, :where(body:not(.site)) .lchart, :where(body:not(.site)) .hchart, :where(body:not(.site)) .timeline { margin: 10px 0 0; font-size: var(--c-chart-font-size); color: var(--muted); }
 /* the top value label sits on the top line: keep it clear of the title or note above, and the axis of what follows */
-.vchart, .lchart { margin: 16px 0 6px; }
-.ch-plot { position: relative; height: var(--c-chart-height); margin-left: var(--c-chart-axis-width); border-bottom: 2px solid var(--rule-strong); }
+:where(body:not(.site)) .vchart, :where(body:not(.site)) .lchart { margin: 16px 0 6px; }
+:where(body:not(.site)) .ch-plot { position: relative; height: var(--c-chart-height); margin-left: var(--c-chart-axis-width); border-bottom: 2px solid var(--rule-strong); }
 /* a line chart has a scale on both sides: equal gutters, each number the same 6px from its colour bar */
-.has-line .ch-plot { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
-.ch-y { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
-.has-line .ch-y:not(.right) { left: calc(-1 * (var(--c-chart-axis-width) + 36px)); width: calc(var(--c-chart-axis-width) + 24px); }
-.ch-y.right { left: calc(100% + 12px); right: auto; width: calc(var(--c-chart-axis-width) + 24px); text-align: left; }
-.ch-y span { position: absolute; right: 0; transform: translateY(50%); }
-.ch-y.right span { left: 0; right: auto; }
-.ch-y span:first-child { transform: translateY(0); }  /* the 0 sits above the baseline, not on top of it */
-.ch-plot::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+:where(body:not(.site)) .has-line .ch-plot { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
+:where(body:not(.site)) .ch-y { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
+:where(body:not(.site)) .has-line .ch-y:not(.right) { left: calc(-1 * (var(--c-chart-axis-width) + 36px)); width: calc(var(--c-chart-axis-width) + 24px); }
+:where(body:not(.site)) .ch-y.right { left: calc(100% + 12px); right: auto; width: calc(var(--c-chart-axis-width) + 24px); text-align: left; }
+:where(body:not(.site)) .ch-y span { position: absolute; right: 0; transform: translateY(50%); }
+:where(body:not(.site)) .ch-y.right span { left: 0; right: auto; }
+:where(body:not(.site)) .ch-y span:first-child { transform: translateY(0); }  /* the 0 sits above the baseline, not on top of it */
+:where(body:not(.site)) .ch-plot::before { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); opacity: .7; }
-.ch-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; }
-.ch-col { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 0 var(--c-chart-bar-gap); }
-.ch-col i { flex: 1 1 0; max-width: var(--c-chart-bar-max); border-radius: 2px 2px 0 0; min-height: 0; }
-.ch-col.stack { flex-direction: column-reverse; align-items: center; justify-content: flex-start; gap: 2px; }
-.ch-col.stack i { flex: none; width: 100%; max-width: var(--c-chart-bar-max); border-radius: 1px; }
-.ch-col.stack i[style^="height:0%"], .ch-col.stack i[style^="height:0.00%"] { display: none; }  /* empty segments add no gap */
-.ch-col i:hover, .hb-track i:hover { filter: brightness(1.12); }
+:where(body:not(.site)) .ch-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; }
+:where(body:not(.site)) .ch-col { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 0 var(--c-chart-bar-gap); }
+:where(body:not(.site)) .ch-col i { flex: 1 1 0; max-width: var(--c-chart-bar-max); border-radius: 2px 2px 0 0; min-height: 0; }
+:where(body:not(.site)) .ch-col.stack { flex-direction: column-reverse; align-items: center; justify-content: flex-start; gap: 2px; }
+:where(body:not(.site)) .ch-col.stack i { flex: none; width: 100%; max-width: var(--c-chart-bar-max); border-radius: 1px; }
+:where(body:not(.site)) .ch-col.stack i[style^="height:0%"], :where(body:not(.site)) .ch-col.stack i[style^="height:0.00%"] { display: none; }  /* empty segments add no gap */
+:where(body:not(.site)) .ch-col i:hover, :where(body:not(.site)) .hb-track i:hover { filter: brightness(1.12); }
 /* only the pace chart (the one with a total line) dims the rest to bring the hovered month forward;
    other vbars (e.g. Over time) just brighten the hovered bar */
-.has-line .ch-cols:hover .ch-col:not(:hover) i { opacity: .35; }
-.has-line .ch-cols:hover ~ .ch-line, .has-line .ch-cols:hover ~ .ch-dot { opacity: .4; }
-.ch-line polyline { stroke-width: 3; }  /* the total line, a touch bolder than the plain line charts */
-.ch-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, 50%); z-index: 1; pointer-events: none; }
+:where(body:not(.site)) .has-line .ch-cols:hover .ch-col:not(:hover) i { opacity: .35; }
+:where(body:not(.site)) .has-line .ch-cols:hover ~ .ch-line, :where(body:not(.site)) .has-line .ch-cols:hover ~ .ch-dot { opacity: .4; }
+:where(body:not(.site)) .ch-line polyline { stroke-width: 3; }  /* the total line, a touch bolder than the plain line charts */
+:where(body:not(.site)) .ch-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, 50%); z-index: 1; pointer-events: none; }
 /* which axis is which: a full-height bar beside the left scale (xp), a full-height line beside the right one (total xp) */
-.axis-key { position: absolute; top: 0; bottom: 0; z-index: 2; pointer-events: none; border-radius: 2px; }
-.axis-key.bar { left: -6px; width: 4px; }
-.axis-key.line { right: -6px; width: 4px; }
-.ch-col .peak { position: absolute; top: -4px; transform: translateY(-100%); white-space: nowrap; color: var(--ink); font: 700 14px var(--type-font-display); }
+:where(body:not(.site)) .axis-key { position: absolute; top: 0; bottom: 0; z-index: 2; pointer-events: none; border-radius: 2px; }
+:where(body:not(.site)) .axis-key.bar { left: -6px; width: 4px; }
+:where(body:not(.site)) .axis-key.line { right: -6px; width: 4px; }
+:where(body:not(.site)) .ch-col .peak { position: absolute; top: -4px; transform: translateY(-100%); white-space: nowrap; color: var(--ink); font: 700 14px var(--type-font-display); }
 /* a peak near an edge reads inwards instead of spilling past the chart */
-.ch-col:nth-child(-n+2) .peak { left: 0; }
-.ch-col:nth-last-child(-n+2) .peak { right: 0; }
-.ch-x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-left: var(--c-chart-axis-width); padding-top: 6px; }
-.has-line .ch-x { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
-.ch-x span { text-align: center; white-space: nowrap; overflow: visible; }
-.ch-title { text-align: center; margin-top: 4px; }
-.ch-line, .ch-lines { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.ch-line polyline, .ch-lines path { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.ch-hover { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), 1fr); }
-.ch-hover i:hover { background: color-mix(in oklab, var(--ink) 6%, transparent); }
-.ch-months { position: relative; display: block; height: 1.6em; margin-left: var(--c-chart-axis-width); }
-.ch-months span { position: absolute; top: 6px; transform: translateX(-50%); white-space: nowrap; }
-.chart-empty { margin-top: 12px; }
-.hchart { display: grid; gap: 4px; container-type: inline-size; }
-@container (max-width: 480px) { .hb-extra { display: none; } }
-.hb-row { display: grid; grid-template-columns: var(--c-chart-row-label-width) minmax(0, 1fr); align-items: center; gap: 10px; min-height: var(--c-chart-row-height); }
-.hb-label { color: var(--text-2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(body:not(.site)) .ch-col:nth-child(-n+2) .peak { left: 0; }
+:where(body:not(.site)) .ch-col:nth-last-child(-n+2) .peak { right: 0; }
+:where(body:not(.site)) .ch-x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-left: var(--c-chart-axis-width); padding-top: 6px; }
+:where(body:not(.site)) .has-line .ch-x { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
+:where(body:not(.site)) .ch-x span { text-align: center; white-space: nowrap; overflow: visible; }
+:where(body:not(.site)) .ch-title { text-align: center; margin-top: 4px; }
+:where(body:not(.site)) .ch-line, :where(body:not(.site)) .ch-lines { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+:where(body:not(.site)) .ch-line polyline, :where(body:not(.site)) .ch-lines path { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+:where(body:not(.site)) .ch-hover { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), 1fr); }
+:where(body:not(.site)) .ch-hover i:hover { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+:where(body:not(.site)) .ch-months { position: relative; display: block; height: 1.6em; margin-left: var(--c-chart-axis-width); }
+:where(body:not(.site)) .ch-months span { position: absolute; top: 6px; transform: translateX(-50%); white-space: nowrap; }
+:where(body:not(.site)) .chart-empty { margin-top: 12px; }
+:where(body:not(.site)) .hchart { display: grid; gap: 4px; container-type: inline-size; }
+@container (max-width: 480px) { :where(body:not(.site)) .hb-extra { display: none; } }
+:where(body:not(.site)) .hb-row { display: grid; grid-template-columns: var(--c-chart-row-label-width) minmax(0, 1fr); align-items: center; gap: 10px; min-height: var(--c-chart-row-height); }
+:where(body:not(.site)) .hb-label { color: var(--text-2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* the widest bar stops short of the edge so its figure still fits after it */
-.hb-track { display: flex; align-items: center; min-width: 0; padding-right: 5.5em; }
-.hb-track i { height: calc(var(--c-chart-row-height) - 8px); flex: none; border-radius: 1px; }
-.hb-track i + i { margin-left: 2px; }
-.hb-track i:first-child { border-radius: 2px 0 0 2px; }
-.hb-track b { margin-left: 6px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
-.hb-row:has(i:hover) .hb-label { color: var(--ink); }
-.timeline { display: grid; gap: 2px; }
-.tl-row, .tl-axis { display: grid; grid-template-columns: var(--c-chart-timeline-label-width) minmax(0, 1fr); gap: 10px; align-items: center; }
-.tl-label { color: var(--text-2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tl-track { position: relative; height: var(--c-chart-timeline-row); background: repeating-linear-gradient(to right, transparent 0 calc(12.5% - 1px), var(--rule) calc(12.5% - 1px) 12.5%); }
-.tl-track i { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
-.tl-axis .ch-months { margin-left: 0; }
+:where(body:not(.site)) .hb-track { display: flex; align-items: center; min-width: 0; padding-right: 5.5em; }
+:where(body:not(.site)) .hb-track i { height: calc(var(--c-chart-row-height) - 8px); flex: none; border-radius: 1px; }
+:where(body:not(.site)) .hb-track i + i { margin-left: 2px; }
+:where(body:not(.site)) .hb-track i:first-child { border-radius: 2px 0 0 2px; }
+:where(body:not(.site)) .hb-track b { margin-left: 6px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+:where(body:not(.site)) .hb-row:has(i:hover) .hb-label { color: var(--ink); }
+:where(body:not(.site)) .timeline { display: grid; gap: 2px; }
+:where(body:not(.site)) .tl-row, :where(body:not(.site)) .tl-axis { display: grid; grid-template-columns: var(--c-chart-timeline-label-width) minmax(0, 1fr); gap: 10px; align-items: center; }
+:where(body:not(.site)) .tl-label { color: var(--text-2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(body:not(.site)) .tl-track { position: relative; height: var(--c-chart-timeline-row); background: repeating-linear-gradient(to right, transparent 0 calc(12.5% - 1px), var(--rule) calc(12.5% - 1px) 12.5%); }
+:where(body:not(.site)) .tl-track i { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
+:where(body:not(.site)) .tl-axis .ch-months { margin-left: 0; }
 
 /* graphs: the wide drawing or the narrow one, by the panel's own width */
-[data-panel="skills"], .graph-panel { container-type: inline-size; }
-.radar-narrow, .graph-narrow { display: none; }
+:where(body:not(.site)) [data-panel="skills"], :where(body:not(.site)) .graph-panel { container-type: inline-size; }
+:where(body:not(.site)) .radar-narrow, :where(body:not(.site)) .graph-narrow { display: none; }
 @container (max-width: 600px) {
-  .radar-wide, .graph-wide { display: none; }
-  .radar-narrow, .graph-narrow { display: block; }
+  :where(body:not(.site)) .radar-wide, :where(body:not(.site)) .graph-wide { display: none; }
+  :where(body:not(.site)) .radar-narrow, :where(body:not(.site)) .graph-narrow { display: block; }
 }
-.radar-wide .radar, .radar-narrow .radar { display: block; width: 100%; height: auto; max-height: 460px; }
+:where(body:not(.site)) .radar-wide .radar, :where(body:not(.site)) .radar-narrow .radar { display: block; width: 100%; height: auto; max-height: 460px; }
 /* skills: the radar beside a scrollable bar per skill; stacks on a narrow panel */
 /* owner stats page: equal modules, each a block of facts */
-.settings .row-links .btn.go { color: var(--good); border-color: var(--good); }
-.settings .row-links .btn.go:hover { background: color-mix(in oklab, var(--good) 12%, transparent); }
+:where(body:not(.site)) .settings .row-links .btn.go { color: var(--good); border-color: var(--good); }
+:where(body:not(.site)) .settings .row-links .btn.go:hover { background: color-mix(in oklab, var(--good) 12%, transparent); }
 /* owner stats page: sections split by a rule, big KPI figures, one budget chart, a session list */
-.stats-sec { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--rule-strong); }
-.stats-sec:first-of-type { margin-top: 12px; border-top: 0; padding-top: 0; }
-.stats-sec > h2 { margin: 0 0 4px; }
-.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px 28px; margin: 14px 0; }
-.stat { min-width: 0; }
-.stat .figure { display: block; font: 800 clamp(24px, 5vw, 38px)/1 var(--type-font-display); letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stat .k { color: var(--text-2); font-size: 14px; }
-.stat-sessions { list-style: none; margin: 10px 0 0; padding: 0; }
-.stat-sessions li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
-.stat-sessions .when { color: var(--text-2); white-space: nowrap; }
-.radar-pair { display: flex; gap: 28px; align-items: center; margin-top: 10px; }
-.radar-fig { flex: 0 0 auto; width: min(100%, 480px); }
-.radar-fig .radar { display: block; width: 100%; height: auto; max-height: 480px; }
-.radar-bars { flex: 1 1 0; min-width: 0; max-height: 480px; overflow-y: auto; border-left: 1px solid var(--rule); padding-left: 28px; }
+:where(body:not(.site)) .stats-sec { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--rule-strong); }
+:where(body:not(.site)) .stats-sec:first-of-type { margin-top: 12px; border-top: 0; padding-top: 0; }
+:where(body:not(.site)) .stats-sec > h2 { margin: 0 0 4px; }
+:where(body:not(.site)) .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px 28px; margin: 14px 0; }
+:where(body:not(.site)) .stat { min-width: 0; }
+:where(body:not(.site)) .stat .figure { display: block; font: 800 clamp(24px, 5vw, 38px)/1 var(--type-font-display); letter-spacing: -.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(body:not(.site)) .stat .k { color: var(--text-2); font-size: 14px; }
+:where(body:not(.site)) .stat-sessions { list-style: none; margin: 10px 0 0; padding: 0; }
+:where(body:not(.site)) .stat-sessions li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+:where(body:not(.site)) .stat-sessions .when { color: var(--text-2); white-space: nowrap; }
+:where(body:not(.site)) .radar-pair { display: flex; gap: 28px; align-items: center; margin-top: 10px; }
+:where(body:not(.site)) .radar-fig { flex: 0 0 auto; width: min(100%, 480px); }
+:where(body:not(.site)) .radar-fig .radar { display: block; width: 100%; height: auto; max-height: 480px; }
+:where(body:not(.site)) .radar-bars { flex: 1 1 0; min-width: 0; max-height: 480px; overflow-y: auto; border-left: 1px solid var(--rule); padding-left: 28px; }
 @container (max-width: 620px) {
-  .radar-pair { flex-direction: column; }
-  .radar-fig { width: 100%; max-width: 400px; margin: 0 auto; }
-  .radar-bars { max-height: none; width: 100%; border-left: 0; border-top: 1px solid var(--rule); padding-left: 0; padding-top: 18px; }
+  :where(body:not(.site)) .radar-pair { flex-direction: column; }
+  :where(body:not(.site)) .radar-fig { width: 100%; max-width: 400px; margin: 0 auto; }
+  :where(body:not(.site)) .radar-bars { max-height: none; width: 100%; border-left: 0; border-top: 1px solid var(--rule); padding-left: 0; padding-top: 18px; }
 }
-.graph-wide .graph, .graph-narrow .graph { display: block; width: 100%; height: auto; }
-.graph a.bubble { cursor: pointer; }
-.graph a.bubble:focus-visible circle { stroke: var(--focus); stroke-width: var(--c-bubble-focus-width); }
+:where(body:not(.site)) .graph-wide .graph, :where(body:not(.site)) .graph-narrow .graph { display: block; width: 100%; height: auto; }
+:where(body:not(.site)) .graph a.bubble { cursor: pointer; }
+:where(body:not(.site)) .graph a.bubble:focus-visible circle { stroke: var(--focus); stroke-width: var(--c-bubble-focus-width); }
 
-.identity .groups { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+:where(body:not(.site)) .identity .groups { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 /* the circle: one-way and two-way chords with arrowheads */
-.net .net-links path.one { stroke: var(--control); }
-.net .net-links path.both { stroke: var(--accent-data); stroke-opacity: .55; }
-.net .arrowhead { fill: var(--ink); }
-.focused .net-links path.hl { stroke-opacity: .95; }
-.arrow-key { width: 30px; height: 10px; }
-.arrow-key line { stroke: var(--control); stroke-width: 2; }
-.arrow-key.both line { stroke: var(--accent-data); }
-.arrow-key path { fill: var(--muted); }
-.net-key { width: 12px; height: 12px; overflow: visible; }
-.net-key circle { stroke-dasharray: none; }
-.net-key .dead circle { stroke-dasharray: 2 2; }
-.legend b { color: var(--ink); font-weight: 600; }
-.dir-key { width: 30px; height: 10px; }
-.dir-key line { stroke-width: 3; }
-.dir-key.in line { stroke: var(--accent-data); }
-.dir-key.out line { stroke: var(--slate); }
-.dir-key.both line { stroke: var(--ink); stroke-width: 5; }
-.dir-key.both line.gap { stroke: var(--ground); stroke-width: 1.5; }
+:where(body:not(.site)) .net .net-links path.one { stroke: var(--control); }
+:where(body:not(.site)) .net .net-links path.both { stroke: var(--accent-data); stroke-opacity: .55; }
+:where(body:not(.site)) .net .arrowhead { fill: var(--ink); }
+:where(body:not(.site)) .focused .net-links path.hl { stroke-opacity: .95; }
+:where(body:not(.site)) .arrow-key { width: 30px; height: 10px; }
+:where(body:not(.site)) .arrow-key line { stroke: var(--control); stroke-width: 2; }
+:where(body:not(.site)) .arrow-key.both line { stroke: var(--accent-data); }
+:where(body:not(.site)) .arrow-key path { fill: var(--muted); }
+:where(body:not(.site)) .net-key { width: 12px; height: 12px; overflow: visible; }
+:where(body:not(.site)) .net-key circle { stroke-dasharray: none; }
+:where(body:not(.site)) .net-key .dead circle { stroke-dasharray: 2 2; }
+:where(body:not(.site)) .legend b { color: var(--ink); font-weight: 600; }
+:where(body:not(.site)) .dir-key { width: 30px; height: 10px; }
+:where(body:not(.site)) .dir-key line { stroke-width: 3; }
+:where(body:not(.site)) .dir-key.in line { stroke: var(--accent-data); }
+:where(body:not(.site)) .dir-key.out line { stroke: var(--slate); }
+:where(body:not(.site)) .dir-key.both line { stroke: var(--ink); stroke-width: 5; }
+:where(body:not(.site)) .dir-key.both line.gap { stroke: var(--ground); stroke-width: 1.5; }
 /* with you in focus the arrowheads give way to colour: in, out, and a hollow double line for both ways */
-.net.focus-me .net-arrows path.hl { display: none; }
-.net.focus-me .net-links path.hl[data-dir="in"] { stroke: var(--accent-data); }
-.net.focus-me .net-links path.hl[data-dir="out"] { stroke: var(--slate); }
-.net.focus-me .net-links path.hl[data-dir="both"] { stroke: var(--ink); stroke-width: 4.5; }
-.net.focus-me .net-arrows path.hl[data-dir="both"] { display: inline; marker: none; stroke: var(--ground); stroke-width: 1.5; }
-.net .net-arrows path { fill: none; stroke: none; pointer-events: none; display: none; }
-.net .net-arrows path.hl { display: inline; }
+:where(body:not(.site)) .net.focus-me .net-arrows path.hl { display: none; }
+:where(body:not(.site)) .net.focus-me .net-links path.hl[data-dir="in"] { stroke: var(--accent-data); }
+:where(body:not(.site)) .net.focus-me .net-links path.hl[data-dir="out"] { stroke: var(--slate); }
+:where(body:not(.site)) .net.focus-me .net-links path.hl[data-dir="both"] { stroke: var(--ink); stroke-width: 4.5; }
+:where(body:not(.site)) .net.focus-me .net-arrows path.hl[data-dir="both"] { display: inline; marker: none; stroke: var(--ground); stroke-width: 1.5; }
+:where(body:not(.site)) .net .net-arrows path { fill: none; stroke: none; pointer-events: none; display: none; }
+:where(body:not(.site)) .net .net-arrows path.hl { display: inline; }
 
-.graph .bubble.received .core, .graph .bubble.given .core { transition: transform var(--motion-fast) ease-out; }
+:where(body:not(.site)) .graph .bubble.received .core, :where(body:not(.site)) .graph .bubble.given .core { transition: transform var(--motion-fast) ease-out; }
 
 /* nodes and bubbles grow under the pointer or focus; the person's chords take the accent */
-.net-node .core, .graph .bubble .core { transform-box: fill-box; transform-origin: center; transition: transform var(--motion-fast) ease-out; }
-.net-node:hover .core, .net-node:focus-visible .core, .graph .bubble:hover .core, .graph .bubble:focus-visible .core { transform: scale(1.2); }
-.focused .net-links path.hl { stroke: var(--accent-data); }
+:where(body:not(.site)) .net-node .core, :where(body:not(.site)) .graph .bubble .core { transform-box: fill-box; transform-origin: center; transition: transform var(--motion-fast) ease-out; }
+:where(body:not(.site)) .net-node:hover .core, :where(body:not(.site)) .net-node:focus-visible .core, :where(body:not(.site)) .graph .bubble:hover .core, :where(body:not(.site)) .graph .bubble:focus-visible .core { transform: scale(1.2); }
+:where(body:not(.site)) .focused .net-links path.hl { stroke: var(--accent-data); }
 
 /* lively controls: a small lift and the accent border under the pointer */
-.btn, .seg > a, .seg > label, .seg button, .periods > a, .toggle-check span { transition: transform var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out, background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
-.btn:hover:not(:disabled):not([aria-disabled="true"]), .periods > a:hover, .toggle-check:hover span { transform: translateY(-1px); }
-.seg > a:hover, .seg > label:hover, .seg button:hover { background: color-mix(in oklab, var(--accent-data) 10%, transparent); }
-.block { transition: border-color var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
-.block:hover { border-color: color-mix(in oklab, var(--accent-data) 45%, var(--rule)); }
+:where(body:not(.site)) .btn, :where(body:not(.site)) .seg > a, :where(body:not(.site)) .seg > label, :where(body:not(.site)) .seg button, :where(body:not(.site)) .periods > a, :where(body:not(.site)) .toggle-check span { transition: transform var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out, background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
+:where(body:not(.site)) .btn:hover:not(:disabled):not([aria-disabled="true"]), :where(body:not(.site)) .periods > a:hover, :where(body:not(.site)) .toggle-check:hover span { transform: translateY(-1px); }
+:where(body:not(.site)) .seg > a:hover, :where(body:not(.site)) .seg > label:hover, :where(body:not(.site)) .seg button:hover { background: color-mix(in oklab, var(--accent-data) 10%, transparent); }
+:where(body:not(.site)) .block { transition: border-color var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
+:where(body:not(.site)) .block:hover { border-color: color-mix(in oklab, var(--accent-data) 45%, var(--rule)); }
 
 /* charts draw themselves the first time they scroll into view (dash.js adds .in); without it they are simply there */
-.js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: scale(0); }
-.vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease), opacity .14s; }
-.hchart .hb-track i { transform-origin: left; transition: transform .6s var(--motion-ease); }
+:where(body:not(.site)) .js .vchart:not(.in) .ch-col i, :where(body:not(.site)) .js .hchart:not(.in) .hb-track i { transform: scale(0); }
+:where(body:not(.site)) .vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease), opacity .14s; }
+:where(body:not(.site)) .hchart .hb-track i { transform-origin: left; transition: transform .6s var(--motion-ease); }
 /* stacked marks grow one after the other: the bottom (or first) segment, then the one above it */
-.vchart .ch-col.stack i:nth-child(2), .hchart .hb-track i:nth-child(2) { transition-delay: .45s; }
-.vchart .ch-col.stack i:nth-child(3), .hchart .hb-track i:nth-child(3) { transition-delay: .9s; }
+:where(body:not(.site)) .vchart .ch-col.stack i:nth-child(2), :where(body:not(.site)) .hchart .hb-track i:nth-child(2) { transition-delay: .45s; }
+:where(body:not(.site)) .vchart .ch-col.stack i:nth-child(3), :where(body:not(.site)) .hchart .hb-track i:nth-child(3) { transition-delay: .9s; }
 /* lines wipe in from the left: a dash trick on a non-scaling stroke measures the wrong length and leaves lines cut short */
-.js .lchart:not(.in) .ch-lines, .js .vchart:not(.in) .ch-line { clip-path: inset(0 100% 0 0); }
-.lchart .ch-lines, .vchart .ch-line { clip-path: inset(0 0 0 0); transition: clip-path 1.1s var(--motion-ease), opacity .14s; }
+:where(body:not(.site)) .js .lchart:not(.in) .ch-lines, :where(body:not(.site)) .js .vchart:not(.in) .ch-line { clip-path: inset(0 100% 0 0); }
+:where(body:not(.site)) .lchart .ch-lines, :where(body:not(.site)) .vchart .ch-line { clip-path: inset(0 0 0 0); transition: clip-path 1.1s var(--motion-ease), opacity .14s; }
 @media (prefers-reduced-motion: reduce) {
-  .js .vchart:not(.in) .ch-col i, .js .hchart:not(.in) .hb-track i { transform: none; }
-  .js .lchart:not(.in) .ch-lines, .js .vchart:not(.in) .ch-line { clip-path: none; }
-  .btn:hover, .periods > a:hover, .toggle-check:hover span { transform: none; }
+  :where(body:not(.site)) .js .vchart:not(.in) .ch-col i, :where(body:not(.site)) .js .hchart:not(.in) .hb-track i { transform: none; }
+  :where(body:not(.site)) .js .lchart:not(.in) .ch-lines, :where(body:not(.site)) .js .vchart:not(.in) .ch-line { clip-path: none; }
+  :where(body:not(.site)) .btn:hover, :where(body:not(.site)) .periods > a:hover, :where(body:not(.site)) .toggle-check:hover span { transform: none; }
 }
 
-.net.focused .net-links path:not(.hl) { stroke-opacity: .05; }
+:where(body:not(.site)) .net.focused .net-links path:not(.hl) { stroke-opacity: .05; }
 
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:where(body:not(.site)) .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- Home: six equal modules on the Swiss grid ---------- */
-.modules-wrap { padding-top: 8px; }
-.modules { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; }
-.module { min-width: 0; display: flex; flex-direction: column; padding: 0 0 20px; container-type: inline-size; }
-.module .tab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 20px 0 0; padding-top: 10px;
+:where(body:not(.site)) .modules-wrap { padding-top: 8px; }
+:where(body:not(.site)) .modules { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; }
+:where(body:not(.site)) .module { min-width: 0; display: flex; flex-direction: column; padding: 0 0 20px; container-type: inline-size; }
+:where(body:not(.site)) .module .tab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 20px 0 0; padding-top: 10px;
   border-top: 2px solid var(--rule-strong); font: 700 16px var(--type-font-display); }
-.module .tab span { color: var(--text-2); font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.module .figure { font: 800 min(var(--c-kpi-size), 17cqi)/1 var(--type-font-display); letter-spacing: -.04em; margin: 14px 0 8px; white-space: nowrap; }
-.module .figure small { font-size: .4em; font-weight: 700; letter-spacing: 0; word-spacing: .08em; color: var(--text-2); }
-.module .line { color: var(--text-2); font-size: 17px; line-height: 1.45; }
-.module .trend { display: block; width: 100%; height: 36px; margin-top: auto; padding-top: 12px; box-sizing: content-box; overflow: visible; }
-.module .trend polyline { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
-.module .trend rect { fill: var(--ink); }
-.module .trend rect.now { fill: var(--accent-data); }
-.module .trend .base { stroke: var(--rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+:where(body:not(.site)) .module .tab span { color: var(--text-2); font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(body:not(.site)) .module .figure { font: 800 min(var(--c-kpi-size), 17cqi)/1 var(--type-font-display); letter-spacing: -.04em; margin: 14px 0 8px; white-space: nowrap; }
+:where(body:not(.site)) .module .figure small { font-size: .4em; font-weight: 700; letter-spacing: 0; word-spacing: .08em; color: var(--text-2); }
+:where(body:not(.site)) .module .line { color: var(--text-2); font-size: 17px; line-height: 1.45; }
+:where(body:not(.site)) .module .trend { display: block; width: 100%; height: 36px; margin-top: auto; padding-top: 12px; box-sizing: content-box; overflow: visible; }
+:where(body:not(.site)) .module .trend polyline { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+:where(body:not(.site)) .module .trend rect { fill: var(--ink); }
+:where(body:not(.site)) .module .trend rect.now { fill: var(--accent-data); }
+:where(body:not(.site)) .module .trend .base { stroke: var(--rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 /* the live module: the accent marks what can still be earned */
-.module.live .tab { border-top-color: var(--accent); border-top-width: 6px; padding-top: 6px; }
-.meter { position: relative; display: block; height: 12px; margin: 4px 0 12px; background: var(--seat-empty); }
-.meter i { position: absolute; inset: 0 auto 0 0; background: var(--accent-data); }
-.meter em { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
-.chip-live { align-self: flex-start; background: var(--accent); color: var(--on-accent); font: 700 16px/1.3 var(--type-font-display); padding: 7px 12px; margin-bottom: 10px; }
+:where(body:not(.site)) .module.live .tab { border-top-color: var(--accent); border-top-width: 6px; padding-top: 6px; }
+:where(body:not(.site)) .meter { position: relative; display: block; height: 12px; margin: 4px 0 12px; background: var(--seat-empty); }
+:where(body:not(.site)) .meter i { position: absolute; inset: 0 auto 0 0; background: var(--accent-data); }
+:where(body:not(.site)) .meter em { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
+:where(body:not(.site)) .chip-live { align-self: flex-start; background: var(--accent); color: var(--on-accent); font: 700 16px/1.3 var(--type-font-display); padding: 7px 12px; margin-bottom: 10px; }
 /* the signature move: each trend wipes in from the left, after the figure starts counting */
-.module .trend, .meter i { transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
-.js .module:not(.in) .trend, .js .module:not(.in) .meter i { clip-path: inset(0 100% 0 0); }
-@media (prefers-reduced-motion: reduce) { .js .module:not(.in) .trend, .js .module:not(.in) .meter i { clip-path: none; } }
-@media (min-width: 640px) { .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-th .th-s { display: none; }
+:where(body:not(.site)) .module .trend, :where(body:not(.site)) .meter i { transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
+:where(body:not(.site)) .js .module:not(.in) .trend, :where(body:not(.site)) .js .module:not(.in) .meter i { clip-path: inset(0 100% 0 0); }
+@media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .js .module:not(.in) .trend, :where(body:not(.site)) .js .module:not(.in) .meter i { clip-path: none; } }
+@media (min-width: 640px) { :where(body:not(.site)) .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { :where(body:not(.site)) .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+:where(body:not(.site)) th .th-s { display: none; }
 @media (max-width: 599.98px) {
   /* long column titles give way to their short form (the full one stays in the button's name and tooltip) */
-  th .th-l { display: none; }
-  th .th-s { display: inline; }
-  .phone-hide { display: none; }
-  table td.when { white-space: normal; }  /* beats the one-line rule further down */
-  table { font-size: var(--c-table-phone-font-size); }
-  td { padding-inline: var(--c-table-phone-cell-padding-x); }
-  th button { padding-inline: var(--c-table-phone-cell-padding-x); }
+  :where(body:not(.site)) th .th-l { display: none; }
+  :where(body:not(.site)) th .th-s { display: inline; }
+  :where(body:not(.site)) .phone-hide { display: none; }
+  :where(body:not(.site)) table td.when { white-space: normal; }  /* beats the one-line rule further down */
+  :where(body:not(.site)) table { font-size: var(--c-table-phone-font-size); }
+  :where(body:not(.site)) td { padding-inline: var(--c-table-phone-cell-padding-x); }
+  :where(body:not(.site)) th button { padding-inline: var(--c-table-phone-cell-padding-x); }
   /* a list's date or count drops under the text when both don't fit side by side */
-  .list li { flex-wrap: wrap; gap: 2px 16px; }
-  .list li > :first-child { flex: 1 1 60%; min-width: 0; }
-  .page-head .periods { justify-self: stretch; display: flex; }
-  .page-head .periods > a { flex: 1; padding: 6px 8px; }
+  :where(body:not(.site)) .list li { flex-wrap: wrap; gap: 2px 16px; }
+  :where(body:not(.site)) .list li > :first-child { flex: 1 1 60%; min-width: 0; }
+  :where(body:not(.site)) .page-head .periods { justify-self: stretch; display: flex; }
+  :where(body:not(.site)) .page-head .periods > a { flex: 1; padding: 6px 8px; }
 }
 
 /* a section's switches share its title rule; a panel of figures keeps only the figures' own rules */
-section > .panel-head { border-bottom: var(--c-section-h2-rule) solid var(--rule-strong); padding-bottom: 12px; margin-bottom: var(--c-section-h2-gap); }
-section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
-[data-panel]:has(> .kpis, > .rates) { border-top: 0; padding-top: 0; }
-.toc + section { padding-top: 40px; }
-.toc + .modules-wrap { padding-top: 0; }
-.line-end { display: none; position: absolute; right: 0; transform: translateY(-120%); padding: 1px 4px; background: var(--ground); color: var(--ink); font: 700 12px var(--type-font-display); white-space: nowrap; }
-[data-panel="skills"] { border-top: 0; padding-top: 0; }
-@media (max-width: 959.98px) { .toc { -webkit-mask-image: linear-gradient(to right, var(--mask) 82%, transparent); mask-image: linear-gradient(to right, var(--mask) 82%, transparent); } }
-.vchart { container-type: inline-size; }
-.vchart, .lchart { overflow-x: clip; }  /* an axis label a pixel too wide never widens the page; peaks above stay visible */
+:where(body:not(.site)) section > .panel-head { border-bottom: var(--c-section-h2-rule) solid var(--rule-strong); padding-bottom: 12px; margin-bottom: var(--c-section-h2-gap); }
+:where(body:not(.site)) section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+:where(body:not(.site)) [data-panel]:has(> .kpis, > .rates) { border-top: 0; padding-top: 0; }
+:where(body:not(.site)) .toc + section { padding-top: 40px; }
+:where(body:not(.site)) .toc + .modules-wrap { padding-top: 0; }
+:where(body:not(.site)) .line-end { display: none; position: absolute; right: 0; transform: translateY(-120%); padding: 1px 4px; background: var(--ground); color: var(--ink); font: 700 12px var(--type-font-display); white-space: nowrap; }
+:where(body:not(.site)) [data-panel="skills"] { border-top: 0; padding-top: 0; }
+@media (max-width: 959.98px) { :where(body:not(.site)) .toc { -webkit-mask-image: linear-gradient(to right, var(--mask) 82%, transparent); mask-image: linear-gradient(to right, var(--mask) 82%, transparent); } }
+:where(body:not(.site)) .vchart { container-type: inline-size; }
+:where(body:not(.site)) .vchart, :where(body:not(.site)) .lchart { overflow-x: clip; }  /* an axis label a pixel too wide never widens the page; peaks above stay visible */
 @container (max-width: 520px) {
-  .has-line .ch-plot, .has-line .ch-x { margin-left: var(--c-chart-axis-width); margin-right: 0; }
-  .has-line .ch-y:not(.right) { left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
-  .ch-y.right, .axis-key { display: none; }
-  .ch-x span.alt { visibility: hidden; }
-  .ch-x span:last-child { display: flex; justify-content: flex-end; }  /* wider than its column, it spills left, not off the chart */
-  .line-end { display: block; }
+  :where(body:not(.site)) .has-line .ch-plot, :where(body:not(.site)) .has-line .ch-x { margin-left: var(--c-chart-axis-width); margin-right: 0; }
+  :where(body:not(.site)) .has-line .ch-y:not(.right) { left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
+  :where(body:not(.site)) .ch-y.right, :where(body:not(.site)) .axis-key { display: none; }
+  :where(body:not(.site)) .ch-x span.alt { visibility: hidden; }
+  :where(body:not(.site)) .ch-x span:last-child { display: flex; justify-content: flex-end; }  /* wider than its column, it spills left, not off the chart */
+  :where(body:not(.site)) .line-end { display: block; }
 }
 
 /* bars and timelines read from the left: labels only as wide as the longest one needs, not a wide centred column */
-.hchart, .timeline { grid-template-columns: minmax(0, max-content) minmax(0, 1fr); column-gap: 12px; align-items: center; }
-.hchart .hb-row, .timeline .tl-row, .timeline .tl-axis { display: contents; }
-.hb-label, .tl-label { text-align: left; max-width: min(240px, 34vw); }
-.timeline, .lchart { container-type: inline-size; }
+:where(body:not(.site)) .hchart, :where(body:not(.site)) .timeline { grid-template-columns: minmax(0, max-content) minmax(0, 1fr); column-gap: 12px; align-items: center; }
+:where(body:not(.site)) .hchart .hb-row, :where(body:not(.site)) .timeline .tl-row, :where(body:not(.site)) .timeline .tl-axis { display: contents; }
+:where(body:not(.site)) .hb-label, :where(body:not(.site)) .tl-label { text-align: left; max-width: min(240px, 34vw); }
+:where(body:not(.site)) .timeline, :where(body:not(.site)) .lchart { container-type: inline-size; }
 @container (max-width: 520px) {
-  .tl-axis .ch-months span:nth-child(even), .lchart .ch-months span:nth-child(even) { visibility: hidden; }
-  .tl-axis .ch-months span:last-child, .lchart .ch-months span:last-child { transform: translateX(-100%); }  /* ends at the edge */
+  :where(body:not(.site)) .tl-axis .ch-months span:nth-child(even), :where(body:not(.site)) .lchart .ch-months span:nth-child(even) { visibility: hidden; }
+  :where(body:not(.site)) .tl-axis .ch-months span:last-child, :where(body:not(.site)) .lchart .ch-months span:last-child { transform: translateX(-100%); }  /* ends at the edge */
 }
 /* a panel's title with its key on the right */
-.block-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 24px; }
-.block-head h3 { margin-bottom: 0; }
-.block-head .legend { margin-top: 0; }
+:where(body:not(.site)) .block-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 24px; }
+:where(body:not(.site)) .block-head h3 { margin-bottom: 0; }
+:where(body:not(.site)) .block-head .legend { margin-top: 0; }
 
 /* your circle: a smaller drawing, no glow; you sit under the chords and dim when the one in focus never met you */
-[data-panel="network"] .graph.net { max-width: 640px; margin: 0 auto; }
-[data-panel="network"] .plot, [data-panel="network"] .graph-wide, [data-panel="network"] .graph-narrow { height: auto; }
-.net .net-me .net-node.me .core { fill-opacity: .85; transition: opacity var(--motion-fast) ease-out; }
-.net.me-off .net-me { opacity: .3; }
-.focused .net-links path.hl { stroke-width: 2.5; }
+:where(body:not(.site)) [data-panel="network"] .graph.net { max-width: 640px; margin: 0 auto; }
+:where(body:not(.site)) [data-panel="network"] .plot, :where(body:not(.site)) [data-panel="network"] .graph-wide, :where(body:not(.site)) [data-panel="network"] .graph-narrow { height: auto; }
+:where(body:not(.site)) .net .net-me .net-node.me .core { fill-opacity: .85; transition: opacity var(--motion-fast) ease-out; }
+:where(body:not(.site)) .net.me-off .net-me { opacity: .3; }
+:where(body:not(.site)) .focused .net-links path.hl { stroke-width: 2.5; }
 /* a table fades at each edge where more waits: below, and to either side while it scrolls sideways (dash.js sets the
    classes); one whose first column stays put fades only on the right */
-.table-wrap { --fade-l: var(--mask); --fade-r: var(--mask); --fade-b: var(--mask); }
-.table-wrap.more { --fade-b: transparent; }
-.table-wrap.more-l:not(:has(> .sticky-first)) { --fade-l: transparent; }
-.table-wrap.more-r { --fade-r: transparent; }
-.table-wrap.more, .table-wrap.more-l, .table-wrap.more-r {
+:where(body:not(.site)) .table-wrap { --fade-l: var(--mask); --fade-r: var(--mask); --fade-b: var(--mask); }
+:where(body:not(.site)) .table-wrap.more { --fade-b: transparent; }
+:where(body:not(.site)) .table-wrap.more-l:not(:has(> .sticky-first)) { --fade-l: transparent; }
+:where(body:not(.site)) .table-wrap.more-r { --fade-r: transparent; }
+:where(body:not(.site)) .table-wrap.more, :where(body:not(.site)) .table-wrap.more-l, :where(body:not(.site)) .table-wrap.more-r {
   -webkit-mask-image: linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
     linear-gradient(to bottom, var(--mask) calc(100% - 56px), var(--fade-b));
   mask-image: linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
     linear-gradient(to bottom, var(--mask) calc(100% - 56px), var(--fade-b));
   -webkit-mask-composite: source-in; mask-composite: intersect; }
-.table-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-top: 12px; }
-.table-foot .note { margin: 0; }
-.table-foot .note b { color: var(--ink); }
+:where(body:not(.site)) .table-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-top: 12px; }
+:where(body:not(.site)) .table-foot .note { margin: 0; }
+:where(body:not(.site)) .table-foot .note b { color: var(--ink); }
 
 /* coalitions and your latest points share one column; side by side with the promo, the column is as tall as the promo
    and the points scroll inside it */
-[data-panel="coal-recent"] { margin-top: 28px; }
-[data-panel="coal-recent"] .list li > span:first-child { min-width: 0; }
+:where(body:not(.site)) [data-panel="coal-recent"] { margin-top: 28px; }
+:where(body:not(.site)) [data-panel="coal-recent"] .list li > span:first-child { min-width: 0; }
 @media (min-width: 1280px) {
-  [data-panel="coalitions"].fit { height: 0; min-height: 100%; display: flex; flex-direction: column; }
-  .fit [data-panel="coal-recent"] { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .fit [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }
+  :where(body:not(.site)) [data-panel="coalitions"].fit { height: 0; min-height: 100%; display: flex; flex-direction: column; }
+  :where(body:not(.site)) .fit [data-panel="coal-recent"] { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  :where(body:not(.site)) .fit [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }
 }
 
 /* bars that are read by name (skills, domains): sizes in ui.json → chart.big-* */
-.hchart.big { font-size: var(--c-chart-big-font-size); }
-.hchart.big .hb-row { min-height: var(--c-chart-big-row-height); }
-.hchart.big .hb-track i { height: calc(var(--c-chart-big-row-height) - 10px); }
-.hchart.big .hb-label { white-space: normal; overflow-wrap: anywhere; max-width: min(var(--c-chart-big-label-max), 40vw); line-height: 1.2; }
+:where(body:not(.site)) .hchart.big { font-size: var(--c-chart-big-font-size); }
+:where(body:not(.site)) .hchart.big .hb-row { min-height: var(--c-chart-big-row-height); }
+:where(body:not(.site)) .hchart.big .hb-track i { height: calc(var(--c-chart-big-row-height) - 10px); }
+:where(body:not(.site)) .hchart.big .hb-label { white-space: normal; overflow-wrap: anywhere; max-width: min(var(--c-chart-big-label-max), 40vw); line-height: 1.2; }
 
 /* when you work: the day in three parts, in the order the line below reads them */
-.kpis .split { display: flex; height: 10px; margin: 2px 0 8px; gap: 2px; }
-.kpis .split i { display: block; min-width: 2px; }
-.kpis .split .morning { background: var(--accent-data); }
-.kpis .split .afternoon { background: var(--slate); }
-.kpis .split .night { background: var(--neutral); }
-.kpis .part { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.45; }
-.kpis .part i { flex: none; width: 10px; height: 10px; }
-.kpis .part .morning { background: var(--accent-data); }
-.kpis .part .afternoon { background: var(--slate); }
-.kpis .part .night { background: var(--neutral); }
+:where(body:not(.site)) .kpis .split { display: flex; height: 10px; margin: 2px 0 8px; gap: 2px; }
+:where(body:not(.site)) .kpis .split i { display: block; min-width: 2px; }
+:where(body:not(.site)) .kpis .split .morning { background: var(--accent-data); }
+:where(body:not(.site)) .kpis .split .afternoon { background: var(--slate); }
+:where(body:not(.site)) .kpis .split .night { background: var(--neutral); }
+:where(body:not(.site)) .kpis .part { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.45; }
+:where(body:not(.site)) .kpis .part i { flex: none; width: 10px; height: 10px; }
+:where(body:not(.site)) .kpis .part .morning { background: var(--accent-data); }
+:where(body:not(.site)) .kpis .part .afternoon { background: var(--slate); }
+:where(body:not(.site)) .kpis .part .night { background: var(--neutral); }
 
 /* one feedback below the maximum: the form's sliders as pips, the short ones in ink */
-.list li.fb-item { display: block; }
-.fb-head { display: flex; justify-content: space-between; gap: 16px; }
-.fb-crit { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 20px; margin: 8px 0 4px; }
-.fb-crit > div { display: grid; gap: 3px; color: var(--muted); }
-.fb-crit dt { font-size: 13px; }
-.fb-crit dd { margin: 0; display: flex; align-items: center; gap: 8px; }
-.fb-crit dd b { font-weight: 600; font-size: 14px; color: var(--text-2); }
-.fb-crit dd b small { color: var(--muted); font-weight: 500; }
-.fb-crit .low dt, .fb-crit .low dd b { color: var(--ink); font-weight: 700; }
-.pips { display: inline-flex; gap: 3px; }
-.pips i { width: 16px; height: 8px; background: var(--seat-empty); }
-.pips i.on { background: var(--accent-data); }
-.fb-crit .low .pips i.on { background: var(--critical); }
+:where(body:not(.site)) .list li.fb-item { display: block; }
+:where(body:not(.site)) .fb-head { display: flex; justify-content: space-between; gap: 16px; }
+:where(body:not(.site)) .fb-crit { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 20px; margin: 8px 0 4px; }
+:where(body:not(.site)) .fb-crit > div { display: grid; gap: 3px; color: var(--muted); }
+:where(body:not(.site)) .fb-crit dt { font-size: 13px; }
+:where(body:not(.site)) .fb-crit dd { margin: 0; display: flex; align-items: center; gap: 8px; }
+:where(body:not(.site)) .fb-crit dd b { font-weight: 600; font-size: 14px; color: var(--text-2); }
+:where(body:not(.site)) .fb-crit dd b small { color: var(--muted); font-weight: 500; }
+:where(body:not(.site)) .fb-crit .low dt, :where(body:not(.site)) .fb-crit .low dd b { color: var(--ink); font-weight: 700; }
+:where(body:not(.site)) .pips { display: inline-flex; gap: 3px; }
+:where(body:not(.site)) .pips i { width: 16px; height: 8px; background: var(--seat-empty); }
+:where(body:not(.site)) .pips i.on { background: var(--accent-data); }
+:where(body:not(.site)) .fb-crit .low .pips i.on { background: var(--critical); }
 /* light reports have no criteria table: the breakdown takes the whole row */
-html body [data-panel="low-feedback"]:only-child { grid-column: span 12; }
-.hchart.big + .note { margin-top: 12px; }
+html body:not(.site) [data-panel="low-feedback"]:only-child { grid-column: span 12; }
+:where(body:not(.site)) .hchart.big + .note { margin-top: 12px; }
 
 /* a note that belongs to the lede: right under it, a step smaller */
-.lede:has(+ .lede-note) { margin-bottom: 6px; }
-.lede-note { margin: 0 0 var(--c-section-lede-gap); }
+:where(body:not(.site)) .lede:has(+ .lede-note) { margin-bottom: 6px; }
+:where(body:not(.site)) .lede-note { margin: 0 0 var(--c-section-lede-gap); }
 
 /* evaluation points: the balance sits halfway down its panel when the table beside it is taller */
-[data-panel="points"] { display: flex; flex-direction: column; }
-[data-panel="points"] > .lchart, [data-panel="points"] > .empty { margin-block: auto; }
+:where(body:not(.site)) [data-panel="points"] { display: flex; flex-direction: column; }
+:where(body:not(.site)) [data-panel="points"] > .lchart, :where(body:not(.site)) [data-panel="points"] > .empty { margin-block: auto; }
 
 /* your circle: the key and its counts on the left, the ring on the right; stacked on narrow screens */
 /* everything in the key is in em: its size is the one font-size below */
-.net-wrap { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 24px 40px; align-items: center; }
-.net-side { align-self: center; font-size: 17px; }
-.net-side h3 { margin: .9em 0 .4em; font-size: 1.05em; }
-.net-side ul { list-style: none; margin: 0; padding: 0; }
-.net-side li { display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; align-items: center; gap: .5em; padding: .35em 0;
+:where(body:not(.site)) .net-wrap { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 24px 40px; align-items: center; }
+:where(body:not(.site)) .net-side { align-self: center; font-size: 17px; }
+:where(body:not(.site)) .net-side h3 { margin: .9em 0 .4em; font-size: 1.05em; }
+:where(body:not(.site)) .net-side ul { list-style: none; margin: 0; padding: 0; }
+:where(body:not(.site)) .net-side li { display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; align-items: center; gap: .5em; padding: .35em 0;
   border-bottom: 1px solid var(--rule); color: var(--text-2); }
-.net-side li .net-key { justify-self: center; width: .9em; height: .9em; }
-.net-side li .arrow-key, .net-side li .dir-key { width: 2em; height: .7em; }
-.net-side li b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+:where(body:not(.site)) .net-side li .net-key { justify-self: center; width: .9em; height: .9em; }
+:where(body:not(.site)) .net-side li .arrow-key, :where(body:not(.site)) .net-side li .dir-key { width: 2em; height: .7em; }
+:where(body:not(.site)) .net-side li b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (max-width: 959.98px) {  /* the key above the ring, each group as one wrapping row */
-  .net-wrap { grid-template-columns: minmax(0, 1fr); }
-  .net-side ul { display: flex; flex-wrap: wrap; gap: 0 1.2em; }
-  .net-side li { grid-template-columns: 2.2em auto auto; justify-content: start; border-bottom: 0; padding: .2em 0; }
+  :where(body:not(.site)) .net-wrap { grid-template-columns: minmax(0, 1fr); }
+  :where(body:not(.site)) .net-side ul { display: flex; flex-wrap: wrap; gap: 0 1.2em; }
+  :where(body:not(.site)) .net-side li { grid-template-columns: 2.2em auto auto; justify-content: start; border-bottom: 0; padding: .2em 0; }
 }
 
 /* a caveat that would interrupt the reading: an info mark beside the title, on its x-height, its text in the tooltip;
    nothing to press (hover, or keyboard focus) */
-h2:has(> .info), h3:has(> .info) { display: flex; align-items: center; gap: .3em; }  /* the mark on the middle of the line */
-.info { display: inline-flex; flex: none; width: .8em; height: .8em; cursor: help; color: var(--muted); outline-offset: 2px; }
-.info svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
-h2 .info { width: .42em; height: .42em; }
-.info:hover, .info:focus-visible { color: var(--ink); }
+:where(body:not(.site)) h2:has(> .info), :where(body:not(.site)) h3:has(> .info) { display: flex; align-items: center; gap: .3em; }  /* the mark on the middle of the line */
+:where(body:not(.site)) .info { display: inline-flex; flex: none; width: .8em; height: .8em; cursor: help; color: var(--muted); outline-offset: 2px; }
+:where(body:not(.site)) .info svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+:where(body:not(.site)) h2 .info { width: .42em; height: .42em; }
+:where(body:not(.site)) .info:hover, :where(body:not(.site)) .info:focus-visible { color: var(--ink); }
 
 /* a little air between a title, its note or key and the table or chart under it */
-[data-panel] .note + .table-wrap, [data-panel] h3 + .table-wrap, [data-panel] .legend + .table-wrap, [data-panel] .controls + #who-results { margin-top: 10px; }
-[data-panel] h3 + .note, [data-panel] .block-head + .legend { margin-top: 3px; }
+:where(body:not(.site)) [data-panel] .note + .table-wrap, :where(body:not(.site)) [data-panel] h3 + .table-wrap, :where(body:not(.site)) [data-panel] .legend + .table-wrap, :where(body:not(.site)) [data-panel] .controls + #who-results { margin-top: 10px; }
+:where(body:not(.site)) [data-panel] h3 + .note, :where(body:not(.site)) [data-panel] .block-head + .legend { margin-top: 3px; }
 
 /* text runs to the end of its panel before it wraps */
-.note, details .txt { max-width: none; }
-td.details .sub, td.details > span:first-child { max-width: 420px; }
-.marks { max-width: 420px; }
+:where(body:not(.site)) .note, :where(body:not(.site)) details .txt { max-width: none; }
+:where(body:not(.site)) td.details .sub, :where(body:not(.site)) td.details > span:first-child { max-width: 420px; }
+:where(body:not(.site)) .marks { max-width: 420px; }
 
 /* your circle: the key and the ring as one centred group */
-.net-wrap { max-width: 1200px; margin: 0 auto; justify-content: center; }
+:where(body:not(.site)) .net-wrap { max-width: 1200px; margin: 0 auto; justify-content: center; }
 
 /* a pressed choice stays as it is under the pointer */
-.theme button[aria-pressed="true"]:hover, .theme a[aria-pressed="true"]:hover { background: var(--ink); color: var(--ground); }
-html body .seg > a[aria-pressed="true"]:hover, html body .seg button[aria-pressed="true"]:hover, html body .seg > label:has(input:checked):hover {
+:where(body:not(.site)) .theme button[aria-pressed="true"]:hover, :where(body:not(.site)) .theme a[aria-pressed="true"]:hover { background: var(--ink); color: var(--ground); }
+html body:not(.site) .seg > a[aria-pressed="true"]:hover, html body:not(.site) .seg button[aria-pressed="true"]:hover, html body:not(.site) .seg > label:has(input:checked):hover {
   background: var(--c-segmented-bg-active); color: var(--c-segmented-fg-active); transform: none; }
-.periods > a[aria-pressed="true"]:hover { transform: none; }
+:where(body:not(.site)) .periods > a[aria-pressed="true"]:hover { transform: none; }
 
 /* never split a date and its time */
-.nw { white-space: nowrap; }
-td.when { white-space: nowrap; }
+:where(body:not(.site)) .nw { white-space: nowrap; }
+:where(body:not(.site)) td.when { white-space: nowrap; }
 
 /* connections: each group on its own grey ground */
-.graph .group-bg { fill: var(--sunken); }
+:where(body:not(.site)) .graph .group-bg { fill: var(--sunken); }
 
 /* a chart in the middle of its panel when the panel beside it is taller */
-[data-panel="by-hour"], [data-panel="coal-sources"] { display: flex; flex-direction: column; }
-[data-panel="by-hour"] > .centred, [data-panel="coal-sources"] > .centred { margin-block: auto; }
+:where(body:not(.site)) [data-panel="by-hour"], :where(body:not(.site)) [data-panel="coal-sources"] { display: flex; flex-direction: column; }
+:where(body:not(.site)) [data-panel="by-hour"] > .centred, :where(body:not(.site)) [data-panel="coal-sources"] > .centred { margin-block: auto; }
 
 /* connections: the key clear of the groups (the bubbles float in dash.js) */
-[data-panel="connections"] > .legend { margin-bottom: 16px; }
+:where(body:not(.site)) [data-panel="connections"] > .legend { margin-bottom: 16px; }
 
 /* your circle: the invisible double of your node that sits above the chords */
-.net .me-hit circle { fill: transparent; stroke: none; }
-.net .me-hit:hover circle { stroke: none; }
+:where(body:not(.site)) .net .me-hit circle { fill: transparent; stroke: none; }
+:where(body:not(.site)) .net .me-hit:hover circle { stroke: none; }
 /* connections: every few seconds a heartbeat runs through each group, biggest bubble first; only the circle grows,
    never the text, so nothing jerks */
-.graph .bubble .core { animation: beat 7s ease-in-out infinite; animation-delay: calc(var(--i, 0) * .14s + var(--g, 0) * .8s); }
+:where(body:not(.site)) .graph .bubble .core { animation: beat 7s ease-in-out infinite; animation-delay: calc(var(--i, 0) * .14s + var(--g, 0) * .8s); }
 @keyframes beat { 0%, 9%, 100% { scale: 1; } 4% { scale: 1.09; } }
-@media (prefers-reduced-motion: reduce) { .graph .bubble .core { animation: none; } }
-.fb-quote { font-style: italic; }
+@media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .graph .bubble .core { animation: none; } }
+:where(body:not(.site)) .fb-quote { font-style: italic; }
 
 /* ranges and steps: the arrow on the middle of the line, not on its baseline */
-.arr { display: inline-block; font-size: .85em; line-height: 1; vertical-align: .08em; color: var(--muted); }
-.step .arr { margin: 0 2px; }
+:where(body:not(.site)) .arr { display: inline-block; font-size: .85em; line-height: 1; vertical-align: .08em; color: var(--muted); }
+:where(body:not(.site)) .step .arr { margin: 0 2px; }
 /* everyone you crossed paths with: one line of headings */
-[data-panel="table-people"] th button { white-space: nowrap; }
+:where(body:not(.site)) [data-panel="table-people"] th button { white-space: nowrap; }
 /* account actions in the settings, as buttons; deleting in red */
-.settings .row-links { display: flex; gap: 8px; flex-wrap: wrap; }
-.settings .row-links .btn { flex: 1 1 auto; min-height: 40px; white-space: nowrap; }
-.settings .row-links .btn.danger { color: var(--critical); border-color: var(--critical); }
-.settings .row-links .btn.danger:hover { background: color-mix(in oklab, var(--critical) 12%, transparent); }
-.settings .row-links form { flex: 1 1 auto; display: flex; margin: 0; }
+:where(body:not(.site)) .settings .row-links { display: flex; gap: 8px; flex-wrap: wrap; }
+:where(body:not(.site)) .settings .row-links .btn { flex: 1 1 auto; min-height: 40px; white-space: nowrap; }
+:where(body:not(.site)) .settings .row-links .btn.danger { color: var(--critical); border-color: var(--critical); }
+:where(body:not(.site)) .settings .row-links .btn.danger:hover { background: color-mix(in oklab, var(--critical) 12%, transparent); }
+:where(body:not(.site)) .settings .row-links form { flex: 1 1 auto; display: flex; margin: 0; }

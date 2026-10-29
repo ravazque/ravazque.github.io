@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { fmt } from "../state";
 import Mark from "./Mark.vue";
@@ -8,8 +8,7 @@ import SiteLinks from "./SiteLinks.vue";
 const f = computed(() => fmt.value);
 const route = useRoute();
 const reason = computed(() => (["staff", "piscine", "blackholed", "frozen", "campus"].includes(String(route.query.reason)) ? String(route.query.reason) : "unknown"));
-onMounted(() => { document.body.classList.add("site"); document.title = `${f.value.t("refused.title")} · ${f.value.t("site.name")}`; });
-onBeforeUnmount(() => document.body.classList.remove("site"));
+onMounted(() => { document.title = `${f.value.t("refused.title")} · ${f.value.t("site.name")}`; });
 </script>
 
 <template>

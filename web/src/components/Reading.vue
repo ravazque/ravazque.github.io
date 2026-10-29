@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // About and Privacy: reading pages from the texts, with a way back.
-import { computed, onBeforeUnmount, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { fmt, loadSession, state } from "../state";
 import SiteLinks from "./SiteLinks.vue";
@@ -14,8 +14,7 @@ const raw = (k: string) => fmt.value.raw(k) as any;
 const sections = computed(() => (raw("policy.sections") as string[] | undefined) || []);
 const fill = (s: string) => s.replace("{controller}", state.session?.controller || "").replace("{email}", state.session?.contact_email || "");
 const back = computed(() => (window.history.state?.back as string | null) || "/");
-onMounted(() => { document.body.classList.add("site"); if (!state.session) loadSession().catch(() => {}); });
-onBeforeUnmount(() => document.body.classList.remove("site"));
+onMounted(() => { if (!state.session) loadSession().catch(() => {}); });
 const title = computed(() => `${heading.value} · ${f.value.t("site.name")}`);
 onMounted(() => { document.title = title.value; });
 </script>

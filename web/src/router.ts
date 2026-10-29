@@ -22,3 +22,7 @@ export const router = createRouter({
     return { top: 0 };
   },
 });
+
+// the public pages and the app have their own stylesheets' scope (body.site): set before the page renders
+const SITE = ["/", "/about", "/privacy", "/refused"];
+router.beforeEach((to) => { document.body.classList.toggle("site", SITE.includes(to.path)); });
