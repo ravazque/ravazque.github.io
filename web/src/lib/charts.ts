@@ -167,7 +167,7 @@ export function timeline(f: Fmt, rows: [string, [number, number, string, string]
 
 /** A module's recent history under its figure: a hairline or thin columns, the newest in the accent when last. */
 export function trend(values: (number | null)[], o: { bars?: boolean; last?: boolean } = {}): string {
-  const vals = values.map((v) => v || 0).slice(-24);
+  const vals = values.map((v) => Math.max(0, v || 0)).slice(-24); // deductions (net points below zero) draw as nothing
   if (vals.length < 2 || !vals.some(Boolean)) return "";
   const top = Math.max(...vals) || 1, n = vals.length;
   let marks: string;

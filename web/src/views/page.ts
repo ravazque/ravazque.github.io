@@ -103,5 +103,11 @@ export function myRank(extras: any): string | null {
   return `rank-${String(ranks.length ? Math.max(...ranks) + 1 : 0).padStart(2, "0")}`;
 }
 
+/** The Common Core track: "python" once the 42Next quest is validated (both tracks share cursus 21), else "c". */
+export function myTrack(extras: any): "c" | "python" | null {
+  if (!(extras?.cursus || []).some((c: any) => c.name === "42cursus")) return null;
+  return (extras.quests || []).some((q: any) => q.name === "42Next" && q.validated) ? "python" : "c";
+}
+
 /** An ISO instant (any offset) as epoch milliseconds. */
 export const msOf = (iso: string) => new Date(iso).getTime();

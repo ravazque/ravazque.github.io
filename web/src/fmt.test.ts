@@ -11,10 +11,7 @@ for (const lang of ["en", "es"] as const) {
     test("hm", () => c.hm.forEach(([s, want]: any) => expect(f.hm(s)).toBe(want)));
     test("day", () => c.day.forEach(([s, w, want]: any) => expect(f.day(s, w)).toBe(want)));
     test("stamp", () =>
-      c.stamp.forEach(([ms, want, num]: any) => {
-        expect(f.stamp(ms)).toBe(want);
-        expect(f.stampNum(ms)).toBe(num);
-      }));
+      c.stamp.forEach(([ms, want]: any) => expect(f.stamp(ms)).toBe(want)));
     test("monthLabel", () => c.month_label.forEach(([m, want]: any) => expect(f.monthLabel(m)).toBe(want)));
     test("plural", () => c.plural.forEach(([n, k, want]: any) => expect(f.plural(n, k)).toBe(want)));
     test("pct", () => c.pct.forEach(([a, b, want]: any) => expect(f.pct(a, b)).toBe(want)));
@@ -32,5 +29,13 @@ test("pyRound rounds exact ties to even, like Python", () => {
 test("missing keys show the key; vars fill in", () => {
   const f = new Fmt("en");
   expect(f.t("no.such.key")).toBe("no.such.key");
-  expect(f.t("home.rank", { rank: "rank 3" })).toBe("rank: rank 3");
+  expect(f.t("home.promo", { rank: "3", size: "9" })).toBe("#3 of 9 in your promo");
+});
+
+test("dates read as 29 Oct 2026, with the time when there is one", () => {
+  const f = new Fmt("es");
+  expect(f.dayTime("2026-10-29 13:15")).toBe("29 oct 2026, 13:15");
+  expect(f.dayTime("2026-10-29T13:15:00")).toBe("29 oct 2026, 13:15");
+  expect(f.dayTime("2026-10-29")).toBe("29 oct 2026");
+  expect(f.dayTime("")).toBe("–");
 });

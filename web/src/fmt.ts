@@ -124,11 +124,8 @@ export class Fmt {
     return `${this.day(p.iso)}, ${p.hh}:${p.mm}`;
   };
 
-  /** "27/10/2026, 14:05" in Madrid time. */
-  stampNum = (ms: number) => {
-    const p = madridParts(ms);
-    return `${String(p.d).padStart(2, "0")}/${String(p.m).padStart(2, "0")}/${p.y}, ${p.hh}:${p.mm}`;
-  };
+  /** "2 Oct 2026, 14:05" from a written date-time ("2026-10-02 14:05" or ISO), the date alone when there is no time. */
+  dayTime = (s: string | null | undefined) => (!s ? "–" : s.length > 10 ? `${this.day(s)}, ${s.slice(11, 16)}` : this.day(s));
 
   monthOf = (ms: number) => this.monthLabel(madridParts(ms).iso.slice(0, 7));
 

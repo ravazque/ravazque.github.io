@@ -203,7 +203,7 @@ const periodHref = (p: string) => router.resolve({ query: { ...params.value, per
       <nav v-if="periods.length" class="seg periods" :aria-label="f.t('rail.period')">
         <a v-for="p in periods" :key="p" :href="periodHref(p)" data-keep role="button" :aria-pressed="p === view?.period">{{ f.t(`period.${p}`) }}</a>
       </nav>
-      <p v-else-if="key === 'home' && state.status?.last" class="periods only">{{ f.t("today.as_of", { time: f.stampNum(new Date(state.status.last).getTime()) }) }}</p>
+      <p v-else-if="key === 'home' && state.status?.last" class="periods only">{{ f.t("today.as_of", { time: f.stamp(new Date(state.status.last).getTime()) }) }}</p>
     </header>
     <nav v-if="sections.length > 1" class="toc" :aria-label="f.t('rail.sections')"><a v-for="s in sections" :key="s.id" :href="`#${s.id}`">{{ s.nav }}</a></nav>
     <div v-for="s in sections" :key="s.id + key" class="sec" v-html="s.html"></div>
@@ -211,7 +211,7 @@ const periodHref = (p: string) => router.resolve({ query: { ...params.value, per
       <SiteCredit />
       <nav class="foot-links"><RouterLink to="/about">{{ f.t("site.about") }}</RouterLink><RouterLink to="/privacy">{{ f.t("site.privacy") }}</RouterLink>
         <a v-if="state.session?.issues_url" :href="state.session.issues_url" rel="noopener" target="_blank">{{ f.t("site.issues") }}</a></nav>
-      <p class="foot-note">{{ f.t(view?.light && !view?.seat_days ? "footer.light" : "footer.full", { when: view?.report.generated || "" }) }}</p>
+      <p class="foot-note">{{ f.t(view?.light && !view?.seat_days ? "footer.light" : "footer.full", { when: f.dayTime(view?.report.generated) }) }}</p>
     </footer>
   </main>
   <main v-else id="main" class="solo">

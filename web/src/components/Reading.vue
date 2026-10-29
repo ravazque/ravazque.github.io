@@ -47,7 +47,7 @@ onMounted(() => { document.title = title.value; });
         <ul v-if="raw(`policy.${sec}.list`)"><li v-for="item in raw(`policy.${sec}.list`)" :key="item">{{ item }}</li></ul>
         <p v-for="p in raw(`policy.${sec}.body`) || []" :key="p">{{ fill(p) }}</p>
       </template>
-      <p class="note">{{ f.t("policy.version", { version: state.session?.consent_version ?? "", updated: state.session?.consent_updated || "" }) }}</p>
+      <p class="note">{{ f.t("policy.version", { version: state.session?.consent_version ?? "", updated: f.day(state.session?.consent_updated) }) }}</p>
     </template>
   </main>
   <footer class="reading-foot"><a class="back" :href="back" @click.prevent="router.push(back)">{{ f.t("site.back") }}</a><SiteLinks :current="page" /></footer>

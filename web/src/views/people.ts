@@ -138,6 +138,7 @@ export function people(pg: Page): Section[] {
     const src = P.sources, months = P.months;
     const month = (m: string) => `${f.months[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}`;
     const names = src.map((s: any) => f.t(`coal.src.${s.key}`));
+    const minus = src.some((s: any) => s.points < 0) || months.some((m: any) => m.logtime < 0 || m.other < 0);
     const total = f.t("coal.total", { points: f.num(P.total), n: f.plural(P.count, "coal.awards"),
       coalition: D.profile.coalition?.name || "–", span: months.length ? f.t("coal.span", { first: month(months[0].month), last: month(months[months.length - 1].month) }) : f.t("empty.period") });
     out.push({ id: "coal-points", nav: f.t("nav.coal"), html: section("coal-points", f.t("coal.title"), cols(
@@ -147,7 +148,7 @@ export function people(pg: Page): Section[] {
       block("coal-months", legend([[f.t("coal.src.logtime"), S1], [f.t("coal.rest"), S2]]) + vbars(f, months.map((m: any) => f.monthLabel(m.month)),
         [[f.t("coal.src.logtime"), months.map((m: any) => m.logtime), S1], [f.t("coal.rest"), months.map((m: any) => m.other), S2]],
         { label: f.t("coal.months"), stacked: true, fmt: (v) => f.num(v), every: Math.ceil(months.length / 6) || 1, emptyText: f.t("empty.period") }), f.t("coal.months"))),
-    { lede: esc(f.t("coal.lede")) }) });
+    { lede: esc(f.t("coal.lede")) + (minus ? ` ${esc(f.t("coal.minus"))}` : "") }) });
   }
   return out;
 }

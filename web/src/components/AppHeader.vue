@@ -33,7 +33,7 @@ const syncWait = computed(() => {
   if (s.state === "failed") return f.value.t("status.failed");
   return s.next_refresh_in > 0 ? `[${waitText(s.next_refresh_in)}]` : "";
 });
-const lastText = computed(() => (status.value?.last ? f.value.t("refresh.last", { when: f.value.stampNum(new Date(status.value.last).getTime()) }) : ""));
+const lastText = computed(() => (status.value?.last ? f.value.t("refresh.last", { when: f.value.stamp(new Date(status.value.last).getTime()) }) : ""));
 const fresh = computed(() => !!status.value?.last && Date.now() - new Date(status.value.last).getTime() < 3600e3);
 
 async function refresh() {

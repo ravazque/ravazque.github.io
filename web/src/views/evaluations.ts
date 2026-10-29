@@ -116,7 +116,7 @@ export function evaluations(pg: Page): Section[] {
       + `<dd><span class="pips" role="img" aria-label="${esc(f.t("feedback.pips", { label, n: shown, max: top }))}">${pips}</span><b>${shown}<small>/${top}</small></b></dd></div>`;
   };
   const lowItem = (x: any) => `<li class="fb-item"><p class="fb-head"><span>${esc(f.t("feedback.by", { login: x.by || "?", project: x.project }))}</span>`
-    + `<span class="when">${esc(x.begin.slice(0, 10))}</span></p><dl class="fb-crit">${meter(f.t("feedback.overall"), x.rating, 5)}`
+    + `<span class="when">${esc(f.day(x.begin))}</span></p><dl class="fb-crit">${meter(f.t("feedback.overall"), x.rating, 5)}`
     + ["punctuality", "interested", "rigorous", "nice"].map((k) => meter(f.t(`feedback.c.${k}`), x[k], 4, f.t(`feedback.q.${k}`))).join("") + "</dl>"
     + ((x.comment || "").trim() ? `<p class="note fb-quote">“${esc(x.comment.trim())}”</p>` : "") + "</li>";
   const lowItems = low.map(lowItem).join("") || `<li class="note">${esc(f.t(rated.length ? "feedback.all_max" : "empty.ratings"))}</li>`;
@@ -157,7 +157,7 @@ function correctedTable(pg: Page, dq: string): string {
   });
   const chip = (e: any) => {
     const state = e.mark === null || e.mark === undefined ? "open" : failed(e) ? "fail" : "pass";
-    return `<span class="mark ${state}" title="${esc(e.begin.slice(0, 10))}">${e.mark !== null && e.mark !== undefined ? esc(e.mark) : noMark(f, e)}</span>`;
+    return `<span class="mark ${state}" title="${esc(f.day(e.begin))}">${e.mark !== null && e.mark !== undefined ? esc(e.mark) : noMark(f, e)}</span>`;
   };
   const detail = (r: any) => {
     const people = [...r.whom].sort((a: any, b: any) => b[1].length - a[1].length || a[0].localeCompare(b[0]));

@@ -3,6 +3,7 @@
 import { BAD, GOOD, NEUTRAL, S1, S2, hbars, legend, lines, timeline, vbars, empty } from "../lib/charts";
 import { radar } from "../lib/graphs";
 import { ARROW, badge, esc } from "../lib/h";
+import { pyRound } from "../fmt";
 import { csv, facts, table } from "../lib/table";
 import { Page, Section, block, cols, filters, radios, search, section, select } from "./page";
 
@@ -69,7 +70,7 @@ export function projects(pg: Page): Section[] {
   const due = dv.alumni_due;
   const lvl: [string, string][] = [];
   if (main) lvl.push([f.t("home.k_level"), `${f.num(main.level, 2)}${main.grade ? ` ${badge(main.grade)}` : ""}`]);
-  if (pg.v.promo) lvl.push([f.t("standing.promo"), esc(f.t("home.promo", { rank: f.num(pg.v.promo.rank), size: f.num(pg.v.promo.size) }))]);
+  if (pg.v.promo) lvl.push([f.t("standing.promo"), esc(f.t("home.promo_short", { rank: f.num(pg.v.promo.rank), size: f.num(pg.v.promo.size) }))]);
   if (pc) {
     if (pc.months_since_kickoff !== null && pc.months_since_kickoff !== undefined) lvl.push([f.t("pace.since"), esc(f.plural(pc.months_since_kickoff, "pace.months"))]);
     lvl.push([f.t("pace.xp_month"), f.num(pc.xp_per_month)]);
@@ -158,9 +159,9 @@ export function projects(pg: Page): Section[] {
 
   const tl = D.projects.map((p: any) => [p.name, p.attempts.map((a: any) => {
     const c = a.validated === true ? GOOD : a.validated === false ? BAD : NEUTRAL;
-    const outcome = a.validated ? f.t("outcome.validated") : a.validated === false ? f.t("outcome.failed") : a.status || "";
+    const outcome = a.validated ? f.t("outcome.validated") : a.validated === false ? f.t("outcome.failed") : a.status ? (f.has(`status.${a.status}`) ? f.t(`status.${a.status}`) : a.status.replace(/_/g, " ")) : "";
     const tip = [f.t("projects.tip_title", { name: p.name, n: a.n, of: p.attempts.length }), `${outcome} · ${f.t("projects.tip_mark", { mark: a.mark ?? "–" })}`,
-      `${a.start} ➜ ${a.closed || a.locked || f.t("projects.tip_open")} (${f.t("projects.tip_days", { n: f.num(a.days, 1) })})`,
+      `${a.start} ➜ ${a.closed || a.locked || f.t("projects.tip_open")} (${f.t("projects.tip_days", { count: pyRound(a.days, 1), n: f.num(a.days, 1) })})`,
       f.plural((a.evals || []).length, "count.evaluations") + (a.outstanding ? ` · ${a.outstanding} ${f.t("flag.outstanding")}` : ""),
       a.correctors?.length ? f.t("projects.by", { list: a.correctors.join(", ") }) : "", a.members?.length ? f.t("projects.team", { list: a.members.join(", ") }) : ""].filter(Boolean).join(" · ");
     return [a.start_ms, a.end_ms || a.start_ms, c, tip];
@@ -178,13 +179,13 @@ export function projects(pg: Page): Section[] {
   // what 42 gave you along the way
   const none = `<li class="note">${esc(f.t("empty.period"))}</li>`;
   const evKind = (k: string) => (f.has(`event.${k}`) ? f.t(`event.${k}`) : String(k).replace(/_/g, " "));
-  const ach = [...X.achievements].reverse().map((a: any) => `<li><span><b>${esc(a.name)}</b>${a.tier && a.tier !== "none" ? " " + badge(a.tier) : ""}<br>`
-    + `<span class="note">${esc(a.description || "")}</span></span><span class="when">${esc((a.at || "").slice(0, 10))}</span></li>`).join("");
+  const ach = [...X.achievements].reverse().map((a: any) => `<li><span><b>${esc(a.name)}</b>${a.tier && a.tier !== "none" ? " " + badge(f.has(`tier.${a.tier}`) ? f.t(`tier.${a.tier}`) : a.tier) : ""}<br>`
+    + `<span class="note">${esc(a.description || "")}</span></span><span class="when">${esc(f.day(a.at))}</span></li>`).join("");
   const evs = [...X.events].reverse().map((e: any) => `<li><span>${esc(e.name)}<br><span class="note">${esc(evKind(e.kind))}${e.location ? " · " + esc(e.location) : ""}`
-    + `${e.hours ? ` · ${esc(f.num(e.hours, 1))} h` : ""}</span></span><span class="when">${esc(e.begin)}</span></li>`).join("");
-  const misc = [...X.titles.map((x: any) => `<li><span><b>${esc(f.t("extras.title_item"))}</b> ${esc(x.name)}${x.selected ? " " + badge(f.t("extras.selected")) : ""}</span><span class="when">${esc((x.at || "").slice(0, 10))}</span></li>`),
+    + `${e.hours ? ` · ${esc(f.num(e.hours, 1))} h` : ""}</span></span><span class="when">${esc(f.day(e.begin))}</span></li>`).join("");
+  const misc = [...X.titles.map((x: any) => `<li><span><b>${esc(f.t("extras.title_item"))}</b> ${esc(x.name)}${x.selected ? " " + badge(f.t("extras.selected")) : ""}</span><span class="when">${esc(f.day(x.at))}</span></li>`),
     ...X.expertises.map((x: any) => `<li><span><b>${esc(f.t("extras.expertise"))}</b> ${esc(x.name)}</span><span class="when">${esc(x.value)} / 5</span></li>`),
-    ...X.quests.map((q: any) => `<li><span><b>${esc(f.t("extras.quest"))}</b> ${esc(q.name)}<br><span class="note">${esc(q.description || "")}</span></span><span class="when">${esc((q.validated || f.t("extras.in_progress")).slice(0, 10))}</span></li>`)].join("");
+    ...X.quests.map((q: any) => `<li><span><b>${esc(f.t("extras.quest"))}</b> ${esc(q.name)}<br><span class="note">${esc(q.description || "")}</span></span><span class="when">${esc(q.validated ? f.day(q.validated) : f.t("extras.in_progress"))}</span></li>`)].join("");
   const kinds = Object.entries(X.event_kinds || {}).map(([k, v]) => `${evKind(k)}: ${v}`).join(" · ");
   out.push({ id: "activity", nav: f.t("activity.title"), html: section("activity", f.t("activity.title"), cols(
     block("achievements", `<ul class="list">${ach || none}</ul>`, f.t("extras.achievements_title")),

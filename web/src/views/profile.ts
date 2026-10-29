@@ -5,7 +5,7 @@ import { trend } from "../lib/charts";
 import { badge, esc, initials, safeColor } from "../lib/h";
 import { madridParts } from "../fmt";
 import { home, type Today } from "./home";
-import { Page, type Section, myRank, msOf } from "./page";
+import { Page, type Section, myRank, myTrack, msOf } from "./page";
 import { projects } from "./projects";
 import { people } from "./people";
 import { campus } from "./campus";
@@ -20,33 +20,32 @@ export const ON_PROFILE = new Set(Object.values(PROFILE_FROM).flat());
 const num = (f: Page["f"], v: number, d = 0, unit = "") =>
   `<span data-count="${v}" data-dec="${d}">${esc(f.num(v, d))}</span>${unit ? `<small>${esc(unit)}</small>` : ""}`;
 
-/** Who this is (photo, name, campus, coalition, rank, grade, groups) and what the intra keeps on the profile. */
+/** Who this is: the photo in a rounded square, the name as a poster, one line of identity (campus, coalition, milestone,
+ * grade, track, groups) and three stacks of facts (cursus · economy · dates). */
 function card(pg: Page): string {
   const f = pg.f, D = pg.D, P = D.profile, dv = pg.v.derive || {};
   const cursus = new Map<string, any>((pg.v.all_cursus || D.extras.cursus || []).map((c: any) => [c.name, c]));
   const main = cursus.get("42cursus"), piscine = cursus.get("C Piscine");
-  const coal = P.coalition, promo = pg.v.promo, rank = myRank(D.extras);
+  const coal = P.coalition, promo = pg.v.promo, rank = myRank(D.extras), track = myTrack(D.extras);
   const month = (s: string) => `${f.months[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;
-  const facts = ([
-    main ? [f.t("home.k_level"), f.num(main.level, 2)] : null,
-    promo ? [f.t("standing.promo"), `${f.num(promo.rank)} / ${f.num(promo.size)}`] : null,
-    P.wallet !== null && P.wallet !== undefined ? [f.t("head.wallet"), `${f.num(P.wallet)} ₳`] : null,
-    P.correction_point !== null && P.correction_point !== undefined ? [f.t("head.points"), f.num(P.correction_point)] : null,
-    piscine?.begin ? [f.t("profile.piscine"), month(piscine.begin)] : null,
-    main?.begin ? [f.t("profile.kickoff"), f.day(main.begin)] : null,
-    dv.alumni_due ? [f.t("profile.alumni"), dv.alumni_due === "paused" ? f.t("profile.paused") : f.day(dv.alumni_due)] : null,
-    coal ? [f.t("home.k_coalition"), coal.rank ? `${coal.name} · ${f.t("home.nth", { n: coal.rank })}` : coal.name] : null,
-  ].filter(Boolean) as [string, string][]);
-  const coalLine = (coal ? `<i class="dot" style="background:${safeColor(coal.color)}"></i>${esc(coal.name)} · ` : "")
-    + esc(rank ? f.t(`groups.${rank}`) : f.t("home.no_cursus")) + (main?.grade ? ` ${badge(main.grade)}` : "");
+  const has = (v: any) => v !== null && v !== undefined;
+  const stacks = ([
+    [main ? [f.t("home.k_level"), f.num(main.level, 2)] : null, promo ? [f.t("standing.promo"), f.t("home.promo_short", { rank: f.num(promo.rank), size: f.num(promo.size) })] : null],
+    [has(P.wallet) ? [f.t("head.wallet"), `${f.num(P.wallet)} ₳`] : null, has(P.correction_point) ? [f.t("head.points"), f.num(P.correction_point)] : null],
+    [main?.begin ? [f.t("profile.kickoff"), f.day(main.begin)] : null, piscine?.begin ? [f.t("profile.piscine"), month(piscine.begin)] : null,
+      dv.alumni_due ? [f.t("profile.alumni"), dv.alumni_due === "paused" ? f.t("profile.paused") : f.day(dv.alumni_due)] : null],
+  ].map((st) => st.filter(Boolean) as [string, string][]).filter((st) => st.length));
+  const sub = [esc(P.login) + (P.campus_current ? ` · ${esc(P.campus_current)}` : ""),
+    coal ? `<span><i class="dot" style="background:${safeColor(coal.color)}"></i>${esc(coal.name)}${coal.rank ? ` · ${esc(f.t("home.nth", { n: coal.rank }))}` : ""}</span>` : "",
+    esc(rank ? f.t(`groups.${rank}`) : f.t("home.no_cursus")),
+    [main?.grade ? badge(main.grade) : "", track ? badge(f.t(`profile.track_${track}`)) : "", ...(P.groups || []).map((g: string) => badge(g))].join("")]
+    .filter(Boolean).map((x) => `<span>${x}</span>`).join("");
   const now = P.location ? f.t("rail.now_at", { seat: P.location }) : f.t("rail.not_logged");
-  const gen = D.generated || "";
-  return `<section id="profile" aria-label="${esc(f.t("profile.title"))}"><div class="id-card">`
-    + `<div class="avatar-lg"><span aria-hidden="true">${esc(initials(P.name || P.login))}</span>${P.image ? `<img src="${esc(P.image)}" alt="">` : ""}</div>`
-    + `<div class="id-text"><p class="name">${esc(P.name || P.login)}</p><p>${esc(P.login)}${P.campus_current ? ` · ${esc(P.campus_current)}` : ""}</p>`
-    + `<p class="coal">${coalLine}</p>${(P.groups || []).length ? `<p class="groups">${P.groups.map((g: string) => badge(g)).join("")}</p>` : ""}</div>`
-    + `<dl class="id-facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`
-    + `<p class="id-now">${esc(now)} · ${esc(f.t("head.generated", { when: gen ? `${f.day(gen)}, ${gen.slice(11, 16)}` : "" }))}</p></div></section>`;
+  return `<section id="profile" aria-label="${esc(f.t("profile.title"))}"><div class="pf">`
+    + `<div class="avatar-lg pf-photo"><span aria-hidden="true">${esc(initials(P.name || P.login))}</span>${P.image ? `<img src="${esc(P.image)}" alt="">` : ""}</div>`
+    + `<div class="pf-main"><p class="pf-name">${esc(P.name || P.login)}</p><p class="pf-sub">${sub}</p>`
+    + `<div class="pf-stacks">${stacks.map((st) => `<dl>${st.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`).join("")}</div>`
+    + `<p class="pf-now">${P.location ? '<i class="live" aria-hidden="true"></i>' : ""}${esc(now)} · ${esc(f.t("head.generated", { when: f.dayTime(D.generated) }))}</p></div></div></section>`;
 }
 
 /** v1's six modules: level, projects, evaluations, coalition, the logtime bonus and hours. */
@@ -67,7 +66,7 @@ function modules(pg: Page): string {
   }
   const coal = D.profile.coalition, cp = D.coalition_points;
   const mods: { key: string; label: string; aside?: string; value: string; lines: string[]; trend: string; live?: boolean; meter?: string; chip?: string }[] = [
-    { key: "level", label: f.t("home.k_level"), aside: level ? f.t("home.cursus") : "", value: level ? num(f, level.level, 2) : "–",
+    { key: "level", label: f.t("home.k_level"), aside: level?.name || "", value: level ? num(f, level.level, 2) : "–",
       lines: [rank ? f.t("home.rank", { rank: f.t(`groups.${rank}`) }) : f.t("home.no_cursus"),
         promo ? f.t("home.promo", { rank: f.num(promo.rank), size: f.num(promo.size) }) : f.t("home.xp", { xp: f.num(xp) })],
       trend: trend(months.map((m: any) => m.cumulative)) },

@@ -38,7 +38,7 @@ const tiles = computed(() => {
       [F.t("stats.ext_avg_time"), n ? F.t("stats.secs", { n: F.num(Math.round(x.extraction_seconds / n)) }) : "–"],
       [F.t("stats.failed"), F.num(x.failed)], [F.t("stats.timeouts"), F.num(x.timeouts)], [F.t("stats.denied"), F.num(x.denied)]],
     sys: [[F.t("stats.uptime"), dur(x.uptime_s)], [F.t("stats.memory"), F.num(x.memory_keys)], [F.t("stats.peak"), F.num(x.peak_sessions)]],
-    note: `${F.t("stats.started")} ${F.stampNum(new Date(x.started).getTime())} · ${F.t("stats.last_publish")} ${x.last_publish ? F.stampNum(new Date(x.last_publish).getTime()) : F.t("stats.never")}`,
+    note: `${F.t("stats.started")} ${F.stamp(new Date(x.started).getTime())} · ${F.t("stats.last_publish")} ${x.last_publish ? F.stamp(new Date(x.last_publish).getTime()) : F.t("stats.never")}`,
   };
 });
 </script>
@@ -55,7 +55,7 @@ const tiles = computed(() => {
       <div class="stat-tiles"><div v-for="[k, v] in tiles.sys" :key="k" class="stat"><b class="figure">{{ v }}</b><span class="k">{{ k }}</span></div></div>
       <p class="note">{{ tiles.note }}</p></section>
     <section class="stats-sec"><h2>{{ f.t("stats.sessions") }}<span class="count"><span class="sep"> · </span>{{ s.sessions?.length || 0 }}</span></h2>
-      <ul v-if="s.sessions?.length" class="stat-sessions"><li v-for="u in s.sessions" :key="u.login + u.created"><span class="who">{{ u.login }}<template v-if="u.name"> · {{ u.name }}</template></span><span class="when">{{ f.stampNum(u.created * 1000) }}</span></li></ul>
+      <ul v-if="s.sessions?.length" class="stat-sessions"><li v-for="u in s.sessions" :key="u.login + u.created"><span class="who">{{ u.login }}<template v-if="u.name"> · {{ u.name }}</template></span><span class="when">{{ f.stamp(u.created * 1000) }}</span></li></ul>
       <p v-else class="note">{{ f.t("stats.no_sessions") }}</p></section>
   </main>
   <div id="tip" role="tooltip"></div>
