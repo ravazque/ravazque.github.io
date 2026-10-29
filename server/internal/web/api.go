@@ -151,7 +151,7 @@ func (s *Server) view(w http.ResponseWriter, r *http.Request, si signedIn) {
 		"period": p, "periods": periods.Keys(), "default_period": data.V("default_period"), "light": data.V("light"),
 		"seat_days": data.V("seat_days"), "report": rep, "derive": core.Derive(rep, all, s.now()),
 		"layout": data.V("layout"), "connections": data.Obj("connections").V(p), "network": data.Obj("network").V(p),
-		"promo": data.V("promo"), "coalitions": data.V("coalitions"), "all_projects": all.V("projects"),
+		"promo": data.V("promo"), "coalitions": data.V("coalitions"), "all_projects": all.V("projects"), "all_cursus": all.Obj("extras").V("cursus"),
 	})
 }
 

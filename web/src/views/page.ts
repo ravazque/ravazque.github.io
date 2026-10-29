@@ -8,7 +8,7 @@ export type Rep = any; // one period's report, as the server stores it (core.Ana
 export type View = {
   period: string; periods: string[]; default_period: string; light: boolean; seat_days: number | null;
   report: Rep; derive: any; layout: Record<string, { rows: number; seats: number }>; connections: any[]; network: any;
-  promo: any; coalitions: any[]; all_projects: any[];
+  promo: any; coalitions: any[]; all_projects: any[]; all_cursus?: any[];
 };
 
 export const PAGES = ["home", "projects", "evaluations", "people", "campus"] as const;

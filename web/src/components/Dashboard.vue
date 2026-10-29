@@ -8,8 +8,9 @@ import { closePops, hideTip, settle } from "../lib/behave";
 import { idbShelf, keepCopy, restore } from "../lib/copy";
 import { esc } from "../lib/h";
 import { parseCsv } from "../lib/table";
-import { Page, type PageKey, type Section, type View, myRank } from "../views/page";
-import { home, type Today } from "../views/home";
+import { Page, type PageKey, type Section, type View } from "../views/page";
+import type { Today } from "../views/home";
+import { ON_PROFILE, profile as profileSections } from "../views/profile";
 import { portfolioCsv, projects, projectsCsv } from "../views/projects";
 import { evaluations } from "../views/evaluations";
 import { people } from "../views/people";
@@ -32,26 +33,12 @@ const pg = computed(() => (view.value ? new Page(f.value, view.value, key.value,
 
 const sections = computed<Section[]>(() => {
   if (!pg.value) return [];
-  if (key.value === "home") return today.value ? home(f.value, today.value, pg.value) : [];
-  return { projects, evaluations, people, campus }[key.value as Exclude<PageKey, "home">](pg.value);
+  if (key.value === "home") return profileSections(pg.value, today.value);
+  // the panels v1's Home held live on Profile again: the other pages leave them out
+  return { projects, evaluations, people, campus }[key.value as Exclude<PageKey, "home">](pg.value).filter((s) => !ON_PROFILE.has(s.id));
 });
 
 const profile = computed(() => view.value?.report.profile);
-const main42 = computed(() => (view.value?.report.extras.cursus || []).find((c: any) => c.name === "42cursus"));
-const facts = computed<[string, string][]>(() => {
-  const P = profile.value, F = f.value;
-  if (!P) return [];
-  const piscine = (view.value!.report.extras.cursus || []).find((c: any) => c.name === "C Piscine");
-  const coal = P.coalition;
-  return ([
-    P.wallet !== null && P.wallet !== undefined ? [F.t("head.wallet"), `${F.num(P.wallet)} ₳`] : null,
-    P.correction_point !== null && P.correction_point !== undefined ? [F.t("head.points"), F.num(P.correction_point)] : null,
-    piscine?.begin ? [F.t("profile.piscine"), `${F.months[+piscine.begin.slice(5, 7) - 1]} ${piscine.begin.slice(0, 4)}`] : null,
-    main42.value?.begin ? [F.t("profile.kickoff"), F.day(main42.value.begin)] : null,
-    coal ? [F.t("home.k_coalition"), coal.rank ? `${coal.name} · ${F.t("home.nth", { n: coal.rank })}` : coal.name] : null,
-    myRank(view.value!.report.extras) ? [F.t("col.group"), F.t(`groups.${myRank(view.value!.report.extras)}`)] : null,
-  ].filter(Boolean) as [string, string][]);
-});
 
 const title = computed(() => {
   if (key.value !== "home") return f.value.t(`pages.${key.value}`);
@@ -94,7 +81,7 @@ async function load() {
 }
 
 async function fetchView() {
-  const period = key.value === "home" ? "all" : params.value.period || ""; // Home shows the whole profile
+  const period = params.value.period || "";
   const [v, td] = await Promise.all([
     api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`),
     key.value === "home" ? api<Today>("/api/me/today") : Promise.resolve(null),
@@ -204,12 +191,12 @@ function exportCsv(btn: HTMLElement) {
   preview.value?.showModal();
 }
 
-const periods = computed(() => (view.value && key.value !== "home" && view.value.periods.length > 1 ? view.value.periods : []));
+const periods = computed(() => (view.value && view.value.periods.length > 1 ? view.value.periods : []));
 const periodHref = (p: string) => router.resolve({ query: { ...params.value, period: p } }).fullPath;
 </script>
 
 <template>
-  <AppHeader :page="key" :period="view?.period" :profile="profile" :level="main42?.level ?? null" :grade="main42?.grade ?? null" :facts="facts" @refreshed="watchSync" />
+  <AppHeader :page="key" :period="view?.period" @refreshed="watchSync" />
   <main v-if="screen === 'page'" id="main" ref="main" :data-page="`web-${key}`" @click="onClick" @input="onInput" @change="onInput" @submit.prevent>
     <header class="page-head">
       <h1>{{ title }}</h1>

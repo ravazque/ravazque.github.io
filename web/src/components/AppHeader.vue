@@ -11,7 +11,7 @@ import { PAGES, PATHS, type PageKey } from "../views/page";
 import BrandMark from "./BrandMark.vue";
 import { offline } from "../offline";
 
-const props = defineProps<{ page?: PageKey; period?: string; profile?: any; level?: number | null; grade?: string | null; facts?: [string, string][] }>();
+const props = defineProps<{ page?: PageKey; period?: string }>();
 const emit = defineEmits<{ refreshed: [] }>();
 const router = useRouter();
 const f = computed(() => fmt.value);
@@ -22,7 +22,7 @@ const accent = ref(applyAccentChoice(settings.get("accent"), user.value?.coaliti
 watch(() => user.value?.coalition_color, (c) => { accent.value = applyAccentChoice(settings.get("accent"), c); });
 
 const label = (k: PageKey) => f.value.t(`pages.${k}`);
-const href = (k: PageKey) => PATHS[k] + (props.period && k !== "home" ? `?period=${props.period}` : "");
+const href = (k: PageKey) => PATHS[k] + (props.period ? `?period=${props.period}` : "");
 
 const busy = computed(() => ["queued", "running"].includes(status.value?.state || ""));
 const waitText = (s: number) => (s < 60 ? f.value.t("refresh.wait_s", { count: Math.max(1, s) }) : f.value.t("refresh.wait", { count: Math.ceil(s / 60) }));
@@ -51,8 +51,6 @@ async function signOut() {
   location.replace("/");
 }
 
-const photoOk = ref(true);
-const avatarUrl = "/avatar/me";
 const tour = ref(false);
 onMounted(() => { tour.value = !offline && !settings.get("tour:star") && props.page !== undefined; });
 function tourDone() { tour.value = false; settings.set("tour:star", "1"); }
@@ -98,17 +96,10 @@ function go(path: string) { closePops(); router.push(path); }
         </template>
       </div>
       <details class="pop settings-wrap">
-        <summary class="me-btn" :aria-label="f.t('user.menu')" :title="f.t('user.menu')">
-          <span class="me-photo" aria-hidden="true"><b>{{ (user?.login || "?").slice(0, 2).toUpperCase() }}</b>
-            <img v-if="user?.has_image && photoOk" :src="avatarUrl" alt="" @error="photoOk = false" /></span>
-          <span class="me-text"><b>{{ user?.login }}</b><small v-if="level !== undefined && level !== null">{{ f.t("user.level", { level: f.num(level, 2) }) }}<template v-if="profile?.coalition"> · {{ profile.coalition.name }}</template></small></span>
+        <summary class="gear" :aria-label="f.t('settings.label')" :title="f.t('settings.label')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
         </summary>
-        <div class="settings" role="group" :aria-label="f.t('user.menu')">
-          <div v-if="profile" class="me-card">
-            <p class="name">{{ profile.name || profile.login }}</p>
-            <p class="note">{{ profile.login }}<template v-if="profile.campus_current"> · {{ profile.campus_current }}</template><template v-if="grade"> · {{ grade }}</template></p>
-            <dl v-if="facts?.length" class="me-facts"><div v-for="[k, v] in facts" :key="k"><dt>{{ k }}</dt><dd>{{ v }}</dd></div></dl>
-          </div>
+        <div class="settings" role="group" :aria-label="f.t('settings.label')">
           <p class="s-label">{{ f.t("settings.accent") }}</p>
           <div class="theme" role="group" :aria-label="f.t('settings.accent')">
             <button type="button" :aria-pressed="accent === 'intra'" @click="pickAccent('intra')">{{ f.t("settings.accent_intra") }}</button>
