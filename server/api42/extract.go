@@ -2,6 +2,7 @@ package api42
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"slices"
 	"sort"
@@ -605,6 +606,10 @@ func networkOf(ctx context.Context, c *Client, d raw, contacts []any, start stri
 			}
 			g.Go(func() error {
 				v, err := c.Get(ctx, "/v2/users/"+idStr(id)+"/scale_teams/as_corrector", vals("page[size]", "100", "sort", "-begin_at"))
+				var apiErr *Error
+				if errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500 && apiErr.Status != 429 {
+					return nil // the API refuses some contacts (a 401 seen live): the network goes without them
+				}
 				if err != nil {
 					return err
 				}

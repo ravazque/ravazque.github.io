@@ -108,6 +108,7 @@ The full policy is on the Privacy page of the app. Security issues: see [SECURIT
 ```
 make                 # list the commands
 make certs           # HTTPS certificates for https://localhost (mkcert if present, else openssl)
+make dev             # build and start https://localhost with no saved profiles (real 42 sign-in only)
 make dev-build       # build and start https://localhost with the synthetic test profiles
 make dev-real        # the same plus the real profiles of DEV_REAL_LOGINS (fetched once, ~120 requests each)
 make dev-logs        # follow dev's logs

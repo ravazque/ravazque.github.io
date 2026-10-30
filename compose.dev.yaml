@@ -1,4 +1,4 @@
-# make dev-build: the synthetic test profiles (web/preview/test-*.json) are served at once, "Test · <login>" on the
+# make dev: no saved profiles (DEV_PROFILES empty), real 42 sign-in only. make dev-build: the synthetic test profiles (web/preview/test-*.json) are served at once, "Test · <login>" on the
 # landing signs in as one; make dev-real adds the real ones (real-*.json, "Real · <login>"). Its own project
 # (ravazque-info-dev), so it runs beside make production; only it publishes ports on the host.
 # A change to the code needs make dev-build (or dev-real) again: it rebuilds the image.
@@ -7,7 +7,7 @@ services:
     ports: ["80:80", "443:443"]
   api:
     environment:
-      DEV_PROFILES: ${DEV_PROFILES:-/preview/test-*.json}
+      DEV_PROFILES: ${DEV_PROFILES-/preview/test-*.json}
       BASE_URL: https://localhost
       OAUTH_APP: "2"
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}

@@ -4,11 +4,16 @@ COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.ya
 # the dev tools run here (Go); fetch reads the 42 apps from the root .env itself, without printing them
 DEVTOOLS := cd server && go run ./cmd/devtools
 .DEFAULT_GOAL := help
-.PHONY: help dev-build dev-real dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot site certs clean fclean re
+.PHONY: help dev dev-build dev-real dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot site certs clean fclean re
 
 help: ## Show this help
 	@echo "ravazque.info — dev at https://localhost (signs in with FT_UID_2), production at https://ravazque.info (FT_UID)"
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+dev: .env web/Caddyfile.local ## Build and start dev at https://localhost with no saved profiles: real 42 sign-in only (FT_UID_2)
+	@mkdir -p web/preview
+	@DEV_PROFILES= $(COMPOSE_DEV) up -d --build
+	@echo "Up at https://localhost — sign in with 42 (the FT_UID_2 app needs the redirect URI https://localhost/auth/callback)"
 
 dev-build: .env web/Caddyfile.local ## Build and start dev at https://localhost with the synthetic test profiles only (made again, 0 requests)
 	@mkdir -p web/preview
@@ -20,7 +25,7 @@ dev-build: .env web/Caddyfile.local ## Build and start dev at https://localhost 
 dev-real: .env web/Caddyfile.local ## dev-build plus the real profiles of DEV_REAL_LOGINS (fetched only when missing, ~120 requests each)
 	@mkdir -p web/preview
 	@if ! ls web/preview/test-*.json >/dev/null 2>&1; then $(DEVTOOLS) profiles $(CURDIR)/web/preview; fi
-	@$(DEVTOOLS) real $(CURDIR)/web/preview
+	@$(DEVTOOLS) real $(CURDIR)/web/preview || echo "Starting without them: run make dev-real again later (only the missing ones are fetched)"
 	@DEV_PROFILES='/preview/test-*.json /preview/real-*.json' $(COMPOSE_DEV) up -d --build
 	@echo "Up at https://localhost — 'Test · …' and 'Real · …' on the landing (delete web/preview/real-<login>.json to fetch it again)"
 

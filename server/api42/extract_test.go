@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"os"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -111,3 +113,38 @@ func TestUpcomingHiddenEvaluationsAreKept(t *testing.T) {
 }
 
 func errorsAs(err error, target any) bool { return errors.As(err, target) }
+
+// One contact the API refuses (seen live: a 401 on another student's given evaluations) leaves that contact out of
+// the network instead of failing the whole extraction.
+func TestRefusedContactIsSkipped(t *testing.T) {
+	d := readJSON(t, "../core/testdata/api/mid.json")
+	uid := strconv.Itoa(int(d["user"].(map[string]any)["id"].(float64)))
+	fake := fake42.Handler(d, func(p string) { t.Errorf("unexpected request %s", p) })
+	var mu sync.Mutex
+	refused, hits := "", 0
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		p := r.URL.Path
+		if strings.HasSuffix(p, "/scale_teams/as_corrector") && !strings.Contains(p, "/users/"+uid+"/") {
+			mu.Lock()
+			if refused == "" {
+				refused = p
+			}
+			hit := p == refused
+			if hit {
+				hits++
+			}
+			mu.Unlock()
+			if hit {
+				w.WriteHeader(401)
+				return
+			}
+		}
+		fake(w, r)
+	})
+	if _, err := Extract(context.Background(), c, int(d["user"].(map[string]any)["id"].(float64)), func(float64) {}, func() time.Time { return goldenNow }); err != nil {
+		t.Fatal(err)
+	}
+	if hits == 0 {
+		t.Fatal("no contact was refused")
+	}
+}

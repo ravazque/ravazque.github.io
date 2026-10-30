@@ -114,6 +114,7 @@ La política completa está en la página de Privacidad de la aplicación. Probl
 ```
 make                 # lista los comandos
 make certs           # certificados HTTPS para https://localhost (mkcert si está, si no openssl)
+make dev             # compila y arranca https://localhost sin perfiles guardados (solo inicio de sesión real con 42)
 make dev-build       # compila y arranca https://localhost con los perfiles de prueba sintéticos
 make dev-real        # lo mismo más los perfiles reales de DEV_REAL_LOGINS (se descargan una vez, ~120 peticiones cada uno)
 make dev-logs        # sigue los logs de dev
