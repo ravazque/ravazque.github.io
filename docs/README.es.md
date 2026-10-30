@@ -114,22 +114,22 @@ La política completa está en la página de Privacidad de la aplicación. Probl
 ```
 make                 # lista los comandos
 make certs           # certificados HTTPS para https://localhost (mkcert si está, si no openssl)
-make dev             # compila y arranca https://localhost con tu informe guardado y los perfiles de prueba
+make dev-build       # compila y arranca https://localhost con los perfiles de prueba sintéticos
+make dev-real        # lo mismo más los perfiles reales de DEV_REAL_LOGINS (se descargan una vez, ~120 peticiones cada uno)
 make dev-logs        # sigue los logs de dev
 make dev-down        # para dev (los navegadores conservan sus informes)
-make build           # rehace la imagen de dev y tu informe guardado (DEV_UID, ~120 peticiones, ~40 s)
 make test            # tests de Go, comprobación de tipos y Vitest, tests del sitio
 make production      # compila y arranca https://ravazque.info a través del túnel de Cloudflare
-make prod-down       # para producción (el registro de aceptación se queda en su volumen)
+make production-down # para producción (el registro de aceptación se queda en su volumen)
 make logs            # sigue los logs de producción
 make site            # compila la página del CV en site/_build y la sirve en http://localhost:8080
 make snapshot        # site/data/42.json a partir del informe guardado: lo que enviaría el botón de publicar
 make clean           # dev-down y los ficheros generados
 make fclean          # clean, la imagen, volúmenes e informes guardados de dev, y web/node_modules
-make re              # fclean y dev
+make re              # fclean y dev-build
 ```
 
-`clean`, `fclean`, `re`, `build` y `test` nunca tocan producción: solo lo hacen `make production`, `make prod-down` y
+`clean`, `fclean`, `re` y `test` nunca tocan producción: solo lo hacen `make production`, `make production-down` y
 `make logs`.
 
 Requisitos: Docker con el plugin de Compose, `make`, y `mkcert` u `openssl`. Go 1.27 y Node 26 solo para
@@ -141,7 +141,7 @@ Requisitos: Docker con el plugin de Compose, `make`, y `mkcert` u `openssl`. Go 
    con la redirect URI `https://localhost/auth/callback` y otra para producción con
    `https://ravazque.info/auth/callback`. Una tercera es opcional y solo añade presupuesto de peticiones.
 2. Ejecuta `make`: copia `.env.example` a `.env`. Rellénalo (abajo) y mantenlo privado (`chmod 600 .env`).
-3. `make certs`, después `make dev`, y abre https://localhost.
+3. `make certs`, después `make dev-build`, y abre https://localhost.
 
 ### Configuración
 
@@ -155,7 +155,7 @@ SESSION_SECRET               # openssl rand -hex 32
 CONTROLLER_NAME              # responsable del tratamiento que nombra la política de privacidad
 CONTACT_EMAIL                # contacto para solicitudes de privacidad (páginas Acerca de y Privacidad)
 TUNNEL_TOKEN                 # producción: el token del túnel de Cloudflare
-DEV_UID                      # dev: tu id de usuario de 42, cuyo informe guarda make build
+DEV_REAL_LOGINS              # dev: logins de 42 (separados por comas) cuyos informes reales sirve make dev-real
 OPTOUT_LOGINS                # opcional: logins que se muestran como "Oculto"
 ISSUES_URL                   # opcional: enlace "Informar de un problema"
 OWNER_LOGIN, GITHUB_TOKEN,   # opcional: el botón de publicar (oculto salvo que OWNER_LOGIN
@@ -164,10 +164,12 @@ GITHUB_REPO, GITHUB_BRANCH   #   y GITHUB_TOKEN estén definidos)
 
 ## Modos
 
-- **Dev** (`make dev`, https://localhost) entra con la segunda app de 42. La página de entrada ofrece además
-  **Dev · login**, que entra con tu informe guardado sin pasar por 42, y tres perfiles **Test** (un estudiante nuevo,
-  uno a mitad del Common Core y un alumni): datos sintéticos movidos a la fecha de hoy, nunca personas reales, que no
-  pueden publicar ni actualizar. Un cambio en el código necesita `make dev` de nuevo.
+- **Dev** (`make dev-build`, https://localhost) entra con la segunda app de 42. La página de entrada ofrece además
+  siete perfiles **Test** (un estudiante nuevo, uno a mitad del Common Core, un transcender del Outer Core, un alumni,
+  un estudiante de la rama Python, un transcender de la rama Python y un estudiante que pasó de C a Python): datos
+  sintéticos movidos a la fecha de hoy, nunca personas reales, que no pueden publicar ni actualizar. `make dev-real`
+  añade **Real · login** para los logins de `DEV_REAL_LOGINS`, guardados en `web/preview/` (solo en local). Un cambio
+  en el código necesita `make dev-build` de nuevo.
 - **Producción** (`make production`, https://ravazque.info) entra con la primera app y se sirve a través de un túnel
   de Cloudflare con nombre (Zero Trust → Networks → Tunnels: un conector Docker cuyo hostname público apunta a
   `http://caddy:8080`; su token va en `TUNNEL_TOKEN`). Dev y producción son proyectos de Compose distintos y pueden
@@ -177,7 +179,7 @@ GITHUB_REPO, GITHUB_BRANCH   #   y GITHUB_TOKEN estén definidos)
 
 ```
 git pull --rebase    # el código nuevo (y lo que haya subido el botón de publicar)
-make prod-down       # opcional: para los contenedores; los volúmenes (el registro de aceptación) se quedan
+make production-down # opcional: para los contenedores; los volúmenes (el registro de aceptación) se quedan
 make production      # reconstruye la imagen con el código que tienes y la vuelve a arrancar
 ```
 

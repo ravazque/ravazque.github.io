@@ -1,33 +1,33 @@
 COMPOSE     := docker compose
 COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.yaml
-# build, test, preview and snapshot run in dev's project with its image: nothing but production's own targets
-# (production, prod-down, logs) ever touches production's containers, image or volumes
-COMPOSE_TOOLS := $(COMPOSE) -p ravazque-info-dev
+# nothing but production's own targets (production, production-down, logs) ever touches production's containers, image or volumes
 # the dev tools run here (Go); fetch reads the 42 apps from the root .env itself, without printing them
 DEVTOOLS := cd server && go run ./cmd/devtools
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-down dev-fclean dev-logs production prod prod-down logs build down ps test preview snapshot site certs clean fclean re
+.PHONY: help dev-build dev-real dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot site certs clean fclean re
 
 help: ## Show this help
 	@echo "ravazque.info — dev at https://localhost (signs in with FT_UID_2), production at https://ravazque.info (FT_UID)"
-	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-11s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-DEV_UID = $(shell sed -n 's/^DEV_UID=\([0-9][0-9]*\)$$/\1/p' .env 2>/dev/null)
+dev-build: .env web/Caddyfile.local ## Build and start dev at https://localhost with the synthetic test profiles only (made again, 0 requests)
+	@mkdir -p web/preview
+	@$(DEVTOOLS) profiles $(CURDIR)/web/preview
+	@DEV_PROFILES='/preview/test-*.json' $(COMPOSE_DEV) up -d --build
+	@echo "Up at https://localhost — 'Test · …' on the landing enters as a synthetic profile"
+	@echo "Real sign-in: the FT_UID_2 app needs the redirect URI https://localhost/auth/callback"
 
-dev: .env web/Caddyfile.local ## Build and start dev at https://localhost (fetches the saved report only when there is none)
-	@if [ ! -f web/preview/data.json ]; then $(MAKE) --no-print-directory build; fi
+dev-real: .env web/Caddyfile.local ## dev-build plus the real profiles of DEV_REAL_LOGINS (fetched only when missing, ~120 requests each)
 	@mkdir -p web/preview
 	@if ! ls web/preview/test-*.json >/dev/null 2>&1; then $(DEVTOOLS) profiles $(CURDIR)/web/preview; fi
-	@$(COMPOSE_DEV) up -d --build
-	@if [ -f web/preview/data.json ]; then echo "Up at https://localhost — 'Dev · …' on the landing enters with the saved report (make build refreshes it)"; \
-	  else echo "Up at https://localhost — no saved report: set DEV_UID in .env and run 'make build'"; fi
-	@if ls web/preview/test-*.json >/dev/null 2>&1; then echo "Test profiles (synthetic): 'Test · …' on the landing"; fi
-	@echo "Real sign-in: the FT_UID_2 app needs the redirect URI https://localhost/auth/callback"
+	@$(DEVTOOLS) real $(CURDIR)/web/preview
+	@DEV_PROFILES='/preview/test-*.json /preview/real-*.json' $(COMPOSE_DEV) up -d --build
+	@echo "Up at https://localhost — 'Test · …' and 'Real · …' on the landing (delete web/preview/real-<login>.json to fetch it again)"
 
 dev-down: ## Stop dev and remove its containers (its sessions and server copies go; browsers keep theirs)
 	@$(COMPOSE_DEV) down --remove-orphans
 
-dev-fclean: ## dev-down + delete dev's image, volumes and saved reports (web/preview): make dev starts from scratch
+dev-fclean: ## dev-down + delete dev's image, volumes and saved reports (web/preview): dev-build starts from scratch
 	@$(COMPOSE_DEV) down --volumes --rmi local --remove-orphans
 	@rm -rf web/preview
 
@@ -39,22 +39,13 @@ production: .env web/Caddyfile.local ## Build and start production at https://ra
 	@$(COMPOSE) --profile tunnel up -d --build
 	@echo "Public: https://ravazque.info (the FT_UID app needs the redirect URI https://ravazque.info/auth/callback)"
 
-prod: production
-
-prod-down: ## Stop production and its tunnel (its volumes, the consent log among them, stay)
+production-down: ## Stop production and its tunnel (its volumes, the consent log among them, stay)
 	@$(COMPOSE) --profile tunnel down
 
 logs: ## Follow production's logs
 	@$(COMPOSE) --profile tunnel logs -f --tail=100
 
-build: .env ## Build dev's image, refresh the saved report of DEV_UID (~120 requests, about 40 s with three apps) and the synthetic test profiles
-	@$(COMPOSE_TOOLS) -f compose.yaml -f compose.dev.yaml build
-	@mkdir -p web/preview
-	@if [ -n "$(DEV_UID)" ]; then $(DEVTOOLS) fetch $(DEV_UID) $(CURDIR)/web/preview/data.json; \
-	  else echo "DEV_UID is not set in .env: image built, saved report not refreshed"; fi
-	@$(DEVTOOLS) profiles $(CURDIR)/web/preview
-
-down: dev-down prod-down ## Stop dev and production
+down: dev-down production-down ## Stop dev and production
 
 ps: ## Show the services of both
 	@$(COMPOSE) --profile tunnel ps; $(COMPOSE_DEV) ps
@@ -90,7 +81,7 @@ clean: dev-down ## dev-down + delete generated files (site/_build, the app's bui
 fclean: clean dev-fclean ## clean + dev-fclean + web/node_modules: everything but production and web/certs
 	@rm -rf web/node_modules
 
-re: fclean dev ## fclean + dev
+re: fclean dev-build ## fclean + dev-build
 
 .env:
 	@cp .env.example .env && chmod 600 .env

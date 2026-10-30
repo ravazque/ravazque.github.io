@@ -59,7 +59,7 @@ func New(s app.Settings, static fs.FS, o Options) *Server {
 	if o.Now == nil {
 		o.Now = time.Now
 	}
-	if s.DevReport != "" { // the saved report stays for the whole session instead of an hour
+	if s.DevProfiles != "" { // the saved reports stay for the whole session instead of an hour
 		s.CacheS = 365 * 86400
 	}
 	m := app.NewMemory(o.Now)
@@ -87,7 +87,7 @@ func New(s app.Settings, static fs.FS, o Options) *Server {
 	if err := app.LoadConsent(srv.Store, o.Now()); err != nil {
 		slog.Error("consent log", "error", err.Error())
 	}
-	if s.DevReport != "" {
+	if s.DevProfiles != "" {
 		srv.seedDev()
 	}
 	srv.routes()
@@ -155,7 +155,7 @@ func (s *Server) routes() {
 	m.HandleFunc("GET /auth/login", s.login)
 	m.HandleFunc("GET /auth/callback", s.callback)
 	m.HandleFunc("POST /auth/logout", s.user(s.csrf(s.logout)))
-	if s.S.DevReport != "" {
+	if s.S.DevProfiles != "" {
 		m.HandleFunc("GET /dev/login", s.devLogin)
 	}
 	m.HandleFunc("GET /api/session", s.session)
@@ -193,7 +193,7 @@ func (s *Server) spa(w http.ResponseWriter, r *http.Request) {
 	}
 	index, err := fs.ReadFile(s.static, "index.html")
 	if err != nil {
-		http.Error(w, "the browser app is not built: run make build", http.StatusServiceUnavailable)
+		http.Error(w, "the browser app is not built: run make dev-build", http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

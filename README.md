@@ -108,22 +108,22 @@ The full policy is on the Privacy page of the app. Security issues: see [SECURIT
 ```
 make                 # list the commands
 make certs           # HTTPS certificates for https://localhost (mkcert if present, else openssl)
-make dev             # build and start https://localhost with your saved report and the test profiles
+make dev-build       # build and start https://localhost with the synthetic test profiles
+make dev-real        # the same plus the real profiles of DEV_REAL_LOGINS (fetched once, ~120 requests each)
 make dev-logs        # follow dev's logs
 make dev-down        # stop dev (browsers keep their reports)
-make build           # refresh dev's image and your saved report (DEV_UID, ~120 requests, ~40 s)
 make test            # Go tests, type check and Vitest, the site's tests
 make production      # build and start https://ravazque.info through the Cloudflare tunnel
-make prod-down       # stop production (the consent log stays in its volume)
+make production-down # stop production (the consent log stays in its volume)
 make logs            # follow production's logs
 make site            # build the CV page into site/_build and serve it at http://localhost:8080
 make snapshot        # site/data/42.json from the saved report: what the publish button would send
 make clean           # dev-down and generated files
 make fclean          # clean, dev's image, volumes and saved reports, and web/node_modules
-make re              # fclean and dev
+make re              # fclean and dev-build
 ```
 
-`clean`, `fclean`, `re`, `build` and `test` never touch production: only `make production`, `make prod-down` and
+`clean`, `fclean`, `re` and `test` never touch production: only `make production`, `make production-down` and
 `make logs` do.
 
 Requirements: Docker with the Compose plugin, `make`, and `mkcert` or `openssl`. Go 1.27 and Node 26 only for
@@ -135,7 +135,7 @@ Requirements: Docker with the Compose plugin, `make`, and `mkcert` or `openssl`.
    the redirect URI `https://localhost/auth/callback`, one for production with `https://ravazque.info/auth/callback`.
    A third one is optional and only adds request budget.
 2. Run `make`: it copies `.env.example` to `.env`. Fill it (below) and keep it private (`chmod 600 .env`).
-3. `make certs`, then `make dev`, and open https://localhost.
+3. `make certs`, then `make dev-build`, and open https://localhost.
 
 ### Configuration
 
@@ -149,7 +149,7 @@ SESSION_SECRET               # openssl rand -hex 32
 CONTROLLER_NAME              # data controller named by the privacy policy
 CONTACT_EMAIL                # contact for privacy requests (About and Privacy pages)
 TUNNEL_TOKEN                 # production: the Cloudflare tunnel's token
-DEV_UID                      # dev: your 42 user id, whose report make build saves
+DEV_REAL_LOGINS              # dev: 42 logins (comma-separated) whose real reports make dev-real serves
 OPTOUT_LOGINS                # optional: logins shown as "Hidden"
 ISSUES_URL                   # optional: "Report an issue" link
 OWNER_LOGIN, GITHUB_TOKEN,   # optional: the publish button (hidden unless OWNER_LOGIN
@@ -158,10 +158,11 @@ GITHUB_REPO, GITHUB_BRANCH   #   and GITHUB_TOKEN are set)
 
 ## Modes
 
-- **Dev** (`make dev`, https://localhost) signs in with the second 42 app. The landing also offers **Dev · login**,
-  which enters with your saved report without going through 42, and three **Test** profiles (a new student, one
-  halfway through the Common Core, an alumni): synthetic data moved to today's date, never real people, never able to
-  publish or refresh. A code change needs `make dev` again.
+- **Dev** (`make dev-build`, https://localhost) signs in with the second 42 app. The landing also offers seven
+  **Test** profiles (a new student, one halfway through the Common Core, an Outer Core transcender, an alumni, a
+  Python-track student, a Python-track transcender and a student who moved from C to Python): synthetic data moved to
+  today's date, never real people, never able to publish or refresh. `make dev-real` adds **Real · login** for the
+  logins in `DEV_REAL_LOGINS`, saved in `web/preview/` (local only). A code change needs `make dev-build` again.
 - **Production** (`make production`, https://ravazque.info) signs in with the first app and is served through a named
   Cloudflare tunnel (Zero Trust → Networks → Tunnels: a Docker connector whose public hostname points to
   `http://caddy:8080`; its token goes in `TUNNEL_TOKEN`). Dev and production are separate Compose projects and can run
@@ -171,7 +172,7 @@ GITHUB_REPO, GITHUB_BRANCH   #   and GITHUB_TOKEN are set)
 
 ```
 git pull --rebase    # the new code (and anything the publish button committed)
-make prod-down       # optional: stops the containers; the volumes (the consent log) stay
+make production-down # optional: stops the containers; the volumes (the consent log) stay
 make production      # rebuilds the image from the code you have and starts it again
 ```
 

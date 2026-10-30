@@ -23,9 +23,8 @@ type Settings struct {
 	ControllerName              string
 	OptoutLogins                []string // students who asked to be left out of every report
 	ConsentLog                  string   // where acceptances of the privacy policy are kept (the only file written)
-	DevReport                   string   // make dev only: a saved report served at once, /dev/login as its owner
-	DevUID                      int
-	OwnerLogin                  string // the one login that may publish to the GitHub Pages site
+	DevProfiles                 string   // make dev only: globs of saved reports served at once, /dev/login as their owners
+	OwnerLogin                  string   // the one login that may publish to the GitHub Pages site
 	GithubToken, GithubRepo     string
 	GithubBranch                string
 	Addr                        string
@@ -70,8 +69,8 @@ func (s Settings) Check() error {
 	if s.ControllerName == "" {
 		return errors.New("CONTROLLER_NAME must be set: the privacy page names the data controller")
 	}
-	if u, err := url.Parse(s.BaseURL); s.DevReport != "" && (err != nil || u.Scheme != "https" || u.Hostname() != "localhost") {
-		return errors.New("DEV_REPORT signs anyone in without 42: it only runs on https://localhost")
+	if u, err := url.Parse(s.BaseURL); s.DevProfiles != "" && (err != nil || u.Scheme != "https" || u.Hostname() != "localhost") {
+		return errors.New("DEV_PROFILES signs anyone in without 42: it only runs on https://localhost")
 	}
 	return nil
 }
@@ -104,7 +103,7 @@ func SettingsFromEnv() Settings {
 		OAuthApp: num("OAUTH_APP", 1), SessionSecret: os.Getenv("SESSION_SECRET"),
 		CooldownS: 3600, CacheS: 3600, SessionS: 604_800,
 		ContactEmail: os.Getenv("CONTACT_EMAIL"), IssuesURL: os.Getenv("ISSUES_URL"), ControllerName: os.Getenv("CONTROLLER_NAME"),
-		OptoutLogins: optout, ConsentLog: os.Getenv("CONSENT_LOG"), DevReport: os.Getenv("DEV_REPORT"), DevUID: num("DEV_UID", 0),
+		OptoutLogins: optout, ConsentLog: os.Getenv("CONSENT_LOG"), DevProfiles: os.Getenv("DEV_PROFILES"),
 		OwnerLogin: os.Getenv("OWNER_LOGIN"), GithubToken: os.Getenv("GITHUB_TOKEN"), GithubRepo: os.Getenv("GITHUB_REPO"),
 		GithubBranch: env("GITHUB_BRANCH", "main"), Addr: env("ADDR", ":8000"),
 	}

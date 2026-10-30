@@ -100,11 +100,11 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request, si signedIn) {
 // session tells the browser app who is signed in and what the public pages need; never a token but the CSRF one.
 func (s *Server) session(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"contact_email": s.S.ContactEmail, "issues_url": s.S.IssuesURL, "controller": s.S.ControllerName,
-		"consent_version": app.ConsentVersion, "consent_updated": app.ConsentUpdated, "dev": s.S.DevReport != "", "user": nil}
+		"consent_version": app.ConsentVersion, "consent_updated": app.ConsentUpdated, "dev": s.S.DevProfiles != "", "user": nil}
 	var dev []map[string]any
 	for _, login := range s.devOrder {
 		d := s.devLogins[login]
-		label := "Dev · "
+		label := "Real · "
 		if d.test {
 			label = "Test · "
 		}

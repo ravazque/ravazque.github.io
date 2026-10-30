@@ -369,15 +369,18 @@ func TestDevLoginOnlyInDevMode(t *testing.T) {
 		t.Fatal("dev login outside dev mode")
 	}
 	dir := t.TempDir()
-	raw, _ := os.ReadFile("../../core/testdata/golden/mid.report.json")
-	os.WriteFile(dir+"/data.json", raw, 0o600)
-	var test map[string]any
-	traw, _ := os.ReadFile("../../core/testdata/golden/new.report.json")
-	json.Unmarshal(traw, &test)
-	test["test_profile"] = 990001
-	traw, _ = json.Marshal(test)
-	os.WriteFile(dir+"/test-new.json", traw, 0o600)
-	d := newEnv(t, func(s *app.Settings) { s.DevReport, s.DevUID = dir+"/data.json", 990002 })
+	for file, golden := range map[string]string{"test-new.json": "new", "real-mid.json": "mid"} {
+		var rep map[string]any
+		raw, _ := os.ReadFile("../../core/testdata/golden/" + golden + ".report.json")
+		json.Unmarshal(raw, &rep)
+		rep["test_profile"] = map[string]int{"new": 990001, "mid": 990002}[golden]
+		raw, _ = json.Marshal(rep)
+		os.WriteFile(dir+"/"+file, raw, 0o600)
+	}
+	d := newEnv(t, func(s *app.Settings) { s.DevProfiles = dir + "/test-*.json " + dir + "/real-*.json" })
+	if body := readAll(d.do(t, "GET", "/api/session", nil, nil)); !strings.Contains(body, "Test · tnova") || !strings.Contains(body, "Real · tmidway") {
+		t.Fatal(body)
+	}
 	if r := d.do(t, "GET", "/dev/login?as=tnova", nil, nil); r.StatusCode != 303 {
 		t.Fatal(r.StatusCode)
 	}
@@ -485,7 +488,7 @@ func TestTestProfilesNeverReachThe42API(t *testing.T) {
 	test["test_profile"] = 990001
 	traw, _ = json.Marshal(test)
 	os.WriteFile(dir+"/test-new.json", traw, 0o600)
-	d := newEnv(t, func(s *app.Settings) { s.DevReport, s.DevUID = dir+"/data.json", 990002 })
+	d := newEnv(t, func(s *app.Settings) { s.DevProfiles = dir + "/test-*.json" })
 	d.do(t, "GET", "/dev/login?as=tnova", nil, nil)
 	var sess struct{ User struct{ CSRF string } }
 	json.Unmarshal([]byte(readAll(d.do(t, "GET", "/api/session", nil, nil))), &sess)

@@ -380,7 +380,7 @@ func TestSettingsChecks(t *testing.T) {
 		"short secret":  func(s *Settings) { s.SessionSecret = "short" },
 		"no contact":    func(s *Settings) { s.ContactEmail = "" },
 		"no controller": func(s *Settings) { s.ControllerName = "" },
-		"dev elsewhere": func(s *Settings) { s.DevReport = "x.json"; s.BaseURL = "https://ravazque.info" },
+		"dev elsewhere": func(s *Settings) { s.DevProfiles = "x/test-*.json"; s.BaseURL = "https://ravazque.info" },
 		"app 2 unset":   func(s *Settings) { s.OAuthApp = 2 },
 	} {
 		bad := testSettings()
@@ -396,9 +396,9 @@ func TestSettingsChecks(t *testing.T) {
 	}
 }
 
-func TestDevReportOnlyOnLocalhostItself(t *testing.T) {
+func TestDevProfilesOnlyOnLocalhostItself(t *testing.T) {
 	s := testSettings()
-	s.DevReport, s.BaseURL = "x.json", "https://localhost.example.com"
+	s.DevProfiles, s.BaseURL = "x/test-*.json", "https://localhost.example.com"
 	if s.Check() == nil {
 		t.Fatal("a look-alike host turns dev mode on")
 	}

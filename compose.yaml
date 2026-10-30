@@ -18,7 +18,7 @@ services:
     build: {context: ., dockerfile: Dockerfile}
     env_file:
       - path: .env
-        required: false  # make clean / down / logs work before .env exists; make dev creates it first
+        required: false  # make clean / down / logs work before .env exists; make dev-build creates it first
     environment:
       CONSENT_LOG: /data/consent.log
       BASE_URL: https://ravazque.info
