@@ -48,6 +48,49 @@
   padding: 10px; background: var(--ground); color: var(--ink); border: 2px solid var(--ink); animation: drop var(--motion-settle) var(--motion-ease); --focus: var(--ink); }
 :where(body:not(.site)) .best-menu { border-top: 6px solid var(--star); }
 :where(body:not(.site)) .best-anchor { position: relative; }
+:where(body:not(.site)) .best-empty { margin: 0; padding: 12px; max-width: 280px; color: var(--text-2); font-size: 15px; line-height: 1.45; }
+/* the star by a section's title keeps it in the band's star menu; on a widget, the cross takes it off Profile */
+/* the tools by a title: a widget's handle, size and cross, boxed like the site's buttons */
+:where(body:not(.site)) h2 .pin { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; flex: none;
+  width: .7em; height: .7em; min-width: 30px; min-height: 30px; margin-left: .2em; padding: .12em; border: 2px solid var(--rule);
+  background: transparent; color: var(--ink); cursor: pointer; transition: border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
+:where(body:not(.site)) h2 .pin svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+:where(body:not(.site)) h2 .pin:hover { border-color: var(--rule-strong); }
+:where(body:not(.site)) h2 .pin:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+:where(body:not(.site)) h2 .widget-grip { cursor: grab; }
+:where(body:not(.site)) h2 .widget-grip .dots { stroke-width: 3.4; }
+/* the star is never boxed: an outline that fills with gold once starred, edged in a deeper gold (clear on both grounds) */
+:where(body:not(.site)) h2 .star-pin { width: .9em; height: .9em; min-width: 34px; min-height: 34px; padding: .08em; border: 0; color: var(--muted); }
+:where(body:not(.site)) h2 .star-pin:hover { color: var(--ink); }
+:where(body:not(.site)) h2 .star-pin[aria-pressed="true"] { color: var(--star-edge); }
+:where(body:not(.site)) h2 .star-pin[aria-pressed="true"] svg { fill: var(--star); stroke-width: 1.3; }
+@media (max-width: 599.98px) { :where(body:not(.site)) h2 .pin { width: 28px; height: 28px; min-width: 28px; min-height: 28px; margin-left: .15em; padding: 4px; } }  /* titles keep one line on phones */
+/* Profile's widgets: two columns from 960 px, a half widget in one of them (its own or the next free), a wide one across */
+:where(body:not(.site)) .widgets { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; align-items: start; }
+:where(body:not(.site)) .widget { position: relative; min-width: 0; }
+@media (min-width: 960px) {
+  :where(body:not(.site)) .widgets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :where(body:not(.site)) .widget.wide { grid-column: 1 / -1; }
+  :where(body:not(.site)) .widget.half.left { grid-column: 1; }
+  :where(body:not(.site)) .widget.half.right { grid-column: 2; }
+  /* in half the page a section's blocks stack */
+  :where(body:not(.site)) .widget.half .cols > * { grid-column: 1 / -1; }
+  :where(body:not(.site)) .widget.half .kpis, :where(body:not(.site)) .widget.half #rhythm .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :where(body:not(.site)) .widget.half #rhythm .kpis > .wide { grid-column: span 2; }
+  /* stacked under the coalitions, your latest points keep their own height */
+  :where(body:not(.site)) .widget.half [data-panel="coal-recent"] { height: auto; min-height: 0; }
+  :where(body:not(.site)) .widget.half [data-panel="coal-recent"] .list { flex: none; max-height: 320px; }
+}
+:where(body:not(.site)) .widget.dragging { opacity: .4; }
+/* where the dragged widget lands: a bar in the accent on that side of the widget under the pointer */
+:where(body:not(.site)) .widget[data-drop]::after { content: ""; position: absolute; z-index: 3; background: var(--accent); pointer-events: none; }
+:where(body:not(.site)) .widget[data-drop="before"]::after { left: 0; right: 0; top: 0; height: 4px; }
+:where(body:not(.site)) .widget[data-drop="after"]::after { left: 0; right: 0; bottom: -6px; height: 4px; }
+:where(body:not(.site)) .widget[data-drop="left"]::after { top: 0; bottom: 0; left: -26px; width: 4px; }
+:where(body:not(.site)) .widget[data-drop="right"]::after { top: 0; bottom: 0; right: -26px; width: 4px; }
+/* the picker under the widgets */
+:where(body:not(.site)) .widget-add { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
+:where(body:not(.site)) .widget-add .field { flex: 1 1 260px; max-width: 460px; }
 :where(body:not(.site)) .best-menu a svg { flex: none; width: 18px; height: 18px; margin-right: 12px; fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 :where(body:not(.site)) .best-menu a span { display: flex; flex-direction: column; line-height: 1.2; padding: 6px 0; }
 :where(body:not(.site)) .best-menu a small { color: var(--muted); font: 500 13px var(--type-font-text); }
@@ -115,7 +158,7 @@
 :where(body:not(.site)) .ch-plot::before { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); opacity: .7; }
 :where(body:not(.site)) .ch-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; }
-:where(body:not(.site)) .ch-col { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 0 var(--c-chart-bar-gap); }
+:where(body:not(.site)) .ch-col { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 0 min(var(--c-chart-bar-gap), 15%); } /* dense months on a phone keep a bar */
 :where(body:not(.site)) .ch-col i { flex: 1 1 0; max-width: var(--c-chart-bar-max); border-radius: 2px 2px 0 0; min-height: 0; }
 :where(body:not(.site)) .ch-col.stack { flex-direction: column-reverse; align-items: center; justify-content: flex-start; gap: 2px; }
 :where(body:not(.site)) .ch-col.stack i { flex: none; width: 100%; max-width: var(--c-chart-bar-max); border-radius: 1px; }
@@ -196,7 +239,13 @@
   :where(body:not(.site)) .radar-fig { width: 100%; max-width: 400px; margin: 0 auto; }
   :where(body:not(.site)) .radar-bars { max-height: none; width: 100%; border-left: 0; border-top: 1px solid var(--rule); padding-left: 0; padding-top: 18px; }
 }
-:where(body:not(.site)) .graph-wide .graph, :where(body:not(.site)) .graph-narrow .graph { display: block; width: 100%; height: auto; }
+:where(body:not(.site)) .graph-wide .graph, :where(body:not(.site)) .graph-mid .graph, :where(body:not(.site)) .graph-narrow .graph { display: block; width: 100%; height: auto; }
+/* Connections at its own scale on every width: 1200 wide, 840 on a tablet, 420 on a phone */
+:where(body:not(.site)) [data-panel="connections"] .graph-mid { display: none; }
+@container (min-width: 600.02px) and (max-width: 999.98px) {
+  :where(body:not(.site)) [data-panel="connections"] .graph-wide { display: none; }
+  :where(body:not(.site)) [data-panel="connections"] .graph-mid { display: block; }
+}
 :where(body:not(.site)) .graph a.bubble { cursor: pointer; }
 :where(body:not(.site)) .graph a.bubble:focus-visible circle { stroke: var(--focus); stroke-width: var(--c-bubble-focus-width); }
 
@@ -263,7 +312,7 @@
 
 :where(body:not(.site)) .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* ---------- Home: six equal modules on the Swiss grid ---------- */
+/* ---------- Profile: three equal modules on the Swiss grid ---------- */
 :where(body:not(.site)) .modules-wrap { padding-top: 8px; }
 :where(body:not(.site)) .modules { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; }
 :where(body:not(.site)) .module { min-width: 0; display: flex; flex-direction: column; padding: 0 0 20px; container-type: inline-size; }
@@ -288,8 +337,7 @@
 :where(body:not(.site)) .module .trend, :where(body:not(.site)) .meter i { transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
 :where(body:not(.site)) .js .module:not(.in) .trend, :where(body:not(.site)) .js .module:not(.in) .meter i { clip-path: inset(0 100% 0 0); }
 @media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .js .module:not(.in) .trend, :where(body:not(.site)) .js .module:not(.in) .meter i { clip-path: none; } }
-@media (min-width: 640px) { :where(body:not(.site)) .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { :where(body:not(.site)) .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 760px) { :where(body:not(.site)) .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 :where(body:not(.site)) th .th-s { display: none; }
 @media (max-width: 599.98px) {
   /* long column titles give way to their short form (the full one stays in the button's name and tooltip) */
@@ -363,14 +411,13 @@
 :where(body:not(.site)) .table-foot .note { margin: 0; }
 :where(body:not(.site)) .table-foot .note b { color: var(--ink); }
 
-/* coalitions and your latest points share one column; side by side with the promo, the column is as tall as the promo
-   and the points scroll inside it */
-:where(body:not(.site)) [data-panel="coal-recent"] { margin-top: 28px; }
+/* your latest points beside the coalitions: as tall as them, the rest scrolls */
 :where(body:not(.site)) [data-panel="coal-recent"] .list li > span:first-child { min-width: 0; }
 @media (min-width: 1280px) {
-  :where(body:not(.site)) [data-panel="coalitions"].fit { height: 0; min-height: 100%; display: flex; flex-direction: column; }
-  :where(body:not(.site)) .fit [data-panel="coal-recent"] { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  :where(body:not(.site)) .fit [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }
+  :where(body:not(.site)) [data-panel="coal-recent"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }
+  :where(body:not(.site)) [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }
+  /* the bonus's three figures leave the fourth column to every bonus so far */
+  :where(body:not(.site)) [data-panel="coal-bonus"] .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* bars that are read by name (skills, domains): sizes in ui.json → chart.big-* */
@@ -380,16 +427,27 @@
 :where(body:not(.site)) .hchart.big .hb-label { white-space: normal; overflow-wrap: anywhere; max-width: min(var(--c-chart-big-label-max), 40vw); line-height: 1.2; }
 
 /* when you work: the day in three parts, in the order the line below reads them */
-:where(body:not(.site)) .kpis .split { display: flex; height: 10px; margin: 2px 0 8px; gap: 2px; }
-:where(body:not(.site)) .kpis .split i { display: block; min-width: 2px; }
-:where(body:not(.site)) .kpis .split .morning { background: var(--accent-data); }
-:where(body:not(.site)) .kpis .split .afternoon { background: var(--slate); }
-:where(body:not(.site)) .kpis .split .night { background: var(--neutral); }
+/* When you work: the 24 hours of the day as bars, each in its part of the day's colour, the parts' shares under them */
+@media (min-width: 600px) { :where(body:not(.site)) .kpis > .wide { grid-column: span 2; } }
+:where(body:not(.site)) .kpis .day24 { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); align-items: end; gap: 2px; height: 64px; margin: 4px 0 0; }
+:where(body:not(.site)) .kpis .day24 i { display: block; min-height: 1px; border-radius: 1px 1px 0 0; }
+:where(body:not(.site)) .kpis :is(.day24, .part) .early { background: var(--day-early); }
+:where(body:not(.site)) .kpis :is(.day24, .part) .morning { background: var(--day-morning); }
+:where(body:not(.site)) .kpis :is(.day24, .part) .afternoon { background: var(--day-afternoon); }
+:where(body:not(.site)) .kpis :is(.day24, .part) .night { background: var(--day-night); }
+:where(body:not(.site)) .kpis .day24-axis { position: relative; display: block; height: 18px; margin-bottom: 8px; border-top: 2px solid var(--rule-strong); }
+:where(body:not(.site)) .kpis .day24-axis b { position: absolute; top: 3px; transform: translateX(-50%); font: 500 12px var(--type-font-text); color: var(--text-2); }
+:where(body:not(.site)) .kpis .day24-axis b:first-child { transform: none; }
+:where(body:not(.site)) .kpis .day24-axis b:last-child { transform: translateX(-100%); }
+:where(body:not(.site)) .kpis .parts { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 20px; width: fit-content; max-width: 100%;
+  margin: 2px auto 0; padding: 5px 12px; border: 1px solid var(--rule); }  /* the shares in a framed key, centred under the day */
+/* Rhythm on a laptop: the two figures as wide as their lines need, the day's hours the rest (its key on one line) */
+@media (min-width: 1280px) {
+  :where(body:not(.site)) #rhythm .kpis { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.3fr) minmax(0, 2.25fr); }
+  :where(body:not(.site)) #rhythm .kpis > .wide { grid-column: auto; }
+}
 :where(body:not(.site)) .kpis .part { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.45; }
 :where(body:not(.site)) .kpis .part i { flex: none; width: 10px; height: 10px; }
-:where(body:not(.site)) .kpis .part .morning { background: var(--accent-data); }
-:where(body:not(.site)) .kpis .part .afternoon { background: var(--slate); }
-:where(body:not(.site)) .kpis .part .night { background: var(--neutral); }
 
 /* one feedback below the maximum: the form's sliders as pips, the short ones in ink */
 :where(body:not(.site)) .list li.fb-item { display: block; }
@@ -415,7 +473,8 @@ html body:not(.site) [data-panel="low-feedback"]:only-child { grid-column: span 
 
 /* evaluation points: the balance sits halfway down its panel when the table beside it is taller */
 :where(body:not(.site)) [data-panel="points"] { display: flex; flex-direction: column; }
-:where(body:not(.site)) [data-panel="points"] > .lchart, :where(body:not(.site)) [data-panel="points"] > .empty { margin-block: auto; }
+/* the balance sits at the bottom: its dates on the line of the reasons table's last row */
+:where(body:not(.site)) [data-panel="points"] > .lchart, :where(body:not(.site)) [data-panel="points"] > .empty { margin-top: auto; }
 
 /* your circle: the key and its counts on the left, the ring on the right; stacked on narrow screens */
 /* everything in the key is in em: its size is the one font-size below */
@@ -448,7 +507,7 @@ html body:not(.site) [data-panel="low-feedback"]:only-child { grid-column: span 
 
 /* text runs to the end of its panel before it wraps */
 :where(body:not(.site)) .note, :where(body:not(.site)) details .txt { max-width: none; }
-:where(body:not(.site)) td.details .sub, :where(body:not(.site)) td.details > span:first-child { max-width: 420px; }
+:where(body:not(.site)) td.details .sub, :where(body:not(.site)) td.details > span:first-child { max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :where(body:not(.site)) .marks { max-width: 420px; }
 
 /* your circle: the key and the ring as one centred group */
@@ -469,7 +528,7 @@ html body:not(.site) .seg > a[aria-pressed="true"]:hover, html body:not(.site) .
 
 /* a chart in the middle of its panel when the panel beside it is taller */
 :where(body:not(.site)) [data-panel="by-hour"], :where(body:not(.site)) [data-panel="coal-sources"] { display: flex; flex-direction: column; }
-:where(body:not(.site)) [data-panel="by-hour"] > .centred, :where(body:not(.site)) [data-panel="coal-sources"] > .centred { margin-block: auto; }
+:where(body:not(.site)) [data-panel="coal-sources"] > .centred { margin-block: auto; }
 
 /* connections: the key clear of the groups (the bubbles float in dash.js) */
 :where(body:not(.site)) [data-panel="connections"] > .legend { margin-bottom: 16px; }

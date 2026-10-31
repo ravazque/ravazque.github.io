@@ -89,6 +89,29 @@ func TestTodayInProgressAndMonth(t *testing.T) {
 	}
 }
 
+func TestInProgressLeavesOutThePiscine(t *testing.T) {
+	raw, err := os.ReadFile("testdata/golden/mid.report.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var d map[string]any
+	if err := json.Unmarshal(raw, &d); err != nil {
+		t.Fatal(err)
+	}
+	all := d["periods"].(map[string]any)["all"].(map[string]any)
+	all["projects"] = append(all["projects"].([]any), map[string]any{"name": "C Piscine Exam 02", "track": "piscine", "exam": true,
+		"status": "in_progress", "validated": nil, "registered": "2024-07-12 09:00", "attempts": []any{}})
+	raw, _ = json.Marshal(d)
+	r, err := ParseOrdered(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	td := BuildToday(r.Obj("periods").Obj("all"), nil, goldenNow)
+	if len(td.InProgress) != 1 || td.InProgress[0].Name != "CPP Module 09" {
+		t.Fatalf("in progress = %+v", td.InProgress)
+	}
+}
+
 func TestNextEvaluationInvisible(t *testing.T) {
 	up := Upcoming([]Raw{
 		{"begin_at": "2026-10-28T15:30:00.000Z", "corrector": "invisible", "team": Raw{"project_id": 1.0}},

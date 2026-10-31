@@ -19,7 +19,7 @@ const roving = (f: Fmt, label: string) => ` data-roving role="group" aria-label=
 
 export type Layout = Record<string, { rows: number; seats: number }>;
 
-/** [plan, scale] for {host: value}; detail(host, value) is the cell's label. */
+/** [plan with the off-plan note under it, scale] for {host: value}; detail(host, value) is the cell's label. */
 export function seatPlan(f: Fmt, layout: Layout, values: Record<string, number>, o: {
   unit: string; detail: (h: string, v: number) => string; toUnit?: (v: number) => number; anchor?: boolean;
 }): [string, string] {
@@ -46,14 +46,20 @@ export function seatPlan(f: Fmt, layout: Layout, values: Record<string, number>,
     }
     out.push(`<figure class="cluster"><figcaption><b>${esc(c)}</b><span>${f.num(toUnit(total), 1)} ${esc(o.unit)}</span></figcaption>${rows.join("")}</figure>`);
   }
+  // computers outside the clusters: under the plan, centred in a framed key, each name beside a square in its shade
   const other = entries.filter(([h]) => !seen.has(h));
-  const off = other.length ? `<p class="note plan-other">${esc(f.t("plan.not_on_plan", { list: other.map(([h, v]) => `${h} (${f.num(toUnit(v), 1)} ${o.unit})`).join(", ") }))}</p>` : "";
+  const off = other.length ? `<div class="plan-other"><b>${esc(f.t("plan.off"))}</b>${other.map(([h, v]) => {
+    const label = o.detail(h, v);
+    return `<span class="grp"><span>${esc(`${h} · ${f.num(toUnit(v), 1)} ${o.unit}`)}</span><span class="seat on${h === topHost ? " top" : ""}" data-cell role="img"`
+      + ` style="--v:${ramp(v, top).toFixed(3)}" aria-label="${esc(label)}"${tipAttr(label)}></span></span>`;
+  }).join("")}</div>` : "";
   let sc = top ? scale(f, toUnit(top), o.unit) : `<span>${esc(f.t("empty.period"))}</span>`;
   if (topHost)
-    sc += `<span class="grp"><i style="background:var(--seat-empty);box-shadow:inset 0 0 0 2px var(--ink)"></i>${esc(f.t("plan.most_used", { seat: topHost }))}</span>`;
-  return [`<div class="plan"${roving(f, f.t("plan.label"))}>${out.join("")}</div>`, `<div class="scale-row"><div class="scale">${sc}</div>${off}</div>`];
+    sc += `<span class="grp"><i style="background:var(--seat-empty);box-shadow:inset 0 0 0 1.5px var(--highlight)"></i>${esc(f.t("plan.most_used", { seat: topHost }))}</span>`;
+  return [`<div class="plan"${roving(f, f.t("plan.label"))}>${out.join("")}</div>${off}`, `<div class="scale">${sc}</div>`];
 }
 
+/** A weekday × hour heat map; each cell says its value. */
 export function heat(f: Fmt, grid: number[][], colors: [string, string], unit: string): string {
   const top = Math.max(0, ...grid.flat());
   const cells = ["<span></span>", ...Array.from({ length: 24 }, (_, h) => `<span class="h" aria-hidden="true">${h % 3 ? "" : h}</span>`)];
@@ -65,54 +71,42 @@ export function heat(f: Fmt, grid: number[][], colors: [string, string], unit: s
       cells.push(`<span class="c" data-cell role="img" aria-label="${esc(label)}"${tipAttr(label)} style="background:${mix(colors, ramp(v, top))}"></span>`);
     });
   });
-  const sc = top ? scale(f, top, unit, colors) : esc(f.t("empty.period"));
-  return `<div class="heat"${roving(f, f.t("heat.label"))}>${cells.join("")}</div><div class="scale">${sc}</div>`;
+  return `<div class="heat"${roving(f, f.t("heat.label"))}>${cells.join("")}</div>`;
 }
 
 const dayNo = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 864e5;
 
-export function calendar(f: Fmt, days: string[], hours: number[]): [string, string] {
+export function calendar(f: Fmt, days: string[], hours: number[]): string {
   const top = Math.max(0, ...hours);
   const years = new Map<string, [string, number][]>();
   days.forEach((d, i) => { const y = d.slice(0, 4); if (!years.has(y)) years.set(y, []); years.get(y)!.push([d, hours[i]]); });
   const out: string[] = [];
-  const firstYear = days[0]?.slice(0, 4), firstDay = days[0];
+  const firstDay = days[0], lastDay = days[days.length - 1];
   for (const [y, data] of years) {
-    // the first year is drawn whole from 1 January, the days before the start greyed out and the start marked;
-    // the last one grows as the days come
-    const items: [string, number][] = [...data];
-    if (y === firstYear) {
-      const pre: [string, number][] = [];
-      for (let t = Date.UTC(+y, 0, 1); t < Date.UTC(+firstDay.slice(0, 4), +firstDay.slice(5, 7) - 1, +firstDay.slice(8, 10)); t += 864e5)
-        pre.push([new Date(t).toISOString().slice(0, 10), -1]);
-      items.unshift(...pre);
-    }
-    const jan1 = dayNo(`${y}-01-01`);
+    // every year is a full rectangle of weeks, Monday to Sunday: the days outside the data (before the start, after
+    // the last day, in the neighbouring years) are plain empty cells, so the current year fills in as the days come
+    const have = new Map(data);
+    const jan1 = dayNo(`${y}-01-01`), len = dayNo(`${+y + 1}-01-01`) - jan1;
     const offset = (new Date(Date.UTC(+y, 0, 1)).getUTCDay() + 6) % 7;
-    const nOf = (iso: string) => dayNo(iso) - jan1 + offset;
-    const skip = 0;
-    const pos = (iso: string): [number, number] => [Math.max(1, Math.floor(nOf(iso) / 7) + 1 - skip), (nOf(iso) % 7) + 2];
-    // a month's label spans 4 columns: one whose start is pulled onto the first column (the data begins later) or
-    // that would touch the previous label gives way to the next
-    const starts = Array.from({ length: 12 }, (_, i) => i + 1)
-      .filter((m) => items.some(([d]) => d.slice(0, 7) === `${y}-${String(m).padStart(2, "0")}`))
-      .map((m) => ({ m, col: pos(`${y}-${String(m).padStart(2, "0")}-01`)[0] }));
+    const cols = Math.floor((offset + len - 1) / 7) + 1;
+    const col = (m: number) => Math.floor((dayNo(`${y}-${String(m).padStart(2, "0")}-01`) - jan1 + offset) / 7) + 1;
+    // a month's label spans 4 columns: one that would touch the next label gives way to it
+    const starts = Array.from({ length: 12 }, (_, i) => ({ m: i + 1, col: col(i + 1) }));
     const kept = starts.filter((x, i) => !starts[i + 1] || starts[i + 1].col - x.col >= 4);
     const months = kept.map(({ m, col }) => `<span class="m" style="grid-area:1/${col}/2/span 4">${esc(f.months[m - 1])}</span>`).join("");
-    const cells = items.map(([d, v]) => {
-      const [c, r] = pos(d);
-      if (v < 0) return `<span class="d pre" style="grid-area:${r}/${c}"></span>`;
-      const start = d === firstDay;
+    const cells = Array.from({ length: cols * 7 }, (_, i) => {
+      const d = new Date((jan1 - offset + i) * 864e5).toISOString().slice(0, 10);
+      const area = `grid-area:${(i % 7) + 2}/${Math.floor(i / 7) + 1}`;
+      if (i < offset || i >= offset + len || d < firstDay || d > lastDay) return `<span class="d pre" style="${area}"></span>`;
+      const v = have.get(d) || 0, start = d === firstDay;
       const label = `${f.day(d, true)} · ${v ? `${f.num(v, 1)} h` : f.t("calendar.not_logged")}${start ? ` · ${f.t("calendar.start")}` : ""}`;
-      return v ? `<span class="d on${start ? " start" : ""}" data-cell role="img" style="grid-area:${r}/${c};--v:${ramp(v, top).toFixed(3)}" aria-label="${esc(label)}"${tipAttr(label)}></span>`
-        : `<span class="d${start ? " start" : ""}" style="grid-area:${r}/${c}"${tipAttr(label)}></span>`;
+      return v ? `<span class="d on${start ? " start" : ""}" data-cell role="img" style="${area};--v:${ramp(v, top).toFixed(3)}" aria-label="${esc(label)}"${tipAttr(label)}></span>`
+        : `<span class="d${start ? " start" : ""}" style="${area}"${tipAttr(label)}></span>`;
     }).join("");
-    const cols = Math.floor(nOf(items[items.length - 1][0]) / 7) - skip + 1;
-    out.push(`<div class="cal-year"><b>${y}</b><div class="cal-grid" style="--cols:${Math.max(cols, 5)}">${months}${cells}</div></div>`);
+    out.push(`<div class="cal-year"><b>${y}</b><div class="cal-grid" style="--cols:${cols}">${months}${cells}</div></div>`);
   }
   const body = out.join("") || `<p class="note">${esc(f.t("empty.sessions"))}</p>`;
-  return [`<div id="calendar"${roving(f, f.t("calendar.label"))}>${body}</div>`,
-    `<div class="scale">${top ? scale(f, top, f.t("unit.h_per_day")) : ""}</div>`];
+  return `<div id="calendar"${roving(f, f.t("calendar.label"))}>${body}</div>`;
 }
 
 export type Skill = { name: string; level: number };
@@ -161,75 +155,102 @@ export function radar(f: Fmt, items: Skill[], label: string, compact = false): s
 }
 
 const LABEL_BAND = 28;
+/** How tight Connections packs its bubbles and how far apart its rows sit: --bubbles-gap, --bubbles-edge and
+ * --bubbles-rows in styles/spacing.css (the defaults here only serve where no stylesheet is loaded, as in tests). */
+export function bubbleSpacing() {
+  const css = typeof document === "undefined" ? null : getComputedStyle(document.documentElement);
+  const num = (name: string, d: number) => { const v = parseFloat(css?.getPropertyValue(name) || ""); return Number.isFinite(v) ? v : d; };
+  return { gap: num("--bubbles-gap", 3), edge: num("--bubbles-edge", 8), rows: num("--bubbles-rows", 28) };
+}
+type Spacing = ReturnType<typeof bubbleSpacing>;
 type Cell = { x: number; y: number; top: number; bottom: number; left: number; right: number };
 
-function cellsFor(groups: string[], width: number, height: number, sizes: Record<string, number>): Map<string, Cell> {
+function cellsFor(groups: string[], width: number, sizes: Record<string, number>, minW: Record<string, number> = {}, grow = 1, rowGap = 0): Map<string, Cell> {
+  // milestones on the first band, where people are after the Common Core (Outer Core, alumni, blackholed…) on the next
   const present = GROUPS.filter((g) => groups.includes(g));
-  const cols = width < 600 ? 2 : present.length > 5 ? Math.ceil(present.length / 2) : present.length;
-  const rows = Math.max(1, Math.ceil(present.length / cols));
+  const bands = [present.filter((g) => g.startsWith("rank-")), present.filter((g) => !g.startsWith("rank-"))].filter((b) => b.length);
+  const rowsOf = (b: string[]) => { const per = width < 600 ? 2 : b.length > 5 ? Math.ceil(b.length / 2) : b.length; return Array.from({ length: Math.ceil(b.length / per) }, (_, i) => b.slice(i * per, (i + 1) * per)); };
+  const rowList = bands.flatMap(rowsOf);
   const out = new Map<string, Cell>();
   let top = 0;
-  for (let row = 0; row < rows; row++) {
-    const members = present.slice(row * cols, (row + 1) * cols);
+  for (const members of rowList) {
     const raw = members.map((g) => Math.sqrt(sizes[g] || 1));
     const weights = raw.map((w) => Math.max(w, 0.35 * Math.max(...raw)));
     const sum = weights.reduce((a, b) => a + b, 0);
-    const widths = weights.map((w) => (width * w) / sum);
-    const need = Math.max(...members.map((g, i) => (Math.PI * (sizes[g] || 1)) / 0.6 / widths[i] + LABEL_BAND));
-    const bottom = top + Math.max(height / rows, need);
+    // each zone is at least as wide as its name; what is left is shared by area
+    const mins = members.map((g) => Math.min(minW[g] || 0, width / members.length));
+    const rest = width - mins.reduce((a, b) => a + b, 0);
+    const widths = weights.map((w, i) => mins[i] + (rest * w) / sum);
+    // a group is roughly a disc of its bubbles' area: the row holds its width-spread area and its diameter
+    const need = Math.max(...members.map((g, i) => LABEL_BAND + grow * Math.max((Math.PI * (sizes[g] || 1)) / 0.6 / widths[i], 2 * Math.sqrt((sizes[g] || 1) / 0.6) + 12)));
+    const bottom = top + need + 12;
     let left = 0;
     members.forEach((g, i) => {
       out.set(g, { x: left + widths[i] / 2, y: (top + LABEL_BAND + bottom) / 2, top, bottom, left, right: left + widths[i] });
       left += widths[i];
     });
-    top = bottom;
+    top = bottom + rowGap;
   }
   return out;
 }
 
 type Bubble = { login: string; name?: string | null; group: string; dir: string; count: number; r: number; p: any; x: number; y: number };
 
-/** Biggest first, each on the nearest free spot of a spiral around the cell centre, inside the cell. */
 /** Bubbles of one group as a cluster: the biggest in the middle of its zone, each next one pushed outwards (golden-angle
- * spiral) until it touches none, kept inside the zone below its name. */
-export function pack(nodes: Bubble[], cell: Cell) {
+ * spiral) until it touches none, kept inside the zone below its name. False when one found no free spot (at once with
+ * giveUp, the rest left unplaced). */
+export function pack(nodes: Bubble[], cell: Cell, giveUp = false, sp: Spacing = bubbleSpacing()): boolean {
   const placed: Bubble[] = [];
   const cy = cell.top + LABEL_BAND + (cell.bottom - cell.top - LABEL_BAND) / 2;
+  const turns = (Math.hypot(cell.right - cell.left, cell.bottom - cell.top) / 6.4) ** 2; // the spiral reaches the zone's corners
+  let ok = true;
   for (const n of [...nodes].sort((a, b) => b.r - a.r)) {
-    let x = cell.x, y = cy;
-    for (let k = 0; k < 6000; k++) {
-      const a = k * 2.39996, d = 1.6 * Math.sqrt(k);
-      x = Math.min(Math.max(cell.x + d * Math.cos(a), cell.left + n.r + 4), cell.right - n.r - 4);
-      y = Math.min(Math.max(cy + d * Math.sin(a), cell.top + LABEL_BAND + n.r + 4), cell.bottom - n.r - 6);
-      if (placed.every((p) => (x - p.x) ** 2 + (y - p.y) ** 2 >= (n.r + p.r + 3) ** 2)) break;
+    const e = sp.edge, [x0, x1, y0, y1] = [cell.left + n.r + e, cell.right - n.r - e, cell.top + LABEL_BAND + n.r + 4, cell.bottom - n.r - 6];
+    let x = cell.x, y = cy, free = false;
+    for (let k = 0; k < turns && !free; k++) {
+      const a = k * 2.39996, d = 3.2 * Math.sqrt(k);
+      x = cell.x + d * Math.cos(a); y = cy + d * Math.sin(a);
+      if (x < x0 || x > x1 || y < y0 || y > y1) continue; // outside the zone: only spots inside it are tried
+      free = placed.every((p) => (x - p.x) ** 2 + (y - p.y) ** 2 >= (n.r + p.r + sp.gap) ** 2);
     }
+    if (!free) { x = Math.min(Math.max(x, x0), x1); y = Math.min(Math.max(y, y0), y1); }
+    if (!free && giveUp) return false;
+    ok &&= free;
     n.x = x; n.y = y;
     placed.push(n);
   }
+  return ok;
 }
 
 export type Conn = { login: string; name?: string | null; group: string; received: number; given: number; last?: string | null };
 
 /** Connections: one bubble per person (two in "mix", joined by a line), sized by evaluations, grouped by rank. */
-export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number; height: number; href: (l: string) => string }): string {
+export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number; href: (l: string) => string }): string {
   const nodes: Bubble[] = [];
   for (const p of people) for (const d of mode === "mix" ? ["received", "given"] : [mode]) {
     const c = (p as any)[d] as number;
-    if (c) nodes.push({ login: p.login, name: p.name, group: p.group, dir: d, count: c, r: 6 + 5 * Math.sqrt(c), p, x: 0, y: 0 });
+    if (c) nodes.push({ login: p.login, name: p.name, group: p.group, dir: d, count: c, r: 10 + 6 * Math.sqrt(c), p, x: 0, y: 0 });
   }
   if (!nodes.length) return "";
   const sizes: Record<string, number> = {};
-  for (const n of nodes) sizes[n.group] = (sizes[n.group] || 0) + (n.r + 2) ** 2;
-  const cells = cellsFor(Object.keys(sizes), o.width, o.height, sizes);
-  for (const [g, cell] of cells) pack(nodes.filter((n) => n.group === g), cell);
-  const h = Math.max(o.height, ...[...cells.values()].map((c) => Math.ceil(c.bottom)), ...nodes.map((n) => Math.ceil(n.y + n.r + 6)));
+  const sp = bubbleSpacing();
+  for (const n of nodes) sizes[n.group] = (sizes[n.group] || 0) + (n.r + sp.gap / 2 + 0.5) ** 2;
+  const name = (g: string) => `${f.t(`groups.${g}`)} · [${new Set(nodes.filter((n) => n.group === g).map((n) => n.login)).size}]`;
+  const boxW = (t: string) => t.length * 8.6 + 18; // shortcut: width estimated from the label's length, close enough for these short names
+  const minW = Object.fromEntries(Object.keys(sizes).map((g) => [g, boxW(name(g)) + 24]));
+  // the zones grow until every group fits without a bubble on another
+  let grow = 1, cells = cellsFor(Object.keys(sizes), o.width, sizes, minW, grow, sp.rows);
+  while (grow < 3 && ![...cells].every(([g, cell]) => pack(nodes.filter((n) => n.group === g), cell, true, sp)))
+    cells = cellsFor(Object.keys(sizes), o.width, sizes, minW, (grow += 0.2), sp.rows);
+  if (grow >= 3) for (const [g, cell] of cells) pack(nodes.filter((n) => n.group === g), cell, false, sp);
+  const h = Math.max(...[...cells.values()].map((c) => Math.ceil(c.bottom)), ...nodes.map((n) => Math.ceil(n.y + n.r + 6)));
   const at = new Map(nodes.map((n) => [`${n.login}|${n.dir}`, n]));
   const links = nodes.filter((n) => mode === "mix" && n.dir === "received" && at.has(`${n.login}|given`)).map((n) => {
     const g = at.get(`${n.login}|given`)!;
     return `<line class="link" x1="${n.x.toFixed(1)}" y1="${n.y.toFixed(1)}" x2="${g.x.toFixed(1)}" y2="${g.y.toFixed(1)}"/>`;
   }).join("");
   const labels = [...cells].map(([g, c]) => {
-    const t = f.t(`groups.${g}`), w = t.length * 8.6 + 18; // shortcut: width estimated from the label's length, close enough for these short names
+    const t = name(g), w = boxW(t);
     return `<rect class="group-box" x="${(c.x - w / 2).toFixed(1)}" y="${(c.top + 2).toFixed(1)}" width="${w.toFixed(1)}" height="24"/>`
       + `<text class="group-label" text-anchor="middle" x="${c.x.toFixed(1)}" y="${(c.top + 19).toFixed(1)}">${esc(t)}</text>`;
   }).join("");
@@ -240,11 +261,9 @@ export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number
     const p = n.p;
     const tip = [p.login, p.name, f.t("connections.tip_counts", { received: p.received || 0, given: p.given || 0 }), f.t(`groups.${p.group}`),
       p.last ? f.t("connections.tip_last", { when: f.day(p.last) }) : null].filter(Boolean).join("\n");
-    const ini = String(p.name || p.login).replace(/[._-]/g, " ").split(/\s+/).filter(Boolean).map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
     const [g, i] = order.get(n)!;
     return `<a href="${esc(o.href(p.login))}" class="bubble ${n.dir} net-node ${netClass(p.group)}" style="--g:${g};--i:${i}" data-cell aria-label="${esc(tip)}" data-tip="${esc(tip)}"`
-      + ` transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><title>${esc(tip)}</title><circle class="core" r="${n.r.toFixed(1)}"/>`
-      + (n.r >= 15 ? `<text text-anchor="middle" dy="0.35em">${esc(ini)}</text>` : "") + "</a>";
+      + ` transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><title>${esc(tip)}</title><circle class="core" r="${n.r.toFixed(1)}"/></a>`;
   }).join("");
   return `<svg class="graph" viewBox="0 0 ${o.width} ${h}" style="aspect-ratio:${o.width}/${h}"${roving(f, f.t("connections.title"))}>`
     + `<g class="labels">${labels}</g><g class="links">${links}</g><g class="nodes">${marks}</g></svg>`;
@@ -316,9 +335,12 @@ export function ring(f: Fmt, net: Net, o: { width: number; height: number; compa
     const meText = n.group === "me" ? `<text y="${(n.r + 18).toFixed(1)}" text-anchor="middle">${esc(n.login)}</text>` : "";
     if (n.group !== "me" && !o.compact) {
       const anchor = Math.cos(n.a) > 0.15 ? "start" : Math.cos(n.a) < -0.15 ? "end" : "middle";
-      text = `<text x="${((n.r + 6) * Math.cos(n.a)).toFixed(1)}" y="${((n.r + 6) * Math.sin(n.a) + 4).toFixed(1)}" text-anchor="${anchor}">${esc(n.login)}</text>`;
+      // clear of its node: under it the cap height, over it the descenders also need room
+      const sin = Math.sin(n.a);
+      text = `<text x="${((n.r + 7) * Math.cos(n.a)).toFixed(1)}" y="${((n.r + 7) * sin + 4 + 6 * sin).toFixed(1)}" text-anchor="${anchor}">${esc(n.login)}</text>`;
     }
-    const side = n.group === "me" ? "" : ` data-side="${n.x < cx ? "left" : "right"}"`;
+    // the tip opens outwards from the centre, so it never covers the rest of the circle
+    const side = n.group === "me" ? "" : ` data-angle="${((n.a * 180) / Math.PI).toFixed(1)}"`;
     (n.group === "me" ? centre : marks).push(`<g class="net-node ${netClass(n.group)}" data-login="${esc(n.login)}" data-cell role="img"${side}`
       + ` aria-label="${esc(tip)}" data-tip="${esc(tip)}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})">`
       + `<title>${esc(tip)}</title><circle class="core" r="${n.r.toFixed(1)}"/>${text}</g>`);

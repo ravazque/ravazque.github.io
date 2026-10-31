@@ -5,7 +5,7 @@ import { radar } from "../lib/graphs";
 import { ARROW, badge, esc } from "../lib/h";
 import { pyRound } from "../fmt";
 import { csv, facts, table } from "../lib/table";
-import { Page, Section, block, cols, filters, radios, search, section, select } from "./page";
+import { Page, Section, block, cols, filters, headBlock, radios, search, section, select } from "./page";
 
 const PROJECT_GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "piscine"];
 
@@ -81,8 +81,7 @@ export function projects(pg: Page): Section[] {
   const pc = D.insights?.pace;
   const due = dv.alumni_due;
   const lvl: [string, string][] = [];
-  if (main) lvl.push([f.t("home.k_level"), `${f.num(main.level, 2)}${main.grade ? ` ${badge(main.grade)}` : ""}`]);
-  if (pg.v.promo) lvl.push([f.t("standing.promo"), esc(f.t("home.promo_short", { rank: f.num(pg.v.promo.rank), size: f.num(pg.v.promo.size) }))]);
+  if (main) lvl.push([f.t("home.k_level"), `${f.level(main.level)}${main.grade ? ` ${badge(main.grade)}` : ""}`]);
   if (pc) {
     if (pc.months_since_kickoff !== null && pc.months_since_kickoff !== undefined) lvl.push([f.t("pace.since"), esc(f.plural(pc.months_since_kickoff, "pace.months"))]);
     lvl.push([f.t("pace.xp_month"), f.num(pc.xp_per_month)]);
@@ -90,11 +89,11 @@ export function projects(pg: Page): Section[] {
     if (pc.blackhole_days !== null && pc.blackhole_days !== undefined) lvl.push([f.t("pace.blackhole"), esc(f.plural(pc.blackhole_days, "count.days"))]);
   }
   if (due) lvl.push([f.t("profile.alumni"), due === "paused" ? esc(f.t("profile.paused")) : esc(f.day(due))]);
-  const months = pc?.months || [];
-  out.push({ id: "pace", nav: f.t("nav.pace"), html: section("pace", f.t("pace.title"), `<dl class="facts">${facts(lvl)}</dl>` + cols(block("pace-xp",
-    legend([[f.t("pace.xp"), S1], [f.t("pace.cumulative"), S2]]) + vbars(f, months.map((m: any) => f.monthLabel(m.month)), [[f.t("pace.xp"), months.map((m: any) => m.xp), S1]],
-      { label: f.t("pace.xp_title"), line: [f.t("pace.cumulative"), months.map((m: any) => m.cumulative), S2], fmt: (v) => f.num(v), emptyText: f.t("empty.period") }),
-    f.t("pace.xp_title")))) });
+  const months = pc?.months || [], promo = pg.v.promo;
+  out.push({ id: "pace", nav: f.t("nav.pace"), html: section("pace", f.t("pace.title"), `<dl class="facts">${facts(lvl)}</dl>` + cols(headBlock("pace-xp", f.t("pace.xp_title"),
+    legend([[f.t("pace.xp"), S1], [f.t("pace.cumulative"), S2]]), vbars(f, months.map((m: any) => f.monthLabel(m.month)), [[f.t("pace.xp"), months.map((m: any) => m.xp), S1]],
+      { label: f.t("pace.xp_title"), line: [f.t("pace.cumulative"), months.map((m: any) => m.cumulative), S2], fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
+    promo ? block("promo", promoChart(pg, promo), f.t("standing.promo"), f.t("standing.promo_lede", { rank: f.num(promo.rank), size: f.num(promo.size), pct: f.num(promo.percentile, 1) })) : "")) });
 
   const cursus = pg.q("cursus", pg.period === "piscine" ? "C Piscine" : "42cursus", ["42cursus", "C Piscine"]);
   const items = X.skills_by_cursus?.[cursus] || (cursus === "42cursus" ? X.skills || [] : []);
@@ -102,7 +101,7 @@ export function projects(pg: Page): Section[] {
   if (items.length) {
     const graded = items.filter((s: any) => s.level > 0);
     const bars = hbars(f, graded.map((s: any) => s.name), [[f.t("extras.level"), graded.map((s: any) => s.level), S1]],
-      { label: f.t("extras.skills_title"), end: (_i, v) => f.num(v, 2), big: true });
+      { label: f.t("extras.skills_title"), end: (_i, v) => f.level(v), big: true });
     skills = `<div class="radar-pair"><div class="radar-fig">${radar(f, items, f.t("extras.skills_title"))}</div><div class="radar-bars">${bars}</div></div>`;
   }
   const sw = pg.seg("cursus", [["42cursus", f.t("track.student")], ["C Piscine", f.t("track.piscine")]], cursus, f.t("skills.cursus"), "skills");
@@ -115,12 +114,12 @@ export function projects(pg: Page): Section[] {
   const evalLine = (e: any) => {
     const state = e.mark === null ? "open" : e.negative || e.mark < 50 ? "fail" : "pass";
     const flag = e.outstanding ? " " + badge(f.t("flag.outstanding"), "out") : e.negative ? " " + badge(e.flag || "", "bad") : "";
-    return `<li><span class="code">${esc(e.corrector)}</span> <span class="mark ${state}">${esc(e.mark ?? "–")}</span>${flag} <span class="note">${esc(e.begin || "")}</span></li>`;
+    return `<li><span class="code">${esc(e.corrector)}</span> <span class="mark ${state}">${esc(e.mark ?? "–")}</span>${flag} <span class="note">${esc(e.begin ? f.dayTime(e.begin) : "")}</span></li>`;
   };
   const detail = (p: any) => {
     if (!p.attempts.length) return "";
-    const lis = p.attempts.map((a: any) => `<li><p><b>${esc(f.t("projects.attempt_title", { n: a.n }))}</b> ${markChip(pg, a)} <span class="note">${esc(a.start)} ${ARROW} `
-      + `${esc(a.closed || a.locked || f.t("projects.tip_open"))}</span></p><p class="note">${esc(a.members?.length ? f.t("projects_table.team", { list: a.members.join(", ") }) : f.t("projects_table.solo"))}</p>`
+    const lis = p.attempts.map((a: any) => `<li><p><b>${esc(f.t("projects.attempt_title", { n: a.n }))}</b> ${markChip(pg, a)} <span class="note">${esc(f.dayTime(a.start))} ${ARROW} `
+      + `${esc(a.closed || a.locked ? f.dayTime(a.closed || a.locked) : f.t("projects.tip_open"))}</span></p><p class="note">${esc(a.members?.length ? f.t("projects_table.team", { list: a.members.join(", ") }) : f.t("projects_table.solo"))}</p>`
       + (a.evaluations?.length ? `<ul class="evals">${a.evaluations.map(evalLine).join("")}</ul>` : `<p class="note">${esc(f.t("projects_table.no_evals"))}</p>`) + "</li>").join("");
     const n = p.attempts.length;
     return `<details><summary>${esc(f.t("projects_table.detail", { count: n, n }))}</summary><ol class="attempts">${lis}</ol></details>`;
@@ -135,7 +134,7 @@ export function projects(pg: Page): Section[] {
       f: (p) => '<span class="marks">' + p.attempts.map((a: any, i: number) => (i === 0 ? markChip(pg, a) : `<span class="step">${ARROW}${markChip(pg, a)}</span>`)).join("") + "</span>" },
     { k: "outstanding", t: f.t("col.outstanding"), s: f.t("abbr.outstanding"), num: true },
     { k: "xp_earned", t: f.t("col.xp"), num: true, nw: true, f: (p) => `${f.num(p.xp_earned)}<span class="sub">${esc(f.t("projects_table.xp_base", { xp: f.num(p.xp_base) }))}</span>` },
-    { k: "first_ms", t: f.t("col.started"), nw: true, hide: true, f: (p) => esc((p.registered || "").slice(0, 10)) },
+    { k: "first_ms", t: f.t("col.started"), nw: true, hide: true, f: (p) => esc(f.day(p.registered)) },
   ], rows, { label: f.t("projects_table.title"), sort: ["first_ms", -1], sticky: true, detail, empty: f.t("projects_table.none"),
     group: fl.grouped ? { key: (p) => p.group || p.track, order: PROJECT_GROUPS, label: (g) => groupLabel(pg, g) } : undefined });
   const form = filters("projects-table",
@@ -148,7 +147,7 @@ export function projects(pg: Page): Section[] {
     form + `<div id="projects-table-results">` + cols(`<div class="block" data-panel="projects-table"><div class="table-wrap tall">${tbl}</div>`
       + `<div class="table-foot"><p class="note"><b>${esc(f.plural(rows.length, "projects_table.count"))}</b> · ${esc(f.t("projects_table.xp_note"))}</p>`
       + csvButtons(pg, "projects", f.t("projects_table.title"), f.t("projects_table.csv")) + "</div></div>") + "</div>",
-    { lede: esc(f.t("projects_table.lede")) }) });
+    ) });
 
   const exams = D.insights?.exams || [];
   out.push({ id: "exams", nav: f.t("nav.exams"), html: section("exams", f.t("exams.title"), cols(block("exams", `<div class="table-wrap">${table(f, [
@@ -166,8 +165,7 @@ export function projects(pg: Page): Section[] {
     + cols(block("domains", hbars(f, areas.map((a: any) => cap(f.t(`domains.tag.${a.key}`))), [[f.t("col.xp"), areas.map((a: any) => a.xp), S1]], {
       label: f.t("domains.title"), tips: areas.map((a: any) => `${f.t(`domains.tag.${a.key}`)} · ≈ ${f.num(a.xp)} XP · ${a.projects.join(", ")}`),
       end: (_i, v) => `≈ ${f.num(v)}`, extra: (i) => f.plural(areas[i].projects.length, "domains.projects"), emptyText: f.t("domains.none"), big: true }))),
-  { head: `<div class="panel-head"><h2>${esc(f.t("domains.title"))}</h2>${csvButtons(pg, "portfolio", f.t("domains.portfolio_title"), f.t("domains.portfolio"))}</div>`,
-    lede: esc(f.t("domains.lede")) }) });
+  { head: `<div class="panel-head"><h2>${esc(f.t("domains.title"))}</h2>${csvButtons(pg, "portfolio", f.t("domains.portfolio_title"), f.t("domains.portfolio"))}</div>` }) });
 
   const tl = D.projects.map((p: any) => [p.name, p.attempts.map((a: any) => {
     const c = a.validated === true ? GOOD : a.validated === false ? BAD : NEUTRAL;
@@ -186,7 +184,7 @@ export function projects(pg: Page): Section[] {
     + timeline(f, tl, { label: f.t("projects.timeline_aria"), emptyText: f.t("empty.period") }) + "</div>",
     block("cum-retries", lines(f, [[f.t("col.retries"), retries, S1]], { label: f.t("projects.cum_title"), emptyText: f.t("empty.period") }), f.t("projects.cum_title"), f.t("projects.cum_note")),
     block("cum-validated", lines(f, [[f.t("outcome.validated"), validated, GOOD]], { label: f.t("projects.validated_title"), emptyText: f.t("empty.period") }), f.t("projects.validated_title"), f.t("projects.validated_note"))),
-  { lede: esc(f.t("projects.lede")) }) });
+  ) });
 
   // what 42 gave you along the way
   const none = `<li class="note">${esc(f.t("empty.period"))}</li>`;
@@ -207,4 +205,17 @@ export function projects(pg: Page): Section[] {
     `<div class="block" data-panel="events"><h3>${esc(f.t("extras.events_title"))}</h3><p class="note">${esc(kinds)}</p><ul class="list">${evs || none}</ul></div>`,
     block("misc", `<ul class="list">${misc || none}</ul>`, f.t("extras.misc_title")))) });
   return out;
+}
+
+/** Your promo by level, your level's bar in the accent. */
+function promoChart(pg: Page, promo: any) {
+  const f = pg.f;
+  const hist = new Map<number, number>(promo.histogram.map((h: any) => [h.level, h.count]));
+  const keys = [...hist.keys()];
+  const levels = keys.length ? Array.from({ length: Math.max(...keys) - Math.min(...keys) + 1 }, (_, i) => Math.min(...keys) + i) : [];
+  const mine = Math.floor(promo.mine);
+  const tips = levels.map((lv) => [f.t("standing.level_tip", { level: lv }), f.plural(hist.get(lv) || 0, "standing.n_students"), ...(lv === mine ? [f.t("standing.you_here")] : [])].join(" · "));
+  return vbars(f, levels.map(String), [[f.t("standing.students"), levels.map((lv) => (lv !== mine ? hist.get(lv) || 0 : 0)), S2],
+    [f.t("standing.your_level"), levels.map((lv) => (lv === mine ? hist.get(lv) || 0 : 0)), S1]],
+  { label: f.t("standing.promo"), stacked: true, xtitle: f.t("standing.level_axis"), fmt: (v) => f.num(v), tips });
 }

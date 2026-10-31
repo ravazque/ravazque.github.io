@@ -66,3 +66,61 @@ export async function loadSession(): Promise<SessionInfo> {
 }
 
 export const settings = store;
+
+/** Sections a student keeps, in this browser and per login: starred ones (shortcuts in the star menu) and widgets
+ * (shown under Profile). A star keeps its section's title in the language it was seen in until its page shows again. */
+export type Pin = { page: string; id: string; label: string; wide?: boolean; side?: "left" | "right" };
+export const pins = reactive({ login: "", stars: [] as Pin[], widgets: [] as Pin[] });
+
+function readPins(key: string): Pin[] {
+  try {
+    const v = JSON.parse(store.get(key) || "[]");
+    return Array.isArray(v) ? v.filter((p) => p && typeof p.page === "string" && typeof p.id === "string").map((p) => ({
+      page: p.page, id: p.id, label: String(p.label || ""),
+      ...(typeof p.wide === "boolean" ? { wide: p.wide } : {}), ...(p.side === "left" || p.side === "right" ? { side: p.side } : {}) })) : [];
+  } catch { return []; }
+}
+
+export function loadPins(login: string) {
+  if (pins.login === login) return;
+  Object.assign(pins, { login, stars: readPins(`stars:${login}`), widgets: readPins(`widgets:${login}`) });
+}
+
+export function hasPin(kind: "stars" | "widgets", page: string, id: string) {
+  return pins[kind].some((p) => p.page === page && p.id === id);
+}
+
+/** Adds the section if it is not kept yet, else takes it away; the list keeps the order things were added in. */
+export function togglePin(kind: "stars" | "widgets", pin: Pin) {
+  if (!pins.login) return;
+  pins[kind] = hasPin(kind, pin.page, pin.id) ? pins[kind].filter((p) => !(p.page === pin.page && p.id === pin.id)) : [...pins[kind], pin];
+  store.set(`${kind}:${pins.login}`, JSON.stringify(pins[kind]));
+}
+
+/** A widget moved to another place in the list (indexes before the move). */
+export function moveWidget(from: number, to: number) {
+  const w = [...pins.widgets];
+  if (from < 0 || from >= w.length || to < 0 || to > w.length) return;
+  const [item] = w.splice(from, 1);
+  w.splice(to > from ? to - 1 : to, 0, item);
+  pins.widgets = w;
+  store.set(`widgets:${pins.login}`, JSON.stringify(w));
+}
+
+/** A widget's size (wide: both columns) or column (side; none: the next free place). */
+export function setWidget(page: string, id: string, patch: { wide?: boolean; side?: "left" | "right" | null }) {
+  pins.widgets = pins.widgets.map((p) => {
+    if (p.page !== page || p.id !== id) return p;
+    const next: Pin = { ...p, ...("wide" in patch ? { wide: patch.wide } : {}) };
+    if ("side" in patch) { if (patch.side) next.side = patch.side; else delete next.side; }
+    return next;
+  });
+  store.set(`widgets:${pins.login}`, JSON.stringify(pins.widgets));
+}
+
+/** Keeps starred titles in the current language once their page is drawn. */
+export function relabelStars(page: string, labels: Map<string, string>) {
+  let changed = false;
+  pins.stars = pins.stars.map((p) => (p.page === page && labels.has(p.id) && labels.get(p.id) !== p.label ? ((changed = true), { ...p, label: labels.get(p.id)! }) : p));
+  if (changed) store.set(`stars:${pins.login}`, JSON.stringify(pins.stars));
+}

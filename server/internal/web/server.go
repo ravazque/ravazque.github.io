@@ -170,6 +170,7 @@ func (s *Server) routes() {
 	m.HandleFunc("POST /api/me/report", s.user(s.csrf(s.reportBack)))
 	m.HandleFunc("GET /api/stats", s.user(s.stats))
 	m.HandleFunc("GET /avatar/me", s.user(s.avatar))
+	m.HandleFunc("GET /api/me/coalition-image", s.user(s.coalitionImage))
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, 404, errBody("not-found")) })
 	m.HandleFunc("/", s.spa)
 	s.mux = m

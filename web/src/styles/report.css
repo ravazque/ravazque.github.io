@@ -144,9 +144,13 @@
   box-shadow: inset 0 0 0 var(--c-seat-ring) color-mix(in oklab, var(--accent-data) 60%, transparent); cursor: default;
 }
 :where(body:not(.site)) .seat.on:hover { outline: var(--c-focus-width) solid var(--focus); outline-offset: 1px; }
-:where(body:not(.site)) .seat.top { box-shadow: inset 0 0 0 var(--c-seat-top-ring) var(--ink); }
+:where(body:not(.site)) .seat.top { box-shadow: inset 0 0 0 max(var(--c-seat-ring), 1.5px) var(--highlight); }  /* its own edge, in gold */
 :where(body:not(.site)) .seat:target { outline: 3px solid var(--focus); outline-offset: 2px; scroll-margin: 40vh 0; }
-:where(body:not(.site)) .plan-other { margin-top: 12px; }
+:where(body:not(.site)) .plan-other { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 20px; width: fit-content; max-width: 100%;
+  margin: 18px auto 0; padding: 6px 12px; border: 1px solid var(--rule); color: var(--text-2); font-size: 14px; }
+:where(body:not(.site)) .plan-other b { color: var(--ink); font-weight: 600; }
+:where(body:not(.site)) .plan-other .grp { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+:where(body:not(.site)) .plan-other .seat { display: inline-block; width: 26px; height: 14px; flex: none; }
 :where(body:not(.site)) .scale { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; row-gap: 6px; font-size: 14px; color: var(--muted); margin-top: 14px; }
 :where(body:not(.site)) .scale i { width: 22px; height: 12px; border-radius: var(--radius-s); display: inline-block; }
 :where(body:not(.site)) .scale .grp { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; margin-right: 12px; }
@@ -169,11 +173,10 @@
 
 /* ---------- calendar & heat ---------- */
 :where(body:not(.site)) .cal-scroll { overflow-x: auto; margin-top: 14px; padding-bottom: 4px; }
-:where(body:not(.site)) .cal-year { display: grid; grid-template-columns: 56px minmax(640px, 1fr); gap: 12px; align-items: start; margin-bottom: 16px; }
+:where(body:not(.site)) .cal-year { display: grid; grid-template-columns: 56px minmax(640px, 1fr); gap: 12px; align-items: start; margin-bottom: 16px;
+  width: max-content; min-width: 100%; }  /* as wide as its weeks, so the sticky year stays in view while they scroll */
 :where(body:not(.site)) .cal-year > b { font: 800 22px/1 var(--type-font-display); padding-top: 18px; position: sticky; left: 0; z-index: 1; background: var(--ground); align-self: stretch; }
-:where(body:not(.site)) .cal-grid { display: grid; grid-template-columns: repeat(54, minmax(0, 1fr)); gap: var(--c-cell-gap); }
-/* a single short period keeps the cell size of a full year, aligned left */
-:where(body:not(.site)) .cal-grid.crop { grid-template-columns: repeat(var(--cols), calc((100% - 53 * var(--c-cell-gap)) / 54)); }
+:where(body:not(.site)) .cal-grid { display: grid; grid-template-columns: repeat(var(--cols, 54), minmax(0, 1fr)); gap: var(--c-cell-gap); }
 :where(body:not(.site)) .cal-grid .m { font: 600 13px var(--type-font-display); color: var(--muted); white-space: nowrap; line-height: 1; padding-bottom: 4px; }
 :where(body:not(.site)) .cal-grid .d { aspect-ratio: 1; border-radius: var(--c-cell-radius); background: var(--seat-empty); }
 :where(body:not(.site)) .cal-grid .d.on { background: color-mix(in oklab, var(--ramp-hi) calc(var(--v) * 100%), var(--ramp-lo)); box-shadow: inset 0 0 0 var(--c-seat-ring) color-mix(in oklab, var(--accent-data) 60%, transparent); }
@@ -282,7 +285,7 @@
 
 @media (max-width: 959.98px) {
   :where(body:not(.site)) .narrow-hide { display: none; }
-  :where(body:not(.site)) h2 .count { display: block; }
+  :where(body:not(.site)) h2 .count { display: block; font-size: .5em; letter-spacing: 0; color: var(--text-2); margin-top: 6px; } /* a quiet line under the title */
   :where(body:not(.site)) h2 .sep { display: none; }
 }
 @media (min-width: 960px) {
@@ -389,6 +392,22 @@
 :where(body:not(.site)) .standings .track b { display: block; height: 100%; }
 :where(body:not(.site)) .standings li.mine .rank { color: var(--ink); }
 :where(body:not(.site)) .standings .num { color: var(--text-2); }
+/* with the intra's banners: a strip per coalition, its banner under a dark wash, its logo, name and points over it,
+   a thin bar of its points along the bottom */
+:where(body:not(.site)) .standings.banners li { position: relative; display: flex; align-items: center; gap: 14px; height: 76px; padding: 0 16px;
+  margin-bottom: 8px; border: 0; overflow: hidden; isolation: isolate; color: var(--on-image);
+  background: linear-gradient(90deg, color-mix(in oklab, var(--coal) 70%, var(--wash)) 0%, color-mix(in oklab, var(--coal) 40%, var(--wash)) 100%); }
+:where(body:not(.site)) .standings.banners .cover { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+:where(body:not(.site)) .standings.banners li::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--wash) 72%, transparent) 0%, color-mix(in oklab, var(--wash) 45%, transparent) 55%, color-mix(in oklab, var(--wash) 20%, transparent) 100%); }
+:where(body:not(.site)) .standings.banners .rank { width: 1.2em; color: var(--on-image); opacity: .8; }
+:where(body:not(.site)) .standings.banners li.mine .rank { color: var(--on-image); opacity: 1; }
+:where(body:not(.site)) .standings.banners .logo { width: 44px; height: 44px; flex: none; object-fit: contain; }
+:where(body:not(.site)) .standings.banners i.logo { background: var(--coal); }
+:where(body:not(.site)) .standings.banners .name { flex: 1; font: 700 19px var(--type-font-display); color: var(--on-image); }
+:where(body:not(.site)) .standings.banners .num { font: 700 17px var(--type-font-display); color: var(--on-image); font-variant-numeric: tabular-nums; }
+:where(body:not(.site)) .standings.banners .track { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: color-mix(in oklab, var(--wash) 35%, transparent); }
+:where(body:not(.site)) .standings.banners .track b { background: var(--coal); }
 :where(body:not(.site)) tbody.group th { text-align: left; padding: 10px 12px; background: var(--sunken); color: var(--ink);
   font: 700 13px var(--type-font-display); }
 
@@ -426,6 +445,6 @@
 :where(body:not(.site)) .net-node.alumni circle { fill: var(--alumni); stroke: var(--alumni-edge); }
 :where(body:not(.site)) .net-node.none circle { fill: var(--surface); stroke: var(--neutral); }
 :where(body:not(.site)) .net-node.dead circle { fill: color-mix(in oklab, var(--critical) 22%, var(--surface)); stroke: var(--critical); stroke-dasharray: 2 2; }
-:where(body:not(.site)) .net-node text { fill: var(--text-2); font: 500 13px var(--type-font-text); paint-order: stroke; stroke: var(--c-island-bg); stroke-width: 3px; }
+:where(body:not(.site)) .net-node text { fill: var(--text-2); font: 500 13px var(--type-font-text); paint-order: stroke; stroke: var(--c-island-bg); stroke-width: 4px; stroke-linejoin: round; }
 :where(body:not(.site)) .net-node:focus-visible circle, :where(body:not(.site)) .net-node:hover circle { stroke: var(--focus); stroke-width: 3; }
 :where(body:not(.site)) .net-node:focus-visible { outline: none; }

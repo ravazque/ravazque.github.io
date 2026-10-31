@@ -1,5 +1,5 @@
-// Home: only what changes day to day. The logtime bonus first, then where you are, your last seven days, what comes
-// next, what is open and this month. Built from /api/me/today (computed at request time from the stored report).
+// Today, on Profile: what changes day to day. The logtime bonus first, then where you are, what comes next, what is open
+// and this month. Built from /api/me/today (computed at request time from the stored report).
 import type { Fmt } from "../fmt";
 import { madridParts } from "../fmt";
 import { esc } from "../lib/h";
@@ -48,7 +48,7 @@ function bonus(f: Fmt, td: Today) {
   return panel("bonus", f.t("today.bonus"), `<p class="figure">${esc(f.num(w, 1))}<small> h</small></p>${meter}`
     + `<div class="tiers">${tier(t50)}${t80 ? tier(t80) : ""}</div>`
     + (drops ? `<h3 class="sub-h">${esc(f.t("today.drops"))}</h3><ul class="drops">${drops}</ul>` : `<p class="line">${esc(f.t("today.no_drops"))}</p>`)
-    + `<p class="line note"><a href="/app/campus#bonus">${esc(f.t("today.bonus_more"))}</a></p>`, { live: true, span: 2, aside: f.t("today.bonus_aside") });
+    + `<p class="line note"><a href="/app/coalition#bonus">${esc(f.t("today.bonus_more"))}</a></p>`, { live: true, span: 2, aside: f.t("today.bonus_aside") });
 }
 
 function nowPanel(f: Fmt, td: Today) {
@@ -64,22 +64,6 @@ function nowPanel(f: Fmt, td: Today) {
   lines.push(td.yesterday_s ? f.t("today.yesterday", { time: f.hm(td.yesterday_s), seats: f.plural(td.yesterday_seats, "today.seats") }) : f.t("today.yesterday_none"));
   if (td.as_of) lines.push(f.t("today.now_as_of", { time: td.as_of.slice(11, 16) }));
   return panel("now", f.t("today.now"), figure + lines.map((l) => `<p class="line">${esc(l)}</p>`).join(""), { live: !!td.now });
-}
-
-function week(f: Fmt, td: Today) {
-  const rows = td.week.map((d) => {
-    const label = f.day(d.date, true).split(" ")[0];
-    const bars = d.parts.map((p) => {
-      const tip = `${f.day(d.date, true)} · ${String(Math.floor(p.from)).padStart(2, "0")}:${String(Math.round((p.from % 1) * 60)).padStart(2, "0")}–`
-        + `${String(Math.floor(p.to)).padStart(2, "0")}:${String(Math.round((p.to % 1) * 60)).padStart(2, "0")}${p.host ? ` · ${p.host}` : ""}${p.leaving ? ` · ${f.t("today.leaving")}` : ""}`;
-      return `<i class="${p.leaving ? "leaving" : ""}" style="left:${((p.from / 24) * 100).toFixed(2)}%;width:max(3px,${(((p.to - p.from) / 24) * 100).toFixed(2)}%)" data-tip="${esc(tip)}" title="${esc(tip)}"></i>`;
-    }).join("");
-    return `<div class="wk-row"><span class="wk-day">${esc(label)} <small>${+d.date.slice(8)}</small></span><span class="wk-track">${bars}</span><span class="wk-total">${d.seconds ? esc(f.hm(d.seconds)) : "–"}</span></div>`;
-  }).join("");
-  const axis = `<div class="wk-row wk-axis" aria-hidden="true"><span></span><span class="wk-track">${[0, 6, 12, 18, 24].map((h) => `<b style="left:${(h / 24) * 100}%">${h}</b>`).join("")}</span><span></span></div>`;
-  const total = td.week.reduce((s, d) => s + d.seconds, 0);
-  return panel("week", f.t("today.week"), `<div class="wk" role="img" aria-label="${esc(f.t("today.week_aria", { time: f.hm(total) }))}">${rows}${axis}</div>`
-    + `<p class="line note">${esc(f.t("today.week_note"))}</p>`, { span: 3, aside: f.hm(total) });
 }
 
 function next(f: Fmt, td: Today) {
@@ -112,5 +96,5 @@ function month(f: Fmt, td: Today) {
 export function home(f: Fmt, td: Today): Section[] {
   const date = f.day(madridParts(Date.now()).iso, true).split(" ").slice(0, 3).join(" ");
   return [{ id: "today", nav: f.t("today.title"), html: `<section id="today" class="today-wrap"><h2>${esc(f.t("today.head", { date }))}</h2>`
-    + `<div class="today">${bonus(f, td)}${nowPanel(f, td)}${week(f, td)}${next(f, td)}${progress(f, td)}${month(f, td)}</div></section>` }];
+    + `<div class="today">${bonus(f, td)}${nowPanel(f, td)}${next(f, td)}${progress(f, td)}${month(f, td)}</div></section>` }];
 }

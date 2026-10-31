@@ -1,20 +1,21 @@
 <script setup lang="ts">
-// The five app pages. Asks for the status first (consent, a report, an extraction running), then the period's view
-// (and Home's today), builds the sections as markup and lets the browser behaviours take it from there.
+// The six app pages. Asks for the status first (consent, a report, an extraction running), then the period's view
+// (and Profile's today), builds the sections as markup and lets the browser behaviours take it from there.
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { HttpError, api, fmt, loadSession, state, type Status } from "../state";
+import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setWidget, state, togglePin, type Status } from "../state";
 import { closePops, hideTip, settle } from "../lib/behave";
 import { idbShelf, keepCopy, restore } from "../lib/copy";
 import { esc } from "../lib/h";
 import { parseCsv } from "../lib/table";
 import { Page, type PageKey, type Section, type View } from "../views/page";
 import type { Today } from "../views/home";
-import { ON_PROFILE, profile as profileSections } from "../views/profile";
+import { profile as profileSections } from "../views/profile";
 import { portfolioCsv, projects, projectsCsv } from "../views/projects";
 import { evaluations } from "../views/evaluations";
 import { people } from "../views/people";
 import { campus } from "../views/campus";
+import { coalition } from "../views/coalition";
 import AppHeader from "./AppHeader.vue";
 import SiteCredit from "./SiteCredit.vue";
 
@@ -33,12 +34,10 @@ const pg = computed(() => (view.value ? new Page(f.value, view.value, key.value,
 
 const sections = computed<Section[]>(() => {
   if (!pg.value) return [];
-  if (key.value === "home") return profileSections(pg.value, today.value);
-  // the panels v1's Home held live on Profile again: the other pages leave them out
   const pv = pg.value;
-  const built = key.value === "projects" ? projects(pv) : key.value === "evaluations" ? evaluations(pv)
-    : key.value === "people" ? people(pv) : key.value === "campus" ? campus(pv) : [];
-  return built.filter((s) => !ON_PROFILE.has(s.id));
+  if (key.value === "home") return profileSections(pv, today.value, pins.widgets);
+  return key.value === "projects" ? projects(pv) : key.value === "evaluations" ? evaluations(pv)
+    : key.value === "people" ? people(pv) : key.value === "campus" ? campus(pv) : key.value === "coalition" ? coalition(pv) : [];
 });
 
 const profile = computed(() => view.value?.report.profile);
@@ -60,6 +59,7 @@ async function load() {
   try {
     if (!state.session?.user) await loadSession();
     if (!state.session?.user) return router.replace("/");
+    loadPins(state.session.user.login);
     const s = await status();
     if (s.state === "refused") return router.replace(`/refused?reason=${encodeURIComponent(s.message || "campus")}`);
     if (!s.consent) { screen.value = "consent"; return; }
@@ -116,6 +116,7 @@ watch(sections, async () => {
   await nextTick();
   if (!main.value) return;
   settle(main.value);
+  markSections(main.value);
   hideTip();
   if (typingIn) {
     const el = main.value.querySelector<HTMLInputElement>(`form[data-filter="${typingIn.form}"] [name="${typingIn.name}"]`);
@@ -125,6 +126,7 @@ watch(sections, async () => {
     } else main.value.querySelector<HTMLElement>(`form[data-filter="${typingIn.form}"] .seg, form[data-filter="${typingIn.form}"]`)?.focus?.();
     typingIn = null;
   }
+  if (refocus) { main.value.querySelector<HTMLElement>(`[data-widget="${refocus}"] [data-widget-grip]`)?.focus({ preventScroll: true }); refocus = ""; }
   const hash = route.hash;
   if (hash && hash !== anchored) {
     anchored = hash;
@@ -139,8 +141,77 @@ async function accept() {
 async function retry() { await api("/api/me/refresh", { method: "POST" }).catch(() => {}); load(); }
 
 // links inside the pages stay in the app; filter forms write their fields into the address
+// every section of a page carries a star by its title; a widget on Profile a handle to move it, its size and a way off
+const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5-4.8-4.5 6.5-.8z"/></svg>';
+const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const GRIP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="dots" d="M9 5.5h.01M15 5.5h.01M9 12h.01M15 12h.01M9 18.5h.01M15 18.5h.01"/></svg>';
+const WIDEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
+const NARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h7M15 12h7M6 8l4 4-4 4M18 8l-4 4 4 4"/></svg>';
+let refocus = "";
+const tool = (cls: string, icon: string, label: string, data: Record<string, string>) => {
+  const b = Object.assign(document.createElement("button"), { type: "button", className: `pin ${cls}`, innerHTML: icon, title: label });
+  b.setAttribute("aria-label", label);
+  Object.assign(b.dataset, data);
+  return b;
+};
+function markSections(root: HTMLElement) {
+  const labels = new Map(sections.value.map((s) => [s.id, s.nav]));
+  root.querySelectorAll<HTMLElement>(".sec > section[id], .widget > section[id]").forEach((sec) => {
+    const widget = sec.parentElement?.dataset.widget;
+    const page = widget ? widget.split(":")[0] : key.value;
+    const h2 = sec.querySelector<HTMLElement>(":scope > h2, :scope > .panel-head > h2");
+    if (page === "home" || !h2 || h2.classList.contains("visually-hidden") || h2.querySelector(".pin")) return;
+    const on = hasPin("stars", page, sec.id), name = labels.get(sec.id) || h2.textContent || sec.id;
+    if (!widget) {
+      const star = Object.assign(document.createElement("button"), { type: "button", className: "pin star-pin", innerHTML: STAR });
+      Object.assign(star.dataset, { pin: `${page}:${sec.id}`, label: name });
+      star.setAttribute("aria-pressed", String(on));
+      star.setAttribute("aria-label", f.value.t(on ? "pin.unstar" : "pin.star", { name }));
+      star.title = star.getAttribute("aria-label")!;
+      h2.append(star);
+    } else {
+      const wide = sec.parentElement!.classList.contains("wide"), wname = sec.parentElement!.dataset.name || name;
+      // a span, not a button: Firefox never starts a drag on a button
+      const grip = Object.assign(document.createElement("span"), { className: "pin widget-grip", innerHTML: GRIP, tabIndex: 0, draggable: true, title: f.value.t("widgets.move", { name: wname }) });
+      grip.setAttribute("role", "button");
+      grip.setAttribute("aria-label", grip.title);
+      grip.dataset.widgetGrip = widget;
+      h2.append(grip, tool("widget-size", wide ? NARROW : WIDEN, f.value.t(wide ? "widgets.half" : "widgets.wide", { name: wname }), { widgetSize: widget }),
+        tool("widget-off", CROSS, f.value.t("widgets.remove", { name: wname }), { widgetOff: widget }));
+    }
+  });
+  if (key.value !== "home") relabelStars(key.value, labels);
+}
+
 function onClick(ev: MouseEvent) {
   const el = ev.target as Element;
+  const star = el.closest?.("[data-pin]") as HTMLElement | null;
+  if (star) {
+    const [page, id] = star.dataset.pin!.split(":");
+    togglePin("stars", { page, id, label: star.dataset.label || id });
+    const on = hasPin("stars", page, id), name = star.dataset.label || id;
+    star.setAttribute("aria-pressed", String(on));
+    star.setAttribute("aria-label", f.value.t(on ? "pin.unstar" : "pin.star", { name }));
+    star.title = star.getAttribute("aria-label")!;
+    return;
+  }
+  const size = el.closest?.("[data-widget-size]") as HTMLElement | null;
+  if (size) {
+    const [page, id] = size.dataset.widgetSize!.split(":");
+    refocus = "";
+    return setWidget(page, id, { wide: !size.closest(".widget")!.classList.contains("wide") });
+  }
+  const off = el.closest?.("[data-widget-off]") as HTMLElement | null;
+  if (off) {
+    const [page, id] = off.dataset.widgetOff!.split(":");
+    return togglePin("widgets", { page, id, label: "" });
+  }
+  if (el.closest?.("[data-widget-add]")) {
+    const pick = main.value?.querySelector<HTMLSelectElement>("#widgets select")?.value || "";
+    const [page, id] = pick.split(":");
+    if (page && id && !hasPin("widgets", page, id)) { togglePin("widgets", { page, id, label: "" }); anchored = ""; router.replace({ query: route.query, hash: `#${id}` }); }
+    return;
+  }
   const btn = el.closest?.("[data-preview], [data-download]") as HTMLElement | null;
   if (btn) return exportCsv(btn);
   const a = el.closest?.("a[href]") as HTMLAnchorElement | null;
@@ -151,6 +222,71 @@ function onClick(ev: MouseEvent) {
   ev.preventDefault();
   closePops();
   router.push(u.pathname + u.search + (a.hasAttribute("data-keep") ? "" : u.hash));
+}
+
+// widgets on Profile: drag a handle onto another widget (before or after it, in the left or right column), or move
+// it with the arrow keys on its handle (up and down: the order; left and right: the column of a half widget)
+let dragFrom = -1;
+function widgetAt(ev: DragEvent) {
+  const grid = main.value?.querySelector<HTMLElement>(".widgets");
+  if (!grid || dragFrom < 0) return null;
+  const all = [...grid.querySelectorAll<HTMLElement>(":scope > .widget")];
+  const two = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length > 1;
+  const gr = grid.getBoundingClientRect();
+  const side: "left" | "right" | null = two ? (ev.clientX < gr.left + gr.width / 2 ? "left" : "right") : null;
+  // the widget under the pointer, else the nearest one
+  const dist = (w: HTMLElement) => { const r = w.getBoundingClientRect(); return Math.hypot(Math.max(r.left - ev.clientX, 0, ev.clientX - r.right), Math.max(r.top - ev.clientY, 0, ev.clientY - r.bottom)); };
+  const over = all.reduce<HTMLElement | null>((a, w) => (!a || dist(w) < dist(a) ? w : a), null);
+  if (!over) return null;
+  const r = over.getBoundingClientRect(), i = +over.dataset.i!;
+  const across = two && over.classList.contains("half");
+  const after = across ? ev.clientX > r.left + r.width / 2 : ev.clientY > r.top + r.height / 2;
+  // beside a half widget it lands on the side it was dropped on; above or below one, in the column under the pointer
+  return { over, to: after ? i + 1 : i, side: across ? (after ? "right" : "left") as "left" | "right" : side, mark: across ? (after ? "right" : "left") : after ? "after" : "before" };
+}
+const clearDrop = () => main.value?.querySelectorAll("[data-drop]").forEach((w) => w.removeAttribute("data-drop"));
+function onDragStart(ev: DragEvent) {
+  const w = (ev.target as Element).closest?.("[data-widget-grip]")?.closest(".widget") as HTMLElement | null;
+  if (!w || !ev.dataTransfer) return;
+  dragFrom = +w.dataset.i!;
+  ev.dataTransfer.effectAllowed = "move";
+  ev.dataTransfer.setData("text/plain", w.dataset.widget!);
+  ev.dataTransfer.setDragImage(w, 24, 24);
+  hideTip();
+  w.classList.add("dragging");
+}
+function onDragOver(ev: DragEvent) {
+  const t = widgetAt(ev);
+  if (!t) return;
+  ev.preventDefault();
+  if (t.over.dataset.drop !== t.mark) { clearDrop(); t.over.dataset.drop = t.mark; }
+}
+function onDrop(ev: DragEvent) {
+  const t = widgetAt(ev);
+  clearDrop();
+  if (!t) return;
+  ev.preventDefault();
+  const moved = pins.widgets[dragFrom];
+  const half = main.value?.querySelector(`[data-widget="${moved.page}:${moved.id}"]`)?.classList.contains("half");
+  moveWidget(dragFrom, t.to);
+  if (half && t.side) setWidget(moved.page, moved.id, { side: t.side });
+  dragFrom = -1;
+}
+function onDragEnd() {
+  dragFrom = -1;
+  clearDrop();
+  main.value?.querySelectorAll(".widget.dragging").forEach((w) => w.classList.remove("dragging"));
+}
+function onKey(ev: KeyboardEvent) {
+  const w = (ev.target as Element).closest?.("[data-widget-grip]")?.closest(".widget") as HTMLElement | null;
+  if (!w) return;
+  const i = +w.dataset.i!, [page, id] = w.dataset.widget!.split(":");
+  if (ev.key === "ArrowUp") moveWidget(i, i - 1);
+  else if (ev.key === "ArrowDown") moveWidget(i, i + 2);
+  else if ((ev.key === "ArrowLeft" || ev.key === "ArrowRight") && w.classList.contains("half")) setWidget(page, id, { side: ev.key === "ArrowLeft" ? "left" : "right" });
+  else return;
+  ev.preventDefault();
+  refocus = w.dataset.widget!;
 }
 
 let typing = 0;
@@ -200,7 +336,8 @@ const periodHref = (p: string) => router.resolve({ query: { ...params.value, per
 
 <template>
   <AppHeader :page="key" :period="view?.period" :periods="periods" @refreshed="watchSync" />
-  <main v-if="screen === 'page'" id="main" ref="main" :data-page="`web-${key}`" @click="onClick" @input="onInput" @change="onInput" @submit.prevent>
+  <main v-if="screen === 'page'" id="main" ref="main" :data-page="`web-${key}`" @click="onClick" @input="onInput" @change="onInput" @submit.prevent
+    @keydown="onKey" @dragstart="onDragStart" @dragover="onDragOver" @drop="onDrop" @dragend="onDragEnd">
     <header class="page-head">
       <h1>{{ title }}</h1>
       <nav v-if="periods.length" class="seg periods" :aria-label="f.t('rail.period')">
@@ -208,7 +345,7 @@ const periodHref = (p: string) => router.resolve({ query: { ...params.value, per
       </nav>
       <p v-else-if="key === 'home' && state.status?.last" class="periods only">{{ f.t("today.as_of", { time: f.stamp(new Date(state.status.last).getTime()) }) }}</p>
     </header>
-    <nav v-if="sections.length > 1" class="toc" :aria-label="f.t('rail.sections')"><a v-for="s in sections" :key="s.id" :href="`#${s.id}`">{{ s.nav }}</a></nav>
+    <nav v-if="sections.length > 1 && key !== 'home'" class="toc" :aria-label="f.t('rail.sections')"><a v-for="s in sections" :key="s.id" :href="`#${s.id}`">{{ s.nav }}</a></nav>
     <div v-for="s in sections" :key="s.id + key" class="sec" v-html="s.html"></div>
     <footer class="site-foot">
       <SiteCredit />
@@ -216,6 +353,12 @@ const periodHref = (p: string) => router.resolve({ query: { ...params.value, per
         <a v-if="state.session?.issues_url" :href="state.session.issues_url" rel="noopener" target="_blank">{{ f.t("site.issues") }}</a></nav>
       <p class="foot-note">{{ f.t(view?.light && !view?.seat_days ? "footer.light" : "footer.full", { when: f.dayTime(view?.report.generated) }) }}</p>
     </footer>
+  </main>
+  <main v-else-if="screen === 'loading' || screen === 'restore'" id="main" class="skel" aria-busy="true">
+    <header class="page-head"><h1>{{ title }}</h1>
+      <p :class="screen === 'restore' ? 'periods only' : 'visually-hidden'" role="status">{{ f.t(screen === "restore" ? "restore.lede" : "boot.title") }}</p></header>
+    <section v-for="n in 2" :key="n" aria-hidden="true"><h2><i class="sk"></i></h2>
+      <div class="cols"><div v-for="b in 2" :key="b" class="block"><i class="sk"></i><i class="sk"></i><i class="sk tall"></i></div></div></section>
   </main>
   <main v-else id="main" class="solo">
     <div v-if="screen === 'consent'" class="boot-panel">
@@ -243,7 +386,6 @@ const periodHref = (p: string) => router.resolve({ query: { ...params.value, per
         <p class="note">{{ f.t("boot.first") }}</p>
       </template>
     </div>
-    <div v-else class="boot-panel"><h2>{{ f.t("boot.title") }}</h2><p>{{ screen === "restore" ? f.t("restore.lede") : "" }}</p></div>
   </main>
   <div id="tip" role="tooltip"></div>
   <Teleport to="#dialogs">

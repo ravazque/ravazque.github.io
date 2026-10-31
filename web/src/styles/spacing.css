@@ -1,0 +1,86 @@
+/* ============================================================================================================
+   SPACING YOU CAN TUNE BY HAND
+   Evaluations, Coalition and People (one block each) and the bubbles of Connections.
+   Change a number, rebuild (make dev-build or make dev-real) and reload. Values are in px.
+   The first block of each page applies to phones and tablets, the second (@media 960px) to laptops and up.
+   ============================================================================================================
+
+   What each value moves, top to bottom inside a page:
+
+     --sections     space above every section: the distance between two sections (e.g. "Contribution" → "Over time")
+     --title-gap    space between a section's title rule and what comes under it (its description or its charts)
+     --info-gap     space between a section's description (the grey text under the title) and its charts or tables
+     --charts-top   space between a section's title rule and its charts when the section has no description
+     --charts-y     space between two charts or tables stacked one under the other
+     --charts-x     space between two charts or tables side by side
+*/
+
+/* ---- Evaluations ---- */
+main[data-page="web-evaluations"] {
+  --sections: 56px;
+  --title-gap: 20px;
+  --info-gap: 20px;
+  --charts-top: 36px;
+  --charts-y: 40px;
+  --charts-x: 12px;
+}
+@media (min-width: 960px) {
+  main[data-page="web-evaluations"] {
+    --sections: 88px;
+    --charts-x: 48px;
+  }
+}
+
+/* ---- Coalition ---- */
+main[data-page="web-coalition"] {
+  --sections: 56px;
+  --title-gap: 20px;
+  --info-gap: 20px;
+  --charts-top: 36px;
+  --charts-y: 40px;
+  --charts-x: 12px;
+}
+@media (min-width: 960px) {
+  main[data-page="web-coalition"] {
+    --sections: 88px;
+    --charts-x: 48px;
+  }
+}
+
+/* ---- People ---- */
+main[data-page="web-people"] {
+  --sections: 56px;
+  --title-gap: 20px;
+  --info-gap: 20px;
+  --charts-top: 36px;
+  --charts-y: 40px;
+  --charts-x: 12px;
+}
+@media (min-width: 960px) {
+  main[data-page="web-people"] {
+    --sections: 88px;
+    --charts-x: 48px;
+  }
+}
+
+/* ---- Connections (People): the bubbles ----
+     --bubbles-gap    space between two bubbles of the same group (smaller packs them tighter)
+     --bubbles-edge   space between a group's bubbles and the sides of its zone
+     --bubbles-rows   space between two rows of groups (the milestones on top, Outer Core, alumni… under them)
+   These three are plain numbers in the graph's units (about px on a laptop; the graph scales with the screen). */
+:root {
+  --bubbles-gap: 3;
+  --bubbles-edge: 8;
+  --bubbles-rows: 28;
+}
+
+/* ============================================================================================================
+   How the values above are used (no need to edit below this line)
+   ============================================================================================================ */
+main:is([data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"]) section { padding-top: var(--sections); }
+main:is([data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"]) section > :is(h2, .panel-head) { margin-bottom: var(--title-gap); }
+main:is([data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"]) section > .panel-head > h2 { margin-bottom: 0; }
+main:is([data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"]) section > .lede { margin-bottom: 0; }
+main:is([data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"]) section > .lede + .cols { margin-top: var(--info-gap); }
+main:is([data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"]) section > :is(h2, .panel-head) + .cols { margin-top: var(--charts-top); }
+main:is([data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"]) .cols { row-gap: var(--charts-y); column-gap: var(--charts-x); }

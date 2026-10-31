@@ -469,6 +469,40 @@ func TestAvatarIsCachedAndOnlyAnImage(t *testing.T) {
 	}
 }
 
+func TestCoalitionImagesOnlyFromTheCDNAndNeverRunning(t *testing.T) {
+	var cdn atomic.Int64
+	e := newEnv(t, nil)
+	cdnSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cdn.Add(1)
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Write([]byte(`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>`))
+	}))
+	defer cdnSrv.Close()
+	e.s.API.CDN = cdnSrv.URL + "/"
+	logo := "/api/me/coalition-image?u=" + url.QueryEscape(cdnSrv.URL+"/coalition/image/1/logo.svg")
+	if r := e.do(t, "GET", logo, nil, nil); r.StatusCode != 401 {
+		t.Fatalf("signed out: %d", r.StatusCode)
+	}
+	sid := e.s.Sessions.Create(app.Session{ID: 5, Login: "tnova"})
+	e.jar.SetCookies(mustURL(e.srv.URL), []*http.Cookie{{Name: app.SessionCookie, Value: sid, Path: "/"}})
+	for range 3 {
+		r := e.do(t, "GET", logo, nil, nil)
+		if r.StatusCode != 200 || r.Header.Get("Content-Type") != "image/svg+xml" || !strings.Contains(r.Header.Get("Content-Security-Policy"), "sandbox") ||
+			r.Header.Get("X-Content-Type-Options") != "nosniff" {
+			t.Fatalf("logo: %d %v", r.StatusCode, r.Header)
+		}
+		readAll(r)
+	}
+	if cdn.Load() != 1 {
+		t.Fatalf("the CDN was asked %d times", cdn.Load())
+	}
+	for _, u := range []string{cdnSrv.URL + "/users/x.jpg", "https://example.com/coalition/a.svg", cdnSrv.URL + "/coalition/../users/x.jpg"} {
+		if r := e.do(t, "GET", "/api/me/coalition-image?u="+url.QueryEscape(u), nil, nil); r.StatusCode != 404 {
+			t.Fatalf("%s: %d", u, r.StatusCode)
+		}
+	}
+}
+
 func mustURL(s string) *url.URL { u, _ := url.Parse(s); return u }
 
 // newEnvSharing: another browser against the same server, signed in as the same user.

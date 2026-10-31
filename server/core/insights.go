@@ -286,7 +286,8 @@ func PromoStanding(levels []float64, mine float64) any {
 		"median", pyRound(median(levels), 2), "mine", mine, "histogram", h)
 }
 
-// CoalitionStandings ranks the campus coalitions by score, with yours marked.
+// CoalitionStandings ranks the campus coalitions by score, with yours marked, each with its logo and banner when the
+// intra has them (shown through the server, which only fetches them from the intra CDN).
 func CoalitionStandings(bloc Raw, mineID any) []any {
 	cs := Objs(bloc, "coalitions")
 	sort.SliceStable(cs, func(i, j int) bool { return Num(cs[i], "score") > Num(cs[j], "score") })
@@ -296,7 +297,14 @@ func CoalitionStandings(bloc Raw, mineID any) []any {
 		if v, ok := c["score"].(float64); ok && v != 0 {
 			score = v
 		}
-		out = append(out, M("name", c["name"], "color", c["color"], "score", score, "rank", i+1, "mine", mineID != nil && c["id"] == mineID))
+		e := M("name", c["name"], "color", c["color"], "score", score, "rank", i+1, "mine", mineID != nil && c["id"] == mineID)
+		if u := Str(c, "image_url"); u != "" {
+			e.Set("logo", u)
+		}
+		if u := Str(c, "cover_url"); u != "" {
+			e.Set("cover", u)
+		}
+		out = append(out, e)
 	}
 	return out
 }

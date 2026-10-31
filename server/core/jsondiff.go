@@ -59,7 +59,7 @@ func JSONDiff(got, want any, path string) string {
 }
 
 // v2Keys were added after the first version: a golden file from it has none of them, so they are left out there.
-var v2Keys = map[string]bool{"leader": true, "cursus": true}
+var v2Keys = map[string]bool{"leader": true, "cursus": true, "logo": true, "cover": true}
 
 func v2Only(keys []string, want *OMap) []string {
 	out := keys[:0:0]

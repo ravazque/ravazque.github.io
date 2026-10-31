@@ -5,6 +5,7 @@ import "./styles/report.css";
 import "./styles/dash.css";
 import "./styles/site.css";
 import "./styles/v2.css";
+import "./styles/spacing.css";
 import App from "./App.vue";
 import { router } from "./router";
 import { install } from "./lib/behave";

@@ -64,21 +64,6 @@
 :where(body:not(.site)) .drops li b { font: 700 15px var(--type-font-display); white-space: nowrap; color: var(--critical); }
 :where(body:not(.site)) .tp .figure.host { letter-spacing: -.02em; }
 
-/* your last seven days: one 0–24 h line per day, each session a bar */
-:where(body:not(.site)) .wk { display: grid; gap: 6px; margin-top: 14px; }
-:where(body:not(.site)) .wk-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) 72px; align-items: center; gap: 12px; }
-:where(body:not(.site)) .wk-day { font: 700 15px var(--type-font-display); white-space: nowrap; }
-:where(body:not(.site)) .wk-day small { color: var(--text-2); font-weight: 500; }
-:where(body:not(.site)) .wk-track { position: relative; height: 18px; background: var(--sunken);
-  background-image: repeating-linear-gradient(to right, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); }
-:where(body:not(.site)) .wk-track i { position: absolute; top: 2px; bottom: 2px; background: var(--accent-data); }
-:where(body:not(.site)) .wk-track i.leaving { background: var(--neutral); opacity: .55; }
-:where(body:not(.site)) .wk-total { text-align: right; font: 700 14px var(--type-font-display); white-space: nowrap; color: var(--text-2); }
-:where(body:not(.site)) .wk-axis .wk-track { height: 16px; background: none; }
-:where(body:not(.site)) .wk-axis b { position: absolute; transform: translateX(-50%); font: 500 12px var(--type-font-text); color: var(--text-2); }
-:where(body:not(.site)) .wk-axis b:first-child { transform: none; }
-:where(body:not(.site)) .wk-axis b:last-child { transform: translateX(-100%); }
-@media (max-width: 479.98px) { :where(body:not(.site)) .wk-row { grid-template-columns: 44px minmax(0, 1fr) 54px; gap: 8px; } :where(body:not(.site)) .wk-day small { display: none; } }
 
 @media (min-width: 640px) {
   :where(body:not(.site)) .today { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -143,8 +128,6 @@
 :where(body:not(.site)) .pf-stacks dl:first-child { padding-left: 0; border-left: 0; }
 :where(body:not(.site)) .pf-stacks dt { color: var(--text-2); font-size: 14px; }
 :where(body:not(.site)) .pf-stacks dd { margin: 2px 0 0; color: var(--ink); font: 800 22px/1.1 var(--type-font-display); letter-spacing: -.02em; }
-:where(body:not(.site)) .pf-now { display: flex; align-items: center; gap: 6px; margin-top: 14px; color: var(--text-2); font-size: 14px; }
-:where(body:not(.site)) .pf-now .live { flex: none; width: 8px; height: 8px; background: var(--accent); }
 @media (max-width: 719.98px) {
   :where(body:not(.site)) .pf { gap: 0 16px; }
   :where(body:not(.site)) .pf .pf-photo { width: 72px; height: 72px; border-radius: 14px; font-size: 22px; }
@@ -153,7 +136,7 @@
   :where(body:not(.site)) .pf-main { display: contents; }
   :where(body:not(.site)) .pf-name, :where(body:not(.site)) .pf-sub { grid-column: 2; }
   :where(body:not(.site)) .pf-name { align-self: end; }
-  :where(body:not(.site)) .pf-stacks, :where(body:not(.site)) .pf-now { grid-column: 1 / -1; }
+  :where(body:not(.site)) .pf-stacks { grid-column: 1 / -1; }
   :where(body:not(.site)) .pf-stacks { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
   :where(body:not(.site)) .pf-stacks dl { display: contents; }
   :where(body:not(.site)) .pf-stacks dl > div { padding: 8px 0; border-bottom: 1px solid var(--rule); }
@@ -197,20 +180,14 @@ html body:not(.site) .graph .bubble.net-node.alumni text { fill: var(--on-accent
 html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken); stroke: var(--muted); }
 :where(body:not(.site)) .erased { color: var(--muted); font-style: italic; }
 
-/* Computers outside the clusters: noted under the plan, in a box */
-:where(body:not(.site)) .scale-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 24px; margin-top: 26px; }
-:where(body:not(.site)) .scale-row > .scale { margin-top: 0; }
-:where(body:not(.site)) .scale-row .plan-other { margin: 0; padding: 6px 10px; border: 1px solid var(--rule); }
+/* Computers outside the clusters: noted under the plan */
+:where(body:not(.site)) .plan + .plan-other { margin: 18px auto 0; }
 /* Connections: each group named in a box, no ground behind it */
 :where(body:not(.site)) .graph .group-box { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
 
-:where(body:not(.site)) #where-clusters > .note { margin-bottom: 14px; }
 /* Facts read on one line each: label left, figure right */
 :where(body:not(.site)) .facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
 @media (min-width: 600px) { :where(body:not(.site)) .facts dt, :where(body:not(.site)) .facts dd { white-space: nowrap; } }
-
-/* Every key of a chart sits in a box */
-:where(body:not(.site)) .block .legend, :where(body:not(.site)) .block .scale { display: inline-flex; width: fit-content; max-width: 100%; padding: 6px 10px; border: 1px solid var(--rule); }
 
 /* Correction rates: the figure with its fraction, a thin bar of the share, then what it means */
 :where(body:not(.site)) .rates .rate .v { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -224,8 +201,7 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .recip-row .frac-v { margin-top: 8px; font: 800 26px/1 var(--type-font-display); letter-spacing: -.02em; }
 :where(body:not(.site)) .recip-row .frac-v small { font-size: .6em; color: var(--muted); }
 :where(body:not(.site)) .recip-row .rate-bar { margin: 8px 0 6px; }
-/* Connections: the key beside the graph, centred on it; Your circle a little lower */
-:where(body:not(.site)) .conn-wrap { align-items: center; }
+/* Your circle a little lower than its key */
 :where(body:not(.site)) [data-panel="network"] .net-plot { margin-top: 48px; } /* centred on the key under "Who", not on its heading */
 
 /* Evaluations outside the 42cursus, folded under the feedback */
@@ -233,14 +209,23 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) details.apart > summary { cursor: pointer; color: var(--text-2); font-size: 14px; min-height: 32px; display: flex; align-items: center; gap: 6px; }
 :where(body:not(.site)) details.apart .list { max-height: 320px; }
 
-/* Keys: one distance everywhere, above a chart (or on its title's line) and under it */
-:where(body:not(.site)) .block .legend { margin: 0 0 16px; }
-:where(body:not(.site)) .block-head .legend { margin: 0; }
-:where(body:not(.site)) .block-head:has(.legend) { margin-bottom: 16px; }
-:where(body:not(.site)) .block figure + .legend, :where(body:not(.site)) .block .centred + .legend { margin: 18px 0 0; }
-:where(body:not(.site)) .block .heat + .scale, :where(body:not(.site)) .block .cal-scroll + .scale { margin-top: 18px; }
-/* Duration and booking lead: the two charts on the same line whatever their notes' length */
-:where(body:not(.site)) [data-panel="duration"] > .note, :where(body:not(.site)) [data-panel="lead"] > .note { min-height: 3em; margin-bottom: 22px; }
-/* The calendar's first year: days before the start faint, the first day ringed */
+/* Keys: one place everywhere, on the block title's line at the right (alone at the right when the block has no title),
+   no box, 16 px above the chart */
+:where(body:not(.site)) .block-head .legend, :where(body:not(.site)) .block-head .scale { margin: 0; }
+:where(body:not(.site)) .block-head .scale .grp:last-child { margin-right: 0; }
+:where(body:not(.site)) .block-head > :only-child { margin-left: auto; }
+:where(body:not(.site)) .block-head:has(.legend, .scale, .head-figure) { margin-bottom: 16px; }
+:where(body:not(.site)) [data-panel="correctors"] .block-head .legend { padding: 6px 10px; border: 1px solid var(--rule); }
+/* a panel with no title of its own right under the section's title: no second rule */
+:where(body:not(.site)) section > :is(h2, .panel-head) + .cols > [data-panel]:not(:has(> h3:first-child, > .block-head:first-child)) { border-top: 0; padding-top: 0; }
+/* The calendar: days outside the data are empty squares, the first day ringed */
 :where(body:not(.site)) .cal-grid .d.pre { background: transparent; box-shadow: inset 0 0 0 1px var(--seat-empty); }
-:where(body:not(.site)) .cal-grid .d.start { outline: 2px solid var(--ink); outline-offset: 1px; }
+:where(body:not(.site)) .cal-grid .d.start { box-shadow: inset 0 0 0 max(var(--c-seat-ring), 1.5px) var(--highlight); }  /* its own edge, in gold */
+
+/* ---------- loading: the page's shape in grey until its data arrives ---------- */
+:where(body:not(.site)) .skel .sk { display: block; height: 14px; margin: 12px 0; background: var(--sunken); animation: sk-pulse 1.2s ease-in-out infinite alternate; }
+:where(body:not(.site)) .skel .sk:nth-child(2) { width: 60%; }
+:where(body:not(.site)) .skel .sk.tall { height: 200px; margin-top: 20px; }
+:where(body:not(.site)) .skel h2 .sk { width: min(320px, 60%); height: .8em; margin: 0; }
+@keyframes sk-pulse { to { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .skel .sk { animation: none; } }

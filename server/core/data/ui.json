@@ -4,7 +4,7 @@
   "breakpoints": "Minimum viewport width in px where each step starts. Below 'desktop' the band wraps its page links onto a second row.",
   "components": "Values directly inside a component apply from 0 px up; an object named after a breakpoint (\"desktop\", \"large\"…) overrides them from that width up.",
   "chart.big": "Bars read by name (Skills as bars, Technical domains): big-font-size is the names and figures, big-row-height each bar's row, big-label-max the widest a name gets before it wraps.",
-  "panels": "Each panel is a block inside a section, on a 12-column grid: span (1-12), order, height of its chart, hidden.",
+  "panels": "Each panel is a block inside a section, on a 12-column grid: span (1-12), order, height of its chart, gap (the space above it), hidden.",
   "site.field": "The landing's animated background: seats (small cubes bouncing off each other), shapes (Swiss forms floating), bubbles (blobs that merge and part) or cubes (cubes that grow and shed smaller ones). Try one with ?field=… on the landing."
  },
  "breakpoints": {
@@ -38,6 +38,14 @@
    "good": "#237a4b",
    "critical": "#c2402f",
    "neutral": "#7d8696",
+   "on-image": "#ffffff",
+   "wash": "#0b0e10",
+   "star-edge": "#8a6d1c",
+   "highlight": "#b7791f",
+   "day-early": "#3a4651",
+   "day-morning": "#b3bcc2",
+   "day-afternoon": "#75828d",
+   "day-night": "#1c262e",
    "seat-empty": "#e1e5e6",
    "focus": "#111417",
    "edge-shadow": "rgba(17, 20, 23, .16)",
@@ -69,6 +77,14 @@
    "good": "#4cc38a",
    "critical": "#f0715e",
    "neutral": "#7a8394",
+   "on-image": "#ffffff",
+   "wash": "#0b0e10",
+   "star-edge": "#c9982f",
+   "highlight": "#f2c14e",
+   "day-early": "#56636e",
+   "day-morning": "#d3dade",
+   "day-afternoon": "#8f9ca7",
+   "day-night": "#3b4752",
    "seat-empty": "#21272b",
    "focus": "@accent-ink",
    "edge-shadow": "rgba(0, 0, 0, .5)",
@@ -410,6 +426,9 @@
    "mobile": {
     "span": 12,
     "height": "200px"
+   },
+   "desktop": {
+    "span": 6
    }
   },
   "calendar": {
@@ -420,6 +439,9 @@
   "heat-presence": {
    "mobile": {
     "span": 12
+   },
+   "desktop": {
+    "span": 6
    }
   },
   "table-seats": {
@@ -455,7 +477,8 @@
   "where-clusters": {
    "mobile": {
     "span": 12,
-    "height": "200px"
+    "height": "200px",
+    "gap": "0px"
    }
   },
   "table-log": {
@@ -675,8 +698,16 @@
    "mobile": {
     "span": 12
    },
-   "large": {
-    "span": 6
+   "desktop": {
+    "span": 7
+   }
+  },
+  "depth-projects": {
+   "mobile": {
+    "span": 12
+   },
+   "desktop": {
+    "span": 5
    }
   },
   "by-hour": {
@@ -702,7 +733,7 @@
     "span": 12
    },
    "large": {
-    "span": 5
+    "span": 7
    }
   },
   "promo": {
@@ -710,7 +741,39 @@
     "span": 12
    },
    "large": {
+    "span": 5
+   }
+  },
+  "pace-xp": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
     "span": 7
+   }
+  },
+  "coal-recent": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 5
+   }
+  },
+  "coal-bonus": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 9
+   }
+  },
+  "bonus-history": {
+   "mobile": {
+    "span": 12
+   },
+   "large": {
+    "span": 3
    }
   },
   "coal-sources": {

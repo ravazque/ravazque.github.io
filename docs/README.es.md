@@ -15,35 +15,40 @@ https://ravazque.github.io), que muestra un pequeño resumen de 42 publicado des
 
 ## Qué ves
 
-Cinco páginas. Cada elección (periodo, filtros, vistas) queda en la dirección, así que cualquier vista se puede
+Seis páginas. Cada elección (periodo, filtros, vistas) queda en la dirección, así que cualquier vista se puede
 guardar o compartir.
 
-- **Perfil**, la página de inicio. Tu ficha (foto, milestone, curso de C o de Python, grado, grupos como mentor,
-  wallet, puntos de corrección, inicio del 42cursus y piscina, la fecha estimada de alumni) y después lo que cambia
-  hoy: el bonus de horas de la coalición (horas en los últimos siete días frente a 50 h y 80 h, cuándo toca cada uno y
-  qué sesiones están a punto de salir de la ventana), dónde estás sentado, tus últimos siete días hora a hora, tu
-  próxima evaluación y los proyectos que tienes abiertos. Debajo: seis módulos de resumen, tu ritmo, el avance y el
-  blackhole, skills, coaliciones y promo, el bonus en detalle, los puntos que diste a tu coalición, logros (una línea
-  por serie, con los niveles anteriores plegados), títulos y quests, tus campus, todas las personas con las que
-  coincidiste, los proyectos que has corregido y el registro completo de evaluaciones con búsqueda.
-- **Proyectos**: cada proyecto e intento con filtros, agrupados por milestone (0 = Libft … 6) para el Common Core de
-  C y el de Python (un proyecto hecho en los dos cursos dice cuál es cuál), exportación a CSV, exámenes, dominios
-  técnicos (las etiquetas RNCP de la intra) y una línea de tiempo con todos los intentos.
+- **Perfil**, la página de inicio. Tu ficha (foto, milestone, curso de C o de Python, grado, grupos como mentor, nivel,
+  puesto en la promo, wallet, puntos de corrección, inicio del 42cursus y piscina, la fecha estimada de alumni), el
+  bonus de horas de la coalición (horas en los últimos siete días frente a 50 h y 80 h, cuándo toca cada uno y qué
+  sesiones están a punto de salir de la ventana), dónde estás sentado, tu próxima evaluación, los proyectos que tienes
+  abiertos, este mes, tres módulos de resumen (proyectos, evaluaciones y horas) y tus campus. Debajo, cualquier sección
+  de las otras páginas que añadas como widget, a media o toda la anchura y colocada arrastrándola (se guarda en tu
+  navegador).
+- **Proyectos**: tu avance (nivel, XP por mes, tu promo por nivel, la fecha estimada de alumni), skills, cada proyecto
+  e intento con filtros, agrupados por milestone (0 = Libft … 6) para el Common Core de C y el de Python (un proyecto
+  hecho en los dos cursos dice cuál es cuál), exportación a CSV, exámenes, dominios técnicos (las etiquetas RNCP de la
+  intra), una línea de tiempo con todos los intentos y tus logros (una línea por serie, con los niveles anteriores
+  plegados), eventos, títulos y quests.
 - **Evaluaciones**: lo que devuelves (horas, personas, valoración, cuántas acabaron por debajo de 50, Outstanding en
   los dos sentidos, según el milestone de la otra persona), recibidas y hechas a lo largo del tiempo, cuándo ocurren
   (día × hora, por hora del día, duración, con cuánta antelación se reservaron), tu feedback (como estudiante solo
-  cuenta el 42cursus; las piscinas Discovery van aparte) y los puntos de corrección.
-- **Personas**: quién te evaluó más, tus conexiones agrupadas por dónde están hoy, tu círculo y tus compañeros de
-  equipo. Las cuentas que 42 borró no aparecen en los gráficos (una nota dice cuántas) y en las tablas salen como
-  "Cuenta borrada"; el staff tiene su propio grupo.
-- **Campus**: el plano con cada ordenador que usaste (los que están fuera de los clústeres, aparte), días y horas (el
-  primer año completo, con tu primer día marcado), el registro de sesiones y dónde ocurren las evaluaciones: las que
-  recibiste o hiciste, por clúster, con el clúster de la otra persona en los últimos 60 días.
+  cuenta el 42cursus; las piscinas Discovery van aparte), los puntos de corrección, los proyectos que has corregido y
+  el registro completo de evaluaciones con búsqueda.
+- **Coalición**: las coaliciones de Madrid y lo último que diste a la tuya, el bonus de horas en detalle con todos los
+  bonus hasta ahora, y tus puntos por origen y por mes.
+- **Personas**: quién te evaluó más, todas las personas con las que coincidiste, tus conexiones agrupadas por dónde
+  están hoy, tu círculo y tus compañeros de equipo. Las cuentas que 42 borró no aparecen en los gráficos (una nota dice
+  cuántas) y en las tablas salen como "Cuenta borrada"; el staff tiene su propio grupo.
+- **Campus**: tu ritmo (racha, semanas activas, tu día hora a hora), el plano con cada ordenador que usaste (los que
+  están fuera de los clústeres, aparte), días y horas (el primer año completo, con tu primer día marcado), el registro
+  de sesiones, dónde ocurren las evaluaciones (las que recibiste o hiciste, por clúster, con el clúster de la otra
+  persona en los últimos 60 días).
 
 Cosas que merece la pena probar:
 
 - El **selector de periodo**: todo, solo el 42cursus o solo la piscina.
-- La **estrella** de la barra: un atajo a las mejores vistas (dónde te sentaste, quién te evaluó, tu círculo…).
+- La **estrella** junto al título de cada sección: las secciones marcadas se reúnen en el menú de la estrella de la barra, a un clic.
 - **Actualizar** tus datos una vez por hora; la extracción va en segundo plano con una barra de progreso.
 - **Ajustes** (el engranaje): acento (el azul de 42 por defecto o el color de tu coalición, ajustado para que se lea
   bien en los dos temas), tema (sistema, claro u oscuro), periodo e idioma.

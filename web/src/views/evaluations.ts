@@ -4,11 +4,7 @@ import { GOOD, BAD, S1, S2, legend, lines, vbars } from "../lib/charts";
 import { ACCENT, SLATE, heat } from "../lib/graphs";
 import { ARROW, avatar, esc } from "../lib/h";
 import { facts, table } from "../lib/table";
-import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, kpis, noMark, radios, search, section, select, shownLogin } from "./page";
-
-/** A panel whose key sits on its title's line, to the right. */
-const headBlock = (panel: string, title: string, key: string, body: string, note = "") =>
-  `<div class="block" data-panel="${panel}"><div class="block-head"><h3>${esc(title)}</h3>${key}</div>${note ? `<p class="note">${esc(note)}</p>` : ""}${body}</div>`;
+import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, noMark, radios, search, section, select, shownLogin, erased } from "./page";
 
 export function evaluations(pg: Page): Section[] {
   const f = pg.f, D = pg.D, S = D.summary, W = D.when;
@@ -25,12 +21,8 @@ export function evaluations(pg: Page): Section[] {
   const roles: [string, string][] = [[f.t("role.received"), S1], [f.t("role.given"), S2]];
   const cm = pg.v.derive?.community || { hours: 0, people: 0, correctors: 0, rating: null, rated: 0 };
 
-  // the hours of the day, shown in When
-  const hourBlock = headBlock("by-hour", f.t("stats.hour_title"), legend(roles), vbars(f, (D.stats?.by_hour || []).map((x: any) => String(x.hour).padStart(2, "0")),
-    [[f.t("role.received"), (D.stats?.by_hour || []).map((x: any) => x.received), S1], [f.t("role.given"), (D.stats?.by_hour || []).map((x: any) => x.given), S2]],
-    { label: f.t("stats.hour_title"), fmt: (v) => f.num(v), every: 3, emptyText: f.t("empty.period") }), f.t("stats.hour_note_ssr"));
   // correction statistics live in Contribution
-  let statBlocks: string[] = [];
+  let statBlocks: string[] = [], byGroup = "";
   const st = D.stats;
   if (st) {
     const bar = (n: number, total: number, cls = "") => `<span class="rate-bar${cls}" aria-hidden="true"><i style="width:${total ? ((100 * n) / total).toFixed(1) : 0}%"></i></span>`;
@@ -45,14 +37,14 @@ export function evaluations(pg: Page): Section[] {
     statBlocks = [
       block("fail-rates", `<div class="rates">${rate(st.failed_given, "stats.failed_given")}${rate(st.failed_received, "stats.failed_received")}`
         + `<div class="rate recip"><h3>${esc(f.t("stats.reciprocity_title"))}</h3>${recip(R.i_gave_back, R.gave_me, f.t("stats.recip_in", { back: R.i_gave_back, gave_me: R.gave_me }))}`
-        + `${recip(R.they_gave_back, R.i_gave, f.t("stats.recip_out", { back: R.they_gave_back, i_gave: R.i_gave }))}</div></div>`),
-      groups.length ? `<div class="block" data-panel="by-group"><h3>${esc(f.t("stats.group_title"))}</h3><p class="note">${esc(f.t("stats.group_note"))}</p><div class="table-wrap">${table(f, [
+        + `${recip(R.they_gave_back, R.i_gave, f.t("stats.recip_out", { back: R.they_gave_back, i_gave: R.i_gave }))}</div></div>`)];
+    byGroup = groups.length ? `<div class="block" data-panel="by-group"><h3>${esc(f.t("nav.by_group"))}</h3><div class="table-wrap">${table(f, [
         { k: "i", t: f.t("col.group"), nw: true, f: (r) => esc(f.t(`groups.${r.g}`)) },
         { k: "received", t: f.t("col.received"), s: f.t("abbr.received"), num: true, nw: true },
         { k: "in_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, nw: true, f: (r) => pctCell(r.in_pct) },
         { k: "given", t: f.t("col.given"), s: f.t("abbr.given"), num: true, nw: true },
         { k: "out_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, nw: true, f: (r) => pctCell(r.out_pct) },
-      ], groups, { label: f.t("stats.group_title"), sort: ["i", 1] })}</div></div>` : ""];
+      ], groups, { label: f.t("stats.group_title"), sort: ["i", 1] })}</div></div>` : "";
   }
 
   out.push({ id: "community", nav: f.t("community.title"), html: section("community", f.t("community.title"), cols(block("kpis", kpis([
@@ -60,20 +52,28 @@ export function evaluations(pg: Page): Section[] {
     [f.t("community.k_people"), f.num(cm.people), [esc(f.t("community.s_people"))]],
     [f.t("community.k_correctors"), f.num(cm.correctors), [esc(f.t("community.s_correctors"))]],
     [f.t("community.k_rating"), cm.rating !== null ? f.num(cm.rating, 2) : "–", [esc(f.t("community.s_rating", { n: f.num(cm.rated) }))]],
-  ])), ...statBlocks), { lede: esc(f.t("community.lede")) }) });
+  ])), ...statBlocks)) });
+  // by the other person's milestone, and beside it, small, the projects you corrected
+  const corrected = `<div class="block" data-panel="depth-projects" id="in-depth"><h3>${esc(f.t("depth.given_title"))}</h3>`
+    + `<div class="table-wrap tall">${correctedTable(pg)}</div></div>`;
+  out.push({ id: "by-group", nav: f.t("stats.group_section"), html: section("by-group", "", cols(byGroup, corrected),
+    { head: `<h2>${esc(f.t("stats.group_section"))} ${info(f.t("stats.group_note"))}</h2>` }) });
 
   const sw = pg.seg("role", [["received", f.t("role.received")], ["given", f.t("role.given")]], role, f.t("log.role_label"), "over-time");
+  // the months up to the report's, the quiet ones as zero
+  const months: string[] = W.months.length ? monthsBetween(W.months[0], [W.months[W.months.length - 1], pg.asOf.slice(0, 7)].sort()[1]) : [];
+  const at = (vals: number[]) => months.map((x) => vals[W.months.indexOf(x)] || 0);
   out.push({ id: "over-time", nav: f.t("over_time.title"), html: section("over-time", "", cols(
     headBlock("recv-monthly", f.t(role === "received" ? "received.monthly_title" : "given.monthly_title"),
       legend([[f.t("flag.ok"), base], [f.t("flag.outstanding"), GOOD], [f.t("flag.negative"), BAD]]),
-      vbars(f, W.months.map((x: string) => f.monthLabel(x)), [[f.t("flag.ok"), m.ok, base], [f.t("flag.outstanding"), m.outstanding, GOOD], [f.t("flag.negative"), m.negative, BAD]],
+      vbars(f, months.map((x: string) => f.monthLabel(x)), [[f.t("flag.ok"), at(m.ok), base], [f.t("flag.outstanding"), at(m.outstanding), GOOD], [f.t("flag.negative"), at(m.negative), BAD]],
         { label: f.t("received.monthly_title"), stacked: true, fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
     headBlock("marks", f.t("received.marks_title"), legend(roles), vbars(f, bins.map(([b]) => b), [[f.t("role.received"), count(D.received), S1], [f.t("role.given"), count(D.given), S2]],
       { label: f.t("received.marks_title"), xtitle: f.t("received.final_mark"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
-    block("cum-evals", legend(roles) + lines(f, [[f.t("role.received"), W.cum_received, S1], [f.t("role.given"), W.cum_given, S2]],
-      { label: f.t("received.cum_title"), emptyText: f.t("empty.period") }), f.t("received.cum_title")),
-    block("cum-out", legend(roles) + lines(f, [[f.t("received.out_received"), W.cum_out_received, S1], [f.t("received.out_given"), W.cum_out_given, S2]],
-      { label: f.t("received.cum_out_title"), emptyText: f.t("empty.period") }), f.t("received.cum_out_title"))),
+    headBlock("cum-evals", f.t("received.cum_title"), legend(roles), lines(f, [[f.t("role.received"), W.cum_received, S1], [f.t("role.given"), W.cum_given, S2]],
+      { label: f.t("received.cum_title"), emptyText: f.t("empty.period") })),
+    headBlock("cum-out", f.t("received.cum_out_title"), legend(roles), lines(f, [[f.t("received.out_received"), W.cum_out_received, S1], [f.t("received.out_given"), W.cum_out_given, S2]],
+      { label: f.t("received.cum_out_title"), emptyText: f.t("empty.period") }))),
   { head: `<div class="panel-head"><h2>${esc(f.t("over_time.title"))}</h2>${sw}</div>`, lede: esc(lede) }) });
 
   const edges = (e: number[]) => e.map((x, i) => (i < e.length - 1 ? `${x}–${e[i + 1]}` : `${x}+`));
@@ -82,16 +82,13 @@ export function evaluations(pg: Page): Section[] {
   const factsHtml = dp ? `<dl class="facts">${facts([[f.t("depth.received_duration"), esc(dur(dp.received_duration))], [f.t("depth.given_duration"), esc(dur(dp.given_duration))],
     [f.t("depth.lead"), esc(dp.received_lead_h === null || dp.received_lead_h === undefined ? "–" : f.t("depth.hours", { h: f.num(dp.received_lead_h, 1) }))],
     [f.t("depth.streak"), f.num(dp.outstanding_streak)]])}</dl>` : "";
-  const dq = pg.q("dq", "").slice(0, 80);
   out.push({ id: "when", nav: f.t("nav.when"), html: section("when", f.t("when.title"), factsHtml + cols(
     block("heat-recv", heat(f, W.heat_received, ACCENT, f.t("unit.evaluations")), f.t("when.heat_recv_title")),
     block("heat-given", heat(f, W.heat_given, SLATE, f.t("unit.evaluations")), f.t("when.heat_given_title")),
-    `<div class="block" data-panel="duration"><h3>${esc(f.t("when.duration_title"))}</h3><p class="note">${esc(f.t("when.duration_note"))}</p>`
-    + vbars(f, edges(W.duration_edges), [[f.t("role.received"), W.duration_received, S1], [f.t("role.given"), W.duration_given, S2]],
-      { label: f.t("when.duration_title"), xtitle: f.t("when.minutes"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }) + legend(roles) + "</div>",
-    `<div class="block" data-panel="lead"><h3>${esc(f.t("when.lead_title"))}</h3><p class="note">${esc(f.t("when.lead_note"))}</p>`
-    + vbars(f, edges(W.lead_edges), [[f.t("role.received"), W.lead_received, S1], [f.t("role.given"), W.lead_given, S2]],
-      { label: f.t("when.lead_title"), xtitle: f.t("when.hours_before"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }) + legend(roles) + "</div>", hourBlock),
+    `<div class="block" data-panel="duration"><div class="block-head"><h3>${esc(f.t("when.duration_title"))} ${info(f.t("when.duration_note"))}</h3>${legend(roles)}</div>` + vbars(f, edges(W.duration_edges), [[f.t("role.received"), W.duration_received, S1], [f.t("role.given"), W.duration_given, S2]],
+      { label: f.t("when.duration_title"), xtitle: f.t("when.minutes"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }) + "</div>",
+    headBlock("lead", f.t("when.lead_title"), legend(roles), vbars(f, edges(W.lead_edges), [[f.t("role.received"), W.lead_received, S1], [f.t("role.given"), W.lead_given, S2]],
+      { label: f.t("when.lead_title"), xtitle: f.t("when.hours_before"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }))),
   { lede: esc(f.t("when.lede", { recv: f.num(W.median_duration_received), given: f.num(W.median_duration_given), lead: f.num(W.median_lead_received, 1) })) }) });
 
   // feedback: the criteria both ways, and every rating under the maximum you got as a corrector
@@ -141,7 +138,7 @@ export function evaluations(pg: Page): Section[] {
     crit ? block("table-feedback", `<div class="table-wrap">${crit}</div>`, f.t("feedback.criteria_title"), f.t("feedback.criteria_note")) : "",
     block("low-feedback", `<ul class="list">${lowItems}</ul>${apart}`, f.t("feedback.low_title"),
       rated.length ? f.t("feedback.low_note", { low: low.length, ratings: f.plural(rated.length, "count.ratings") }) : "")),
-  { lede: esc(f.t("feedback.lede")) }) });
+  ) });
 
   const CP = D.correction_points;
   out.push({ id: "points", nav: f.t("nav.points"), html: section("points", f.t("points.title"), cols(
@@ -150,20 +147,16 @@ export function evaluations(pg: Page): Section[] {
       Object.entries(CP.reasons || {}).map(([reason, v]: [string, any]) => ({ reason, ...v })), { label: f.t("points.reasons_title"), sort: ["count", -1] })}</div>`, f.t("points.reasons_title"))),
   { lede: esc(CP.series.length ? f.t("points.lede", { earned: CP.earned, spent: CP.spent, max: CP.max }) : f.t("empty.points")) }) });
 
-  out.push({ id: "corrected", nav: f.t("nav.corrected"), html: section("corrected", f.t("depth.given_title"),
-    `<div class="block" data-panel="depth-projects" id="in-depth">`
-    + filters("depth", search("dq", dq, f.t("common.search"), f.t("depth.search_placeholder")))
-    + `<div id="depth-results"><div class="table-wrap tall">${correctedTable(pg, dq)}</div></div></div>`, { lede: esc(f.t("depth.given_note")) }) });
   out.push(logSection(pg));
   return out;
 }
 
 /** The projects you corrected in this period: how often, how many people, the marks you gave. */
-function correctedTable(pg: Page, dq: string): string {
-  const f = pg.f, q = dq.toLowerCase();
+/** The projects you corrected, compact: how often, your average mark and, opened, whom you evaluated with each mark. */
+function correctedTable(pg: Page): string {
+  const f = pg.f;
   const by = new Map<string, any[]>();
   for (const e of pg.D.given) {
-    if (q && !e.project.toLowerCase().includes(q)) continue;
     if (!by.has(e.project)) by.set(e.project, []);
     by.get(e.project)!.push(e);
   }
@@ -182,17 +175,14 @@ function correctedTable(pg: Page, dq: string): string {
   };
   const detail = (r: any) => {
     const people = [...r.whom].sort((a: any, b: any) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-    const lis = people.map(([login, evs]: [string, any[]]) => `<li><a class="code" href="${esc(pg.url("home", { q: login, log: "given" }))}#log">${esc(login)}</a>`
+    const lis = people.map(([login, evs]: [string, any[]]) => `<li><a class="code" href="${esc(pg.url("evaluations", { q: login, log: "given" }))}#log">${esc(login)}</a>`
       + `${evs.length > 1 ? ` ×${evs.length}` : ""} <span class="marks">${[...evs].sort((a, b) => a.begin.localeCompare(b.begin)).map(chip).join("")}</span></li>`).join("");
     return `<details><summary>${esc(f.plural(r.people, "depth.whom"))}</summary><ul class="evals">${lis}</ul></details>`;
   };
   return table(f, [
-    { k: "project", t: f.t("col.project"), nw: true }, { k: "times", t: f.t("col.times"), num: true }, { k: "people", t: f.t("col.people"), num: true },
+    { k: "project", t: f.t("col.project") }, { k: "times", t: f.t("col.times"), num: true },
     { k: "avg", t: f.t("col.avg_mark"), s: f.t("abbr.avg_mark"), num: true, f: (r) => (r.avg !== null ? f.num(r.avg, 1) : noMark(f, r.last_e)) },
-    { k: "fails", t: f.t("col.fails"), s: f.t("abbr.fails"), num: true, hide: true },
-    { k: "outstanding", t: f.t("col.outstanding"), s: f.t("abbr.outstanding"), num: true, hide: true },
-    { k: "first", t: f.t("col.first"), nw: true, hide: true }, { k: "last", t: f.t("col.last"), nw: true },
-  ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t(q ? "empty.search_depth" : "empty.period") });
+  ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t("empty.period") });
 }
 
 function logSection(pg: Page): Section {
@@ -227,9 +217,9 @@ function logSection(pg: Page): Section {
   };
   const person = (p: any, checked: boolean) => {
     const seat = checked ? (p.host ? f.t("log.at_seat", { seat: p.host }) : f.t("log.not_logged")) : "";
-    return `${avatar(p)}${shownLogin(f, p.login)}` + (seat ? `<span class="sub">${esc(seat)}</span>` : "");
+    return `${erased(p.login) ? "" : avatar(p)}${shownLogin(f, p.login, false)}` + (seat ? `<span class="sub">${esc(seat)}</span>` : "");
   };
-  const when = { k: "begin_ms", t: f.t("col.when"), cls: "when", f: (e: any) => `<span class="nw">${esc(e.begin.slice(0, 10))}</span> <span class="nw">${esc(e.begin.slice(11))}`
+  const when = { k: "begin_ms", t: f.t("col.when"), cls: "when", f: (e: any) => `<span class="nw">${esc(f.day(e.begin))}</span> <span class="nw">${esc(e.begin.slice(11))}`
     + (e.filled ? ` ${ARROW} ${esc(e.filled.slice(11))}` : "") + "</span>" };
   const flagCol = { k: "flag", t: f.t("col.flag"), nw: true, sv: (e: any) => (e.outstanding ? 2 : e.negative_flag ? 0 : 1), f: (e: any) => flagBadge(f, e) };
   const minCol = { k: "duration_min", t: f.t("col.duration"), s: f.t("abbr.duration"), num: true, nw: true,
@@ -251,5 +241,5 @@ function logSection(pg: Page): Section {
     + search("q", pg.q("q", "").slice(0, 80), f.t("common.search"), f.t("log.search_placeholder")));
   return { id: "log", nav: f.t("nav.log"), html: section("log", f.t("log.title"), form + `<div id="log-results"><p class="controls-after"><span class="note">${esc(f.plural(rows.length, "count.evaluations"))}</span></p>`
     + cols(block("table-log", `<div class="table-wrap tall">${table(f, columns as any, rows, { label: f.t("log.title"), sort: ["begin_ms", -1], empty: f.t("empty.search_log"), sticky: true, detail: fbText })}</div>`)) + "</div>",
-  { lede: esc(f.t("log.lede")) }) };
+  ) };
 }

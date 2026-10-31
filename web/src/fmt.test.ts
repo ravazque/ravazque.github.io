@@ -26,6 +26,13 @@ test("pyRound rounds exact ties to even, like Python", () => {
   expect(pyRound(-3.25, 1)).toBe(-3.2);
 });
 
+test("a level always has two decimals, in each language's separator", () => {
+  expect(new Fmt("en").level(16.9)).toBe("16.90");
+  expect(new Fmt("es").level(7)).toBe("7,00");
+  expect(new Fmt("en").level(12.084)).toBe("12.08");
+  expect(new Fmt("en").level(null)).toBe("–");
+});
+
 test("missing keys show the key; vars fill in", () => {
   const f = new Fmt("en");
   expect(f.t("no.such.key")).toBe("no.such.key");

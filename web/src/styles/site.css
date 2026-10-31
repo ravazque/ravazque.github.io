@@ -34,7 +34,9 @@ body.site .mark .lit { fill: var(--accent); }
 .pitch { margin: 6px 0 8px; font-size: var(--c-section-lede-size); color: var(--text-2); max-width: 52ch; }
 .error { margin: 0; color: var(--critical); font-weight: 600; }
 .landing .btn { align-self: flex-start; }
-.dev-logins { display: flex; flex-wrap: wrap; gap: 10px; }
+.dev-logins { display: flex; flex-wrap: wrap; gap: 16px 24px; }
+.dev-pick { display: flex; align-items: flex-end; gap: 10px; flex: 1 1 260px; }
+.landing .dev-pick .btn { align-self: flex-end; }  /* level with its list, not the landing's top-aligned buttons */
 .signin { display: flex; flex-direction: column; gap: 14px; }
 
 /* "What you'll see": a dialog over the landing; the backdrop and Escape close it */

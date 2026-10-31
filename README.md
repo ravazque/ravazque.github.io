@@ -14,34 +14,36 @@ small 42 snapshot published from the app.
 
 ## What you see
 
-Five pages. Every choice (period, filters, views) lives in the address, so any view can be bookmarked or shared.
+Six pages. Every choice (period, filters, views) lives in the address, so any view can be bookmarked or shared.
 
-- **Profile**, the home page. Your card (photo, milestone, C or Python track, grade, groups such as mentor, wallet,
-  correction points, kickoff and piscine, the estimated alumni date), then what changes today: the coalition logtime
-  bonus (hours in the rolling seven days against 50 h and 80 h, when each one is due, which sessions are about to
-  leave the window), where you are sitting, your last seven days hour by hour, your next evaluation and the projects
-  you have open. Below: six summary modules, your rhythm, pace and blackhole, skills, coalitions and promo, the bonus
-  in detail, the points you gave your coalition, achievements (one line per series, the earlier levels folded),
-  titles and quests, your campuses, everyone you crossed paths with, the projects you corrected and the full
-  evaluation log with search.
-- **Projects**: every project and attempt with filters, grouped by milestone (0 = Libft … 6) for the C and the Python
-  Common Core (a project done in both tracks says which), CSV export, exams, technical domains (the intra's RNCP tags)
-  and a timeline of every attempt.
+- **Profile**, the home page. Your card (photo, milestone, C or Python track, grade, groups such as mentor, level,
+  promo rank, wallet, correction points, kickoff and piscine, the estimated alumni date), the coalition logtime bonus
+  (hours in the rolling seven days against 50 h and 80 h, when each one is due, which sessions are about to leave the
+  window), where you are sitting, your next evaluation, the projects you have open, this month, three summary
+  modules (projects, evaluations and logged time) and your campuses. Under them, any section of the other pages you add
+  as a widget, half or full width, dragged into place (kept in your browser).
+- **Projects**: your pace (level, XP per month, your promo by level, the estimated alumni date), skills, every project
+  and attempt with filters, grouped by milestone (0 = Libft … 6) for the C and the Python Common Core (a project done
+  in both tracks says which), CSV export, exams, technical domains (the intra's RNCP tags), a timeline of every attempt
+  and your achievements (one line per series, the earlier levels folded), events, titles and quests.
 - **Evaluations**: what you give back (hours, people, rating, how many ended below 50, Outstanding both ways, by the
   other person's milestone), received and given over time, when they happen (weekday × hour, by hour of the day,
   duration, how far ahead they were booked), your feedback (as a student, only the 42cursus counts; Discovery
-  piscines are set apart) and correction points.
-- **People**: who evaluated you most, your connections grouped by where they are today, your circle and your
-  teammates. Accounts that 42 erased are left out of the graphs (a note says how many) and read "Deleted account" in
-  tables; staff get a group of their own.
-- **Campus**: the seat plan with every computer you used (computers outside the clusters noted apart), days and
-  hours (the first year in full, your first day marked), the sessions log, and where evaluations happen: the ones you
-  received or gave, by cluster, with the other side's cluster for the last 60 days.
+  piscines are set apart), correction points, the projects you corrected and the full evaluation log with search.
+- **Coalition**: the coalitions of Madrid and what you last gave yours, the logtime bonus in detail with every bonus
+  so far, and your points by source and month.
+- **People**: who evaluated you most, everyone you met, your connections grouped by where they are
+  today, your circle and your teammates. Accounts that 42 erased are left out of the graphs (a note says how many) and
+  read "Deleted account" in tables; staff get a group of their own.
+- **Campus**: your rhythm (streak, active weeks, your day hour by hour), the seat plan with every computer you used
+  (computers outside the clusters noted apart), days and hours (the first year in full, your first day marked), the
+  sessions log, where evaluations happen (the ones you received or gave, by cluster, with the other side's cluster for
+  the last 60 days).
 
 Things worth trying:
 
 - The **period switch**: everything, the 42cursus only, or the C Piscine only.
-- The **star** in the band: a shortcut to the best views (where you sat, who evaluated you, your circle…).
+- The **star** by every section's title: starred sections gather in the star menu of the band, one click away.
 - **Refresh** your data once an hour; the extraction runs in the background with a progress bar.
 - **Settings** (the gear): accent (the default 42 blue or your coalition's colour, adjusted for contrast in both
   themes), theme (system, light or dark), period and language.

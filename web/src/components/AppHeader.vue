@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// The band on top of every app page: brand, pages, the sync state, the highlights, and you (photo, login, level,
-// coalition) opening your settings and account.
+// The band on top of every app page: brand, pages, the sync state, the sections you starred, and your settings and
+// account.
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { api, fmt, setLang, settings, state } from "../state";
+import { api, fmt, pins, setLang, settings, state } from "../state";
 import { applyAccentChoice, applyTheme, setTheme, type Theme } from "../lib/look";
 import { closePops } from "../lib/behave";
 import { forget, idbShelf } from "../lib/copy";
@@ -22,6 +22,7 @@ const accent = ref(applyAccentChoice(settings.get("accent"), user.value?.coaliti
 watch(() => user.value?.coalition_color, (c) => { accent.value = applyAccentChoice(settings.get("accent"), c); });
 
 const label = (k: PageKey) => f.value.t(`pages.${k}`);
+const starHref = (s: { page: string; id: string }) => `${PATHS[s.page as PageKey] || "/app"}#${s.id}`;
 const href = (k: PageKey) => PATHS[k] + (props.period ? `?period=${props.period}` : "");
 
 const busy = computed(() => ["queued", "running"].includes(status.value?.state || ""));
@@ -79,13 +80,11 @@ function go(path: string) { closePops(); router.push(path); }
             <svg class="caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg>
           </summary>
           <nav class="best-menu" :aria-label="f.t('best.label')">
-            <a v-for="b in [['/app#today', 'today.bonus', 'today.title'], ['/app/campus#seats', 'seats.title', 'pages.campus'], ['/app/campus#days', 'days.title', 'pages.campus'],
-                            ['/app/people#who', 'who.title', 'pages.people'], ['/app/people#circle', 'network.title', 'pages.people'],
-                            ['/app#in-depth', 'depth.given_title', 'pages.home'], ['/app#log', 'log.title', 'pages.evaluations']]"
-               :key="b[0]" :href="b[0]" @click.prevent="go(b[0])">
+            <a v-for="s in pins.stars" :key="s.page + s.id" :href="starHref(s)" @click.prevent="go(starHref(s))">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /></svg>
-              <span>{{ f.t(b[1]) }}<small>{{ f.t(b[2]) }}</small></span>
+              <span>{{ s.label }}<small>{{ label(s.page as PageKey) }}</small></span>
             </a>
+            <p v-if="!pins.stars.length" class="best-empty">{{ f.t("best.empty") }}</p>
           </nav>
         </details>
         <template v-if="tour">

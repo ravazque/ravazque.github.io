@@ -1,9 +1,10 @@
 <script setup lang="ts">
 // The landing: who it is for, the policy to accept, sign in with 42, and the accent field behind the mark.
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { fmt, loadSession, state } from "../state";
 import { startLanding } from "../legacy/field.js";
+import { enhanceSelect } from "../legacy/controls.js";
 import Mark from "./Mark.vue";
 import SiteLinks from "./SiteLinks.vue";
 
@@ -14,11 +15,23 @@ const plan = ref<HTMLElement | null>(null), features = ref<HTMLDialogElement | n
 const error = computed(() => (["signin", "consent"].includes(String(route.query.error)) ? String(route.query.error) : ""));
 let stop: (() => void) | undefined;
 
+// dev only: the saved profiles to enter as, the synthetic tests in one list and the real ones in another
+const devGroups = computed(() => (["test", "real"] as const).map((kind) => ({ kind,
+  items: (state.session?.dev_logins || []).filter((d) => d.label.toLowerCase().startsWith(kind)).map((d) => ({ href: d.href, name: d.label.split(" · ").slice(1).join(" · ") })) }))
+  .filter((g) => g.items.length));
+const devPick = ref<HTMLElement | null>(null);
+function enterDev(ev: Event) {
+  const href = (ev.target as HTMLFormElement).querySelector("select")?.value;
+  if (href?.startsWith("/dev/login?")) location.href = href;
+}
+
 onMounted(async () => {
   document.title = f.value.t("site.name");
   if (plan.value) stop = startLanding(plan.value);
   const s = await loadSession().catch(() => null);
   if (s?.user) router.replace("/app");
+  await nextTick();
+  devPick.value?.querySelectorAll("select").forEach((el) => enhanceSelect(el));
 });
 onBeforeUnmount(() => stop?.());
 
@@ -48,7 +61,13 @@ const acceptParts = computed(() => f.value.t("site.accept").split("{privacy}"));
           <a class="btn secondary" href="/about#features" aria-haspopup="dialog" @click.prevent="features?.showModal()">{{ f.t("landing.features_button") }}</a>
         </div>
       </form>
-      <p v-if="state.session?.dev_logins?.length" class="dev-logins"><a v-for="d in state.session.dev_logins" :key="d.href" class="btn secondary" :href="d.href">{{ d.label }}</a></p>
+      <div v-if="devGroups.length" ref="devPick" class="dev-logins">
+        <form v-for="g in devGroups" :key="g.kind" class="dev-pick" @submit.prevent="enterDev">
+          <label class="field"><span>{{ f.t(`dev.${g.kind}`) }}</span>
+            <select><option v-for="d in g.items" :key="d.href" :value="d.href">{{ d.name }}</option></select></label>
+          <button class="btn secondary" type="submit">{{ f.t("dev.enter") }}</button>
+        </form>
+      </div>
       <p class="note">{{ f.t("site.only_madrid") }} {{ f.t("site.independent") }}</p>
       <SiteLinks />
     </section>

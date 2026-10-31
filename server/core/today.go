@@ -190,7 +190,8 @@ func BuildToday(all *OMap, upcoming []UpcomingEval, now time.Time) Today {
 	}
 
 	for _, p := range all.Os("projects") {
-		if p.V("validated") == true || p.S("status") == "finished" {
+		// a piscine project left open (an exam nobody closed) is not in progress once in the 42cursus
+		if p.V("validated") == true || p.S("status") == "finished" || p.S("track") == "piscine" {
 			continue
 		}
 		reg, err := time.ParseInLocation("2006-01-02 15:04", p.S("registered"), Madrid)

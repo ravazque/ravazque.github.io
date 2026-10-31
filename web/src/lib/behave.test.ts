@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { sortBodies, sortRows } from "./behave";
+import { outward, sortBodies, sortRows } from "./behave";
 import { csv, parseCsv } from "./table";
 
 const row = (...vals: string[]) => {
@@ -36,4 +36,14 @@ test("CSV previews read quoted fields, doubled quotes and line breaks inside quo
   expect(parseCsv("a,b")).toEqual([["a", "b"]]);
   expect(parseCsv("")).toEqual([]);
   expect(parseCsv(csv([["x, y", 'say "hi"', null]]))).toEqual([["x, y", 'say "hi"', ""]]);
+});
+
+test("a ring node's tip goes outwards in one of eight directions", () => {
+  expect(outward(-90)).toEqual([0, -1]); // top: above, centred
+  expect(outward(90)).toEqual([0, 1]); // bottom: below, centred
+  expect(outward(0)).toEqual([1, 0]); // right: beside
+  expect(outward(180)).toEqual([-1, 0]);
+  expect(outward(45)).toEqual([1, 1]); // bottom right: below and to the right
+  expect(outward(-135)).toEqual([-1, -1]); // top left
+  expect(outward(80)).toEqual([0, 1]); // nearly at the bottom still opens straight down
 });

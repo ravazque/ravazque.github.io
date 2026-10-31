@@ -157,6 +157,9 @@ func panelRules(panel string, p *OMap) []string {
 	if v, ok := p.Get("height"); ok {
 		rules = append(rules, fmt.Sprintf("%s .plot { height: %s; }", sel, pyStr(v)))
 	}
+	if v, ok := p.Get("gap"); ok {
+		rules = append(rules, fmt.Sprintf("%s { margin-top: %s; }", sel, pyStr(v)))
+	}
 	if v, ok := p.Get("hidden"); ok {
 		d := "block"
 		if v == true {
@@ -301,8 +304,10 @@ func ValidateUI(cfg *OMap) []string {
 					errs = append(errs, fmt.Sprintf("panels.%s.%s.span: must be 1–12", panel, bp))
 				}
 			}
-			if v, ok := p.Get("height"); ok && !reLength.MatchString(pyStr(v)) {
-				errs = append(errs, fmt.Sprintf("panels.%s.%s.height: invalid length %q", panel, bp, pyStr(v)))
+			for _, k := range []string{"height", "gap"} {
+				if v, ok := p.Get(k); ok && !reLength.MatchString(pyStr(v)) {
+					errs = append(errs, fmt.Sprintf("panels.%s.%s.%s: invalid length %q", panel, bp, k, pyStr(v)))
+				}
 			}
 		}
 	}

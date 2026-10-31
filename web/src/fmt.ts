@@ -97,6 +97,9 @@ export class Fmt {
     return (neg && (whole !== "0" || frac) ? "-" : "") + whole + (frac ? this.dec + frac : "");
   };
 
+  /** A 42 level always with two decimals ("16.90"): the decimals are the way to the next level. */
+  level = (v: number | null | undefined) => (v === null || v === undefined ? "–" : pyRound(Number(v), 2).toFixed(2).replace(".", this.dec));
+
   pct = (a: number, b: number) => (b ? `${pyRound((100 * a) / b)}%` : "–");
 
   hm = (seconds: number | null | undefined) => {

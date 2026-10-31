@@ -12,7 +12,7 @@ export const router = createRouter({
     { path: "/app/delete", component: () => import("./components/Confirm.vue"), props: { kind: "delete" } },
     { path: "/app/publish", component: () => import("./components/Confirm.vue"), props: { kind: "publish" } },
     { path: "/app/corrections", redirect: "/app/evaluations" },
-    { path: "/app/:page(projects|evaluations|people|campus)?", component: () => import("./components/Dashboard.vue") },
+    { path: "/app/:page(projects|evaluations|people|campus|coalition)?", component: () => import("./components/Dashboard.vue") },
     { path: "/:rest(.*)*", redirect: "/" },
   ],
   scrollBehavior(to, from, saved) {

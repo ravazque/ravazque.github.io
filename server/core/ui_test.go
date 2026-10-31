@@ -39,6 +39,17 @@ func TestValidateUIClean(t *testing.T) {
 	}
 }
 
+func TestPanelGapIsTheSpaceAboveIt(t *testing.T) {
+	p, _ := ParseOrdered([]byte(`{"span":12,"gap":"48px"}`))
+	if got := strings.Join(panelRules("hours-month", p), " "); !strings.Contains(got, `[data-panel="hours-month"] { margin-top: 48px; }`) {
+		t.Fatalf("rules = %s", got)
+	}
+	bad, _ := ParseOrdered([]byte(`{"breakpoints":{"mobile":0},"panels":{"hours-month":{"mobile":{"gap":"lots"}}}}`))
+	if errs := ValidateUI(bad); len(errs) != 1 || !strings.Contains(errs[0], "panels.hours-month.mobile.gap") {
+		t.Fatalf("errors = %v", errs)
+	}
+}
+
 func TestOrderedJSONRoundTripKeepsEmptyLists(t *testing.T) {
 	in := `{"a":[],"b":{"c":[[]],"d":null},"e":[1,{}]}`
 	m, err := ParseOrdered([]byte(in))

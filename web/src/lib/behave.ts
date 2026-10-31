@@ -29,7 +29,15 @@ export function sortBodies<T extends Element>(bodies: T[], index: number, dir: n
 let tipFor: Element | null = null;
 const tipEl = () => document.getElementById("tip") as HTMLElement | null;
 
-/** beside the mark it explains, never over it: right, else left; a mark too wide for either gets it above or below */
+/** The way out from a ring's centre at an angle (degrees, 0 = right, 90 = down), in eighths: -1, 0 or 1 across and down. */
+export function outward(deg: number): [number, number] {
+  const a = (deg * Math.PI) / 180, x = Math.cos(a), y = Math.sin(a), q = (v: number) => (Math.abs(v) < 0.38 ? 0 : Math.sign(v));
+  return [q(x), q(y)];
+}
+
+/** beside the mark it explains, never over it: right, else left; a mark too wide for either gets it above or below. A node
+ * of a ring (data-angle) gets it right next to it, outwards from the ring's centre, turned the other way on a side the
+ * window has no room on */
 function placeTip(el: HTMLElement, x: number | null = null) {
   const tip = tipEl();
   if (!tip || (tipFor === el && tip.style.display === "block")) return;
@@ -43,8 +51,14 @@ function placeTip(el: HTMLElement, x: number | null = null) {
   const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 10, edge = 8;
   let left: number, top = r.top + r.height / 2 - h / 2;
   const fitsRight = r.right + gap + w <= innerWidth - edge, fitsLeft = r.left - gap - w >= edge;
-  if (el.dataset.side === "left" && fitsLeft) left = r.left - gap - w;
-  else if (fitsRight) left = r.right + gap;
+  const fitsAbove = r.top - gap - h >= edge, fitsBelow = r.bottom + gap + h <= innerHeight - edge;
+  if (el.dataset.angle) {
+    let [hx, vy] = outward(+el.dataset.angle);
+    if (hx > 0 && !fitsRight) hx = -1; else if (hx < 0 && !fitsLeft) hx = 1;
+    if (vy > 0 && !fitsBelow) vy = -1; else if (vy < 0 && !fitsAbove) vy = 1;
+    left = hx > 0 ? r.right + gap : hx < 0 ? r.left - gap - w : r.left + r.width / 2 - w / 2;
+    top = vy > 0 ? r.bottom + gap : vy < 0 ? r.top - gap - h : r.top + r.height / 2 - h / 2;
+  } else if (fitsRight) left = r.right + gap;
   else if (fitsLeft) left = r.left - gap - w;
   else {
     left = (x ?? r.left + r.width / 2) - w / 2;
@@ -204,6 +218,11 @@ export function settle(root: ParentNode) {
   $$("[data-roving]", root).forEach((g) => $$("[data-cell]", g).forEach((c, i) => { c.tabIndex = i ? -1 : 0; }));
   hintScroll(root);
   $$<HTMLSelectElement>("select", root).forEach((s) => enhanceSelect(s));
+  // an image that cannot load (offline, the CDN down) leaves its place: a banner to its colour, a logo to a square
+  $$<HTMLImageElement>("img[data-fallback]", root).forEach((img) => {
+    const drop = () => (img.classList.contains("logo") ? img.replaceWith(Object.assign(document.createElement("i"), { className: "logo" })) : img.remove());
+    if (img.complete && !img.naturalWidth) drop(); else img.addEventListener("error", drop, { once: true });
+  });
   $$(".cal-scroll", root).forEach((c) => { c.scrollLeft = c.scrollWidth; }); // narrow screens open on the latest months
   reveal ??= window.IntersectionObserver ? new IntersectionObserver((entries) => entries.forEach((e) => {
     if (!e.isIntersecting) return;

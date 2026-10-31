@@ -11,10 +11,11 @@ export type View = {
   promo: any; coalitions: any[]; all_projects: any[]; all_cursus?: any[];
 };
 
-export const PAGES = ["home", "projects", "evaluations", "people", "campus"] as const;
+export const PAGES = ["home", "projects", "evaluations", "coalition", "people", "campus"] as const;
 export type PageKey = (typeof PAGES)[number];
 export const PATHS: Record<PageKey, string> = {
   home: "/app", projects: "/app/projects", evaluations: "/app/evaluations", people: "/app/people", campus: "/app/campus",
+  coalition: "/app/coalition",
 };
 export const KINDS = ["nice", "rigorous", "interested", "punctuality"];
 
@@ -27,6 +28,9 @@ export class Page {
   }
 
   get light() { return this.v.light === true; }
+  /** The day the period's time series reach ("" for the piscine, which is over): a quiet stretch up to the report's day
+   * still shows, as empty days and months. */
+  get asOf(): string { return this.period === "piscine" ? "" : (this.D.generated || "").slice(0, 10); }
   get seats() { return this.v.seat_days; }
   get allProjects(): any[] { return this.v.all_projects || this.D.projects; }
 
@@ -59,13 +63,17 @@ export const section = (id: string, title: string, body: string, o: { lede?: str
 export const block = (panel: string, body: string, title = "", note = "") =>
   `<div class="block" data-panel="${panel}">${title ? `<h3>${esc(title)}</h3>` : ""}${note ? `<p class="note">${esc(note)}</p>` : ""}${body}</div>`;
 
+/** A block whose key sits on its title's line, at the right: the one place for every chart's key. */
+export const headBlock = (panel: string, title: string, key: string, body: string, note = "") =>
+  `<div class="block" data-panel="${panel}"><div class="block-head"><h3>${esc(title)}</h3>${key}</div>${note ? `<p class="note">${esc(note)}</p>` : ""}${body}</div>`;
+
 export const cols = (...blocks: string[]) => `<div class="cols" data-grid>${blocks.join("")}</div>`;
 
 export const info = (text: string) =>
   `<span class="info" tabindex="0" role="note" data-tip="${esc(text)}" title="${esc(text)}" aria-label="${esc(text)}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 7.2v4.3M8 4.6v.1"/></svg></span>`;
 
-export const kpis = (items: [string, string, string[]][]) =>
-  `<div class="kpis">${items.map(([k, v, subs]) => `<div><h3>${esc(k)}</h3><p class="v">${v}</p>${subs.filter(Boolean).map((x) => `<p class="s">${x}</p>`).join("")}</div>`).join("")}</div>`;
+export const kpis = (items: ([string, string, string[]] | [string, string, string[], string])[]) =>
+  `<div class="kpis">${items.map(([k, v, subs, cls]) => `<div${cls ? ` class="${cls}"` : ""}><h3>${esc(k)}</h3><p class="v">${v}</p>${subs.filter(Boolean).map((x) => `<p class="s">${x}</p>`).join("")}</div>`).join("")}</div>`;
 
 export const search = (name: string, value: string, label: string, placeholder: string) =>
   `<label class="field"><span>${esc(label)}</span><input type="search" name="${name}" value="${esc(value)}" placeholder="${esc(placeholder)}" autocomplete="off"></label>`;
@@ -112,9 +120,37 @@ export function myTrack(extras: any): "c" | "python" | null {
 /** 42 renames an account it erased to "3b3-NNNNN": nobody can tell who it was. */
 export const erased = (login?: string | null) => /^3b3-\d+$/.test(login || "");
 
-/** A login as shown: an erased account reads "Deleted account", the original in its tip. */
-export const shownLogin = (f: Fmt, login: string) =>
-  erased(login) ? `<span class="erased" title="${esc(login)}">${esc(f.t("who.erased"))}</span>` : esc(login);
+/** A login as shown: an erased account has none ("–"); where no name follows, it reads "Deleted" instead. */
+export const shownLogin = (f: Fmt, login: string, named = true) =>
+  erased(login) ? (named ? "–" : deletedName(f)) : esc(login);
+
+/** The name of an erased account (42 replaces it with placeholder letters): "Deleted", in italics. */
+export const deletedName = (f: Fmt) => `<span class="erased">${esc(f.t("who.erased_name"))}</span>`;
 
 /** An ISO instant (any offset) as epoch milliseconds. */
 export const msOf = (iso: string) => new Date(iso).getTime();
+
+/** The months from one "YYYY-MM" to another, both included. */
+export function monthsBetween(from: string, to: string): string[] {
+  const out: string[] = [];
+  let [y, m] = from.split("-").map(Number);
+  for (let k = `${from}`; k <= to; k = `${y}-${String(m).padStart(2, "0")}`) {
+    out.push(k);
+    [y, m] = m === 12 ? [y + 1, 1] : [y, m + 1];
+  }
+  return out;
+}
+
+/** Consecutive days and their values carried on to a later day with zeros. */
+export function daysTo(days: string[], values: number[], end: string): [string[], number[]] {
+  if (!days.length || !end || days[days.length - 1] >= end) return [days, values];
+  const d = [...days], v = [...values], t = new Date(`${days[days.length - 1]}T00:00:00Z`);
+  for (;;) {
+    t.setUTCDate(t.getUTCDate() + 1);
+    const k = t.toISOString().slice(0, 10);
+    if (k > end) break;
+    d.push(k);
+    v.push(0);
+  }
+  return [d, v];
+}

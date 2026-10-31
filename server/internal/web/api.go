@@ -231,6 +231,42 @@ func (s *Server) avatar(w http.ResponseWriter, r *http.Request, si signedIn) {
 	w.Write(b)
 }
 
+// coalitionImage serves a coalition's logo or banner from the intra CDN (the page's CSP keeps every image on this
+// origin): only coalition paths of the CDN, cached for a day for everyone, and an SVG never runs (sandboxed, no sniffing).
+func (s *Server) coalitionImage(w http.ResponseWriter, r *http.Request, si signedIn) {
+	u := r.URL.Query().Get("u")
+	if !strings.HasPrefix(u, s.API.CDN+"coalition/") || strings.Contains(u, "..") || strings.ContainsAny(u, "?#") {
+		w.WriteHeader(404)
+		return
+	}
+	key := "coalimg:" + u
+	var b []byte
+	ct := ""
+	if cached, ok := s.M.Get(key); ok {
+		ct, b = string(cached[:bytes.IndexByte(cached, '\n')]), cached[bytes.IndexByte(cached, '\n')+1:]
+	} else {
+		var err error
+		if b, ct, err = s.API.Avatar(r.Context(), u); err != nil {
+			s.M.Set(key, []byte("\n"), 10*time.Minute, false) // a missing image is not asked for again at once
+			w.WriteHeader(404)
+			return
+		}
+		if ct = strings.TrimSpace(strings.Split(ct, ";")[0]); !imageTypes[ct] && ct != "image/svg+xml" {
+			ct, b = "", nil
+		}
+		s.M.Set(key, append([]byte(ct+"\n"), b...), 24*time.Hour, false)
+	}
+	if len(b) == 0 {
+		w.WriteHeader(404)
+		return
+	}
+	w.Header().Set("Content-Type", ct)
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Cache-Control", "private, max-age=86400")
+	w.Write(b)
+}
+
 // stats is the owner's live operations page: counters, queue, API budget and who is signed in.
 func (s *Server) stats(w http.ResponseWriter, r *http.Request, si signedIn) {
 	if !s.isOwner(si.u) {
