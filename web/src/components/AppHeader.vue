@@ -32,9 +32,8 @@ const syncWait = computed(() => {
   if (!s) return "";
   if (busy.value) return f.value.t(s.message || `status.${s.state}`);
   if (s.state === "failed") return f.value.t("status.failed");
-  return s.next_refresh_in > 0 ? `[${waitText(s.next_refresh_in)}]` : "";
+  return s.next_refresh_in > 0 ? f.value.t("refresh.next_in", { time: waitText(s.next_refresh_in) }) : "";
 });
-const lastText = computed(() => (status.value?.last ? f.value.t("refresh.last", { when: f.value.stamp(new Date(status.value.last).getTime()) }) : ""));
 const fresh = computed(() => !!status.value?.last && Date.now() - new Date(status.value.last).getTime() < 3600e3);
 
 async function refresh() {
@@ -68,7 +67,6 @@ function go(path: string) { closePops(); router.push(path); }
     </nav>
     <div class="topbar-end">
       <div v-if="status && !offline" class="sync" aria-live="polite">
-        <span v-if="lastText" class="last">{{ lastText }}</span>
         <span v-if="syncWait" :class="busy ? 'visually-hidden' : 'wait'">{{ syncWait }}</span>
         <div v-if="busy" class="progress"><i :style="{ width: Math.round(100 * (status.progress || 0)) + '%' }"></i></div>
         <button class="btn on-band" type="button" :disabled="busy || status.next_refresh_in > 0 || status.frozen" @click="refresh">{{ f.t("refresh.button") }}</button>

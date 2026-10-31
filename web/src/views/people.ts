@@ -1,9 +1,9 @@
-// People: who evaluated you, everyone you crossed paths with, your connections and circle, and your teammates.
+// People: who evaluated you, everyone you met (or only your teammates), your connections and your circle.
 import { GOOD, S1, hbars, legend } from "../lib/charts";
 import { GROUPS, bubbles, netClass, ring } from "../lib/graphs";
 import { avatar, badge, esc } from "../lib/h";
 import { table } from "../lib/table";
-import { Page, Section, block, cols, deletedName, filters, info, search, section, erased, shownLogin } from "./page";
+import { Page, Section, cols, deletedName, filters, info, search, section, erased, shownLogin } from "./page";
 
 /** The circle's links with the student's own side rebuilt from their evaluations (contacts' lists only see "→ me"). */
 function circleLinks(net: any, me: string, given: any[], received: any[]) {
@@ -58,10 +58,20 @@ export function people(pg: Page): Section[] {
         extra: (i) => (top[i].outstanding_to_me ? `${top[i].outstanding_to_me} ${f.t("flag.outstanding")}` : "") }) + "</div>"), { lede }) });
 
   const rate = (v: any) => (v === null || v === undefined ? "–" : f.num(v, 2));
+  // everyone you met, or only your teammates: one switch, one search
+  const met = pg.q("met", "all", ["all", "teammates"]);
+  const metSwitch = pg.seg("met", [["all", f.t("who.met_all")], ["teammates", f.t("teammates.title")]], met, f.t("who.met_label"), "crossed");
+  const tm = (D.insights?.teammates || []).filter((r: any) => !q || JSON.stringify([r.login, r.name, r.projects]).toLowerCase().includes(q.toLowerCase()));
+  const teammates = `<div class="table-wrap">${table(f, [
+    { k: "login", t: f.t("col.login"), nw: true, f: (r) => shownLogin(f, r.login) }, { k: "name", t: f.t("col.name"), hide: true, f: (r) => (erased(r.login) ? deletedName(f) : esc(r.name || "")) },
+    { k: "teams", t: f.t("col.teams"), num: true },
+    { k: "projects", t: f.t("col.projects"), sv: (r) => Object.keys(r.projects || {}).length,
+      f: (r) => esc(Object.entries(r.projects || {}).map(([n, c]: [string, any]) => (c > 1 ? `${n} (x${c})` : n)).join(", ")) },
+  ], tm, { label: f.t("teammates.title"), sort: ["teams", -1], empty: f.t("teammates.none") })}</div>`;
   out.push({ id: "crossed", nav: f.t("nav.crossed"), html: section("crossed", "", cols(
     `<div class="block" data-panel="table-people">`
     + filters("who", search("q", q, f.t("common.search"), f.t("who.search_placeholder")))
-    + `<div id="who-results"><div class="table-wrap">${table(f, [
+    + `<div id="who-results">${met === "teammates" ? teammates : `<div class="table-wrap">${table(f, [
       { k: "login", t: f.t("col.login"), nw: true, f: (p) => `${erased(p.login) ? "" : avatar(p)}${shownLogin(f, p.login)}${p.staff ? " " + badge(f.t("who.staff")) : ""}` },
       { k: "name", t: f.t("col.name"), cls: "name", hide: true, f: (p) => (erased(p.login) ? deletedName(f) : `<span title="${esc(p.name || "")}">${esc(p.name || "")}</span>`) },
       { k: "group", t: f.t("col.group"), nw: true, hide: true, sv: (p) => order(groupOf.get(p.login)), f: (p) => (groupOf.has(p.login) ? esc(f.t(`groups.${groupOf.get(p.login)}`)) : "–") },
@@ -75,8 +85,8 @@ export function people(pg: Page): Section[] {
       { k: "projects_on_me", t: f.t("col.details"), cls: "details", hide: true, sv: (p) => Object.keys(p.projects_on_me || {}).length, f: details },
       { k: "first", t: f.t("col.first"), nw: true, hide: true, f: (p) => esc(f.day(p.first)) },
       { k: "last", t: f.t("col.last"), nw: true, hide: true, f: (p) => esc(f.day(p.last)) },
-    ], rows, { label: f.t("who.people_title"), sort: ["evaluated_me", -1], sticky: true })}</div></div></div>`),
-  { head: `<h2>${esc(f.t("who.people_title"))} ${info(f.t("who.people_note"))}</h2>` }) });
+    ], rows, { label: f.t("who.people_title"), sort: ["evaluated_me", -1], sticky: true })}</div>`}</div></div>`),
+  { head: `<div class="panel-head"><h2>${esc(f.t("who.people_title"))} ${info(f.t("who.people_note"))}</h2>${metSwitch}</div>` }) });
 
   const mode = pg.q("mode", "received", ["received", "given", "mix"]);
   const conn = connections(pg).filter((c: any) => !erased(c.login));
@@ -126,14 +136,5 @@ export function people(pg: Page): Section[] {
     + (has ? `<div class="net-wrap"><aside class="net-side" aria-label="${esc(f.t("network.key_who"))}">${side}</aside><div class="net-plot graph-panel">`
       + `<div class="graph-wide">${ring(f, net, { width: 720, height: 640, compact: false, uid: "w" })}</div><div class="graph-narrow">${ring(f, net, { width: 400, height: 400, compact: true, uid: "n" })}</div></div></div>`
       : `<p class="note">${esc(f.t("network.empty"))}</p>`) + "</div>"), { head: `<h2>${esc(f.t("network.title"))}${netGone ? ` ${info(erasedNote(f, netGone))}` : ""}</h2>`, lede: esc(f.t("network.lede")) }) });
-
-  const tm = D.insights?.teammates || [];
-  out.push({ id: "teammates", nav: f.t("nav.teammates"), html: section("teammates", f.t("teammates.title"), cols(block("teammates", !tm.length ? `<p class="note">${esc(f.t("teammates.none"))}</p>` : `<div class="table-wrap">${table(f, [
-    { k: "login", t: f.t("col.login"), nw: true, f: (r) => shownLogin(f, r.login) }, { k: "name", t: f.t("col.name"), hide: true, f: (r) => (erased(r.login) ? deletedName(f) : esc(r.name || "")) },
-    { k: "teams", t: f.t("col.teams"), num: true },
-    { k: "projects", t: f.t("col.projects"), sv: (r) => Object.keys(r.projects || {}).length,
-      f: (r) => esc(Object.entries(r.projects || {}).map(([n, c]: [string, any]) => (c > 1 ? `${n} (x${c})` : n)).join(", ")) },
-  ], tm, { label: f.t("teammates.title"), sort: ["teams", -1], empty: f.t("teammates.none") })}</div>`)), { count: f.plural(tm.length, "depth.whom") }) });
-
   return out;
 }

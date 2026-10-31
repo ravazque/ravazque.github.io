@@ -36,8 +36,11 @@ export function campus(pg: Page): Section[] {
 
   const topSeat = L.seats[0];
   const overlap = L.seats.reduce((s: number, x: any) => s + x.seconds, 0) - L.total_seconds;
-  const lede = topSeat ? pair(f.t("seats.lede_total", { total: f.hm(L.total_seconds), computers: f.plural(L.seats.length, "count.computers"),
-    clusters: f.plural(Object.keys(L.clusters).length, "count.clusters") }),
+  // how many of the campus's computers you used, out of those on the plan
+  const onPlan = Object.values(layout).reduce((s: number, c: any) => s + c.rows * c.seats, 0);
+  const lede = topSeat ? pair(onPlan ? f.t("seats.lede_of", { total: f.hm(L.total_seconds), computers: f.plural(L.seats.length, "count.computers"),
+    seats: f.num(onPlan), clusters: f.plural(Object.keys(layout).length, "count.clusters") })
+    : f.t("seats.lede_total", { total: f.hm(L.total_seconds), computers: f.plural(L.seats.length, "count.computers"), clusters: f.plural(Object.keys(L.clusters).length, "count.clusters") }),
   f.t("seats.lede_top", { seat: topSeat.host, hours: f.nb(topSeat.hours, "h"), sessions: f.plural(topSeat.sessions, "count.sessions") })) : esc(f.t("empty.sessions"));
   const seatsHead = `<h2>${esc(f.t("seats.title"))}`
     + (overlap >= 60 ? ` ${info(capital(f.t("seats.lede_overlap", { overlap: f.hm(overlap) })))}` : "") + "</h2>";

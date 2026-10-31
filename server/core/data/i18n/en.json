@@ -407,7 +407,6 @@
  "refresh.button": "Refresh",
  "refresh.wait": {"one": "{count} min", "other": "{count} min"},
  "refresh.wait_s": {"one": "{count} s", "other": "{count} s"},
- "refresh.last": "Updated {when}",
  "refresh.running": "Refreshing · {pct}",
  "stats.button": "Server stats",
  "stats.title": "Server stats",
@@ -970,5 +969,9 @@
  "dev.real": "Real profiles",
  "dev.enter": "Enter",
  "rhythm.s_share": "{pct}% {part}",
- "stats.group_section": "Milestones and projects"
+ "stats.group_section": "Milestones and projects",
+ "who.met_all": "Everyone",
+ "who.met_label": "Show",
+ "refresh.next_in": "The API reloads in [{time}]",
+ "seats.lede_of": "Total: {total} on {computers} out of {seats} in {clusters}."
 }

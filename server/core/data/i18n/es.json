@@ -407,7 +407,6 @@
  "refresh.button": "Actualizar",
  "refresh.wait": {"one": "{count} min", "other": "{count} min"},
  "refresh.wait_s": {"one": "{count} s", "other": "{count} s"},
- "refresh.last": "Actualizado {when}",
  "refresh.running": "Actualizando · {pct}",
  "stats.button": "Estadísticas del servidor",
  "stats.title": "Stats del servidor",
@@ -970,5 +969,9 @@
  "dev.real": "Perfiles reales",
  "dev.enter": "Entrar",
  "rhythm.s_share": "{pct}% {part}",
- "stats.group_section": "Milestones y proyectos"
+ "stats.group_section": "Milestones y proyectos",
+ "who.met_all": "Todas",
+ "who.met_label": "Mostrar",
+ "refresh.next_in": "La API se recargará en [{time}]",
+ "seats.lede_of": "Total: {total} en {computers} de {seats} en {clusters}."
 }

@@ -90,10 +90,9 @@ export const WIDGETS: [Exclude<PageKey, "home">, string, string][] = [
   ["evaluations", "log", "nav.log"],
   ["coalition", "standing", "nav.standing"], ["coalition", "bonus", "bonus.title"], ["coalition", "coal-points", "nav.coal"],
   ["people", "who", "nav.who"], ["people", "crossed", "nav.crossed"], ["people", "connections", "nav.connections"], ["people", "circle", "nav.network"],
-  ["people", "teammates", "nav.teammates"],
   ["campus", "rhythm", "rhythm.title"], ["campus", "seats", "nav.seats"], ["campus", "days", "nav.days"], ["campus", "sessions", "nav.sessions"], ["campus", "where", "nav.where"],
 ];
-export const HALF = new Set(["exams", "by-group", "points", "standing", "bonus", "coal-points", "teammates", "rhythm", "community"]);
+export const HALF = new Set(["exams", "by-group", "points", "standing", "bonus", "coal-points", "rhythm", "community"]);
 const BUILD: Record<string, (pg: Page) => Section[]> = { projects, evaluations, coalition, people, campus };
 
 /** The added sections on a two-column grid, each built by its own page (once per page), in the student's order, size

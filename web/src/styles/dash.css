@@ -412,7 +412,15 @@
 :where(body:not(.site)) .table-foot .note b { color: var(--ink); }
 
 /* your latest points beside the coalitions: as tall as them, the rest scrolls */
-:where(body:not(.site)) [data-panel="coal-recent"] .list li > span:first-child { min-width: 0; }
+:where(body:not(.site)) [data-panel="coal-recent"] .list li > span:first-child { min-width: 0; font-size: 17px; }
+/* the points: on the right, centred on their line, a little larger */
+:where(body:not(.site)) [data-panel="coal-recent"] .list li { align-items: center; }
+:where(body:not(.site)) [data-panel="coal-recent"] .list li .when { font: 700 17px var(--type-font-display); color: var(--ink); }
+/* Projects you corrected as tall as the table by milestone beside it, the rest scrolls */
+@media (min-width: 960px) {
+  :where(body:not(.site)) [data-panel="depth-projects"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }
+  :where(body:not(.site)) [data-panel="depth-projects"] .table-wrap { flex: 1; min-height: 0; max-height: none; }
+}
 @media (min-width: 1280px) {
   :where(body:not(.site)) [data-panel="coal-recent"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }
   :where(body:not(.site)) [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }

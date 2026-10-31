@@ -184,6 +184,14 @@
 :where(body:not(.site)) .heat .c { aspect-ratio: 1; border-radius: var(--c-cell-radius); background: var(--seat-empty); min-width: 0; }
 :where(body:not(.site)) .heat-wide .heat { grid-template-columns: 40px repeat(24, minmax(0, 1fr)); max-width: 1100px; margin-inline: auto; }
 :where(body:not(.site)) .heat-wide .heat .c { aspect-ratio: 1.5; }
+/* beside Hours per month the week fills the same height: its 7 × 24 grid stays, the cells grow taller */
+@media (min-width: 960px) {
+  :where(body:not(.site)) [data-panel="heat-presence"] { display: flex; flex-direction: column; }
+  :where(body:not(.site)) [data-panel="heat-presence"] .heat-wide { flex: 1; display: flex; }
+  :where(body:not(.site)) [data-panel="heat-presence"] .heat { flex: 1; max-width: none; grid-template-rows: auto repeat(7, minmax(14px, 1fr)); }
+  :where(body:not(.site)) [data-panel="heat-presence"] .heat .c { aspect-ratio: auto; }
+  :where(body:not(.site)) [data-panel="heat-presence"] .heat > span:not(.c):not(.h) { align-self: center; }
+}
 :where(body:not(.site)) .heat .h { text-align: center; }
 :where(body:not(.site)) .cal-grid .d.on:hover, :where(body:not(.site)) .heat .c[data-tip]:hover { outline: var(--c-focus-width) solid var(--focus); outline-offset: 1px; }
 

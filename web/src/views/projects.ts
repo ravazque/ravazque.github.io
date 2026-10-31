@@ -81,7 +81,7 @@ export function projects(pg: Page): Section[] {
   const pc = D.insights?.pace;
   const due = dv.alumni_due;
   const lvl: [string, string][] = [];
-  if (main) lvl.push([f.t("home.k_level"), `${f.level(main.level)}${main.grade ? ` ${badge(main.grade)}` : ""}`]);
+  if (main) lvl.push([f.t("home.k_level"), f.level(main.level)]);
   if (pc) {
     if (pc.months_since_kickoff !== null && pc.months_since_kickoff !== undefined) lvl.push([f.t("pace.since"), esc(f.plural(pc.months_since_kickoff, "pace.months"))]);
     lvl.push([f.t("pace.xp_month"), f.num(pc.xp_per_month)]);
