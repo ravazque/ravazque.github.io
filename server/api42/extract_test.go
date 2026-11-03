@@ -87,6 +87,25 @@ func TestRefusedUser(t *testing.T) {
 	}
 }
 
+func TestBlackholedIsRefusedUnlessAnyAccount(t *testing.T) {
+	d := readJSON(t, "../core/testdata/api/mid.json")
+	for _, cu := range d["user"].(map[string]any)["cursus_users"].([]any) {
+		if cu := cu.(map[string]any); cu["cursus_id"] == float64(core.MainCursus) {
+			cu["end_at"] = "2026-01-01T00:00:00.000Z"
+		}
+	}
+	uid := int(d["user"].(map[string]any)["id"].(float64))
+	c, _ := newTestClient(t, fake42.Handler(d, func(p string) { t.Errorf("unexpected request %s", p) }))
+	var refused core.AccessRefused
+	if _, err := Extract(context.Background(), c, uid, func(float64) {}, func() time.Time { return goldenNow }); !errorsAs(err, &refused) || refused.Reason != "blackholed" {
+		t.Fatalf("the site refuses a blackholed student: %v", err)
+	}
+	c.AnyAccount = true // make dev-real's own reports
+	if report, err := Extract(context.Background(), c, uid, func(float64) {}, func() time.Time { return goldenNow }); err != nil || len(report.Obj("periods").Keys()) == 0 {
+		t.Fatalf("dev tools extract anyone: %v", err)
+	}
+}
+
 func TestUpcomingHiddenEvaluationsAreKept(t *testing.T) {
 	d := readJSON(t, "../core/testdata/api/mid.json")
 	recv := d["evals_received"].([]any)

@@ -60,7 +60,7 @@
 :where(body:not(.site)) .tier.cooldown b { color: var(--good); }
 :where(body:not(.site)) .tier.ready { border-top-color: var(--accent); }
 :where(body:not(.site)) .drops { list-style: none; margin: 0; padding: 0; }
-:where(body:not(.site)) .drops li { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; border-bottom: 1px solid var(--rule); font-size: 15px; }
+:where(body:not(.site)) .drops li { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; border-bottom: var(--list-line) solid var(--rule); font-size: 15px; }
 :where(body:not(.site)) .drops li b { font: 700 15px var(--type-font-display); white-space: nowrap; color: var(--critical); }
 :where(body:not(.site)) .tp .figure.host { letter-spacing: -.02em; }
 
@@ -148,7 +148,7 @@
   list-style: none; color: var(--text-2); font-size: 14px; }
 :where(body:not(.site)) .ach-more > summary::-webkit-details-marker { display: none; }
 :where(body:not(.site)) .ach-more > summary:hover { color: var(--ink); }
-:where(body:not(.site)) .ach-more ul { margin: 2px 0 4px; padding: 0 0 0 12px; list-style: none; border-left: 2px solid var(--rule); }
+:where(body:not(.site)) .ach-more ul { margin: 2px 0 4px; padding: 0 0 0 12px; list-style: none; border-left: var(--indent-line) solid var(--rule); }
 :where(body:not(.site)) .list .ach-more li { padding: 4px 0; border-bottom: 0; gap: 12px; }
 :where(body:not(.site)) [data-panel="achievements"] .list > li { flex-wrap: wrap; }
 :where(body:not(.site)) [data-panel="achievements"] .list > li > span:first-child { flex: 1 1 60%; min-width: 0; }
@@ -156,8 +156,12 @@
 :where(body:not(.site)) .list .ach-more li { justify-content: space-between; }
 
 /* Numbers centred under their column title (the people table) */
-:where(body:not(.site)) td.mid, :where(body:not(.site)) th.mid { text-align: center; }
-:where(body:not(.site)) th.mid button { justify-content: center; text-align: center; }
+:where(body:not(.site)) :is(td, th):is(.mid, .ctr) { text-align: center; }
+:where(body:not(.site)) th:is(.mid, .ctr) button { justify-content: center; text-align: center; }
+/* the evaluation log's "Comment and 1 feedback": quieter than the row above it */
+:where(body:not(.site)) tr.detail details > summary { color: var(--muted); }
+/* points taken away, in the coalition's list */
+:where(body:not(.site)) .when.neg { color: var(--critical); }
 /* Connections: bubbles in the colours of the circle's key */
 html body:not(.site) .graph .bubble.net-node.rank circle { fill: color-mix(in oklab, var(--accent-data) var(--bubble-fill), var(--surface)); stroke: var(--accent-data); }
 html body:not(.site) .graph .bubble.net-node.outer circle { fill: color-mix(in oklab, var(--slate) var(--bubble-fill), var(--surface)); stroke: var(--slate); }
@@ -183,7 +187,7 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 /* Computers outside the clusters: noted under the plan */
 :where(body:not(.site)) .plan + .plan-other { margin: 18px auto 0; }
 /* Connections: each group named in a box, no ground behind it */
-:where(body:not(.site)) .graph .group-box { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+:where(body:not(.site)) .graph .group-box { fill: var(--surface); stroke: var(--rule); stroke-width: var(--key-box); }
 
 /* Facts read on one line each: label left, figure right */
 :where(body:not(.site)) .facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
@@ -215,7 +219,7 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .block-head .scale .grp:last-child { margin-right: 0; }
 :where(body:not(.site)) .block-head > :only-child { margin-left: auto; }
 :where(body:not(.site)) .block-head:has(.legend, .scale, .head-figure) { margin-bottom: 16px; }
-:where(body:not(.site)) [data-panel="correctors"] .block-head .legend { padding: 6px 10px; border: 1px solid var(--rule); }
+:where(body:not(.site)) [data-panel="correctors"] .block-head .legend { padding: 6px 10px; border: var(--key-box) solid var(--rule); }
 /* a panel with no title of its own right under the section's title: no second rule */
 :where(body:not(.site)) section > :is(h2, .panel-head) + .cols > [data-panel]:not(:has(> h3:first-child, > .block-head:first-child)) { border-top: 0; padding-top: 0; }
 /* The calendar: days outside the data are empty squares, the first day ringed */

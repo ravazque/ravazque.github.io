@@ -4,7 +4,7 @@ import { GOOD, BAD, S1, S2, legend, lines, vbars } from "../lib/charts";
 import { ACCENT, SLATE, heat } from "../lib/graphs";
 import { ARROW, avatar, esc } from "../lib/h";
 import { facts, table } from "../lib/table";
-import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, noMark, radios, search, section, select, shownLogin, erased } from "./page";
+import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased } from "./page";
 
 export function evaluations(pg: Page): Section[] {
   const f = pg.f, D = pg.D, S = D.summary, W = D.when;
@@ -63,11 +63,15 @@ export function evaluations(pg: Page): Section[] {
   // the months up to the report's, the quiet ones as zero
   const months: string[] = W.months.length ? monthsBetween(W.months[0], [W.months[W.months.length - 1], pg.asOf.slice(0, 7)].sort()[1]) : [];
   const at = (vals: number[]) => months.map((x) => vals[W.months.indexOf(x)] || 0);
+  // each month's tip names its negative flags
+  const flagSeries: [string, number[], string][] = [[f.t("flag.ok"), at(m.ok), base], [f.t("flag.outstanding"), at(m.outstanding), GOOD], [f.t("flag.negative"), at(m.negative), BAD]];
+  const negs = negativeFlags(D[role]);
+  const flagTips = months.map((x, i) => [f.monthLabel(x), ...flagSeries.map(([n, v], s) => `${n} ${f.num(v[i])}` + (s === 2 && negs.get(x) ? `: ${negs.get(x)}` : ""))].join("\n"));
   out.push({ id: "over-time", nav: f.t("over_time.title"), html: section("over-time", "", cols(
     headBlock("recv-monthly", f.t(role === "received" ? "received.monthly_title" : "given.monthly_title"),
       legend([[f.t("flag.ok"), base], [f.t("flag.outstanding"), GOOD], [f.t("flag.negative"), BAD]]),
-      vbars(f, months.map((x: string) => f.monthLabel(x)), [[f.t("flag.ok"), at(m.ok), base], [f.t("flag.outstanding"), at(m.outstanding), GOOD], [f.t("flag.negative"), at(m.negative), BAD]],
-        { label: f.t("received.monthly_title"), stacked: true, fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
+      vbars(f, months.map((x: string) => f.monthLabel(x)), flagSeries,
+        { label: f.t("received.monthly_title"), stacked: true, fmt: (v) => f.num(v), tips: flagTips, emptyText: f.t("empty.period") })),
     headBlock("marks", f.t("received.marks_title"), legend(roles), vbars(f, bins.map(([b]) => b), [[f.t("role.received"), count(D.received), S1], [f.t("role.given"), count(D.given), S2]],
       { label: f.t("received.marks_title"), xtitle: f.t("received.final_mark"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
     headBlock("cum-evals", f.t("received.cum_title"), legend(roles), lines(f, [[f.t("role.received"), W.cum_received, S1], [f.t("role.given"), W.cum_given, S2]],
@@ -171,7 +175,7 @@ function correctedTable(pg: Page): string {
   });
   const chip = (e: any) => {
     const state = e.mark === null || e.mark === undefined ? "open" : failed(e) ? "fail" : "pass";
-    return `<span class="mark ${state}" title="${esc(f.day(e.begin))}">${e.mark !== null && e.mark !== undefined ? esc(e.mark) : noMark(f, e)}</span>`;
+    return `<span class="mark ${state}" title="${esc(f.day(e.begin) + (e.negative_flag && e.flag ? ` · ${e.flag}` : ""))}">${e.mark !== null && e.mark !== undefined ? esc(e.mark) : noMark(f, e)}</span>`;
   };
   const detail = (r: any) => {
     const people = [...r.whom].sort((a: any, b: any) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
@@ -185,17 +189,31 @@ function correctedTable(pg: Page): string {
   ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t("empty.period") });
 }
 
+/** The log's "Seat" filter: who had no session open (false: no such filter, a seat in a link is ignored). */
+const SEAT_FILTER = true;
+
+/** One evaluation against the seat filter ("" any): no session of yours open (me), the other side with none where
+ * their seat was looked up (other: the corrector, or any person you evaluated), or your seat in one cluster (c1…). */
+export const seatMatch = (role: string, seat: string, e: any) =>
+  /^c\d+$/.test(seat) ? (e.my_host || "").split("r")[0] === seat
+  : seat === "me" ? !e.my_host
+  : seat === "other" ? !!e.other_host_checked && (role === "received" ? !e.other_host : (e.correcteds || []).some((c: any) => !c.host))
+  : true;
+
 function logSection(pg: Page): Section {
   const f = pg.f, D = pg.D;
   const role = pg.q("log", "received", ["received", "given"]);
   const flag = pg.q("flag", "", ["", "out", "bad", "ok"]);
   const projectsAll = [...new Set([...D.received, ...D.given].map((e: any) => e.project as string))].sort();
   const proj = pg.q("project", "", ["", ...projectsAll]);
+  const clusters = Object.keys(pg.v.layout || {}).sort();
+  const seat = SEAT_FILTER ? pg.q("seat", "", ["", "me", "other", ...clusters]) : "";
   const q = pg.q("q", "").slice(0, 80).toLowerCase();
   const attemptOf = new Map<unknown, number>(D.projects.flatMap((p: any) => p.attempts.map((a: any) => [a.team_id, a.n] as [unknown, number])));
   const match = (e: any) => {
     if (flag && !(flag === "out" ? e.outstanding : flag === "bad" ? e.negative_flag : !e.outstanding && !e.negative_flag)) return false;
     if (proj && e.project !== proj) return false;
+    if (!seatMatch(role, seat, e)) return false;
     const hay = JSON.stringify([e.corrector?.login, (e.correcteds || []).map((c: any) => c.login), e.comment, e.feedback, e.feedbacks, e.my_host, e.other_host, e.project, e.begin]).toLowerCase();
     return !q || hay.includes(q);
   };
@@ -210,10 +228,7 @@ function logSection(pg: Page): Section {
     }
     const n = e.feedbacks.length;
     const what = e.comment && n ? f.t("log.comment_and_feedback", { count: n, n }) : e.comment ? f.t("log.comment_only") : f.t("log.feedback_only", { count: n, n });
-    const text = String(e.comment || (n ? e.feedbacks[0].comment : "") || "").trim();
-    const first = text.split("\n")[0].replace(/\s+/g, " ");
-    const preview = first.slice(0, 140) + (first.length > 140 || text.includes("\n") ? "…" : "");
-    return `<details><summary>${esc(what)}<span class="preview">${esc(preview)}</span></summary>${parts.join("")}</details>`;
+    return `<details><summary>${esc(what)}</summary>${parts.join("")}</details>`;
   };
   const person = (p: any, checked: boolean) => {
     const seat = checked ? (p.host ? f.t("log.at_seat", { seat: p.host }) : f.t("log.not_logged")) : "";
@@ -221,23 +236,25 @@ function logSection(pg: Page): Section {
   };
   const when = { k: "begin_ms", t: f.t("col.when"), cls: "when", f: (e: any) => `<span class="nw">${esc(f.day(e.begin))}</span> <span class="nw">${esc(e.begin.slice(11))}`
     + (e.filled ? ` ${ARROW} ${esc(e.filled.slice(11))}` : "") + "</span>" };
-  const flagCol = { k: "flag", t: f.t("col.flag"), nw: true, sv: (e: any) => (e.outstanding ? 2 : e.negative_flag ? 0 : 1), f: (e: any) => flagBadge(f, e) };
+  const flagCol = { k: "flag", t: f.t("col.flag"), nw: true, cls: "ctr", sv: (e: any) => (e.outstanding ? 2 : e.negative_flag ? 0 : 1), f: (e: any) => flagBadge(f, e) };
   const minCol = { k: "duration_min", t: f.t("col.duration"), s: f.t("abbr.duration"), num: true, nw: true,
     f: (e: any) => `${esc(f.t("unit.min", { n: f.num(e.duration_min) }))}<span class="sub">${esc([f.t("log.planned", { n: e.planned_min }),
       e.lead_h !== null && e.lead_h !== undefined ? f.t("log.booked_ahead", { h: f.num(e.lead_h, 1) }) : ""].filter(Boolean).join(" · "))}</span>` };
-  const mySeat = { k: "my_host", t: f.t("col.your_seat"), nw: true, hide: true, f: (e: any) => esc(e.my_host || f.t("log.not_logged")) };
+  const mySeat = { k: "my_host", t: f.t("col.your_seat"), nw: true, hide: true, cls: "ctr", f: (e: any) => esc(e.my_host || f.t("log.not_logged")) };
   const columns = role === "received" ? [when,
     { k: "project", t: f.t("col.project"), nw: true, f: (e: any) => `${esc(e.project)}<span class="sub">${esc(f.t("projects.attempt", { n: attemptOf.get(e.team_id) ?? "?" }))}</span>` },
-    { k: "corrector", t: f.t("col.corrector"), s: f.t("abbr.corrector"), nw: true, sv: (e: any) => e.corrector.login, f: (e: any) => person(e.corrector, e.other_host_checked) },
-    mySeat, minCol, { k: "mark", t: f.t("col.mark"), num: true }, flagCol, { k: "fb_rating", t: f.t("col.your_rating"), num: true, hide: true }]
+    { k: "corrector", t: f.t("col.corrector"), s: f.t("abbr.corrector"), nw: true, cls: "ctr", sv: (e: any) => e.corrector.login, f: (e: any) => person(e.corrector, e.other_host_checked) },
+    mySeat, minCol, { k: "mark", t: f.t("col.mark"), num: true, cls: "ctr" }, flagCol, { k: "fb_rating", t: f.t("col.your_rating"), num: true, hide: true, cls: "ctr" }]
     : [when, { k: "project", t: f.t("col.project"), nw: true },
-      { k: "correcteds", t: f.t("col.evaluated"), s: f.t("abbr.evaluated"), nw: true, sv: (e: any) => e.correcteds.map((c: any) => c.login || "").join(","),
+      { k: "correcteds", t: f.t("col.evaluated"), s: f.t("abbr.evaluated"), nw: true, cls: "ctr", sv: (e: any) => e.correcteds.map((c: any) => c.login || "").join(","),
         f: (e: any) => e.correcteds.map((c: any) => person(c, e.other_host_checked)).join("<br>") },
-      mySeat, minCol, { k: "mark", t: f.t("col.mark"), num: true, f: (e: any) => esc(e.mark ?? "") }, flagCol, { k: "fb_rating", t: f.t("col.their_rating"), num: true, hide: true }];
+      mySeat, minCol, { k: "mark", t: f.t("col.mark"), num: true, cls: "ctr", f: (e: any) => esc(e.mark ?? "") }, flagCol, { k: "fb_rating", t: f.t("col.their_rating"), num: true, hide: true, cls: "ctr" }];
   const form = filters("log",
     radios("log", f.t("log.role_label"), (["received", "given"] as const).map((v) => [v, f.t(`log.${v}`)]), role)
     + select("flag", f.t("log.flag"), [["", f.t("log.flag_all")], ["out", f.t("log.flag_out")], ["bad", f.t("log.flag_bad")], ["ok", f.t("log.flag_ok")]], flag)
     + select("project", f.t("log.project"), [["", f.t("log.project_all")], ...projectsAll.map((p) => [p, p] as [string, string])], proj)
+    + (SEAT_FILTER ? select("seat", f.t("log.seat"), [["", f.t("log.seat_all")], ["me", f.t("col.nl_you")],
+      ["other", f.t(role === "received" ? "col.nl_corrector" : "col.nl_evaluated")], ...clusters.map((c) => [c, f.t("log.seat_in", { c })] as [string, string])], seat) : "")
     + search("q", pg.q("q", "").slice(0, 80), f.t("common.search"), f.t("log.search_placeholder")));
   return { id: "log", nav: f.t("nav.log"), html: section("log", f.t("log.title"), form + `<div id="log-results"><p class="controls-after"><span class="note">${esc(f.plural(rows.length, "count.evaluations"))}</span></p>`
     + cols(block("table-log", `<div class="table-wrap tall">${table(f, columns as any, rows, { label: f.t("log.title"), sort: ["begin_ms", -1], empty: f.t("empty.search_log"), sticky: true, detail: fbText })}</div>`)) + "</div>",

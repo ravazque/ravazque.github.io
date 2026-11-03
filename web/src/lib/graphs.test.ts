@@ -37,3 +37,10 @@ test("crowded groups get zones tall enough that no bubble overlaps another, at e
     }
   }
 });
+
+test("a zone's name is its group alone, with no count", () => {
+  const people = [{ login: "a", group: "rank-03", received: 2, given: 0 }, { login: "b", group: "rank-03", received: 1, given: 0 }];
+  const svg = bubbles(new Fmt("en"), people, "received", { width: 1200, href: () => "#" });
+  expect(svg).not.toContain("[2]");
+  expect(svg).toContain(`>${new Fmt("en").t("groups.rank-03")}<`);
+});

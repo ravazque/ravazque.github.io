@@ -51,6 +51,7 @@ type token struct {
 
 type Client struct {
 	Base, CDN   string
+	AnyAccount  bool // dev tools only: extract someone the site refuses (blackholed, frozen…) for a local dev report
 	apps        []App
 	oauth       int
 	redirectURI string
@@ -60,6 +61,9 @@ type Client struct {
 	mu          sync.Mutex
 	tokens      map[int]token
 	requests    atomic.Int64
+	blocMu      sync.Mutex
+	bloc        raw
+	blocAt      time.Time // the quarter of the hour the bloc was asked in
 }
 
 func New(apps []App, oauthIndex int, redirectURI string, lim Limiter, hc *http.Client) *Client {

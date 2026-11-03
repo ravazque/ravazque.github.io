@@ -13,6 +13,9 @@ export type View = {
 
 export const PAGES = ["home", "projects", "evaluations", "coalition", "people", "campus"] as const;
 export type PageKey = (typeof PAGES)[number];
+/** The period a page is drawn for: Coalition always shows the student one (coalitions begin with the 42cursus); the
+ * chosen one stays in the address for the other pages. */
+export const pagePeriod = (key: PageKey, chosen: string) => (key === "coalition" ? "student" : chosen);
 export const PATHS: Record<PageKey, string> = {
   home: "/app", projects: "/app/projects", evaluations: "/app/evaluations", people: "/app/people", campus: "/app/campus",
   coalition: "/app/coalition",
@@ -97,6 +100,18 @@ export function flagBadge(f: Fmt, e: any) {
   if (e.outstanding) return badge(f.t("flag.outstanding"), "out");
   if (e.negative_flag) return badge(e.flag || "", "bad");
   return e.flag ? badge(e.flag) : "";
+}
+
+/** The negative flags of some evaluations by month (YYYY-MM), each named with how many times, most first. */
+export function negativeFlags(evs: any[]): Map<string, string> {
+  const by = new Map<string, Map<string, number>>();
+  for (const e of evs) {
+    if (!e.negative_flag) continue;
+    const m = String(e.begin).slice(0, 7), n = e.flag || "?";
+    if (!by.has(m)) by.set(m, new Map());
+    by.get(m)!.set(n, (by.get(m)!.get(n) || 0) + 1);
+  }
+  return new Map([...by].map(([m, c]) => [m, [...c].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([n, k]) => (k > 1 ? `${n} ×${k}` : n)).join(", ")]));
 }
 
 export const failed = (e: any) => e.negative_flag || (e.mark !== null && e.mark !== undefined && e.mark < 50);

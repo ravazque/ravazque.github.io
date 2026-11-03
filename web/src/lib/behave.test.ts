@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { outward, sortBodies, sortRows } from "./behave";
+import { floatAt, hintScroll, outward, sortBodies, sortRows } from "./behave";
 import { csv, parseCsv } from "./table";
 
 const row = (...vals: string[]) => {
@@ -46,4 +46,24 @@ test("a ring node's tip goes outwards in one of eight directions", () => {
   expect(outward(45)).toEqual([1, 1]); // bottom right: below and to the right
   expect(outward(-135)).toEqual([-1, -1]); // top left
   expect(outward(80)).toEqual([0, 1]); // nearly at the bottom still opens straight down
+});
+
+test("a scroll box marks each side where more waits and how thick its scrollbars are", () => {
+  const box = document.createElement("div");
+  box.className = "table-wrap";
+  const geo = { scrollWidth: 500, clientWidth: 300, scrollLeft: 0, scrollHeight: 400, clientHeight: 200, scrollTop: 50, offsetWidth: 310, offsetHeight: 212 };
+  for (const [k, v] of Object.entries(geo)) Object.defineProperty(box, k, { value: v, configurable: true });
+  document.body.append(box);
+  hintScroll(document);
+  expect(["more-t", "more", "more-l", "more-r"].filter((c) => box.classList.contains(c))).toEqual(["more-t", "more", "more-r"]);
+  expect([box.style.getPropertyValue("--sb-w"), box.style.getPropertyValue("--sb-h")]).toEqual(["10px", "12px"]);
+  box.remove();
+});
+
+test("a floating panel opens under what opened it, or above when there is no room below, always on screen", () => {
+  const r = { left: 100, right: 260, top: 300, bottom: 320 } as DOMRect;
+  expect(floatAt(r, 240, 150, 1000, 800)).toEqual({ left: 100, top: 326 });
+  expect(floatAt(r, 240, 600, 1000, 800)).toEqual({ left: 100, top: 192 }); // fits neither side: as low as the screen allows
+  expect(floatAt({ ...r, top: 700, bottom: 720 } as DOMRect, 240, 150, 1000, 800)).toEqual({ left: 100, top: 544 });
+  expect(floatAt({ ...r, left: 900, right: 990 } as DOMRect, 240, 150, 1000, 800)).toEqual({ left: 752, top: 326 });
 });

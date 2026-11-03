@@ -1,6 +1,9 @@
 package core
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestCoalitionStandingsCarryTheirLogoAndBanner(t *testing.T) {
 	bloc := Raw{"coalitions": []any{
@@ -15,5 +18,26 @@ func TestCoalitionStandingsCarryTheirLogoAndBanner(t *testing.T) {
 	}
 	if b.Has("logo") || b.Has("cover") {
 		t.Fatalf("a coalition with no images keeps no keys for them: %v", b)
+	}
+}
+
+func TestEveryCoalitionAwardIsKeptNewestFirst(t *testing.T) {
+	var scores []Raw
+	for i := range 45 {
+		scores = append(scores, Raw{"created_at": fmt.Sprintf("2026-01-%02dT%02d:00:00.000Z", 1+i%28, 10+i/28),
+			"scoreable_type": "ScaleTeam", "scoreable_id": float64(i), "value": 250.0})
+	}
+	p := CoalitionPoints(scores)
+	awards, recent := p.Os("awards"), p.Os("recent")
+	if len(awards) != 45 || len(recent) != 40 {
+		t.Fatalf("awards %d, recent %d", len(awards), len(recent))
+	}
+	for i := 1; i < len(awards); i++ {
+		if awards[i-1].S("at") < awards[i].S("at") {
+			t.Fatalf("award %d is newer than %d", i, i-1)
+		}
+	}
+	if !v2Keys["awards"] {
+		t.Fatal("v1's golden files have no awards: it must be a v2 key")
 	}
 }

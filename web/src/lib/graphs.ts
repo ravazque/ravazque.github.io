@@ -44,7 +44,7 @@ export function seatPlan(f: Fmt, layout: Layout, values: Record<string, number>,
       }
       rows.push(`<div class="row" style="--seats:${shape.seats}"><span class="rn" aria-hidden="true">r${r}</span>${cells.join("")}</div>`);
     }
-    out.push(`<figure class="cluster"><figcaption><b>${esc(c)}</b><span>${f.num(toUnit(total), 1)} ${esc(o.unit)}</span></figcaption>${rows.join("")}</figure>`);
+    out.push(`<figure class="cluster"><figcaption><b>${esc(c)}<i class="n"> - ${f.num(shape.rows * shape.seats)}</i></b><span>${f.num(toUnit(total), 1)} ${esc(o.unit)}</span></figcaption>${rows.join("")}</figure>`);
   }
   // computers outside the clusters: under the plan, centred in a framed key, each name beside a square in its shade
   const other = entries.filter(([h]) => !seen.has(h));
@@ -235,7 +235,7 @@ export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number
   const sizes: Record<string, number> = {};
   const sp = bubbleSpacing();
   for (const n of nodes) sizes[n.group] = (sizes[n.group] || 0) + (n.r + sp.gap / 2 + 0.5) ** 2;
-  const name = (g: string) => `${f.t(`groups.${g}`)} · [${new Set(nodes.filter((n) => n.group === g).map((n) => n.login)).size}]`;
+  const name = (g: string) => f.t(`groups.${g}`);
   const boxW = (t: string) => t.length * 8.6 + 18; // shortcut: width estimated from the label's length, close enough for these short names
   const minW = Object.fromEntries(Object.keys(sizes).map((g) => [g, boxW(name(g)) + 24]));
   // the zones grow until every group fits without a bubble on another

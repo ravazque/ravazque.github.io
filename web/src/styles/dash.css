@@ -146,7 +146,7 @@
 :where(body:not(.site)) .vchart, :where(body:not(.site)) .lchart, :where(body:not(.site)) .hchart, :where(body:not(.site)) .timeline { margin: 10px 0 0; font-size: var(--c-chart-font-size); color: var(--muted); }
 /* the top value label sits on the top line: keep it clear of the title or note above, and the axis of what follows */
 :where(body:not(.site)) .vchart, :where(body:not(.site)) .lchart { margin: 16px 0 6px; }
-:where(body:not(.site)) .ch-plot { position: relative; height: var(--c-chart-height); margin-left: var(--c-chart-axis-width); border-bottom: 2px solid var(--rule-strong); }
+:where(body:not(.site)) .ch-plot { position: relative; height: var(--c-chart-height); margin-left: var(--c-chart-axis-width); border-bottom: var(--axis-line) solid var(--rule-strong); }
 /* a line chart has a scale on both sides: equal gutters, each number the same 6px from its colour bar */
 :where(body:not(.site)) .has-line .ch-plot { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
 :where(body:not(.site)) .ch-y { position: absolute; top: 0; bottom: 0; left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
@@ -233,11 +233,11 @@
 :where(body:not(.site)) .radar-pair { display: flex; gap: 28px; align-items: center; margin-top: 10px; }
 :where(body:not(.site)) .radar-fig { flex: 0 0 auto; width: min(100%, 480px); }
 :where(body:not(.site)) .radar-fig .radar { display: block; width: 100%; height: auto; max-height: 480px; }
-:where(body:not(.site)) .radar-bars { flex: 1 1 0; min-width: 0; max-height: 480px; overflow-y: auto; border-left: 1px solid var(--rule); padding-left: 28px; }
+:where(body:not(.site)) .radar-bars { flex: 1 1 0; min-width: 0; max-height: 480px; overflow-y: auto; border-left: var(--divider-line) solid var(--rule); padding-left: 28px; }
 @container (max-width: 620px) {
   :where(body:not(.site)) .radar-pair { flex-direction: column; }
   :where(body:not(.site)) .radar-fig { width: 100%; max-width: 400px; margin: 0 auto; }
-  :where(body:not(.site)) .radar-bars { max-height: none; width: 100%; border-left: 0; border-top: 1px solid var(--rule); padding-left: 0; padding-top: 18px; }
+  :where(body:not(.site)) .radar-bars { max-height: none; width: 100%; border-left: 0; border-top: var(--divider-line) solid var(--rule); padding-left: 0; padding-top: 18px; }
 }
 :where(body:not(.site)) .graph-wide .graph, :where(body:not(.site)) .graph-mid .graph, :where(body:not(.site)) .graph-narrow .graph { display: block; width: 100%; height: auto; }
 /* Connections at its own scale on every width: 1200 wide, 840 on a tablet, 420 on a phone */
@@ -287,7 +287,8 @@
 
 /* lively controls: a small lift and the accent border under the pointer */
 :where(body:not(.site)) .btn, :where(body:not(.site)) .seg > a, :where(body:not(.site)) .seg > label, :where(body:not(.site)) .seg button, :where(body:not(.site)) .periods > a, :where(body:not(.site)) .toggle-check span { transition: transform var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out, background-color var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
-:where(body:not(.site)) .btn:hover:not(:disabled):not([aria-disabled="true"]), :where(body:not(.site)) .periods > a:hover, :where(body:not(.site)) .toggle-check:hover span { transform: translateY(-1px); }
+:where(body:not(.site)) .btn:hover:not(:disabled):not([aria-disabled="true"]), :where(body:not(.site)) .periods > a[href]:hover, :where(body:not(.site)) .toggle-check:hover span { transform: translateY(-1px); }
+:where(body:not(.site)) .periods > a[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
 :where(body:not(.site)) .seg > a:hover, :where(body:not(.site)) .seg > label:hover, :where(body:not(.site)) .seg button:hover { background: color-mix(in oklab, var(--accent-data) 10%, transparent); }
 :where(body:not(.site)) .block { transition: border-color var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
 :where(body:not(.site)) .block:hover { border-color: color-mix(in oklab, var(--accent-data) 45%, var(--rule)); }
@@ -356,7 +357,7 @@
 }
 
 /* a section's switches share its title rule; a panel of figures keeps only the figures' own rules */
-:where(body:not(.site)) section > .panel-head { border-bottom: var(--c-section-h2-rule) solid var(--rule-strong); padding-bottom: 12px; margin-bottom: var(--c-section-h2-gap); }
+:where(body:not(.site)) section > .panel-head { border-bottom: var(--title-line) solid var(--rule-strong); padding-bottom: var(--title-pad); margin-bottom: var(--c-section-h2-gap); }
 :where(body:not(.site)) section > .panel-head > h2 { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
 :where(body:not(.site)) [data-panel]:has(> .kpis, > .rates) { border-top: 0; padding-top: 0; }
 :where(body:not(.site)) .toc + section, :where(body:not(.site)) .toc + .sec > section:first-child { padding-top: 40px; }
@@ -395,18 +396,37 @@
 :where(body:not(.site)) .net .net-me .net-node.me .core { fill-opacity: .85; transition: opacity var(--motion-fast) ease-out; }
 :where(body:not(.site)) .net.me-off .net-me { opacity: .3; }
 :where(body:not(.site)) .focused .net-links path.hl { stroke-width: 2.5; }
-/* a table fades at each edge where more waits: below, and to either side while it scrolls sideways (dash.js sets the
-   classes); one whose first column stays put fades only on the right */
-:where(body:not(.site)) .table-wrap { --fade-l: var(--mask); --fade-r: var(--mask); --fade-b: var(--mask); }
-:where(body:not(.site)) .table-wrap.more { --fade-b: transparent; }
-:where(body:not(.site)) .table-wrap.more-l:not(:has(> .sticky-first)) { --fade-l: transparent; }
-:where(body:not(.site)) .table-wrap.more-r { --fade-r: transparent; }
-:where(body:not(.site)) .table-wrap.more, :where(body:not(.site)) .table-wrap.more-l, :where(body:not(.site)) .table-wrap.more-r {
-  -webkit-mask-image: linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
-    linear-gradient(to bottom, var(--mask) calc(100% - 56px), var(--fade-b));
-  mask-image: linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
-    linear-gradient(to bottom, var(--mask) calc(100% - 56px), var(--fade-b));
-  -webkit-mask-composite: source-in; mask-composite: intersect; }
+/* a scroll box (a table, a list, the calendar, the skills' bars) fades each of its four edges where more waits
+   (behave.ts sets more-t, more, more-l, more-r and the scrollbars' thickness): two solid layers keep the scrollbars out
+   of the fade, a table's sticky head stays clear of the top one; a table whose first column stays put fades only on
+   the right */
+:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars) { --fade-t: var(--mask); --fade-b: var(--mask); --fade-l: var(--mask); --fade-r: var(--mask); }
+:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-t { --fade-t: transparent; }
+:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more { --fade-b: transparent; }
+:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-l:not(:has(> .sticky-first)) { --fade-l: transparent; }
+:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-r { --fade-r: transparent; }
+:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars):is(.more-t, .more, .more-l, .more-r) {
+  --fade-area: calc(100% - var(--sb-w, 0px)) calc(100% - var(--sb-h, 0px));
+  -webkit-mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
+    linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
+    linear-gradient(to bottom, var(--mask) var(--head-h, 0px), var(--fade-t) var(--head-h, 0px), var(--mask) calc(var(--head-h, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-b));
+  mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
+    linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
+    linear-gradient(to bottom, var(--mask) var(--head-h, 0px), var(--fade-t) var(--head-h, 0px), var(--mask) calc(var(--head-h, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-b));
+  -webkit-mask-size: var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);
+  mask-size: var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);
+  -webkit-mask-position: right top, left bottom, left top, left top; mask-position: right top, left bottom, left top, left top;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-composite: source-over, source-over, source-in; mask-composite: add, add, intersect; }
+/* Everyone you met: a person's details open on click in a floating list (behave.ts places it) */
+:where(body:not(.site)) .who-pop > summary { text-decoration: underline dotted; text-underline-offset: 4px; }
+:where(body:not(.site)) .who-pop[open] > .pop-panel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:where(body:not(.site)) .float-panel { position: fixed; z-index: 60; max-width: min(420px, calc(100vw - 16px)); max-height: 60vh; overflow: auto;
+  padding: 10px 14px; background: var(--ground); color: var(--ink); border: 2px solid var(--ink); font-size: 14px; animation: drop var(--motion-settle) var(--motion-ease); }
+:where(body:not(.site)) .float-panel[hidden] { display: none; }
+:where(body:not(.site)) .float-panel ul { list-style: none; margin: 6px 0 0; padding: 0; }
+:where(body:not(.site)) .float-panel li { padding: 5px 0; border-bottom: var(--list-line) solid var(--rule); white-space: nowrap; }
+:where(body:not(.site)) .float-panel li:last-child { border-bottom: 0; }
 :where(body:not(.site)) .table-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-top: 12px; }
 :where(body:not(.site)) .table-foot .note { margin: 0; }
 :where(body:not(.site)) .table-foot .note b { color: var(--ink); }
@@ -443,12 +463,12 @@
 :where(body:not(.site)) .kpis :is(.day24, .part) .morning { background: var(--day-morning); }
 :where(body:not(.site)) .kpis :is(.day24, .part) .afternoon { background: var(--day-afternoon); }
 :where(body:not(.site)) .kpis :is(.day24, .part) .night { background: var(--day-night); }
-:where(body:not(.site)) .kpis .day24-axis { position: relative; display: block; height: 18px; margin-bottom: 8px; border-top: 2px solid var(--rule-strong); }
+:where(body:not(.site)) .kpis .day24-axis { position: relative; display: block; height: 18px; margin-bottom: 8px; border-top: var(--axis-line) solid var(--rule-strong); }
 :where(body:not(.site)) .kpis .day24-axis b { position: absolute; top: 3px; transform: translateX(-50%); font: 500 12px var(--type-font-text); color: var(--text-2); }
 :where(body:not(.site)) .kpis .day24-axis b:first-child { transform: none; }
 :where(body:not(.site)) .kpis .day24-axis b:last-child { transform: translateX(-100%); }
 :where(body:not(.site)) .kpis .parts { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 20px; width: fit-content; max-width: 100%;
-  margin: 2px auto 0; padding: 5px 12px; border: 1px solid var(--rule); }  /* the shares in a framed key, centred under the day */
+  margin: 2px auto 0; padding: 5px 12px; border: var(--key-box) solid var(--rule); }  /* the shares in a framed key, centred under the day */
 /* Rhythm on a laptop: the two figures as wide as their lines need, the day's hours the rest (its key on one line) */
 @media (min-width: 1280px) {
   :where(body:not(.site)) #rhythm .kpis { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.3fr) minmax(0, 2.25fr); }
@@ -491,7 +511,7 @@ html body:not(.site) [data-panel="low-feedback"]:only-child { grid-column: span 
 :where(body:not(.site)) .net-side h3 { margin: .9em 0 .4em; font-size: 1.05em; }
 :where(body:not(.site)) .net-side ul { list-style: none; margin: 0; padding: 0; }
 :where(body:not(.site)) .net-side li { display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; align-items: center; gap: .5em; padding: .35em 0;
-  border-bottom: 1px solid var(--rule); color: var(--text-2); }
+  border-bottom: var(--list-line) solid var(--rule); color: var(--text-2); }
 :where(body:not(.site)) .net-side li .net-key { justify-self: center; width: .9em; height: .9em; }
 :where(body:not(.site)) .net-side li .arrow-key, :where(body:not(.site)) .net-side li .dir-key { width: 2em; height: .7em; }
 :where(body:not(.site)) .net-side li b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }

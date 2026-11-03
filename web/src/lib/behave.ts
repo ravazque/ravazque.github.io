@@ -76,6 +76,37 @@ export function hideTip() {
 
 export const closePops = () => $$<HTMLDetailsElement>("details.pop[open]").forEach((d) => { d.open = false; });
 
+/** Where a floating panel opens: under its opener (left-aligned), above it when there is no room below, kept on screen. */
+export function floatAt(r: DOMRect, w: number, h: number, vw = innerWidth, vh = innerHeight) {
+  const gap = 6, edge = 8, below = r.bottom + gap, above = r.top - gap - h;
+  const top = below + h <= vh - edge ? below : above >= edge ? above : Math.max(edge, Math.min(below, vh - h - edge));
+  return { left: Math.max(edge, Math.min(r.left, vw - w - edge)), top };
+}
+
+// a details.pop[data-float] shows its panel in one floating element on the page: inside a table the scroll box would
+// clip and fade it; the panel inside stays for screen readers, the floating copy is for the eyes
+let floatFor: HTMLDetailsElement | null = null;
+const floatEl = () => document.getElementById("float") as HTMLElement | null;
+function openFloat(d: HTMLDetailsElement) {
+  let el = floatEl();
+  if (!el) {
+    el = Object.assign(document.createElement("div"), { id: "float", className: "float-panel" });
+    el.setAttribute("aria-hidden", "true");
+    document.body.append(el);
+  }
+  el.innerHTML = d.querySelector(":scope > .pop-panel")?.innerHTML || "";
+  el.hidden = false;
+  el.style.left = el.style.top = "0px";
+  const { left, top } = floatAt(d.querySelector("summary")!.getBoundingClientRect(), el.offsetWidth, el.offsetHeight);
+  Object.assign(el.style, { left: `${left}px`, top: `${top}px` });
+  floatFor = d;
+}
+export function closeFloat() {
+  const el = floatEl();
+  if (el) el.hidden = true;
+  floatFor = null;
+}
+
 const tipOf = (t: EventTarget | null) => (t as Element | null)?.closest?.("[data-tip]") as HTMLElement | null;
 
 let installed = false;
@@ -142,20 +173,23 @@ export function install() {
     if (next) { cell.tabIndex = -1; next.tabIndex = 0; next.focus(); }
   });
   document.addEventListener("click", (ev) => {
-    $$<HTMLDetailsElement>("details.pop[open]").forEach((d) => { if (!d.contains(ev.target as Node)) d.open = false; });
+    const inFloat = floatEl()?.contains(ev.target as Node);
+    $$<HTMLDetailsElement>("details.pop[open]").forEach((d) => { if (!d.contains(ev.target as Node) && !(inFloat && d === floatFor)) d.open = false; });
   });
 
   // a tooltip or an open menu never outlives what it belongs to: scrolling, leaving, resizing closes them
   let openedAt = 0;
   document.addEventListener("toggle", (ev) => {
-    if ((ev.target as Element).matches?.("details.pop") && (ev.target as HTMLDetailsElement).open) openedAt = scrollY;
+    const d = ev.target as HTMLDetailsElement;
+    if (d.matches?.("details.pop") && d.open) openedAt = scrollY;
+    if (d.matches?.("details.pop[data-float]")) { if (d.open) openFloat(d); else if (d === floatFor) closeFloat(); }
   }, true);
   document.addEventListener("scroll", (ev) => {
     const kb = document.activeElement?.matches?.("[data-tip]:focus-visible") ? (document.activeElement as HTMLElement) : null;
     const r = kb?.getBoundingClientRect();
     hideTip();
     if (kb && r && r.bottom > 0 && r.top < innerHeight) placeTip(kb);
-    const inPop = (ev.target as Element).closest?.("details.pop");
+    const inPop = (ev.target as Element).closest?.("details.pop, #float");
     if (!inPop && (ev.target !== document || Math.abs(scrollY - openedAt) > 8)) closePops();
   }, { capture: true, passive: true });
   document.documentElement.addEventListener("mouseleave", hideTip);
@@ -180,13 +214,19 @@ export function install() {
   document.addEventListener("error", (ev) => { if ((ev.target as Element).matches?.(".avatar img, .avatar-lg img, .me-photo img")) (ev.target as Element).remove(); }, true);
 }
 
-/** scroll boxes fade their bottom edge while rows remain below, and a table its sides while columns wait there */
+/** scroll boxes fade each edge where more waits (more-t, more for the bottom, more-l, more-r), and give the CSS their
+ * scrollbars' thickness and a table's sticky head height so neither is faded */
 export function hintScroll(root: ParentNode = document) {
-  $$(".list, .table-wrap", root).forEach((box) => {
+  $$(".list, .table-wrap, .cal-scroll, .radar-bars", root).forEach((box) => {
     const update = () => {
+      box.classList.toggle("more-t", box.scrollTop > 2);
       box.classList.toggle("more", box.scrollHeight - box.scrollTop - box.clientHeight > 2);
       box.classList.toggle("more-r", box.scrollWidth - box.scrollLeft - box.clientWidth > 2);
       box.classList.toggle("more-l", box.scrollLeft > 2);
+      const cs = getComputedStyle(box), px = (v: string) => parseFloat(v) || 0;
+      box.style.setProperty("--sb-w", `${Math.max(0, box.offsetWidth - box.clientWidth - px(cs.borderLeftWidth) - px(cs.borderRightWidth))}px`);
+      box.style.setProperty("--sb-h", `${Math.max(0, box.offsetHeight - box.clientHeight - px(cs.borderTopWidth) - px(cs.borderBottomWidth))}px`);
+      box.style.setProperty("--head-h", `${box.querySelector<HTMLElement>(":scope > table > thead")?.offsetHeight || 0}px`);
     };
     if (!box.dataset.hint) { box.dataset.hint = "1"; box.addEventListener("scroll", update, { passive: true }); }
     update();
@@ -212,6 +252,7 @@ let tocIO: IntersectionObserver | null = null;
 
 /** After a render: tooltips (styled ones replace the native fallbacks), grids, scroll hints, selects, the draw-in. */
 export function settle(root: ParentNode) {
+  closeFloat(); // what opened it was just drawn again
   $$("[data-tip][title]", root).forEach((el) => el.removeAttribute("title"));
   $$("svg [data-tip] > title", root).forEach((el) => el.remove());
   $$(".avatar img, .avatar-lg img", root).forEach((img) => { const i = img as HTMLImageElement; if (i.complete && !i.naturalWidth) i.remove(); });

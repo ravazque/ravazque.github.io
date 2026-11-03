@@ -91,11 +91,12 @@ type HOpts = {
 export function hbars(f: Fmt, labels: string[], series: Series[], o: HOpts): string {
   if (!labels.length) return empty(o.emptyText || "");
   const totals = labels.map((_, i) => series.reduce((s, [, v]) => s + (v[i] || 0), 0));
-  const top = Math.max((Math.max(...totals) || 1) * 1.3, o.min || 0); // the longest bar leaves room for its end label
+  const top = Math.max((Math.max(...totals.map(Math.abs)) || 1) * 1.3, o.min || 0); // the longest bar leaves room for its end label
   const end = o.end || ((_: number, v: number) => f.num(v, Number.isInteger(v) ? 0 : 2));
   const rows = labels.map((lab, i) => {
     const tip = o.tips ? o.tips[i] : [lab, ...series.flatMap(([n, v]) => (v[i] ? [`${n} ${f.num(v[i], 2)}`] : []))].join(" · ");
-    const segs = series.filter(([, v]) => v[i]).map(([, v, c]) => `<i style="width:${pct(v[i] || 0, top)};background:${c}"${tipAttr(tip)}></i>`).join("");
+    // a negative value (points taken away) draws as long as it is, in red
+    const segs = series.filter(([, v]) => v[i]).map(([, v, c]) => `<i style="width:${pct(Math.abs(v[i] || 0), top)};background:${(v[i] || 0) < 0 ? BAD : c}"${tipAttr(tip)}></i>`).join("");
     const x = o.extra?.(i);
     return `<div class="hb-row"><span class="hb-label">${esc(lab)}</span><span class="hb-track">${segs}<b>${esc(end(i, totals[i]))}`
       + `${x ? `<span class=hb-extra> · ${esc(x)}</span>` : ""}</b></span></div>`;

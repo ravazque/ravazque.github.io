@@ -65,6 +65,9 @@ export async function loadSession(): Promise<SessionInfo> {
   return state.session;
 }
 
+/** Milliseconds to the next quarter of the hour (:00, :15, :30, :45), when the server refreshes the coalitions. */
+export const untilQuarter = (d: Date) => 900_000 - (d.getTime() % 900_000);
+
 export const settings = store;
 
 /** Sections a student keeps, in this browser and per login: starred ones (shortcuts in the star menu) and widgets

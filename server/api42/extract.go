@@ -132,7 +132,7 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 	}
 	d := raw{"user": user}
 	u, _ := user.(raw)
-	if ok, reason := core.Access(u, now); !ok { // checked again at every extraction: blackholed or frozen since signing in
+	if ok, reason := core.Access(u, now); !ok && !c.AnyAccount { // checked again at every extraction: blackholed or frozen since signing in
 		return nil, core.AccessRefused{Reason: reason}
 	}
 	step()
@@ -333,7 +333,7 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 	})
 	g.Go(func() error {
 		var err error
-		standing, err = standingOf(ctx, c, d)
+		standing, err = standingOf(ctx, c, d, now)
 		if err == nil {
 			step()
 		}
@@ -528,7 +528,7 @@ func feedbacks(ctx context.Context, c *Client, d raw) (raw, error) {
 }
 
 // standingOf: the promo (who started the 42cursus in Madrid the same week, counts only) and the Madrid coalitions.
-func standingOf(ctx context.Context, c *Client, d raw) (*core.OMap, error) {
+func standingOf(ctx context.Context, c *Client, d raw, now time.Time) (*core.OMap, error) {
 	var main raw
 	for _, cu := range core.Objs(core.Obj(d, "user"), "cursus_users") {
 		if core.Num(cu, "cursus_id") == core.MainCursus {
@@ -553,7 +553,7 @@ func standingOf(ctx context.Context, c *Client, d raw) (*core.OMap, error) {
 		}
 		promo = core.PromoStanding(levels, core.Num(main, "level"))
 	}
-	blocs, err := c.Get(ctx, "/v2/blocs", vals("filter[campus_id]", strconv.Itoa(core.MadridCampus), "filter[cursus_id]", strconv.Itoa(core.MainCursus)))
+	bloc, err := c.Bloc(ctx, now)
 	if err != nil {
 		return nil, err
 	}
@@ -561,11 +561,35 @@ func standingOf(ctx context.Context, c *Client, d raw) (*core.OMap, error) {
 	if cs := core.Objs(d, "coalitions"); len(cs) > 0 {
 		mine = cs[0]["id"]
 	}
+	return core.M("promo", promo, "coalitions", core.CoalitionStandings(bloc, mine)), nil
+}
+
+// Bloc is the Madrid 42cursus bloc (its coalitions and their scores), asked for at most once per quarter of the hour:
+// the server refreshes it on the quarter and extractions in between reuse it.
+func (c *Client) Bloc(ctx context.Context, now time.Time) (raw, error) {
+	q := now.Truncate(15 * time.Minute)
+	c.blocMu.Lock()
+	defer c.blocMu.Unlock()
+	if !c.blocAt.IsZero() && c.blocAt.Equal(q) {
+		return c.bloc, nil
+	}
+	blocs, err := c.Get(ctx, "/v2/blocs", vals("filter[campus_id]", strconv.Itoa(core.MadridCampus), "filter[cursus_id]", strconv.Itoa(core.MainCursus)))
+	if err != nil {
+		return nil, err
+	}
 	var bloc raw
 	if bs, _ := blocs.([]any); len(bs) > 0 {
 		bloc, _ = bs[0].(raw)
 	}
-	return core.M("promo", promo, "coalitions", core.CoalitionStandings(bloc, mine)), nil
+	c.bloc, c.blocAt = bloc, q
+	return bloc, nil
+}
+
+// LastBloc is the bloc asked for last (nil before the first answer), however old.
+func (c *Client) LastBloc() raw {
+	c.blocMu.Lock()
+	defer c.blocMu.Unlock()
+	return c.bloc
 }
 
 // kickoff is the 42cursus start, where the student period begins.

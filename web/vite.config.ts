@@ -4,7 +4,8 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const out = fileURLToPath(new URL("../server/internal/web/dist", import.meta.url));
-const go = "http://localhost:8000";
+// where the dev server sends API calls: a local go run, or the running make dev (API=https://localhost, make dev-live)
+const go = process.env.API || "http://localhost:8000";
 
 // "offline": a single-file export (one script and one stylesheet, to be inlined into one HTML page)
 export default defineConfig(({ mode }) => ({
@@ -19,7 +20,7 @@ export default defineConfig(({ mode }) => ({
     : { outDir: out, emptyOutDir: true, assetsInlineLimit: 0 },
   server: {
     fs: { allow: [".."] },
-    proxy: Object.fromEntries(["/api", "/auth", "/dev", "/avatar", "/ui.css", "/healthz"].map((p) => [p, go])),
+    proxy: Object.fromEntries(["/api", "/auth", "/dev", "/avatar", "/ui.css", "/healthz"].map((p) => [p, { target: go, changeOrigin: true, secure: false }])),
   },
   test: { environment: "jsdom" },
 }));

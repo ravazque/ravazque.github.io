@@ -416,8 +416,8 @@ func bonusHours(calc any) (int, bool) {
 	return 0, false
 }
 
-// CoalitionPoints: points by source (biggest first), per Madrid month (logtime apart), the logtime bonuses and the
-// latest awards (scoreable_id says which project, evaluation or exam each came from).
+// CoalitionPoints: points by source (biggest first), per Madrid month (logtime apart), the logtime bonuses, every
+// award (awards, v2) and v1's latest 40 (recent); scoreable_id says which project, evaluation or exam each came from.
 func CoalitionPoints(scores []Raw) *OMap {
 	type src struct {
 		key           string
@@ -475,6 +475,7 @@ func CoalitionPoints(scores []Raw) *OMap {
 	}
 	byAtDesc(bonuses)
 	byAtDesc(recent)
+	awards := recent
 	if len(recent) > recentPoints {
 		recent = recent[:recentPoints]
 	}
@@ -485,7 +486,7 @@ func CoalitionPoints(scores []Raw) *OMap {
 		total += s.points
 		srcRows = append(srcRows, M("key", s.key, "points", s.points, "count", int(s.count)))
 	}
-	return M("total", total, "count", len(scores), "sources", srcRows, "months", span, "bonuses", list(bonuses), "recent", list(recent))
+	return M("total", total, "count", len(scores), "sources", srcRows, "months", span, "bonuses", list(bonuses), "recent", list(recent), "awards", list(awards))
 }
 
 // BonusWindow is what LogtimeBonus needs, kept in the report: the last 7 days of sessions (merged; an open one ends

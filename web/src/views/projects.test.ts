@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
-import { achievementSeries } from "./projects";
+import { achievementSeries, tryChip } from "./projects";
+import { Fmt } from "../fmt";
 
 const a = (name: string, description: string, at: string) => ({ name, description, at, tier: "none" });
 
@@ -16,4 +17,11 @@ test("achievements of one series show their highest level first and keep the oth
     ["Did it once.", []],
     ["Validated 3 projects", ["Validated your first project."]],
   ]);
+});
+
+test("an exam try with no mark is a grey chip, not a red one", () => {
+  const f = new Fmt("en");
+  expect(tryChip(f, { mark: null, passed: false, date: "2026-03-02" })).toMatch(/^<span class="mark" title="[^"]+">–<\/span>$/);
+  expect(tryChip(f, { mark: 0, passed: false, date: "2026-03-02" })).toContain('class="mark fail"');
+  expect(tryChip(f, { mark: 100, passed: true, date: "2026-03-02" })).toContain('class="mark pass"');
 });

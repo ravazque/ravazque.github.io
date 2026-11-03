@@ -72,6 +72,10 @@ export function achievementSeries(list: any[]): { top: any; rest: any[] }[] {
     .map(([top, ...rest]) => ({ top, rest })).sort((a, b) => String(b.top.at || "").localeCompare(String(a.top.at || "")));
 }
 
+/** One exam try: its mark in green (passed) or red, or a grey "–" when it has none. */
+export const tryChip = (f: Page["f"], x: any) =>
+  `<span class="mark${x.mark === null || x.mark === undefined ? "" : x.passed ? " pass" : " fail"}" title="${esc(f.day(x.date))}">${esc(x.mark ?? "–")}</span>`;
+
 export function projects(pg: Page): Section[] {
   const f = pg.f, D = pg.D, X = D.extras, dv = pg.v.derive || {};
   const out: Section[] = [];
@@ -155,8 +159,7 @@ export function projects(pg: Page): Section[] {
     { k: "passed", t: f.t("col.status"), nw: true, sv: (e) => (e.passed ? 1 : 0), f: (e) => badge(f.t(e.passed ? "exams.passed" : "exams.pending"), e.passed ? "out" : "") },
     { k: "attempts", t: f.t("col.attempts"), s: f.t("abbr.attempts"), num: true }, { k: "best", t: f.t("col.best"), num: true },
     { k: "days_to_pass", t: f.t("col.days_to_pass"), s: f.t("abbr.days_to_pass"), num: true, f: (e) => esc(f.num(e.days_to_pass)) },
-    { k: "tries", t: f.t("col.tries"), ph: true, sv: (e) => e.tries.length, f: (e) => '<span class="marks">' + e.tries.map((x: any) =>
-      `<span class="mark ${x.passed ? "pass" : "fail"}" title="${esc(f.day(x.date))}">${esc(x.mark ?? "–")}</span>`).join("") + "</span>" },
+    { k: "tries", t: f.t("col.tries"), ph: true, sv: (e) => e.tries.length, f: (e) => '<span class="marks">' + e.tries.map((x: any) => tryChip(f, x)).join("") + "</span>" },
   ], exams, { label: f.t("exams.title"), sort: ["name", 1], empty: f.t("exams.none") })}</div>`))) });
 
   const areas = dv.domains || [];

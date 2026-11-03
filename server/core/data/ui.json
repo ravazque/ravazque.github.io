@@ -481,6 +481,11 @@
     "gap": "0px"
    }
   },
+  "where-not-logged": {
+   "mobile": {
+    "span": 12
+   }
+  },
   "table-log": {
    "mobile": {
     "span": 12

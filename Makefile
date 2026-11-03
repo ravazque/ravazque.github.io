@@ -4,7 +4,7 @@ COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.ya
 # the dev tools run here (Go); fetch reads the 42 apps from the root .env itself, without printing them
 DEVTOOLS := cd server && go run ./cmd/devtools
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-build dev-real dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot site certs clean fclean re
+.PHONY: help dev dev-build dev-real dev-live dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot site certs clean fclean re
 
 help: ## Show this help
 	@echo "ravazque.info — dev at https://localhost (signs in with FT_UID_2), production at https://ravazque.info (FT_UID)"
@@ -28,6 +28,10 @@ dev-real: .env web/Caddyfile.local ## dev-build plus the real profiles of DEV_RE
 	@$(DEVTOOLS) real $(CURDIR)/web/preview || echo "Starting without them: run make dev-real again later (only the missing ones are fetched)"
 	@DEV_PROFILES='/preview/test-*.json /preview/real-*.json' $(COMPOSE_DEV) up -d --build
 	@echo "Up at https://localhost — 'Test · …' and 'Real · …' on the landing (delete web/preview/real-<login>.json to fetch it again)"
+
+dev-live: ## Edit live: the browser app straight from web/src at http://localhost:5173, a saved change shows at once (start dev first; Ctrl+C stops)
+	@curl -sk -o /dev/null https://localhost/healthz || { echo "Dev is not running: make dev-build or make dev-real first"; exit 1; }
+	@cd web && { test -x node_modules/.bin/vite || npm ci --no-audit --no-fund --silent; } && API=https://localhost node_modules/.bin/vite --port 5173 --strictPort
 
 dev-down: ## Stop dev and remove its containers (its sessions and server copies go; browsers keep theirs)
 	@$(COMPOSE_DEV) down --remove-orphans

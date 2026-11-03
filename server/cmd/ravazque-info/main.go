@@ -24,6 +24,7 @@ func main() {
 	}
 	srv := web.New(s, web.Static(), web.Options{})
 	defer srv.Close()
+	go srv.FollowCoalitions()
 	hs := &http.Server{Addr: s.Addr, Handler: srv, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: time.Minute,
 		WriteTimeout: 2 * time.Minute, IdleTimeout: 2 * time.Minute, MaxHeaderBytes: 64 << 10}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

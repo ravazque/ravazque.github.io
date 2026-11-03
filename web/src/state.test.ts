@@ -48,3 +48,10 @@ test("widgets move to any place, keep their size and column, and read back as sa
     { page: "people", id: "d", label: "" }, { page: "people", id: "c", label: "", wide: true },
     { page: "people", id: "a", label: "" }, { page: "people", id: "b", label: "", side: "left" }]);
 });
+
+test("the next refresh falls on the next quarter of the hour", async () => {
+  const { untilQuarter } = await import("./state");
+  expect(untilQuarter(new Date(2026, 10, 1, 12, 14, 30))).toBe(30_000);
+  expect(untilQuarter(new Date(2026, 10, 1, 12, 15, 0))).toBe(15 * 60_000);
+  expect(untilQuarter(new Date(2026, 10, 1, 12, 59, 59, 500))).toBe(500);
+});

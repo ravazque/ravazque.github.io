@@ -21,6 +21,30 @@ function circleLinks(net: any, me: string, given: any[], received: any[]) {
     links: [...links].map(([k, count]) => { const [source, target] = k.split("\u0000"); return { source, target, count }; }) };
 }
 
+/** A name's first two words ("Álvaro Cerezo" of "Álvaro Cerezo Fernández"). */
+export const shortName = (name?: string | null) => (name || "").trim().split(/\s+/).slice(0, 2).join(" ");
+
+/** The evaluations a person did on you, newest first: project, day and the seat they used (known only where it was
+ * looked up, the last days); "" when there are none. */
+export function evaluatedBy(f: Page["f"], received: any[], login: string): string {
+  const evs = received.filter((e) => e.corrector?.login === login).sort((a, b) => String(b.begin).localeCompare(String(a.begin)));
+  const seat = (e: any) => (!e.other_host_checked ? "–" : e.other_host || f.t("log.not_logged"));
+  return evs.length ? [f.t("who.details_tip"), ...evs.map((e) => `${e.project} · ${f.day(e.begin)} · ${seat(e)}`)].join("\n") : "";
+}
+
+/** The first project and how many more ("libft +3 more"); "–" for none. */
+export const firstMore = (f: Page["f"], xs: string[]) => (!xs.length ? "–" : xs.length > 1 ? f.t("who.first_more", { first: xs[0], n: xs.length - 1 }) : xs[0]);
+
+/** Details: the first project and how many more; a click opens every evaluation in a floating list (project, day,
+ * their seat). Plain text when there is nothing more to list. */
+export function whoDetails(f: Page["f"], projs: string[], tip: string): string {
+  const label = esc(firstMore(f, projs));
+  if (!tip) return label;
+  const [head, ...rows] = tip.split("\n");
+  return `<details class="pop who-pop" data-float><summary>${label}</summary><div class="pop-panel"><b>${esc(head)}</b>`
+    + `<ul>${rows.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div></details>`;
+}
+
 /** Said in a title's ⓘ where erased accounts were left out: for privacy the panel is drawn with the people still there. */
 const erasedNote = (f: Page["f"], n: number) => (n ? f.plural(n, "who.erased_note") : "");
 
@@ -38,13 +62,11 @@ export function people(pg: Page): Section[] {
   const out: Section[] = [];
   const top = D.people.filter((p: any) => p.evaluated_me).slice(0, 25);
   const q = pg.q("q", "").slice(0, 80);
-  const rows = D.people.filter((p: any) => !q || JSON.stringify([p.login, p.name, p.projects_on_me, p.hosts]).toLowerCase().includes(q.toLowerCase()));
-  const firstOf = (xs: string[], n: number) => (xs.length > n ? f.t("common.first_of", { list: xs.slice(0, n).join(", "), more: xs.length - n }) : xs.join(", "));
+  // "Evaluations": the people who evaluated you or whom you evaluated (teammates have their own view)
+  const rows = D.people.filter((p: any) => (p.evaluated_me || p.evaluated_by_me) && (!q || JSON.stringify([p.login, p.name, p.projects_on_me, p.hosts]).toLowerCase().includes(q.toLowerCase())));
   const details = (p: any) => {
     const projs = Object.entries(p.projects_on_me || {}).map(([k, v]: [string, any]) => (v > 1 ? `${k} (x${v})` : k));
-    const seats = Object.keys(p.hosts || {});
-    const line = seats.length ? f.t("who.seats", { list: firstOf(seats, 2) }) : "";
-    return `<span title="${esc(projs.join(", "))}">${esc(firstOf(projs, 3) || "–")}</span>` + (line ? `<span class="sub" title="${esc(seats.join(", "))}">${esc(line)}</span>` : "");
+    return whoDetails(f, projs, evaluatedBy(f, D.received, p.login));
   };
   const tip = (p: any) => [p.login, f.t("who.tip_mark", { mark: f.num(p.avg_mark_to_me, 1), rating: f.num(p.my_rating_of_them, 2) }),
     f.t("who.tip_cross", { you: p.evaluated_by_me, team: p.teammate })].join(" · ");
@@ -63,7 +85,7 @@ export function people(pg: Page): Section[] {
   const metSwitch = pg.seg("met", [["all", f.t("who.met_all")], ["teammates", f.t("teammates.title")]], met, f.t("who.met_label"), "crossed");
   const tm = (D.insights?.teammates || []).filter((r: any) => !q || JSON.stringify([r.login, r.name, r.projects]).toLowerCase().includes(q.toLowerCase()));
   const teammates = `<div class="table-wrap">${table(f, [
-    { k: "login", t: f.t("col.login"), nw: true, f: (r) => shownLogin(f, r.login) }, { k: "name", t: f.t("col.name"), hide: true, f: (r) => (erased(r.login) ? deletedName(f) : esc(r.name || "")) },
+    { k: "login", t: f.t("col.login"), nw: true, f: (r) => shownLogin(f, r.login) }, { k: "name", t: f.t("col.name"), nw: true, hide: true, f: (r) => (erased(r.login) ? deletedName(f) : esc(shortName(r.name))) },
     { k: "teams", t: f.t("col.teams"), num: true },
     { k: "projects", t: f.t("col.projects"), sv: (r) => Object.keys(r.projects || {}).length,
       f: (r) => esc(Object.entries(r.projects || {}).map(([n, c]: [string, any]) => (c > 1 ? `${n} (x${c})` : n)).join(", ")) },
@@ -73,7 +95,7 @@ export function people(pg: Page): Section[] {
     + filters("who", search("q", q, f.t("common.search"), f.t("who.search_placeholder")))
     + `<div id="who-results">${met === "teammates" ? teammates : `<div class="table-wrap">${table(f, [
       { k: "login", t: f.t("col.login"), nw: true, f: (p) => `${erased(p.login) ? "" : avatar(p)}${shownLogin(f, p.login)}${p.staff ? " " + badge(f.t("who.staff")) : ""}` },
-      { k: "name", t: f.t("col.name"), cls: "name", hide: true, f: (p) => (erased(p.login) ? deletedName(f) : `<span title="${esc(p.name || "")}">${esc(p.name || "")}</span>`) },
+      { k: "name", t: f.t("col.name"), nw: true, hide: true, f: (p) => (erased(p.login) ? deletedName(f) : esc(shortName(p.name))) },
       { k: "group", t: f.t("col.group"), nw: true, hide: true, sv: (p) => order(groupOf.get(p.login)), f: (p) => (groupOf.has(p.login) ? esc(f.t(`groups.${groupOf.get(p.login)}`)) : "–") },
       { k: "evaluated_me", t: f.t("col.evaluated_you"), s: f.t("abbr.evaluated_you"), num: true, cls: "mid" },
       { k: "outstanding_to_me", t: f.t("col.outstanding"), s: f.t("abbr.outstanding"), num: true, cls: "mid" },

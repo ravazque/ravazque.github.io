@@ -1,5 +1,5 @@
-// Coalition: where the coalitions of Madrid stand and what you last gave yours, the logtime bonus in detail and every
-// bonus so far, and your points by source and month.
+// Coalition (student period only): where the coalitions of Madrid stand and every point you gave yours, the logtime
+// bonus in detail and every bonus so far, and your points by source and month.
 import { S1, S2, hbars, legend, vbars } from "../lib/charts";
 import { esc, safeColor } from "../lib/h";
 import { Page, Section, block, cols, headBlock, info, kpis, monthsBetween, msOf, section } from "./page";
@@ -11,7 +11,7 @@ export function coalition(pg: Page): Section[] {
   const out: Section[] = [];
 
   const C = pg.v.coalitions || [];
-  const recent = recentPoints(pg);
+  const recent = allPoints(pg);
   if (C.length || recent) {
     const best = Math.max(1, ...C.map((c: any) => c.score));
     // with the intra's banners and logos (newer reports): one strip per coalition, else the bars as before
@@ -27,14 +27,10 @@ export function coalition(pg: Page): Section[] {
       : `<li class="${c.mine ? "mine" : ""}"><span class="rank">${esc(c.rank)}</span><span class="name"><i style="background:${safeColor(c.color)}"></i>`
         + `${esc(c.name)}</span><span class="track"><b style="width:${((100 * c.score) / best).toFixed(1)}%;`
         + `background:${safeColor(c.color)}"></b></span><span class="num">${f.num(c.score)}</span></li>`).join("");
-    const mineC = D.profile.coalition;
-    const mineLine = mineC ? [mineC.name, mineC.rank ? f.t("standing.coal_rank", { n: mineC.rank }) : "", mineC.score !== null && mineC.score !== undefined ? f.t("standing.coal_score", { n: f.num(mineC.score) }) : "",
-      mineC.master ? f.t("standing.coal_master") : ""].filter(Boolean).join(" · ") : "";
     out.push({ id: "standing", nav: f.t("nav.standing"), html: section("standing", f.t("standing.title"), cols(
       C.length ? block("coalitions", `<ol class="standings${banners ? " banners" : ""}">${coal}</ol>`, f.t("standing.coalitions")) : "",
       recent ? `<div class="block recent" data-panel="coal-recent"><h3>${esc(f.t("standing.recent"))}</h3>`
-        + `<ol class="list" tabindex="0" aria-label="${esc(f.t("standing.recent"))}">${recent}</ol></div>` : ""),
-    { lede: mineLine ? `<b>${esc(f.t("standing.mine"))}:</b> ${esc(mineLine)}` : "" }) });
+        + `<ol class="list" tabindex="0" aria-label="${esc(f.t("standing.recent"))}">${recent}</ol></div>` : "")) });
   }
 
   // the logtime bonus in detail (inferred rule) and every bonus given so far
@@ -83,10 +79,11 @@ export function coalition(pg: Page): Section[] {
   return out;
 }
 
-/** The latest awards to the coalition, newest first, each with the project, evaluation or exam it came from. */
-function recentPoints(pg: Page): string {
+/** Every award to the coalition (the latest 40 in reports saved before), newest first, each with the project,
+ * evaluation or exam it came from. */
+export function allPoints(pg: Page): string {
   const f = pg.f;
-  const recent = pg.D.coalition_points?.recent;
+  const recent = pg.D.coalition_points?.awards || pg.D.coalition_points?.recent;
   if (!recent?.length) return "";
   const names = new Map<string, string>();
   for (const p of pg.allProjects) {
@@ -97,6 +94,7 @@ function recentPoints(pg: Page): string {
   return recent.map((r: any) => {
     const name = names.get(`${r.key}|${r.id}`);
     const what = name || r.key.startsWith("logtime") ? f.t(`coal.why.${r.key}`, { name: name || "" }) : f.t(`coal.src.${r.key}`);
-    return `<li><span>${esc(what)}<br><span class="note">${esc(f.stamp(msOf(r.at)))}</span></span><span class="when">+${esc(f.num(r.points))}</span></li>`;
+    const pts = r.points < 0 ? `<span class="when neg">${esc(f.num(r.points))}</span>` : `<span class="when">+${esc(f.num(r.points))}</span>`;
+    return `<li><span>${esc(what)}<br><span class="note">${esc(f.stamp(msOf(r.at)))}</span></span>${pts}</li>`;
   }).join("");
 }

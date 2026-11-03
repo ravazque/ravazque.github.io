@@ -34,14 +34,8 @@ export function campus(pg: Page): Section[] {
       `<span class="parts">${parts.map(([k, v]) => `<span class="part"><i class="${k}"></i>${esc(f.t("rhythm.s_share", { pct: v, part: f.t(`rhythm.${k}`) }))}</span>`).join("")}</span>`] : [], "wide"],
   ])))) });
 
-  const topSeat = L.seats[0];
   const overlap = L.seats.reduce((s: number, x: any) => s + x.seconds, 0) - L.total_seconds;
-  // how many of the campus's computers you used, out of those on the plan
-  const onPlan = Object.values(layout).reduce((s: number, c: any) => s + c.rows * c.seats, 0);
-  const lede = topSeat ? pair(onPlan ? f.t("seats.lede_of", { total: f.hm(L.total_seconds), computers: f.plural(L.seats.length, "count.computers"),
-    seats: f.num(onPlan), clusters: f.plural(Object.keys(layout).length, "count.clusters") })
-    : f.t("seats.lede_total", { total: f.hm(L.total_seconds), computers: f.plural(L.seats.length, "count.computers"), clusters: f.plural(Object.keys(L.clusters).length, "count.clusters") }),
-  f.t("seats.lede_top", { seat: topSeat.host, hours: f.nb(topSeat.hours, "h"), sessions: f.plural(topSeat.sessions, "count.sessions") })) : esc(f.t("empty.sessions"));
+  const lede = L.seats.length ? "" : esc(f.t("empty.sessions"));
   const seatsHead = `<h2>${esc(f.t("seats.title"))}`
     + (overlap >= 60 ? ` ${info(capital(f.t("seats.lede_overlap", { overlap: f.hm(overlap) })))}` : "") + "</h2>";
   const info_ = new Map<string, any>(L.seats.map((s: any) => [s.host, s]));
@@ -72,8 +66,8 @@ export function campus(pg: Page): Section[] {
     + (peakAt >= 0 ? `<span class="head-figure">${esc(f.t("seats.peak", { v: f.num(values[peakAt], 1), label: labels[peakAt] }))}</span>` : "") + "</div>"
     + vbars(f, labels, [[f.t("unit.hours"), values, S1]], { label: f.t("seats.month_aria"), fmt: (v) => f.num(v, 1), emptyText: f.t("empty.sessions") }) + "</div>",
     block("heat-presence", `<div class="heat-wide">${hgrid}</div>`, f.t("days.heat_title"))),
-  { lede: L.days_present ? pair(f.t("days.l_span", { days: f.plural(L.days_present, "count.days"), first: f.day(L.first_day), last: f.day(L.last_day) }),
-    f.t("days.l_avg", { avg: f.hm(L.total_seconds / L.days_present) })) : esc(f.t("empty.sessions")) }) });
+  L.days_present ? { head: `<h2>${esc(f.t("days.title"))} ${info([f.t("days.l_span", { days: f.plural(L.days_present, "count.days"), first: f.day(L.first_day), last: f.day(L.last_day) }),
+    f.t("days.l_avg", { avg: f.hm(L.total_seconds / L.days_present) })].join("\n"))}</h2>` } : { lede: esc(f.t("empty.sessions")) }) });
 
   const sq = pg.q("sq", "").slice(0, 80);
   const log = L.log.filter((s: any) => !sq || `${s.begin} ${s.end} ${s.host} ${f.dayTime(s.begin)} ${f.dayTime(s.end)}`.toLowerCase().includes(sq.toLowerCase()));
@@ -108,10 +102,32 @@ const seatOrder = (h: string) => {
   return m ? +m[1] * 1e6 + +m[2] * 1e3 + +m[3] : 9e9;
 };
 
+/** Per project, the evaluations of one role with no session of yours open (me) and, where the other side's seat was
+ * looked up, with none of theirs (other: the corrector, or each person you evaluated); most first. */
+export function notLoggedRows(role: string, evs: any[]): { project: string; me: number; other: number }[] {
+  const rows = new Map<string, { project: string; me: number; other: number }>();
+  const at = (p: string) => { let r = rows.get(p); if (!r) rows.set(p, (r = { project: p, me: 0, other: 0 })); return r; };
+  for (const e of evs) {
+    if (!e.my_host) at(e.project).me++;
+    const away = !e.other_host_checked ? 0 : role === "received" ? Number(!e.other_host) : (e.correcteds || []).filter((c: any) => !c.host).length;
+    if (away) at(e.project).other += away;
+  }
+  return [...rows.values()].sort((a, b) => b.me + b.other - a.me - a.other || a.project.localeCompare(b.project));
+}
+
 const capital = (s: string) => s.slice(0, 1).toUpperCase() + s.slice(1);
+
+/** For the "not logged" bar's tip: the projects evaluated with no session of yours open, most first. */
+export function notLoggedProjects(rows: { project: string; me: number; other: number }[]): string {
+  return rows.filter((r) => r.me).sort((a, b) => b.me - a.me || a.project.localeCompare(b.project))
+    .map((r) => (r.me > 1 ? `${r.project} (x${r.me})` : r.project)).join(", ");
+}
 
 /** The seat plan of "Where · evaluations": off, its code kept. */
 const WHERE_PLAN = false;
+/** The table under "Where · evaluations" of the projects evaluated without a login, each linking to the evaluation log
+ * (false: the "not logged" bar's tip names them instead, one line per side). */
+const NOT_LOGGED_TABLE = false;
 
 function where(pg: Page): Section {
   const f = pg.f, D = pg.D, PL = D.place, S = D.summary, layout = pg.v.layout || {};
@@ -129,7 +145,20 @@ function where(pg: Page): Section {
   const lab = (k: string) => (k === "not logged" ? f.t("log.not_logged") : k);
   // group evaluations happen at the leader's computer: how many of the received ones you led
   const led = D.projects.flatMap((p: any) => p.attempts).filter((a: any) => a.leader && (a.members || []).length).reduce((n: number, a: any) => n + (a.evals || []).length, 0);
-  const tips = ckeys.map((k) => [lab(k), ...series.map(([n, v]) => `${n}: ${f.num(v[k] || 0)}`),
+  const away = notLoggedRows(role, recv ? D.received : D.given);
+  const mineList = NOT_LOGGED_TABLE ? "" : notLoggedProjects(away);
+  const toLog = (o: Record<string, string>) => pg.url("evaluations", { log: role, ...o }) + "#log";
+  const linked = (n: number, o: Record<string, string>) => (n ? `<a class="code" href="${esc(toLog(o))}">${f.num(n)}</a>` : "–");
+  const awayTable = NOT_LOGGED_TABLE && away.length ? headBlock("where-not-logged", f.t("where.nl_title"), `<a class="code" href="${esc(toLog({ seat: "me" }))}">${esc(f.t("where.nl_all"))}</a>`,
+    `<div class="table-wrap">${table(f, [
+      { k: "project", t: f.t("col.project"), f: (r) => `<a class="code" href="${esc(toLog({ project: r.project }))}">${esc(r.project)}</a>` },
+      { k: "me", t: f.t("col.nl_you"), num: true, cls: "ctr", f: (r) => linked(r.me, { project: r.project, seat: "me" }) },
+      { k: "other", t: f.t(recv ? "col.nl_corrector" : "col.nl_evaluated"), num: true, cls: "ctr", f: (r) => linked(r.other, { project: r.project, seat: "other" }) },
+    ], away, { label: f.t("where.nl_title"), sort: ["me", -1] })}</div>`, pg.seats ? f.t("where.nl_note", { days: pg.seats }) : "") : "";
+  // the "not logged" bar speaks of you alone: your count with your projects beside it
+  const tips = ckeys.map((k) => [lab(k), ...(k === "not logged" && !NOT_LOGGED_TABLE
+    ? [`${series[0][0]}: ${f.num(series[0][1][k] || 0)}` + (mineList ? ` · ${mineList}` : "")]
+    : series.map(([n, v]) => `${n}: ${f.num(v[k] || 0)}`)),
     ...(k === "not logged" && recv ? [f.t("where.note_not_logged"), f.plural(led, "where.leader")] : [])].join("\n"));
   // the seat plan of evaluations is kept but not drawn (WHERE_PLAN): the cluster chart says it more plainly
   const shown: Record<string, number> = {};
@@ -144,6 +173,7 @@ function where(pg: Page): Section {
   return { id: "where", nav: f.t("nav.where"), html: section("where", "", cols(
     ...(WHERE_PLAN ? [`<div class="block" data-panel="where-plan" id="where-plan"><div class="block-head">${wscale}</div>${wplan}</div>`] : []),
     headBlock("where-clusters", f.t(`where.title_${role}`), series.length > 1 ? legend(series.map(([n, , c]) => [n, c])) : "",
-      vbars(f, ckeys.map(lab), series.map(([n, v, c]) => [n, ckeys.map((k) => v[k] || 0), c]), { label: f.t(`where.title_${role}`), fmt: (v) => f.num(v), tips, barTips: true, emptyText: f.t("empty.period") }))),
+      vbars(f, ckeys.map(lab), series.map(([n, v, c]) => [n, ckeys.map((k) => v[k] || 0), c]), { label: f.t(`where.title_${role}`), fmt: (v) => f.num(v), tips, barTips: true, emptyText: f.t("empty.period") })),
+    awayTable),
   { head: `<div class="panel-head"><h2>${esc(f.t("where.title"))} ${info(f.t("where.inferred_note"))}</h2>${sw}</div>`, lede }) };
 }

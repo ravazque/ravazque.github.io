@@ -2,8 +2,10 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"slices"
@@ -151,7 +153,7 @@ func (s *Server) view(w http.ResponseWriter, r *http.Request, si signedIn) {
 		"period": p, "periods": periods.Keys(), "default_period": data.V("default_period"), "light": data.V("light"),
 		"seat_days": data.V("seat_days"), "report": rep, "derive": core.Derive(rep, all, s.now()),
 		"layout": data.V("layout"), "connections": data.Obj("connections").V(p), "network": data.Obj("network").V(p),
-		"promo": data.V("promo"), "coalitions": data.V("coalitions"), "all_projects": all.V("projects"), "all_cursus": all.Obj("extras").V("cursus"),
+		"promo": data.V("promo"), "coalitions": s.coalitionsFor(data), "all_projects": all.V("projects"), "all_cursus": all.Obj("extras").V("cursus"),
 	})
 }
 
@@ -234,28 +236,7 @@ func (s *Server) avatar(w http.ResponseWriter, r *http.Request, si signedIn) {
 // coalitionImage serves a coalition's logo or banner from the intra CDN (the page's CSP keeps every image on this
 // origin): only coalition paths of the CDN, cached for a day for everyone, and an SVG never runs (sandboxed, no sniffing).
 func (s *Server) coalitionImage(w http.ResponseWriter, r *http.Request, si signedIn) {
-	u := r.URL.Query().Get("u")
-	if !strings.HasPrefix(u, s.API.CDN+"coalition/") || strings.Contains(u, "..") || strings.ContainsAny(u, "?#") {
-		w.WriteHeader(404)
-		return
-	}
-	key := "coalimg:" + u
-	var b []byte
-	ct := ""
-	if cached, ok := s.M.Get(key); ok {
-		ct, b = string(cached[:bytes.IndexByte(cached, '\n')]), cached[bytes.IndexByte(cached, '\n')+1:]
-	} else {
-		var err error
-		if b, ct, err = s.API.Avatar(r.Context(), u); err != nil {
-			s.M.Set(key, []byte("\n"), 10*time.Minute, false) // a missing image is not asked for again at once
-			w.WriteHeader(404)
-			return
-		}
-		if ct = strings.TrimSpace(strings.Split(ct, ";")[0]); !imageTypes[ct] && ct != "image/svg+xml" {
-			ct, b = "", nil
-		}
-		s.M.Set(key, append([]byte(ct+"\n"), b...), 24*time.Hour, false)
-	}
+	ct, b := s.coalitionImageBytes(r.Context(), r.URL.Query().Get("u"))
 	if len(b) == 0 {
 		w.WriteHeader(404)
 		return
@@ -265,6 +246,75 @@ func (s *Server) coalitionImage(w http.ResponseWriter, r *http.Request, si signe
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Cache-Control", "private, max-age=86400")
 	w.Write(b)
+}
+
+// coalitionImageBytes is a coalition's logo or cover from the intra CDN (coalition paths only), kept in memory 24 h;
+// nothing when the path is refused or the image is missing.
+func (s *Server) coalitionImageBytes(ctx context.Context, u string) (string, []byte) {
+	if !strings.HasPrefix(u, s.API.CDN+"coalition/") || strings.Contains(u, "..") || strings.ContainsAny(u, "?#") {
+		return "", nil
+	}
+	key := "coalimg:" + u
+	if cached, ok := s.M.Get(key); ok {
+		return string(cached[:bytes.IndexByte(cached, '\n')]), cached[bytes.IndexByte(cached, '\n')+1:]
+	}
+	b, ct, err := s.API.Avatar(ctx, u)
+	if err != nil {
+		s.M.Set(key, []byte("\n"), 10*time.Minute, false) // a missing image is not asked for again at once
+		return "", nil
+	}
+	if ct = strings.TrimSpace(strings.Split(ct, ";")[0]); !imageTypes[ct] && ct != "image/svg+xml" {
+		ct, b = "", nil
+	}
+	s.M.Set(key, append([]byte(ct+"\n"), b...), 24*time.Hour, false)
+	return ct, b
+}
+
+// refreshCoalitions asks for the Madrid bloc once per quarter of the hour and keeps the coalitions' logos and covers in
+// memory, so every page shows the current standing and nobody waits for the CDN.
+func (s *Server) refreshCoalitions(ctx context.Context) {
+	bloc, err := s.API.Bloc(ctx, s.now())
+	if err != nil {
+		slog.Warn("coalitions", "error", err.Error())
+		return
+	}
+	for _, c := range core.Objs(bloc, "coalitions") {
+		for _, k := range []string{"image_url", "cover_url"} {
+			if u := core.Str(c, k); u != "" {
+				s.coalitionImageBytes(ctx, u)
+			}
+		}
+	}
+}
+
+// coalitionsFor is the latest standing of the Madrid coalitions with the student's own marked (found by the name
+// saved with the report); the report's own standing until the first refresh.
+func (s *Server) coalitionsFor(data *core.OMap) any {
+	bloc := s.API.LastBloc()
+	if len(core.Objs(bloc, "coalitions")) == 0 {
+		return data.V("coalitions")
+	}
+	mine := ""
+	for _, c := range data.Os("coalitions") {
+		if c.B("mine") {
+			mine = c.S("name")
+		}
+	}
+	var id any
+	for _, c := range core.Objs(bloc, "coalitions") {
+		if mine != "" && core.Str(c, "name") == mine {
+			id = c["id"]
+		}
+	}
+	return core.CoalitionStandings(bloc, id)
+}
+
+func (s *Server) coalitions(w http.ResponseWriter, r *http.Request, si signedIn) {
+	data, ok := s.load(w, si)
+	if !ok {
+		return
+	}
+	writeJSON(w, 200, map[string]any{"coalitions": s.coalitionsFor(data)})
 }
 
 // stats is the owner's live operations page: counters, queue, API budget and who is signed in.

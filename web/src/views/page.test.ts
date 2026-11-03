@@ -38,3 +38,42 @@ test("every section Profile offers as a widget is built by its page and has a ti
     expect(key in en && key in es, key).toBe(true);
   }
 });
+
+test("per project, the received evaluations with no session of yours open and, where looked up, none of your corrector's", async () => {
+  const { notLoggedRows } = await import("./campus");
+  const ev = (project: string, my_host: string | null, checked = false, other_host: string | null = null) => ({ project, my_host, other_host_checked: checked, other_host });
+  expect(notLoggedRows("received", [ev("libft", null), ev("minishell", "c1r1s1", true, null), ev("libft", null, true, "c2r1s1"), ev("cub3d", "c1r1s1", true, "c1r2s2"),
+    ev("push_swap", null, true, null)])).toEqual([
+    { project: "libft", me: 2, other: 0 }, { project: "push_swap", me: 1, other: 1 }, { project: "minishell", me: 0, other: 1 }]);
+});
+
+test("per project, the given evaluations with no session of yours open and each evaluated person not logged where looked up", async () => {
+  const { notLoggedRows } = await import("./campus");
+  const ev = (project: string, my_host: string | null, checked: boolean, hosts: (string | null)[]) =>
+    ({ project, my_host, other_host_checked: checked, correcteds: hosts.map((host, i) => ({ login: `peer0${i}`, host })) });
+  expect(notLoggedRows("given", [ev("libft", "c1r1s1", true, [null, null, "c1r1s2"]), ev("libft", null, false, [null]), ev("so_long", "c1r1s1", true, ["c3r1s1"])]))
+    .toEqual([{ project: "libft", me: 1, other: 2 }]);
+});
+
+test("Coalition always shows the student period; every other page the one chosen", async () => {
+  const { pagePeriod } = await import("./page");
+  expect(pagePeriod("coalition", "piscine")).toBe("student");
+  expect(pagePeriod("coalition", "")).toBe("student");
+  expect(pagePeriod("campus", "piscine")).toBe("piscine");
+  expect(pagePeriod("home", "")).toBe("");
+});
+
+test("the not logged bar's tip names your projects beside your count", async () => {
+  const { notLoggedProjects } = await import("./campus");
+  const rows = [{ project: "libft", me: 2, other: 0 }, { project: "push_swap", me: 1, other: 1 }, { project: "minishell", me: 0, other: 3 }];
+  expect(notLoggedProjects(rows)).toBe("libft (x2), push_swap");
+  expect(notLoggedProjects([{ project: "minishell", me: 0, other: 3 }])).toBe("");
+});
+
+test("negative flags are named, most first, per month", async () => {
+  const { negativeFlags } = await import("./page");
+  const ev = (begin: string, flag: string, negative_flag = true) => ({ begin, flag, negative_flag });
+  const evs = [ev("2026-03-02 10:00", "Cheat"), ev("2026-03-09 10:00", "Crash"), ev("2026-03-20 10:00", "Cheat"), ev("2026-03-21 10:00", "Ok", false),
+    ev("2026-04-01 10:00", "Norme")];
+  expect(negativeFlags(evs)).toEqual(new Map([["2026-03", "Cheat ×2, Crash"], ["2026-04", "Norme"]]));
+});

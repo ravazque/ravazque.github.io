@@ -194,3 +194,33 @@ func TestRetryAfterIsCapped(t *testing.T) {
 		}
 	}
 }
+
+func TestBlocIsAskedOncePerQuarterOfTheHour(t *testing.T) {
+	var asked atomic.Int64
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/oauth/token" {
+			tokenOK(w, "T")
+			return
+		}
+		if r.URL.Path != "/v2/blocs" || r.URL.Query().Get("filter[campus_id]") != "22" || r.URL.Query().Get("filter[cursus_id]") != "21" {
+			t.Errorf("asked %s", r.URL)
+		}
+		asked.Add(1)
+		w.Write([]byte(`[{"coalitions":[{"id":7,"name":"Zefiria","score":10}]}]`))
+	})
+	if c.LastBloc() != nil {
+		t.Fatal("a bloc before asking for one")
+	}
+	at := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	for _, d := range []time.Duration{time.Minute, 14*time.Minute + 59*time.Second, 15 * time.Minute, 29 * time.Minute} {
+		if _, err := c.Bloc(context.Background(), at.Add(d)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if asked.Load() != 2 {
+		t.Fatalf("asked %d times for two quarters", asked.Load())
+	}
+	if cs, _ := c.LastBloc()["coalitions"].([]any); len(cs) != 1 {
+		t.Fatalf("last bloc %v", c.LastBloc())
+	}
+}

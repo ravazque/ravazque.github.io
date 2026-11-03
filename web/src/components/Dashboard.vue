@@ -3,12 +3,12 @@
 // (and Profile's today), builds the sections as markup and lets the browser behaviours take it from there.
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setWidget, state, togglePin, type Status } from "../state";
+import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setWidget, state, togglePin, untilQuarter, type Status } from "../state";
 import { closePops, hideTip, settle } from "../lib/behave";
 import { idbShelf, keepCopy, restore } from "../lib/copy";
 import { esc } from "../lib/h";
 import { parseCsv } from "../lib/table";
-import { Page, type PageKey, type Section, type View } from "../views/page";
+import { Page, pagePeriod, type PageKey, type Section, type View } from "../views/page";
 import type { Today } from "../views/home";
 import { profile as profileSections } from "../views/profile";
 import { portfolioCsv, projects, projectsCsv } from "../views/projects";
@@ -84,7 +84,7 @@ async function load() {
 }
 
 async function fetchView() {
-  const period = params.value.period || "";
+  const period = pagePeriod(key.value, params.value.period || "");
   const [v, td] = await Promise.all([
     api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`),
     key.value === "home" ? api<Today>("/api/me/today") : Promise.resolve(null),
@@ -92,6 +92,7 @@ async function fetchView() {
   view.value = v;
   today.value = td;
   screen.value = "page";
+  followCoalitions();
   const u = state.session?.user, last = state.status?.last || "";
   if (u && last && localStorage.getItem(`copy:${u.login}`) !== last) {
     keepCopy(idbShelf, u.login, (p, i) => fetch(p, { credentials: "same-origin", ...i })).then(() => localStorage.setItem(`copy:${u.login}`, last)).catch(() => {});
@@ -105,9 +106,24 @@ async function watchSync() {
   await fetchView();
 }
 
+/** The server refreshes the coalitions' standing on every quarter of the hour: where it shows, the open page follows
+ * (half a minute later, the refresh done). */
+let live = 0;
+function followCoalitions() {
+  clearTimeout(live);
+  live = window.setTimeout(async () => {
+    const v = view.value;
+    if (v && main.value?.querySelector(".standings")) {
+      const r = await api<{ coalitions: any[] }>("/api/me/coalitions").catch(() => null);
+      if (r && v === view.value && JSON.stringify(r.coalitions) !== JSON.stringify(v.coalitions)) view.value = { ...v, coalitions: r.coalitions };
+    }
+    followCoalitions();
+  }, untilQuarter(new Date()) + 30_000);
+}
+
 watch([key, () => params.value.period], () => { if (screen.value === "page") fetchView(); else load(); });
 load();
-onBeforeUnmount(() => clearTimeout(poll));
+onBeforeUnmount(() => { clearTimeout(poll); clearTimeout(live); });
 
 // the field being typed in survives the re-render its own input caused; a link's anchor is reached once drawn
 let typingIn: { form: string; name: string; start: number | null; end: number | null } | null = null;
@@ -332,16 +348,19 @@ function exportCsv(btn: HTMLElement) {
 
 const periods = computed(() => (view.value && view.value.periods.length > 1 ? view.value.periods : []));
 const periodHref = (p: string) => router.resolve({ query: { ...params.value, period: p } }).fullPath;
+// Coalition keeps to the student period: its switch shows it and changes nothing, the chosen period waits in the address
+const locked = computed(() => pagePeriod(key.value, "") !== "");
 </script>
 
 <template>
-  <AppHeader :page="key" :period="view?.period" :periods="periods" @refreshed="watchSync" />
+  <AppHeader :page="key" :period="params.period || view?.period" :periods="periods" @refreshed="watchSync" />
   <main v-if="screen === 'page'" id="main" ref="main" :data-page="`web-${key}`" @click="onClick" @input="onInput" @change="onInput" @submit.prevent
     @keydown="onKey" @dragstart="onDragStart" @dragover="onDragOver" @drop="onDrop" @dragend="onDragEnd">
     <header class="page-head">
       <h1>{{ title }}</h1>
       <nav v-if="periods.length" class="seg periods" :aria-label="f.t('rail.period')">
-        <a v-for="p in periods" :key="p" :href="periodHref(p)" data-keep role="button" :aria-pressed="p === view?.period">{{ f.t(`period.${p}`) }}</a>
+        <a v-for="p in periods" :key="p" :href="locked ? undefined : periodHref(p)" data-keep role="button" :aria-pressed="p === view?.period"
+          :aria-disabled="locked && p !== view?.period ? 'true' : undefined" :title="locked ? f.t('period.student_only') : undefined">{{ f.t(`period.${p}`) }}</a>
       </nav>
       <p v-else-if="key === 'home' && state.status?.last" class="periods only">{{ f.t("today.as_of", { time: f.stamp(new Date(state.status.last).getTime()) }) }}</p>
     </header>

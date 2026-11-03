@@ -314,6 +314,7 @@ func fetchReal(dir string) error {
 	if err != nil {
 		return err
 	}
+	c.AnyAccount = true // a blackholed or frozen classmate is still a useful local profile
 	found, err := c.Get(context.Background(), "/v2/users", url.Values{"filter[login]": {strings.Join(missing, ",")}, "page[size]": {"100"}})
 	if err != nil {
 		return err

@@ -53,7 +53,7 @@
 :where(body:not(.site)) .theme button[aria-pressed="true"], :where(body:not(.site)) .theme a[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
 
 /* ---------- page head: the page's name at poster scale, who, the period ---------- */
-:where(body:not(.site)) .page-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 40px; padding-top: 28px; padding-bottom: 16px; border-bottom: 6px solid var(--rule-strong); }
+:where(body:not(.site)) .page-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 40px; padding-top: 28px; padding-bottom: 16px; border-bottom: var(--page-line) solid var(--rule-strong); }
 :where(body:not(.site)) .page-head h1 { font: 900 clamp(56px, 9vw, 112px)/.88 var(--type-font-display); letter-spacing: -.045em; text-wrap: balance; }
 :where(body:not(.site)) .who { display: flex; gap: 16px; align-items: center; }
 :where(body:not(.site)) .avatar-lg { position: relative; flex: none; width: 56px; height: 56px; overflow: hidden; background: var(--sunken); display: grid; place-items: center;
@@ -79,7 +79,7 @@
 
 /* ---------- section index: sticky under the band ---------- */
 :where(body:not(.site)) .toc { position: sticky; top: var(--c-topbar-height); z-index: 20; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
-  margin: 0 calc(-1 * var(--c-page-padding-x)); padding: 0 var(--c-page-padding-x); background: var(--ground); border-bottom: 1px solid var(--rule); }
+  margin: 0 calc(-1 * var(--c-page-padding-x)); padding: 0 var(--c-page-padding-x); background: var(--ground); border-bottom: var(--toc-line) solid var(--rule); }
 :where(body:not(.site)) .toc::-webkit-scrollbar { display: none; }
 :where(body:not(.site)) .toc a { position: relative; flex: none; display: inline-flex; align-items: center; min-height: 46px; padding: 0 14px; color: var(--text-2); text-decoration: none;
   font: 600 16px var(--type-font-text); white-space: nowrap; transition: color var(--motion-fast) ease-out; }
@@ -94,7 +94,7 @@
 :where(body:not(.site)) section { padding-top: var(--c-section-padding-top); scroll-margin-top: 8px; }
 :where(body:not(.site)) h2 {
   font: 800 var(--c-section-h2-size)/1 var(--type-font-display); letter-spacing: -.03em;
-  padding-bottom: 12px; border-bottom: var(--c-section-h2-rule) solid var(--rule-strong); margin-bottom: var(--c-section-h2-gap); text-wrap: balance;
+  padding-bottom: var(--title-pad); border-bottom: var(--title-line) solid var(--rule-strong); margin-bottom: var(--c-section-h2-gap); text-wrap: balance;
 }
 :where(body:not(.site)) h2 .count { white-space: nowrap; }
 :where(body:not(.site)) h3 { font: 700 var(--c-section-h3-size)/1.25 var(--type-font-display); margin-bottom: 4px; }
@@ -126,15 +126,16 @@
 :where(body:not(.site)) .lead .v small { font-size: .45em; color: var(--muted); font-weight: 700; }
 :where(body:not(.site)) .lead .s { color: var(--muted); font-size: 15px; }
 :where(body:not(.site)) .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); column-gap: 32px; margin-top: 36px; }
-:where(body:not(.site)) .facts div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+:where(body:not(.site)) .facts div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 10px 0; border-bottom: var(--list-line) solid var(--rule); }
 :where(body:not(.site)) .facts dt { color: var(--text-2); }
 :where(body:not(.site)) .facts dd { font: 700 19px var(--type-font-display); text-align: right; }
 :where(body:not(.site)) .facts dd span { display: block; font: 400 14px var(--type-font-text); color: var(--muted); }
 
 /* ---------- seat plan ---------- */
 :where(body:not(.site)) .plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--c-cluster-min-width)), 1fr)); gap: var(--c-cluster-gap-y) var(--c-cluster-gap-x); align-items: start; }
-:where(body:not(.site)) .cluster figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: var(--c-cluster-rule) solid var(--rule-strong); padding-bottom: 4px; margin-bottom: 10px; }
+:where(body:not(.site)) .cluster figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: var(--cluster-line) solid var(--rule-strong); padding-bottom: 4px; margin-bottom: 10px; }
 :where(body:not(.site)) .cluster figcaption b { font: 800 var(--c-cluster-label-size)/1 var(--type-font-display); }
+:where(body:not(.site)) .cluster figcaption b .n { font-style: normal; font-weight: 600; font-size: .5em; color: var(--muted); }
 :where(body:not(.site)) .cluster figcaption span { color: var(--text-2); font-weight: 600; font-size: 15px; }
 :where(body:not(.site)) .row { display: grid; grid-template-columns: var(--c-seat-label-width) repeat(var(--seats), minmax(0, 1fr)); gap: var(--c-seat-gap); margin-bottom: var(--c-seat-gap); align-items: center; }
 :where(body:not(.site)) .rn { font: 600 13px var(--type-font-display); color: var(--muted); }
@@ -147,7 +148,7 @@
 :where(body:not(.site)) .seat.top { box-shadow: inset 0 0 0 max(var(--c-seat-ring), 1.5px) var(--highlight); }  /* its own edge, in gold */
 :where(body:not(.site)) .seat:target { outline: 3px solid var(--focus); outline-offset: 2px; scroll-margin: 40vh 0; }
 :where(body:not(.site)) .plan-other { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 20px; width: fit-content; max-width: 100%;
-  margin: 18px auto 0; padding: 6px 12px; border: 1px solid var(--rule); color: var(--text-2); font-size: 14px; }
+  margin: 18px auto 0; padding: 6px 12px; border: var(--key-box) solid var(--rule); color: var(--text-2); font-size: 14px; }
 :where(body:not(.site)) .plan-other b { color: var(--ink); font-weight: 600; }
 :where(body:not(.site)) .plan-other .grp { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 :where(body:not(.site)) .plan-other .seat { display: inline-block; width: 26px; height: 14px; flex: none; }
@@ -191,6 +192,9 @@
   :where(body:not(.site)) [data-panel="heat-presence"] .heat { flex: 1; max-width: none; grid-template-rows: auto repeat(7, minmax(14px, 1fr)); }
   :where(body:not(.site)) [data-panel="heat-presence"] .heat .c { aspect-ratio: auto; }
   :where(body:not(.site)) [data-panel="heat-presence"] .heat > span:not(.c):not(.h) { align-self: center; }
+  /* its last row ends on the baseline of Hours per month: the room of that chart's month labels (6 px above them, one
+     line, 6 px under the chart) stays free */
+  :where(body:not(.site)) [data-panel="heat-presence"]::after { content: ""; flex: none; height: calc(12px + 1lh); font-size: var(--c-chart-font-size); }
 }
 :where(body:not(.site)) .heat .h { text-align: center; }
 :where(body:not(.site)) .cal-grid .d.on:hover, :where(body:not(.site)) .heat .c[data-tip]:hover { outline: var(--c-focus-width) solid var(--focus); outline-offset: 1px; }
@@ -206,8 +210,8 @@
 }
 :where(body:not(.site)) .table-wrap.tall { max-height: var(--c-table-tall-max-height); }
 :where(body:not(.site)) table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--c-table-font-size); }
-:where(body:not(.site)) th, :where(body:not(.site)) td { text-align: left; padding: var(--c-table-cell-padding-y) var(--c-table-cell-padding-x); border-bottom: 1px solid var(--c-table-border); vertical-align: middle; }
-:where(body:not(.site)) th { position: sticky; top: 0; z-index: 1; padding: 0; background: var(--c-table-bg); border-bottom: var(--c-table-head-rule) solid var(--rule-strong); vertical-align: bottom; }
+:where(body:not(.site)) th, :where(body:not(.site)) td { text-align: left; padding: var(--c-table-cell-padding-y) var(--c-table-cell-padding-x); border-bottom: var(--table-row-line) solid var(--c-table-border); vertical-align: middle; }
+:where(body:not(.site)) th { position: sticky; top: 0; z-index: 1; padding: 0; background: var(--c-table-bg); border-bottom: var(--table-head-line) solid var(--rule-strong); vertical-align: bottom; }
 :where(body:not(.site)) th button {
   display: flex; align-items: center; gap: 6px; width: 100%; padding: var(--c-sort-header-padding); border: 0; background: none; cursor: pointer;
   font: 700 var(--c-sort-header-font-size)/1.15 var(--type-font-display); color: var(--c-sort-header-fg); text-align: left;
@@ -227,7 +231,6 @@
 :where(body:not(.site)) td.nowrap { white-space: nowrap; }
 :where(body:not(.site)) td.mid { min-width: 160px; }
 /* table cells ignore max-width, so the clipping lives on their content */
-:where(body:not(.site)) td.name span { display: block; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :where(body:not(.site)) td.proj { min-width: 140px; }
 :where(body:not(.site)) td.proj .badge { margin-left: 10px; }
 :where(body:not(.site)) td.proj .sub { max-width: 150px; }
@@ -241,7 +244,6 @@
 :where(body:not(.site)) tbody.pair:hover td, :where(body:not(.site)) tbody tr:hover td { background: var(--c-table-row-hover); }
 /* the comment preview must not widen the table: it takes whatever width the columns leave */
 :where(body:not(.site)) tr.detail details { contain: inline-size; }
-:where(body:not(.site)) .preview { color: var(--muted); margin-left: 8px; }
 :where(body:not(.site)) a.code { color: inherit; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 4px; }
 :where(body:not(.site)) a.code:hover { text-decoration-color: currentColor; }
 /* wide tables keep their first column in view while scrolling sideways */
@@ -276,11 +278,10 @@
 :where(body:not(.site)) details summary::before { content: ""; display: inline-block; border: var(--c-disclosure-marker-size) solid transparent; border-left-color: currentColor;
   margin-right: var(--c-disclosure-gap); transition: transform var(--motion-fast) ease-out; transform-origin: 30% 50%; }
 :where(body:not(.site)) details[open] > summary::before { transform: rotate(90deg); }
-:where(body:not(.site)) details[open] > summary .preview { display: none; }
 :where(body:not(.site)) details .txt { white-space: pre-wrap; margin: 6px 0 10px; max-width: 80ch; }
 
 :where(body:not(.site)) .list { margin: 10px 0 0; padding: 0 14px 0 0; list-style: none; max-height: 440px; overflow: auto; }  /* the text keeps clear of the scrollbar */
-:where(body:not(.site)) .list li { padding: 9px 0; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 16px; }
+:where(body:not(.site)) .list li { padding: 9px 0; border-bottom: var(--list-line) solid var(--rule); display: flex; justify-content: space-between; gap: 16px; }
 :where(body:not(.site)) .list li .when { color: var(--muted); white-space: nowrap; font-size: 14px; }
 
 /* the page settles after a period switch */
@@ -315,14 +316,14 @@
 :where(body:not(.site)) .web-controls .link-btn:hover { color: var(--ink); }
 
 :where(body:not(.site)) .kpis { display: grid; grid-template-columns: 1fr; gap: 24px 32px; }
-:where(body:not(.site)) .kpis > div { border-top: var(--c-kpi-rule) solid var(--rule-strong); padding-top: 10px; }
+:where(body:not(.site)) .kpis > div { border-top: var(--kpi-line) solid var(--rule-strong); padding-top: var(--kpi-pad); }
 :where(body:not(.site)) .kpis h3 { font-size: 15px; font-weight: 700; color: var(--ink); }
 :where(body:not(.site)) .kpis .v { font: 800 calc(var(--c-kpi-size) * .7)/1 var(--type-font-display); letter-spacing: -.035em; margin: 14px 0 8px; }
 :where(body:not(.site)) .kpis .v small { font-size: .42em; color: var(--muted); font-weight: 700; letter-spacing: 0; word-spacing: .08em; }
 :where(body:not(.site)) .kpis .s { color: var(--text-2); font-size: 16px; }
 
 :where(body:not(.site)) .rates { display: grid; grid-template-columns: 1fr; gap: 24px 32px; }
-:where(body:not(.site)) .rates > div { border-top: var(--c-kpi-rule) solid var(--rule-strong); padding-top: 10px; }
+:where(body:not(.site)) .rates > div { border-top: var(--kpi-line) solid var(--rule-strong); padding-top: var(--kpi-pad); }
 :where(body:not(.site)) .rates .v { font: 800 calc(var(--c-kpi-size) * .7)/1 var(--type-font-display); letter-spacing: -.035em; }
 :where(body:not(.site)) .rates .v small { font-size: .5em; color: var(--muted); }
 :where(body:not(.site)) .rates .k { color: var(--text-2); margin-top: 6px; }
@@ -361,15 +362,10 @@
 :where(body:not(.site)) .graph-empty { position: absolute; inset: 0; display: grid; place-items: center; }
 :where(body:not(.site)) .graph-table { margin-top: 12px; }
 
-/* scroll boxes fade out at the bottom while rows remain below (class set by report.js) */
-:where(body:not(.site)) .list.more, :where(body:not(.site)) .table-wrap.more {
-  -webkit-mask-image: linear-gradient(to bottom, var(--mask) calc(100% - 56px), transparent);
-  mask-image: linear-gradient(to bottom, var(--mask) calc(100% - 56px), transparent);
-}
 
 
 /* ---------- panels ---------- */
-:where(body:not(.site)) [data-panel] { border-top: 2px solid var(--rule-strong); padding-top: 12px; }
+:where(body:not(.site)) [data-panel] { border-top: var(--block-line) solid var(--rule-strong); padding-top: var(--block-pad); }
 :where(body:not(.site)) [data-panel] > h3:first-child, :where(body:not(.site)) .panel-head h3 { margin-top: 0; }
 :where(body:not(.site)) [data-panel] .table-wrap { border: 0; border-radius: 0; margin-top: 4px; }
 :where(body:not(.site)) .panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 8px; }
@@ -385,14 +381,14 @@
 :where(body:not(.site)) .radar .label { fill: var(--text-2); font: 500 14px var(--type-font-text); }
 :where(body:not(.site)) .radar.compact .label { font-size: 15px; font-weight: 700; }  /* numbers only: the key under the radar names them */
 :where(body:not(.site)) .radar-key { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; font-size: 13px; }
-:where(body:not(.site)) .radar-key li { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; gap: 6px; align-items: baseline; padding: 3px 0; border-bottom: 1px solid var(--rule); }
+:where(body:not(.site)) .radar-key li { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; gap: 6px; align-items: baseline; padding: 3px 0; border-bottom: var(--list-line) solid var(--rule); }
 :where(body:not(.site)) .radar-key .k { font: 700 13px var(--type-font-display); color: var(--muted); }
 :where(body:not(.site)) .radar-key .v { color: var(--text-2); }
 @media (max-width: 420px) { :where(body:not(.site)) .radar-key { grid-template-columns: 1fr; } }
 
 /* ---------- coalitions and promo, grouped tables ---------- */
 :where(body:not(.site)) .standings { list-style: none; margin: 8px 0 0; padding: 0; }
-:where(body:not(.site)) .standings li { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) 1.2fr auto; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+:where(body:not(.site)) .standings li { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) 1.2fr auto; align-items: center; gap: 12px; padding: 9px 0; border-bottom: var(--list-line) solid var(--rule); }
 :where(body:not(.site)) .standings .rank { font: 700 18px var(--type-font-display); color: var(--muted); }
 :where(body:not(.site)) .standings .name { font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
 :where(body:not(.site)) .standings .name i { width: 12px; height: 12px; flex: none; }
@@ -420,7 +416,7 @@
   font: 700 13px var(--type-font-display); }
 
 /* ---------- footer: credits ---------- */
-:where(body:not(.site)) .site-foot { margin-top: 64px; padding-top: 18px; border-top: var(--c-section-h2-rule) solid var(--rule-strong); display: grid; gap: 20px;
+:where(body:not(.site)) .site-foot { margin-top: 64px; padding-top: 18px; border-top: var(--foot-line) solid var(--rule-strong); display: grid; gap: 20px;
   color: var(--text-2); max-width: none; }
 :where(body:not(.site)) .foot-title { font-size: 22px; border: 0; padding: 0; margin: 0 0 8px; }
 :where(body:not(.site)) .foot-credit { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }

@@ -117,6 +117,21 @@ func (s *Server) sweep() {
 	}
 }
 
+// FollowCoalitions refreshes the coalitions now and then on every quarter of the hour (:00, :15, :30, :45) until Close.
+func (s *Server) FollowCoalitions() {
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		s.refreshCoalitions(ctx)
+		cancel()
+		now := s.now()
+		select {
+		case <-s.stop:
+			return
+		case <-time.After(now.Truncate(15 * time.Minute).Add(15 * time.Minute).Sub(now)):
+		}
+	}
+}
+
 // extractJob is the queued extraction: the 42 data, analysed, saved as the user's report.
 func (s *Server) extractJob(ctx context.Context, uid int) error {
 	return app.RunExtraction(ctx, s.Store, s.Stats, uid, func(ctx context.Context, progress func(float64)) ([]byte, error) {
@@ -171,6 +186,7 @@ func (s *Server) routes() {
 	m.HandleFunc("GET /api/stats", s.user(s.stats))
 	m.HandleFunc("GET /avatar/me", s.user(s.avatar))
 	m.HandleFunc("GET /api/me/coalition-image", s.user(s.coalitionImage))
+	m.HandleFunc("GET /api/me/coalitions", s.user(s.coalitions))
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, 404, errBody("not-found")) })
 	m.HandleFunc("/", s.spa)
 	s.mux = m

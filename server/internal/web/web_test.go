@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -26,9 +27,11 @@ func settings() app.Settings {
 		ControllerName: "Test", OwnerLogin: "tmidway"}
 }
 
-// fake42 answers sign-in: the token exchange, /v2/me and the coalitions.
+// fake42 answers sign-in: the token exchange, /v2/me and the coalitions; bloc is the Madrid bloc once a test sets it.
 type fake42 struct {
 	me       map[string]any
+	bloc     atomic.Value
+	blocs    atomic.Int64
 	requests atomic.Int64
 }
 
@@ -41,6 +44,9 @@ func (f *fake42) handler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(f.me)
 	case strings.HasSuffix(r.URL.Path, "/coalitions"):
 		w.Write([]byte(`[{"slug":"zefiria","color":"#E39F0B","name":"Zefiria"}]`))
+	case r.URL.Path == "/v2/blocs" && f.bloc.Load() != nil:
+		f.blocs.Add(1)
+		json.NewEncoder(w).Encode(f.bloc.Load())
 	default:
 		w.WriteHeader(404) // the first extraction fails at once (no retries): nothing here depends on it
 	}
@@ -500,6 +506,49 @@ func TestCoalitionImagesOnlyFromTheCDNAndNeverRunning(t *testing.T) {
 		if r := e.do(t, "GET", "/api/me/coalition-image?u="+url.QueryEscape(u), nil, nil); r.StatusCode != 404 {
 			t.Fatalf("%s: %d", u, r.StatusCode)
 		}
+	}
+}
+
+func TestCoalitionsFollowTheQuarterHourWithTheirImagesInMemory(t *testing.T) {
+	var cdn atomic.Int64
+	e := newEnv(t, nil)
+	cdnSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cdn.Add(1)
+		w.Header().Set("Content-Type", "image/png")
+		w.Write([]byte("PNG"))
+	}))
+	defer cdnSrv.Close()
+	e.s.API.CDN = cdnSrv.URL + "/"
+	e.signIn(t)
+	e.s.Jobs.Drain()
+	e.seed(t, 990002, "../../core/testdata/golden/mid.report.json")
+	standing := func(path string) []map[string]any {
+		var v struct{ Coalitions []map[string]any }
+		json.Unmarshal([]byte(readAll(e.do(t, "GET", path, nil, nil))), &v)
+		return v.Coalitions
+	}
+	if cs := standing("/api/me/view"); len(cs) != 4 {
+		t.Fatalf("before the first refresh the report's own standing shows: %v", cs)
+	}
+	e.f.bloc.Store([]any{map[string]any{"coalitions": []any{
+		map[string]any{"id": 8, "name": "Coalition C", "color": "#5BA35B", "score": 80000},
+		map[string]any{"id": 7, "name": "Zefiria", "color": "#E39F0B", "score": 90000,
+			"image_url": cdnSrv.URL + "/coalition/image/7/logo.svg", "cover_url": cdnSrv.URL + "/coalition/cover/7/cover.jpg"},
+	}}})
+	e.s.now = func() time.Time { return time.Date(2026, 11, 1, 12, 5, 0, 0, time.UTC) }
+	e.s.refreshCoalitions(context.Background())
+	e.s.refreshCoalitions(context.Background()) // the same quarter: nothing is asked again
+	if e.f.blocs.Load() != 1 || cdn.Load() != 2 {
+		t.Fatalf("bloc asked %d times, CDN %d", e.f.blocs.Load(), cdn.Load())
+	}
+	for _, path := range []string{"/api/me/coalitions", "/api/me/view"} {
+		cs := standing(path)
+		if len(cs) != 2 || cs[0]["name"] != "Zefiria" || cs[0]["rank"] != 1.0 || cs[0]["score"] != 90000.0 || cs[0]["mine"] != true || cs[1]["mine"] != false {
+			t.Fatalf("%s: %v", path, cs)
+		}
+	}
+	if r := e.do(t, "GET", "/api/me/coalition-image?u="+url.QueryEscape(cdnSrv.URL+"/coalition/image/7/logo.svg"), nil, nil); r.StatusCode != 200 || cdn.Load() != 2 {
+		t.Fatalf("logo: %d, CDN %d", r.StatusCode, cdn.Load())
 	}
 }
 
