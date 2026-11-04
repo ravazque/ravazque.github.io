@@ -216,7 +216,7 @@ Setup:
 Every push and pull request runs `.github/workflows/ci.yml`:
 
 - `go`: vet, tests with the race detector and govulncheck;
-- `web`: type check, tests, build and `npm audit` of the browser app, and the site's tests;
+- `web`: type check, tests, build and `npm audit` of the browser app, the site's tests and the evaluation report's tests;
 - `image`: the Docker image builds;
 - `secrets`: gitleaks over the whole history, plus a guard that no private file (`.env`, build output, local folders)
   is tracked.
@@ -235,9 +235,16 @@ The web app itself is not deployed by CI: production runs on the owner's machine
 - the Go tests next to their code in `server/`. The analysis is checked against golden files that the first version
   produced from the same data, key order included;
 - the browser app's tests in `web/src/` (Vitest), which also check that every text key exists in both languages;
-- the site's tests in `site/tests/`.
+- the site's tests in `site/tests/`;
+- the evaluation report's tests in `tools/evaluation-report/`.
 
 Fixtures are anonymised or synthetic.
+
+## Tools
+
+- [`tools/evaluation-report`](tools/evaluation-report/README.md): `make eval-report` asks for a 42 login and writes that student's evaluation
+  history as one private HTML page: every attempt with its correctors, times and seats. It runs locally, is not part of the
+  deployed app, and could become a page of it later.
 
 ## Customising
 

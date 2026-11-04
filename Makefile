@@ -4,7 +4,7 @@ COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.ya
 # the dev tools run here (Go); fetch reads the 42 apps from the root .env itself, without printing them
 DEVTOOLS := cd server && go run ./cmd/devtools
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-build dev-real dev-live dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot site certs clean fclean re
+.PHONY: help dev dev-build dev-real dev-live dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot eval-report site certs clean fclean re
 
 help: ## Show this help
 	@echo "ravazque.info — dev at https://localhost (signs in with FT_UID_2), production at https://ravazque.info (FT_UID)"
@@ -59,16 +59,20 @@ down: dev-down production-down ## Stop dev and production
 ps: ## Show the services of both
 	@$(COMPOSE) --profile tunnel ps; $(COMPOSE_DEV) ps
 
-test: ## Run every test: Go (server), the browser app (web) and the site's scripts
+test: ## Run every test: Go (server), the browser app (web), the site's scripts and the evaluation report
 	@cd server && go vet ./... && go test ./...
 	@cd web && npm ci --no-audit --no-fund --silent && npx vue-tsc --noEmit && npx vitest run
 	@node --test site/tests/*.test.mjs
+	@python3 tools/evaluation-report/test_evaluation_report.py
 
 preview: .env ## Save a real extraction to web/preview/data.json for make snapshot (UID=<42 user id>, about 120 requests)
 	@mkdir -p web/preview && $(DEVTOOLS) fetch $(UID) $(CURDIR)/web/preview/data.json
 
 snapshot: ## Write site/data/42.json from web/preview/data.json (what the publish button would send)
 	@$(DEVTOOLS) snapshot $(CURDIR)/web/preview/data.json $(CURDIR)/site/data/42.json
+
+eval-report: .env ## Ask for a 42 login and write its evaluation history as one private HTML page (about 130 requests)
+	@python3 tools/evaluation-report/evaluation_report.py
 
 site: ## Build the GitHub Pages site into site/_build and serve it at http://localhost:8080
 	@sh site/build.sh site/_build

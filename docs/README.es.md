@@ -227,7 +227,7 @@ Puesta en marcha:
 Cada push y cada pull request ejecutan `.github/workflows/ci.yml`:
 
 - `go`: vet, tests con el detector de carreras y govulncheck;
-- `web`: comprobación de tipos, tests, compilación y `npm audit` de la aplicación del navegador, y los tests del sitio;
+- `web`: comprobación de tipos, tests, compilación y `npm audit` de la aplicación del navegador, los tests del sitio y los del informe de evaluaciones;
 - `image`: la imagen de Docker compila;
 - `secrets`: gitleaks sobre todo el historial, y un control de que no se sube ningún fichero privado (`.env`,
   resultados de compilación, carpetas locales).
@@ -247,9 +247,16 @@ La aplicación web no la despliega el CI: producción corre en la máquina del a
   versión a partir de los mismos datos, incluido el orden de las claves;
 - los tests de la aplicación del navegador en `web/src/` (Vitest), que también comprueban que cada texto existe en
   los dos idiomas;
-- los tests del sitio en `site/tests/`.
+- los tests del sitio en `site/tests/`;
+- los tests del informe de evaluaciones en `tools/evaluation-report/`.
 
 Los datos de prueba están anonimizados o son sintéticos.
+
+## Herramientas
+
+- [`tools/evaluation-report`](../tools/evaluation-report/README.md): `make eval-report` pide un login de 42 y escribe el historial de
+  evaluaciones de ese estudiante en una página HTML privada: cada intento con sus correctores, tiempos y asientos. Se ejecuta
+  en local, no forma parte de la aplicación desplegada y podría convertirse en una página de ella más adelante.
 
 ## Personalizar
 

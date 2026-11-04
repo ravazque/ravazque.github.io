@@ -7,6 +7,10 @@ web/certs/*
 report-tool/
 .venv/
 
+# The evaluation report's extractions and pages name other students
+tools/evaluation-report/data/
+tools/evaluation-report/out/
+
 # Generated
 web/Caddyfile.local
 web/preview/
