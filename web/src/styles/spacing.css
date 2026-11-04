@@ -9,16 +9,21 @@
    Phones and laptops: a distance that changes with the screen has two lines side by side, the plain one for phones
    and tablets, the one ending in -laptop for screens 960 px wide and up (a computer: edit that one to see it there).
    Lines: 0 hides a line; the space beside it (its -pad) stays until you lower it too.
+   Negative values bring things closer than 0 does (-10px: 10 px of overlap). Every distance and -pad takes them except
+   --title-pad, where 0 is the least (the line would cross the title's letters).
    ============================================================================================================
 
    Distances, top to bottom inside a section:
      --page-top         the section index (the links under the page title) → the first section's title
-     --sections         the section above → this section's title (0 is the least: it can't go negative)
+     --sections         the section above → this section's title
      --title-gap        the title's line → the text under it (its description, a note, a row of facts or the filters)
      --charts-top       the title's line → the charts or tables, when nothing comes between them
-     --info-gap         the description (the grey text) → what comes under it
+     --info-gap         the description (the grey text), or its line when it has one → what comes under it
+     --info-line        a line under the description (its thickness; no line unless the section lists it); --info-pad is
+                        the space between the description and that line
      --facts-gap        a row of facts, a note or the filters → the charts or the table under them
-     --charts-y         two charts or tables one under the other (on phones every chart is)
+     --charts-y         two charts or tables one under the other (on phones every chart is); --charts-y-laptop, when
+                        listed, is the same on laptops
      --charts-x         two charts or tables side by side
 
    Lines of a section:
@@ -189,8 +194,8 @@ main[data-page="web-evaluations"] #community {
 }
 main[data-page="web-evaluations"] #by-group {
   --sections: 56px;            /* Contribution → "Milestones and projects", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --charts-top: 36px;          /* "Milestones and projects" → the tables */
+  --sections-laptop: 75px;     /* the same, laptops */
+  --charts-top: 15px;          /* "Milestones and projects" → the tables */
   --charts-y: 40px;            /* tables one under the other */
   --charts-x: 12px;            /* tables side by side, phones and tablets */
   --charts-x-laptop: 48px;     /* the same, laptops */
@@ -208,34 +213,38 @@ main[data-page="web-evaluations"] #by-group {
 }
 main[data-page="web-evaluations"] #over-time {
   --sections: 56px;            /* Milestones and projects → "Over time", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: 65px;     /* the same, laptops */
   --title-gap: 20px;           /* "Over time" → its description */
   --info-gap: 20px;            /* the description → the charts */
-  --charts-y: 40px;            /* charts one under the other */
+  --charts-y: 40px;            /* charts one under the other, phones and tablets */
+  --charts-y-laptop: 40px;     /* the two charts on top → the two under them, laptops */
   --charts-x: 12px;            /* charts side by side, phones and tablets */
   --charts-x-laptop: 48px;     /* the same, laptops */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Over time" */
   --title-pad: 12px;           /* "Over time" → its line */
   --received-month-line: 2px;  /* over "Received per month, by flag" */
-  --received-month-gap: 16px;  /* "Received per month, by flag" → the chart */
+  --received-month-gap: 40px;  /* "Received per month, by flag" → the chart */
   --marks-line: 2px;           /* over "Marks" */
-  --marks-gap: 16px;           /* "Marks" → the chart */
+  --marks-gap: 40px;           /* "Marks" → the chart */
   --cum-evals-line: 2px;       /* over "Cumulative evaluations" */
-  --cum-evals-gap: 16px;       /* "Cumulative evaluations" → the chart */
+  --cum-evals-gap: 40px;       /* "Cumulative evaluations" → the chart */
   --cum-out-line: 2px;         /* over "Cumulative Outstanding flags" */
-  --cum-out-gap: 16px;         /* "Cumulative Outstanding flags" → the chart */
+  --cum-out-gap: 40px;         /* "Cumulative Outstanding flags" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the charts' baselines */
   --key-box: 1px;              /* the frames of the keys */
 }
 main[data-page="web-evaluations"] #when {
   --sections: 56px;            /* Over time → "When", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: 70px;     /* the same, laptops */
   --title-gap: 20px;           /* "When" → its description */
-  --info-gap: 36px;            /* the description → its row of facts */
+  --info-pad: 12px;            /* the description → its line */
+  --info-line: 2px;            /* the line under the description (0 hides it) */
+  --info-gap: 36px;            /* that line → its row of facts */
   --facts-gap: 36px;           /* the facts → the charts */
-  --charts-y: 40px;            /* charts one under the other */
+  --charts-y: 40px;            /* charts one under the other, phones and tablets */
+  --charts-y-laptop: 0px;      /* the two grids on top → Duration and Booking lead time, laptops */
   --charts-x: 12px;            /* charts side by side, phones and tablets */
   --charts-x-laptop: 48px;     /* the same, laptops */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
@@ -246,9 +255,9 @@ main[data-page="web-evaluations"] #when {
   --heat-given-line: 2px;      /* over "Given · weekday × hour" */
   --heat-given-gap: 12px;      /* "Given · weekday × hour" → the grid */
   --duration-line: 2px;        /* over "Duration" */
-  --duration-gap: 16px;        /* "Duration" → the chart */
+  --duration-gap: 30px;        /* "Duration" → the chart */
   --lead-line: 2px;            /* over "Booking lead time" */
-  --lead-gap: 16px;            /* "Booking lead time" → the chart */
+  --lead-gap: 30px;            /* "Booking lead time" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the facts */
   --axis-line: 2px;            /* the charts' baselines */
@@ -256,7 +265,7 @@ main[data-page="web-evaluations"] #when {
 }
 main[data-page="web-evaluations"] #feedback {
   --sections: 56px;            /* When → "Feedback", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: 70px;     /* the same, laptops */
   --charts-top: 36px;          /* "Feedback" → its lists */
   --charts-y: 40px;            /* lists and tables one under the other */
   --charts-x: 12px;            /* lists and tables side by side, phones and tablets */
@@ -264,8 +273,8 @@ main[data-page="web-evaluations"] #feedback {
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Feedback" */
   --title-pad: 12px;           /* "Feedback" → its line */
-  --low-feedback-line: 2px;    /* over "Feedback below the maximum, per evaluator" */
-  --low-feedback-gap: 10px;    /* "Feedback below the maximum, per evaluator": its note → the list */
+  --low-feedback-line: 0px;    /* over "Feedback below the maximum, per evaluator" */
+  --low-feedback-gap: 5px;    /* "Feedback below the maximum, per evaluator": its note → the list */
   --criteria-line: 2px;        /* over "Ratings per criterion" (when shown) */
   --criteria-gap: 10px;        /* "Ratings per criterion": its note → the table */
   --block-pad: 12px;           /* each of those lines → what is under it */
@@ -285,7 +294,7 @@ main[data-page="web-evaluations"] #points {
   --title-line: 4px;           /* under "Correction points" */
   --title-pad: 12px;           /* "Correction points" → its line */
   --balance-line: 2px;         /* over "Balance over time" */
-  --balance-gap: 4px;          /* "Balance over time" → the chart */
+  --balance-gap: 30px;          /* "Balance over time" → the chart */
   --reasons-line: 2px;         /* over "Movements by reason" */
   --reasons-gap: 10px;         /* "Movements by reason" → the table */
   --block-pad: 12px;           /* each of those lines → what is under it */
@@ -295,15 +304,15 @@ main[data-page="web-evaluations"] #points {
 }
 main[data-page="web-evaluations"] #log {
   --sections: 56px;            /* Correction points → "Evaluation log", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: 70px;     /* the same, laptops */
   --title-gap: 20px;           /* "Evaluation log" → the filters */
   --facts-gap: 16px;           /* the filters → the count and the table */
   --count-gap: 36px;           /* the count ("90 evaluations") → the table's line */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Evaluation log" */
   --title-pad: 12px;           /* "Evaluation log" → its line */
-  --log-table-line: 2px;       /* over the table */
-  --block-pad: 16px;           /* the table's line → the table */
+  --log-table-line: 0px;       /* over the table */
+  --block-pad: -1px;           /* the table's line → the table */
   --table-head-line: 2px;      /* under the table's column names */
   --table-row-line: 1px;       /* between the table's rows */
 }
@@ -390,9 +399,9 @@ main[data-page="web-people"] #who {
 }
 main[data-page="web-people"] #crossed {
   --sections: 56px;            /* Who evaluated you → "Everyone you met", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --charts-top: 10px;          /* "Everyone you met" → the search and the table */
-  --search-gap: 10px;          /* the search → the table */
+  --sections-laptop: 60px;     /* the same, laptops */
+  --charts-top: 8px;          /* "Everyone you met" → the search and the table */
+  --search-gap: 25px;          /* the search → the table */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Everyone you met" */
   --title-pad: 12px;           /* "Everyone you met" → its line */
@@ -401,8 +410,8 @@ main[data-page="web-people"] #crossed {
 }
 main[data-page="web-people"] #connections {
   --sections: 56px;            /* Everyone you met → "Connections", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --charts-top: 36px;          /* "Connections" → the bubbles */
+  --sections-laptop: 80px;     /* the same, laptops */
+  --charts-top: 56px;          /* "Connections" → the bubbles */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Connections" */
   --title-pad: 12px;           /* "Connections" → its line */
@@ -410,7 +419,7 @@ main[data-page="web-people"] #connections {
 }
 main[data-page="web-people"] #circle {
   --sections: 56px;            /* Connections → "Your circle", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: 70px;     /* the same, laptops */
   --title-gap: 20px;           /* "Your circle" → its description */
   --info-gap: 20px;            /* the description → the ring */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
@@ -517,24 +526,33 @@ main[data-page="web-campus"] #where {
    How the values above are used (no need to edit below this line). A distance a section doesn't list (one that
    only shows with other data) keeps the default written in var(…, default) here.
    ============================================================================================================ */
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section { padding-top: var(--sections, 56px); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .toc + .sec > section:first-child { padding-top: var(--page-top, 40px); }
+/* a negative value is invalid for padding and gaps (the browser reads 0), so in each of them a margin takes what is
+   under 0: min(0px, x) is 0 until x goes negative */
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section { padding-top: var(--sections, 56px); margin-top: min(0px, var(--sections, 56px)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .toc + .sec > section:first-child { padding-top: var(--page-top, 40px); margin-top: min(0px, var(--page-top, 40px)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) [data-panel]::before, main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) :is(.kpis, .rates) > div::before { content: ""; display: block; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) [data-panel]::before { margin-bottom: min(0px, var(--block-pad)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) :is(.kpis, .rates) > div::before { margin-bottom: min(0px, var(--kpi-pad)); }
 /* each space is one value: the margin on the other side of it is 0 (two margins would merge into the larger) */
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) { margin-bottom: var(--title-gap, 20px); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .panel-head > h2 { margin-bottom: 0; }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head):has(+ .cols) { margin-bottom: 0; }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + .cols { margin-top: var(--charts-top, 36px); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + :not(.cols) { margin-top: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede { margin-bottom: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede { margin-bottom: 0; padding-bottom: var(--info-pad, 0px); border-bottom: var(--info-line, 0px) solid var(--rule-strong); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede::after { content: ""; display: block; margin-top: min(0px, var(--info-pad, 0px)); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede + * { margin-top: var(--info-gap, 20px); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls) { margin-bottom: 0; }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls) + * { margin-top: var(--facts-gap, 36px); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .controls + * > .controls-after:first-child { margin-top: 0; }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .controls-after + .cols { margin-top: var(--count-gap, 36px); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .controls-after + .cols .table-wrap { margin-top: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols { row-gap: var(--charts-y, 40px); column-gap: var(--charts-x, 12px); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols { --cols-y: var(--charts-y, 40px); --cols-x: var(--charts-x, 12px); row-gap: var(--cols-y); column-gap: var(--cols-x);
+  margin-bottom: max(0px, calc(0px - var(--cols-y))); margin-right: max(0px, calc(0px - var(--cols-x))); }  /* gives back what the last row and column lose */
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols > * { margin-bottom: min(0px, var(--cols-y)); margin-right: min(0px, var(--cols-x)); }
 @media (min-width: 960px) {
-  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section { padding-top: var(--sections-laptop, 88px); }
-  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols { column-gap: var(--charts-x-laptop, 48px); }
+  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section { padding-top: var(--sections-laptop, 88px); margin-top: min(0px, var(--sections-laptop, 88px)); }
+  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols { --cols-y: var(--charts-y-laptop, var(--charts-y, 40px)); --cols-x: var(--charts-x-laptop, 48px); }
 }
 /* Everyone you met: the search → its table, one value */
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls { margin-bottom: 0; }

@@ -6,6 +6,9 @@ import { ARROW, avatar, esc } from "../lib/h";
 import { facts, table } from "../lib/table";
 import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased } from "./page";
 
+/** A histogram's bins from its edges, each with its unit: "0–1 h", "1–3 h", "3+ h". */
+export const binLabels = (edges: number[], unit: string) => edges.map((x, i) => `${i < edges.length - 1 ? `${x}–${edges[i + 1]}` : `${x}+`} ${unit}`);
+
 export function evaluations(pg: Page): Section[] {
   const f = pg.f, D = pg.D, S = D.summary, W = D.when;
   const out: Section[] = [];
@@ -73,14 +76,13 @@ export function evaluations(pg: Page): Section[] {
       vbars(f, months.map((x: string) => f.monthLabel(x)), flagSeries,
         { label: f.t("received.monthly_title"), stacked: true, fmt: (v) => f.num(v), tips: flagTips, emptyText: f.t("empty.period") })),
     headBlock("marks", f.t("received.marks_title"), legend(roles), vbars(f, bins.map(([b]) => b), [[f.t("role.received"), count(D.received), S1], [f.t("role.given"), count(D.given), S2]],
-      { label: f.t("received.marks_title"), xtitle: f.t("received.final_mark"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
+      { label: f.t("received.marks_title"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
     headBlock("cum-evals", f.t("received.cum_title"), legend(roles), lines(f, [[f.t("role.received"), W.cum_received, S1], [f.t("role.given"), W.cum_given, S2]],
       { label: f.t("received.cum_title"), emptyText: f.t("empty.period") })),
     headBlock("cum-out", f.t("received.cum_out_title"), legend(roles), lines(f, [[f.t("received.out_received"), W.cum_out_received, S1], [f.t("received.out_given"), W.cum_out_given, S2]],
       { label: f.t("received.cum_out_title"), emptyText: f.t("empty.period") }))),
   { head: `<div class="panel-head"><h2>${esc(f.t("over_time.title"))}</h2>${sw}</div>`, lede: esc(lede) }) });
 
-  const edges = (e: number[]) => e.map((x, i) => (i < e.length - 1 ? `${x}–${e[i + 1]}` : `${x}+`));
   const dp = D.insights?.evaluations;
   const dur = (d: any) => (d.avg === null || d.avg === undefined ? "–" : f.t("depth.minutes", { avg: f.num(d.avg), median: f.num(d.median) }));
   const factsHtml = dp ? `<dl class="facts">${facts([[f.t("depth.received_duration"), esc(dur(dp.received_duration))], [f.t("depth.given_duration"), esc(dur(dp.given_duration))],
@@ -89,10 +91,10 @@ export function evaluations(pg: Page): Section[] {
   out.push({ id: "when", nav: f.t("nav.when"), html: section("when", f.t("when.title"), factsHtml + cols(
     block("heat-recv", heat(f, W.heat_received, ACCENT, f.t("unit.evaluations")), f.t("when.heat_recv_title")),
     block("heat-given", heat(f, W.heat_given, SLATE, f.t("unit.evaluations")), f.t("when.heat_given_title")),
-    `<div class="block" data-panel="duration"><div class="block-head"><h3>${esc(f.t("when.duration_title"))} ${info(f.t("when.duration_note"))}</h3>${legend(roles)}</div>` + vbars(f, edges(W.duration_edges), [[f.t("role.received"), W.duration_received, S1], [f.t("role.given"), W.duration_given, S2]],
-      { label: f.t("when.duration_title"), xtitle: f.t("when.minutes"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }) + "</div>",
-    headBlock("lead", f.t("when.lead_title"), legend(roles), vbars(f, edges(W.lead_edges), [[f.t("role.received"), W.lead_received, S1], [f.t("role.given"), W.lead_given, S2]],
-      { label: f.t("when.lead_title"), xtitle: f.t("when.hours_before"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }))),
+    `<div class="block" data-panel="duration"><div class="block-head"><h3>${esc(f.t("when.duration_title"))} ${info(f.t("when.duration_note"))}</h3>${legend(roles)}</div>` + vbars(f, binLabels(W.duration_edges, "m"), [[f.t("role.received"), W.duration_received, S1], [f.t("role.given"), W.duration_given, S2]],
+      { label: f.t("when.duration_title"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }) + "</div>",
+    headBlock("lead", f.t("when.lead_title"), legend(roles), vbars(f, binLabels(W.lead_edges, "h"), [[f.t("role.received"), W.lead_received, S1], [f.t("role.given"), W.lead_given, S2]],
+      { label: f.t("when.lead_title"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") }))),
   { lede: esc(f.t("when.lede", { recv: f.num(W.median_duration_received), given: f.num(W.median_duration_given), lead: f.num(W.median_lead_received, 1) })) }) });
 
   // feedback: the criteria both ways, and every rating under the maximum you got as a corrector

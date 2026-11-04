@@ -202,11 +202,7 @@
 /* ---------- tables ---------- */
 :where(body:not(.site)) .table-wrap {
   overflow: auto; max-height: var(--c-table-max-height); margin-top: 14px; border: 1px solid var(--c-table-border); border-radius: var(--c-table-radius);
-  /* a shadow on the right edge says more columns wait sideways; it disappears at the end */
-  background:
-    linear-gradient(to left, var(--c-table-bg) 40%, transparent) right center / 48px 100% no-repeat local,
-    radial-gradient(farthest-side at 100% 50%, var(--edge-shadow), transparent) right center / 16px 100% no-repeat scroll,
-    var(--c-table-bg);
+  background: var(--c-table-bg);
 }
 :where(body:not(.site)) .table-wrap.tall { max-height: var(--c-table-tall-max-height); }
 :where(body:not(.site)) table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--c-table-font-size); }

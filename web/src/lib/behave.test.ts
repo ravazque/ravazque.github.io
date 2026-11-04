@@ -48,6 +48,21 @@ test("a ring node's tip goes outwards in one of eight directions", () => {
   expect(outward(80)).toEqual([0, 1]); // nearly at the bottom still opens straight down
 });
 
+test("a table whose first column stays put gives its width, so the left fade starts past it", () => {
+  const box = document.createElement("div");
+  box.className = "table-wrap";
+  box.innerHTML = '<table class="sticky-first"><thead><tr><th>Login</th></tr></thead></table>';
+  Object.defineProperty(box.querySelector("th")!, "offsetWidth", { value: 120 });
+  const plain = document.createElement("div");
+  plain.className = "table-wrap";
+  plain.innerHTML = "<table><thead><tr><th>Login</th></tr></thead></table>";
+  document.body.append(box, plain);
+  hintScroll(document);
+  expect(box.style.getPropertyValue("--stick-w")).toBe("120px");
+  expect(plain.style.getPropertyValue("--stick-w")).toBe("0px");
+  box.remove(); plain.remove();
+});
+
 test("a scroll box marks each side where more waits and how thick its scrollbars are", () => {
   const box = document.createElement("div");
   box.className = "table-wrap";

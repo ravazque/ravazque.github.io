@@ -398,20 +398,20 @@
 :where(body:not(.site)) .focused .net-links path.hl { stroke-width: 2.5; }
 /* a scroll box (a table, a list, the calendar, the skills' bars) fades each of its four edges where more waits
    (behave.ts sets more-t, more, more-l, more-r and the scrollbars' thickness): two solid layers keep the scrollbars out
-   of the fade, a table's sticky head stays clear of the top one; a table whose first column stays put fades only on
-   the right */
+   of the fade, a table's sticky head stays clear of the top one and its sticky first column of the left one, which
+   starts past it */
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars) { --fade-t: var(--mask); --fade-b: var(--mask); --fade-l: var(--mask); --fade-r: var(--mask); }
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-t { --fade-t: transparent; }
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more { --fade-b: transparent; }
-:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-l:not(:has(> .sticky-first)) { --fade-l: transparent; }
+:where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-l { --fade-l: transparent; }
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-r { --fade-r: transparent; }
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars):is(.more-t, .more, .more-l, .more-r) {
   --fade-area: calc(100% - var(--sb-w, 0px)) calc(100% - var(--sb-h, 0px));
   -webkit-mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
-    linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
+    linear-gradient(to right, var(--mask) var(--stick-w, 0px), var(--fade-l) var(--stick-w, 0px), var(--mask) calc(var(--stick-w, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-r)),
     linear-gradient(to bottom, var(--mask) var(--head-h, 0px), var(--fade-t) var(--head-h, 0px), var(--mask) calc(var(--head-h, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-b));
   mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
-    linear-gradient(to right, var(--fade-l), var(--mask) 40px, var(--mask) calc(100% - 56px), var(--fade-r)),
+    linear-gradient(to right, var(--mask) var(--stick-w, 0px), var(--fade-l) var(--stick-w, 0px), var(--mask) calc(var(--stick-w, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-r)),
     linear-gradient(to bottom, var(--mask) var(--head-h, 0px), var(--fade-t) var(--head-h, 0px), var(--mask) calc(var(--head-h, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-b));
   -webkit-mask-size: var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);
   mask-size: var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);

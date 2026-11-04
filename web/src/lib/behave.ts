@@ -215,7 +215,7 @@ export function install() {
 }
 
 /** scroll boxes fade each edge where more waits (more-t, more for the bottom, more-l, more-r), and give the CSS their
- * scrollbars' thickness and a table's sticky head height so neither is faded */
+ * scrollbars' thickness, a table's sticky head height and its sticky first column's width so none of them is faded */
 export function hintScroll(root: ParentNode = document) {
   $$(".list, .table-wrap, .cal-scroll, .radar-bars", root).forEach((box) => {
     const update = () => {
@@ -227,6 +227,7 @@ export function hintScroll(root: ParentNode = document) {
       box.style.setProperty("--sb-w", `${Math.max(0, box.offsetWidth - box.clientWidth - px(cs.borderLeftWidth) - px(cs.borderRightWidth))}px`);
       box.style.setProperty("--sb-h", `${Math.max(0, box.offsetHeight - box.clientHeight - px(cs.borderTopWidth) - px(cs.borderBottomWidth))}px`);
       box.style.setProperty("--head-h", `${box.querySelector<HTMLElement>(":scope > table > thead")?.offsetHeight || 0}px`);
+      box.style.setProperty("--stick-w", `${box.querySelector<HTMLElement>(":scope > table.sticky-first th:first-child")?.offsetWidth || 0}px`);
     };
     if (!box.dataset.hint) { box.dataset.hint = "1"; box.addEventListener("scroll", update, { passive: true }); }
     update();

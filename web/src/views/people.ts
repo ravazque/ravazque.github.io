@@ -1,7 +1,7 @@
 // People: who evaluated you, everyone you met (or only your teammates), your connections and your circle.
 import { GOOD, S1, hbars, legend } from "../lib/charts";
 import { GROUPS, bubbles, netClass, ring } from "../lib/graphs";
-import { avatar, badge, esc } from "../lib/h";
+import { avatar, esc } from "../lib/h";
 import { table } from "../lib/table";
 import { Page, Section, cols, deletedName, filters, info, search, section, erased, shownLogin } from "./page";
 
@@ -94,7 +94,7 @@ export function people(pg: Page): Section[] {
     `<div class="block" data-panel="table-people">`
     + filters("who", search("q", q, f.t("common.search"), f.t("who.search_placeholder")))
     + `<div id="who-results">${met === "teammates" ? teammates : `<div class="table-wrap">${table(f, [
-      { k: "login", t: f.t("col.login"), nw: true, f: (p) => `${erased(p.login) ? "" : avatar(p)}${shownLogin(f, p.login)}${p.staff ? " " + badge(f.t("who.staff")) : ""}` },
+      { k: "login", t: f.t("col.login"), nw: true, f: (p) => `${erased(p.login) ? "" : avatar(p)}${shownLogin(f, p.login)}` },
       { k: "name", t: f.t("col.name"), nw: true, hide: true, f: (p) => (erased(p.login) ? deletedName(f) : esc(shortName(p.name))) },
       { k: "group", t: f.t("col.group"), nw: true, hide: true, sv: (p) => order(groupOf.get(p.login)), f: (p) => (groupOf.has(p.login) ? esc(f.t(`groups.${groupOf.get(p.login)}`)) : "–") },
       { k: "evaluated_me", t: f.t("col.evaluated_you"), s: f.t("abbr.evaluated_you"), num: true, cls: "mid" },

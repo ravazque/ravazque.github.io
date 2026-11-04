@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { seatMatch } from "./evaluations";
+import { binLabels, seatMatch } from "./evaluations";
 
 test("the log's seat filter: you with no session open, or the other side not logged where it was looked up", () => {
   const recv = (my_host: string | null, checked: boolean, other_host: string | null) => ({ my_host, other_host_checked: checked, other_host });
@@ -19,4 +19,9 @@ test("the seat filter by cluster keeps the evaluations you had in that cluster",
   expect(seatMatch("received", "c1", { my_host: "c1r2s3" })).toBe(true);
   expect(seatMatch("given", "c2", { my_host: "c1r2s3" })).toBe(false);
   expect(seatMatch("received", "c1", { my_host: null })).toBe(false);
+});
+
+test("a histogram's bins carry their unit beside the numbers", () => {
+  expect(binLabels([0, 1, 3], "h")).toEqual(["0–1 h", "1–3 h", "3+ h"]);
+  expect(binLabels([0, 15], "m")).toEqual(["0–15 m", "15+ m"]);
 });
