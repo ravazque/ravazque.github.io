@@ -32,13 +32,13 @@ guardar o compartir.
   plegados), eventos, títulos y quests.
 - **Evaluaciones**: lo que devuelves (horas, personas, valoración, cuántas acabaron por debajo de 50, Outstanding en
   los dos sentidos, según el milestone de la otra persona), recibidas y hechas a lo largo del tiempo, cuándo ocurren
-  (día × hora, por hora del día, duración, con cuánta antelación se reservaron), tu feedback (como estudiante solo
+  (día × hora, duración, con cuánta antelación se reservaron), tu feedback (como estudiante solo
   cuenta el 42cursus; las piscinas Discovery van aparte), los puntos de corrección, los proyectos que has corregido y
-  el registro completo de evaluaciones con búsqueda.
-- **Coalición**: las coaliciones de Madrid y lo último que diste a la tuya, el bonus de horas en detalle con todos los
-  bonus hasta ahora, y tus puntos por origen y por mes.
-- **Personas**: quién te evaluó más, todas las personas con las que coincidiste, tus conexiones agrupadas por dónde
-  están hoy, tu círculo y tus compañeros de equipo. Las cuentas que 42 borró no aparecen en los gráficos (una nota dice
+  el registro completo de evaluaciones con búsqueda y filtros.
+- **Coalición**: las coaliciones de Madrid, actualizadas cada cuarto de hora, y cada punto que diste a la tuya, el bonus
+  de horas en detalle con todos los bonus hasta ahora, y tus puntos por origen y por mes.
+- **Personas**: quién te evaluó más, todas las personas con las que coincidiste (o solo tus compañeros de equipo), tus
+  conexiones agrupadas por dónde están hoy y tu círculo. Las cuentas que 42 borró no aparecen en los gráficos (una nota dice
   cuántas) y en las tablas salen como "Cuenta borrada"; el staff tiene su propio grupo.
 - **Campus**: tu ritmo (racha, semanas activas, tu día hora a hora), el plano con cada ordenador que usaste (los que
   están fuera de los clústeres, aparte), días y horas (el primer año completo, con tu primer día marcado), el registro
@@ -89,13 +89,14 @@ blackhole o congeladas ven una página con el motivo. El acceso se comprueba de 
 - **Sin base de datos.** Tu informe vive en tu navegador (IndexedDB). El servidor guarda una copia firmada en memoria
   durante una hora desde su último uso, y solo acepta la copia del navegador si lleva su propia firma para tu cuenta.
 - Tu token de 42 se usa una vez para saber quién eres y se descarta; los tokens nunca llegan al navegador.
-- De otros estudiantes solo se guarda login, nombre, milestone y si son staff. Del feedback que recibiste, solo el
-  tuyo.
+- De otros estudiantes solo se guarda login, nombre, grupo (milestone, alumni, blackhole…) y si son staff y, en tus
+  evaluaciones de los últimos 60 días, el asiento que usó la otra parte. Del feedback que recibiste, solo el tuyo.
 - El único fichero que escribe el servidor es el registro de aceptación: un hash con clave de tu id de 42, la versión
   de la política y la fecha, que se conserva dos años.
 - *Borrar mis datos* elimina la copia del servidor, cancela una actualización pendiente y le pide a tu navegador que
   borre lo que guarda.
-- Quien pide no aparecer sale como "Oculto" en los informes de los demás (`OPTOUT_LOGINS`).
+- Quien pide no aparecer sale como "Hidden", sin nombre ni asiento, en los informes de los demás (`OPTOUT_LOGINS`).
+- El servidor corre en Amazon Web Services, en la UE (Estocolmo), y se llega a él a través de Cloudflare.
 
 La política completa está en la página de Privacidad de la aplicación. Problemas de seguridad: mira
 [SECURITY.md](../SECURITY.md).
@@ -122,14 +123,16 @@ make certs           # certificados HTTPS para https://localhost (mkcert si est�
 make dev             # compila y arranca https://localhost sin perfiles guardados (solo inicio de sesión real con 42)
 make dev-build       # compila y arranca https://localhost con los perfiles de prueba sintéticos
 make dev-real        # lo mismo más los perfiles reales de DEV_REAL_LOGINS (se descargan una vez, ~120 peticiones cada uno)
+make dev-live        # edición en vivo: la app del navegador desde web/src en http://localhost:5173 (arranca dev antes)
 make dev-logs        # sigue los logs de dev
 make dev-down        # para dev (los navegadores conservan sus informes)
-make test            # tests de Go, comprobación de tipos y Vitest, tests del sitio
+make test            # tests de Go, comprobación de tipos y Vitest, tests del sitio y del informe de evaluaciones
 make production      # compila y arranca https://ravazque.info a través del túnel de Cloudflare
 make production-down # para producción (el registro de aceptación se queda en su volumen)
 make logs            # sigue los logs de producción
 make site            # compila la página del CV en site/_build y la sirve en http://localhost:8080
 make snapshot        # site/data/42.json a partir del informe guardado: lo que enviaría el botón de publicar
+make eval-report     # pide un login de 42 y escribe su historial de evaluaciones en una página HTML privada (~130 peticiones)
 make clean           # dev-down y los ficheros generados
 make fclean          # clean, la imagen, volúmenes e informes guardados de dev, y web/node_modules
 make re              # fclean y dev-build
@@ -138,8 +141,8 @@ make re              # fclean y dev-build
 `clean`, `fclean`, `re` y `test` nunca tocan producción: solo lo hacen `make production`, `make production-down` y
 `make logs`.
 
-Requisitos: Docker con el plugin de Compose, `make`, y `mkcert` u `openssl`. Go 1.27 y Node 26 solo para
-`make test` y las herramientas de desarrollo.
+Requisitos: Docker con el plugin de Compose, `make`, y `mkcert` u `openssl`. Go 1.27, Node 26 y Python 3.12 solo
+para `make test` y las herramientas de desarrollo.
 
 ### Primera vez
 
@@ -162,7 +165,7 @@ CONTROLLER_NAME              # responsable del tratamiento que nombra la políti
 CONTACT_EMAIL                # contacto para solicitudes de privacidad (páginas Acerca de y Privacidad)
 TUNNEL_TOKEN                 # producción: el token del túnel de Cloudflare
 DEV_REAL_LOGINS              # dev: logins de 42 (separados por comas) cuyos informes reales sirve make dev-real
-OPTOUT_LOGINS                # opcional: logins que se muestran como "Oculto"
+OPTOUT_LOGINS                # opcional: logins que se muestran como "Hidden"
 ISSUES_URL                   # opcional: enlace "Informar de un problema"
 OWNER_LOGIN, GITHUB_TOKEN,   # opcional: el botón de publicar (oculto salvo que OWNER_LOGIN
 GITHUB_REPO, GITHUB_BRANCH   #   y GITHUB_TOKEN estén definidos)
@@ -175,13 +178,16 @@ GITHUB_REPO, GITHUB_BRANCH   #   y GITHUB_TOKEN estén definidos)
   un estudiante de la rama Python, un transcender de la rama Python y un estudiante que pasó de C a Python): datos
   sintéticos movidos a la fecha de hoy, nunca personas reales, que no pueden publicar ni actualizar. `make dev-real`
   añade **Real · login** para los logins de `DEV_REAL_LOGINS`, guardados en `web/preview/` (solo en local). Un cambio
-  en el código necesita `make dev-build` de nuevo.
+  en el código necesita `make dev-build` de nuevo; `make dev-live` muestra al momento los cambios de la app del navegador
+  (`ui.json` y el servidor siguen necesitando reconstruir).
 - **Producción** (`make production`, https://ravazque.info) entra con la primera app y se sirve a través de un túnel
   de Cloudflare con nombre (Zero Trust → Networks → Tunnels: un conector Docker cuyo hostname público apunta a
   `http://caddy:8080`; su token va en `TUNNEL_TOKEN`). Dev y producción son proyectos de Compose distintos y pueden
-  funcionar a la vez.
+  funcionar a la vez. Corre en una sola máquina, hoy un EC2 de AWS en Estocolmo.
 
 ### Actualizar producción
+
+En la máquina que la sirve:
 
 ```
 git pull --rebase    # el código nuevo (y lo que haya subido el botón de publicar)
@@ -256,12 +262,16 @@ Los datos de prueba están anonimizados o son sintéticos.
 
 - [`tools/evaluation-report`](../tools/evaluation-report/README.md): `make eval-report` pide un login de 42 y escribe el historial de
   evaluaciones de ese estudiante en una página HTML privada: cada intento con sus correctores, tiempos y asientos. Se ejecuta
-  en local, no forma parte de la aplicación desplegada y podría convertirse en una página de ella más adelante.
+  en local, no forma parte de la aplicación desplegada y podría convertirse en una página de ella más adelante. Oculta a los
+  estudiantes de `OPTOUT_LOGINS` igual que la aplicación, pero queda fuera de la política de privacidad del sitio: mira su
+  sección Privacy.
 
 ## Personalizar
 
 - `server/core/data/ui.json`: colores de los dos temas, tipografía, espaciado, puntos de corte y disposición de los
   paneles, servido como `/ui.css`.
+- `web/src/styles/spacing.css`: cada distancia y línea de cada página, sección a sección, para ajustar a mano (los
+  valores negativos acercan más).
 - `server/core/data/i18n/{en,es}.json`: todos los textos; los dos ficheros deben tener las mismas claves.
 - `server/core/data/tracks.json`: a qué milestone del Common Core pertenece cada proyecto, para los cursos de C y de
   Python. Cualquier otro proyecto del 42cursus cuenta como Outer Core.

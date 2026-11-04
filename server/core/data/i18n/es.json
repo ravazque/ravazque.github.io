@@ -640,7 +640,7 @@
  "policy.rights.list": ["Acceso: saber qué datos tuyos se guardan (todos están en tu dashboard y en tu navegador).", "Rectificación: los datos vienen de la intra, así que se corrigen allí.", "Supresión: \"Borrar mis datos\" elimina la copia del servidor y vacía el almacenamiento de este sitio en tu navegador; al cerrar sesión se borra el informe de tu navegador. Para borrar los datos de origen, contacta con 42.", "Limitación y oposición al tratamiento, y portabilidad de tus datos.", "Retirar tu consentimiento en cualquier momento borrando tus datos y cerrando sesión; no afecta al tratamiento anterior."],
  "policy.rights.body": ["Las solicitudes se responden en un plazo de un mes. También puedes presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD, www.aepd.es)."],
  "policy.exclusion.title": "Exclusión",
- "policy.exclusion.body": ["Si apareces en el informe de otra persona y quieres que te excluyan, escribe a {email} con tu login: aparecerás como \"Oculto\" en todos los informes, sin nombre, foto ni asiento."],
+ "policy.exclusion.body": ["Si apareces en el informe de otra persona y quieres que te excluyan, escribe a {email} con tu login: aparecerás como \"Hidden\" en todos los informes, sin nombre, foto ni asiento."],
  "policy.cookies.title": "Cookies y almacenamiento local",
  "policy.cookies.list": ["__Host-session: mantiene tu sesión iniciada.", "__Host-oauth_state: protege el inicio de sesión con 42, 10 minutos.", "IndexedDB: tu informe, con la firma del servidor.", "localStorage: idioma, tema y color de acento; las secciones que marcas con estrella y tus widgets de Perfil, con tu login; y la fecha de tu informe guardado."],
  "policy.changes.title": "Cambios en esta política",

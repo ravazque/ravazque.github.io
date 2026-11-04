@@ -27,13 +27,13 @@ Six pages. Every choice (period, filters, views) lives in the address, so any vi
   in both tracks says which), CSV export, exams, technical domains (the intra's RNCP tags), a timeline of every attempt
   and your achievements (one line per series, the earlier levels folded), events, titles and quests.
 - **Evaluations**: what you give back (hours, people, rating, how many ended below 50, Outstanding both ways, by the
-  other person's milestone), received and given over time, when they happen (weekday × hour, by hour of the day,
-  duration, how far ahead they were booked), your feedback (as a student, only the 42cursus counts; Discovery
-  piscines are set apart), correction points, the projects you corrected and the full evaluation log with search.
-- **Coalition**: the coalitions of Madrid and what you last gave yours, the logtime bonus in detail with every bonus
-  so far, and your points by source and month.
-- **People**: who evaluated you most, everyone you met, your connections grouped by where they are
-  today, your circle and your teammates. Accounts that 42 erased are left out of the graphs (a note says how many) and
+  other person's milestone), received and given over time, when they happen (weekday × hour, duration, how far
+  ahead they were booked), your feedback (as a student, only the 42cursus counts; Discovery
+  piscines are set apart), correction points, the projects you corrected and the full evaluation log with search and filters.
+- **Coalition**: the coalitions of Madrid, refreshed every quarter of an hour, and every point you gave yours, the
+  logtime bonus in detail with every bonus so far, and your points by source and month.
+- **People**: who evaluated you most, everyone you met (or only your teammates), your connections grouped by where
+  they are today and your circle. Accounts that 42 erased are left out of the graphs (a note says how many) and
   read "Deleted account" in tables; staff get a group of their own.
 - **Campus**: your rhythm (streak, active weeks, your day hour by hour), the seat plan with every computer you used
   (computers outside the clusters noted apart), days and hours (the first year in full, your first day marked), the
@@ -83,12 +83,14 @@ a page with the reason. Access is checked again on every refresh.
 - **No database.** Your report lives in your browser (IndexedDB). The server keeps a signed copy in memory for one hour
   after its last use, and accepts the browser's copy back only with its own signature for your account.
 - Your 42 token is used once to know who you are and then dropped; tokens never reach the browser.
-- About other students the app keeps only login, name, milestone and whether they are staff. Of the feedback you
-  received, only yours.
+- About other students the app keeps only login, name, group (milestone, alumni, blackholed…) and whether they are
+  staff and, for your evaluations of the last 60 days, the seat the other side used. Of the feedback you received, only
+  yours.
 - The only file the server writes is the consent record: a keyed hash of your 42 id, the policy version and the date,
   kept for two years.
 - *Delete my data* clears the server's copy, cancels a pending refresh and tells your browser to clear its storage.
-- Students who ask to be left out appear as "Hidden" in everyone's reports (`OPTOUT_LOGINS`).
+- Students who ask to be left out appear as "Hidden", with no name or seat, in everyone's reports (`OPTOUT_LOGINS`).
+- The server runs on Amazon Web Services in the EU (Stockholm) and is reached through Cloudflare.
 
 The full policy is on the Privacy page of the app. Security issues: see [SECURITY.md](SECURITY.md).
 
@@ -113,14 +115,16 @@ make certs           # HTTPS certificates for https://localhost (mkcert if prese
 make dev             # build and start https://localhost with no saved profiles (real 42 sign-in only)
 make dev-build       # build and start https://localhost with the synthetic test profiles
 make dev-real        # the same plus the real profiles of DEV_REAL_LOGINS (fetched once, ~120 requests each)
+make dev-live        # edit live: the browser app from web/src at http://localhost:5173 (start dev first)
 make dev-logs        # follow dev's logs
 make dev-down        # stop dev (browsers keep their reports)
-make test            # Go tests, type check and Vitest, the site's tests
+make test            # Go tests, type check and Vitest, the site's and the evaluation report's tests
 make production      # build and start https://ravazque.info through the Cloudflare tunnel
 make production-down # stop production (the consent log stays in its volume)
 make logs            # follow production's logs
 make site            # build the CV page into site/_build and serve it at http://localhost:8080
 make snapshot        # site/data/42.json from the saved report: what the publish button would send
+make eval-report     # ask for a 42 login and write its evaluation history as one private HTML page (~130 requests)
 make clean           # dev-down and generated files
 make fclean          # clean, dev's image, volumes and saved reports, and web/node_modules
 make re              # fclean and dev-build
@@ -129,8 +133,8 @@ make re              # fclean and dev-build
 `clean`, `fclean`, `re` and `test` never touch production: only `make production`, `make production-down` and
 `make logs` do.
 
-Requirements: Docker with the Compose plugin, `make`, and `mkcert` or `openssl`. Go 1.27 and Node 26 only for
-`make test` and the dev tools.
+Requirements: Docker with the Compose plugin, `make`, and `mkcert` or `openssl`. Go 1.27, Node 26 and Python 3.12 only
+for `make test` and the dev tools.
 
 ### First run
 
@@ -165,13 +169,16 @@ GITHUB_REPO, GITHUB_BRANCH   #   and GITHUB_TOKEN are set)
   **Test** profiles (a new student, one halfway through the Common Core, an Outer Core transcender, an alumni, a
   Python-track student, a Python-track transcender and a student who moved from C to Python): synthetic data moved to
   today's date, never real people, never able to publish or refresh. `make dev-real` adds **Real · login** for the
-  logins in `DEV_REAL_LOGINS`, saved in `web/preview/` (local only). A code change needs `make dev-build` again.
+  logins in `DEV_REAL_LOGINS`, saved in `web/preview/` (local only). A code change needs `make dev-build` again; `make dev-live` shows the
+  browser app's changes at once (`ui.json` and the server still need the rebuild).
 - **Production** (`make production`, https://ravazque.info) signs in with the first app and is served through a named
   Cloudflare tunnel (Zero Trust → Networks → Tunnels: a Docker connector whose public hostname points to
   `http://caddy:8080`; its token goes in `TUNNEL_TOKEN`). Dev and production are separate Compose projects and can run
-  side by side.
+  side by side. It runs on one machine, today an AWS EC2 in Stockholm.
 
 ### Updating production
+
+On the machine that serves it:
 
 ```
 git pull --rebase    # the new code (and anything the publish button committed)
@@ -244,11 +251,14 @@ Fixtures are anonymised or synthetic.
 
 - [`tools/evaluation-report`](tools/evaluation-report/README.md): `make eval-report` asks for a 42 login and writes that student's evaluation
   history as one private HTML page: every attempt with its correctors, times and seats. It runs locally, is not part of the
-  deployed app, and could become a page of it later.
+  deployed app, and could become a page of it later. It hides the students in `OPTOUT_LOGINS` as the app does, but stays
+  outside the site's privacy policy: see its Privacy section.
 
 ## Customising
 
 - `server/core/data/ui.json`: colours for both themes, type, spacing, breakpoints and panel layout, served as `/ui.css`.
+- `web/src/styles/spacing.css`: every distance and line of each page, section by section, to tune by hand (negative
+  values bring things closer).
 - `server/core/data/i18n/{en,es}.json`: every text; both files must have the same keys.
 - `server/core/data/tracks.json`: which Common Core milestone each project belongs to, for the C and the Python
   tracks. Any other 42cursus project counts as Outer Core.
