@@ -38,9 +38,9 @@ Requirements: Python 3.12 or newer (standard library only), Go (the extraction i
   one, mark and flag, both seats and the comments.
 - **Correctores**: who corrected these evaluations, how many times, in which projects.
 
-The details cover Milestone 6, Outer Core and the Common Core projects handed in again from there. Two constants at the
-top of `evaluation_report.py` decide this: `HANDED_IN_AGAIN` (miniRT, Born2beroot) and `GROUP_OF` (ft_resume belongs to
-Milestone 6, while the extraction counts it as Outer Core).
+The details cover Milestone 6 (but its exam), Outer Core and the Common Core projects handed in again from there, which
+`HANDED_IN_AGAIN` names at the top of `evaluation_report.py` (miniRT, Born2beroot). Which milestone a project belongs to
+comes from `server/core/data/tracks.json`, as in the web app.
 
 Every table fits the window from 320 px up: wide tables stack into labelled rows instead of scrolling sideways. The page
 follows the system's light or dark theme, takes its colours from `server/core/data/ui.json` and prints on A4 landscape.

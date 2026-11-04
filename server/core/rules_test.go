@@ -49,6 +49,16 @@ func TestXPEarned(t *testing.T) {
 	}
 }
 
+func TestFtResumeIsInMilestoneSix(t *testing.T) {
+	p := pu("42_collaborative_resume", 21)
+	if got := GroupOf(p); got != "rank-06" {
+		t.Errorf("GroupOf(ft_resume) = %s, want rank-06", got)
+	}
+	if got := TrackOf(p); got != "common-core" {
+		t.Errorf("TrackOf(ft_resume) = %s, want common-core", got)
+	}
+}
+
 func TestGroupOf(t *testing.T) {
 	for slug, want := range map[string]string{"42cursus-libft": "rank-00", "born2beroot": "rank-01", "exam-rank-02": "rank-02",
 		"minishell": "rank-03", "cpp-module-04": "rank-04", "cpp-module-05": "rank-05", "ft_transcendence": "rank-06", "scop": "outer-core"} {

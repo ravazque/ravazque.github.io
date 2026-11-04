@@ -45,8 +45,6 @@ NO_MARK = {"pending": "Pendiente", "absent_you": "No se presentó el alumno", "a
 GROUPS = {"rank-00": "Milestone 0", "rank-01": "Milestone 1", "rank-02": "Milestone 2", "rank-03": "Milestone 3",
           "rank-04": "Milestone 4", "rank-05": "Milestone 5", "rank-06": "Milestone 6", "outer-core": "Outer Core",
           "piscine": "Piscina"}
-# the holy graph puts ft_resume in Milestone 6; the extraction counts every project outside tracks.json as Outer Core
-GROUP_OF = {"42_collaborative_resume": "rank-06"}
 # Common Core projects handed in again from the Outer Core: their new attempts belong with the rest of this history
 HANDED_IN_AGAIN = ("minirt", "born2beroot")
 OUTCOMES = {"out": "Outstanding", "ok": "100 o más", "low": "Menos de 100 o marca negativa", "none": "Sin nota"}
@@ -64,19 +62,15 @@ class LookupFailed(Exception):
     pass
 
 
-def group_of(p):
-    return GROUP_OF.get(p["slug"], p["group"])
-
-
 def selected(projects):
-    return [p for p in projects if p["group"] == "outer-core" or "transcendence" in p["slug"]
+    return [p for p in projects if p["group"] == "outer-core" or (p["group"] == "rank-06" and not p.get("exam"))
             or any(name in p["slug"] for name in HANDED_IN_AGAIN)]
 
 
 def detail_groups(projects):
     named = {"rank-06": "Milestone 6", "outer-core": "Outer Core"}
-    groups = [(title, [p for p in projects if group_of(p) == key]) for key, title in named.items()]
-    groups.append(("Reentregas de milestones anteriores", [p for p in projects if group_of(p) not in named]))
+    groups = [(title, [p for p in projects if p["group"] == key]) for key, title in named.items()]
+    groups.append(("Reentregas de milestones anteriores", [p for p in projects if p["group"] not in named]))
     return [(title, ps) for title, ps in groups if ps]
 
 
@@ -320,7 +314,7 @@ def profile(doc):
 def all_projects(projects, detailed):
     by_group = defaultdict(list)
     for p in projects:
-        by_group[group_of(p)].append(p)
+        by_group[p["group"]].append(p)
     order = [g for g in GROUPS if g in by_group] + [g for g in by_group if g not in GROUPS]
     blocks = []
     for g in order:

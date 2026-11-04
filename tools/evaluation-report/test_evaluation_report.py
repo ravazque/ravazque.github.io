@@ -42,20 +42,16 @@ def report(*evals):
 class Selection(unittest.TestCase):
     def test_keeps_outer_core_milestone_six_and_the_projects_to_hand_in_again(self):
         ps = [{"group": "outer-core", "slug": "scop"}, {"group": "rank-06", "slug": "ft_transcendence"},
-              {"group": "rank-06", "slug": "42cursus-ft_transcendence"}, {"group": "rank-06", "slug": "exam-rank-06"},
+              {"group": "rank-06", "slug": "42_collaborative_resume"}, {"group": "rank-06", "slug": "exam-rank-06", "exam": True},
               {"group": "rank-04", "slug": "minirt"}, {"group": "rank-01", "slug": "born2beroot"},
               {"group": "rank-01", "slug": "42next-born2beroot"}, {"group": "rank-02", "slug": "pipex"},
               {"group": "piscine", "slug": "c-piscine-c-00"}]
         self.assertEqual([p["slug"] for p in h.selected(ps)],
-                         ["scop", "ft_transcendence", "42cursus-ft_transcendence", "minirt", "born2beroot", "42next-born2beroot"])
-
-    def test_ft_resume_belongs_to_milestone_six(self):
-        self.assertEqual(h.group_of({"group": "outer-core", "slug": "42_collaborative_resume"}), "rank-06")
-        self.assertEqual(h.group_of({"group": "outer-core", "slug": "scop"}), "outer-core")
+                         ["scop", "ft_transcendence", "42_collaborative_resume", "minirt", "born2beroot", "42next-born2beroot"])
 
     def test_detail_groups_keep_their_order(self):
         ps = [{"group": "rank-01", "slug": "born2beroot"}, {"group": "outer-core", "slug": "scop"},
-              {"group": "outer-core", "slug": "42_collaborative_resume"}, {"group": "rank-06", "slug": "ft_transcendence"}]
+              {"group": "rank-06", "slug": "42_collaborative_resume"}, {"group": "rank-06", "slug": "ft_transcendence"}]
         self.assertEqual([(t, [p["slug"] for p in g]) for t, g in h.detail_groups(ps)],
                          [("Milestone 6", ["42_collaborative_resume", "ft_transcendence"]), ("Outer Core", ["scop"]),
                           ("Reentregas de milestones anteriores", ["born2beroot"])])
@@ -177,10 +173,10 @@ class Page(unittest.TestCase):
         self.assertIn('<span class="att-n">1 de 1</span>', page)
         self.assertIn(">Proyecto</span><span>Intento</span>", page)
 
-    def test_milestones_are_named_and_ft_resume_is_in_the_sixth(self):
+    def test_milestones_are_named_and_each_project_listed_in_its_own(self):
         doc = report(evaluation())
         doc["periods"]["all"]["projects"].append(
-            {"name": "ft_resume", "slug": "42_collaborative_resume", "group": "outer-core", "status": "finished", "validated": True,
+            {"name": "ft_resume", "slug": "42_collaborative_resume", "group": "rank-06", "status": "finished", "validated": True,
              "mark": 100, "first_ms": T, "evals": 0, "days_to_validate": 0.2, "attempts": []})
         page = h.render(doc, {})
         block = page[page.index("<h3>Milestone 6 "):]
