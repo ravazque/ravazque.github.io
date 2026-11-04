@@ -222,5 +222,52 @@ class Page(unittest.TestCase):
         self.assertIn("Perfil", h.render(doc, {}))
 
 
+class OptOut(unittest.TestCase):
+    OUT = {"peer01"}
+
+    def test_reads_the_logins_from_the_root_env(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(h, "REPO", Path(tmp)):
+                self.assertEqual(h.optouts(), set())
+                (Path(tmp) / ".env").write_text("FT_UID=x\nOPTOUT_LOGINS=Peer01, peer02 ,\n")
+                self.assertEqual(h.optouts(), {"peer01", "peer02"})
+
+    def test_a_hidden_student_keeps_no_name_seat_or_key(self):
+        e = evaluation(other_host="c1r1s1", other_host_checked=True,
+                       corrector={"login": "peer01", "name": "Peer One", "image": "https://cdn.invalid/p.jpg", "host": "c1r1s1"})
+        doc = {"periods": {"all": {"received": [e], "seen": {"peer01": 2, "peer02": 1}, "members": ["peer01", "peer02"],
+                                   "profile": {"login": "tself", "name": "Test Self"}}}}
+        rep = h.hide(doc, self.OUT, "tself")["periods"]["all"]
+        got = json.dumps(rep)
+        for gone in ("peer01", "Peer One", "cdn.invalid", "c1r1s1"):
+            self.assertNotIn(gone, got)
+        self.assertEqual(rep["received"][0]["corrector"]["login"], h.HIDDEN)
+        self.assertFalse(rep["received"][0]["other_host_checked"])
+        self.assertEqual(rep["seen"], {h.HIDDEN: 2, "peer02": 1})
+        self.assertEqual(rep["members"], [h.HIDDEN, "peer02"])
+
+    def test_the_student_of_the_report_is_never_hidden(self):
+        doc = {"profile": {"login": "tself", "name": "Test Self"}}
+        self.assertEqual(h.hide(doc, {"tself"}, "tself"), doc)
+
+    def test_a_hidden_seat_is_never_looked_up_and_a_saved_one_goes(self):
+        hidden = evaluation(id=1, corrector={"login": h.HIDDEN})
+        other = evaluation(id=2, corrector={"login": "peer02"})
+        asked = []
+
+        def lookup(e):
+            asked.append(e["id"])
+            return []
+
+        cache = {"1": "c1r1s1"}
+        seats = h.corrector_seats([hidden, other], cache, lookup)
+        self.assertEqual(asked, [2])
+        self.assertNotIn(1, seats)
+        self.assertNotIn("1", cache)
+
+
 if __name__ == "__main__":
     unittest.main()

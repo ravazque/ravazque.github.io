@@ -44,6 +44,13 @@ func hide(v any, logins map[string]bool, own string) any {
 				out = renamed
 			}
 		}
+		// the evaluation carries the seat too; looked up with no seat would read "not logged", so it claims neither
+		if out.Has("other_host_checked") && namesHidden(out) {
+			out.Set("other_host_checked", false)
+			if out.Has("other_host") {
+				out.Set("other_host", nil)
+			}
+		}
 		return out
 	case []any:
 		out := make([]any, len(x))
@@ -57,4 +64,17 @@ func hide(v any, logins map[string]bool, own string) any {
 		}
 	}
 	return v
+}
+
+// namesHidden says whether an evaluation has a hidden student on the other side.
+func namesHidden(e *core.OMap) bool {
+	if c, ok := e.V("corrector").(*core.OMap); ok && c.S("login") == hidden {
+		return true
+	}
+	for _, c := range e.Os("correcteds") {
+		if c.S("login") == hidden {
+			return true
+		}
+	}
+	return false
 }

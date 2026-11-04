@@ -24,7 +24,8 @@ To try it without touching the API, render a synthetic profile (`make dev-build`
 `python3 tools/evaluation-report/evaluation_report.py --report web/preview/test-outer.json --out /tmp/report.html`.
 
 Requirements: Python 3.12 or newer (standard library only), Go (the extraction is the server's own,
-`server/cmd/devtools`) and `FT_UID` and `FT_SECRET` in the root `.env`.
+`server/cmd/devtools`) and `FT_UID` and `FT_SECRET` in the root `.env`, which also holds `OPTOUT_LOGINS` (see
+[Privacy](#privacy)).
 
 ## What the page shows
 
@@ -54,7 +55,7 @@ Some values are inferences, and the page says so next to them:
 - **Duration** runs from the start to when the form was filled in, so it drifts if the form was filled in late or early.
 - **Seats** are the computer with the most login time during the evaluation. The API does not say where an evaluation
   took place, so both seats are shown. "No logeado" means no session in that time; "Sin datos" means it could not be
-  looked up.
+  looked up, or that the student is hidden.
 
 ## Cost on the 42 API
 
@@ -74,6 +75,11 @@ The page and `data/` hold other students' names, comments and seats.
 - Never publish a page or commit an extraction. Delete both folders when you are done with them.
 - Accounts the app refuses (staff, pisciners, blackholed, frozen) are refused here too: the extraction applies the same
   rules.
+- Students in `OPTOUT_LOGINS` (root `.env`) appear as "Hidden", with no name or seat, as in the app. Their sessions are
+  never looked up, and the saved extraction and seats stop naming them on the next run. A page written before they
+  opted out keeps what it had: write it again or delete it.
+- The site's privacy policy covers what the site does, not this tool, which also reads correctors' seats further back
+  than the site's 60 days. Whoever runs it answers for that data, including the correctors', who were not asked.
 
 ## Tests
 
@@ -88,7 +94,8 @@ The tool already reads the report the app produces, so most of the work is prese
 2. **Page**: `render()` becomes a section in `web/src/views/` (the attempts timeline and the sheets are new; the profile
    and the project list exist there already), with its text in `server/core/data/i18n/{en,es}.json`.
 3. **Older seats**: `corrector_seats()` is the rule. On the server it would go in `api42/extract.go` with a limit, since
-   each evaluation older than `SeatDays` costs one request of the shared budget.
+   each evaluation older than `SeatDays` costs one request of the shared budget. The privacy policy promises the last
+   60 days only, so it would have to change first.
 4. **Access**: on the web a student only ever sees their own report, so the login prompt goes away and the consent and
    access rules of the app apply. Corrector seats and comments stay within the signed-in user's own view.
 5. **Print**: the print styles at the end of `CSS` can move to the app as they are.

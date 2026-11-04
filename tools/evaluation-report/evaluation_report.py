@@ -35,6 +35,7 @@ OUT = HERE / "out"
 API_URL = "https://api.intra.42.fr"
 MIN_INTERVAL = 0.52  # the app limit is 2 requests per second
 REUSE_SECONDS = 3600  # one extraction per user per hour, like the app
+HIDDEN = "Hidden"  # how an opted-out student appears, as in server/internal/web/hide.go
 USER_AGENT = "ravazque-info-evaluation-report"  # the API answers 403 to Python's default one
 
 MONTHS = "ene feb mar abr may jun jul ago sep oct nov dic".split()
@@ -82,6 +83,38 @@ def parse_env(text):
     """KEY=value lines of the root .env (compose format: it cannot be sourced by a shell)."""
     pairs = (line.split("=", 1) for line in text.splitlines() if "=" in line and not line.lstrip().startswith("#"))
     return {k.strip(): v.strip().strip("\"'") for k, v in pairs}
+
+
+def optouts():
+    """The logins in OPTOUT_LOGINS of the root .env: students who asked not to appear in anyone's report."""
+    env = parse_env((REPO / ".env").read_text()) if (REPO / ".env").exists() else {}
+    return {x.strip().lower() for x in env.get("OPTOUT_LOGINS", "").split(",") if x.strip()}
+
+
+def hide(v, logins, own):
+    """A copy with every opted-out student a label with no name, photo or seat, as the app's hide.go does; the student
+    of the report never is."""
+    gone = lambda x: x.lower() in logins and x != own
+    if isinstance(v, list):
+        return [hide(x, logins, own) for x in v]
+    if isinstance(v, str):
+        return HIDDEN if gone(v) else v
+    if not isinstance(v, dict):
+        return v
+    out = {}
+    for k, x in v.items():
+        key, n = (HIDDEN, 2) if gone(k) else (k, 0)
+        while n and key in out:  # two hidden logins as keys of one object keep both entries
+            key, n = f"{HIDDEN} {n}", n + 1
+        out[key] = hide(x, logins, own)
+    if isinstance(v.get("login"), str) and gone(v["login"]):
+        out.update({k: None for k in ("name", "image", "displayname", "host", "hosts") if k in out})
+    people = [out.get("corrector"), *(out.get("correcteds") or [])]
+    if "other_host_checked" in out and any(isinstance(p, dict) and p.get("login") == HIDDEN for p in people):
+        out["other_host_checked"] = False
+        if "other_host" in out:
+            out["other_host"] = None
+    return out
 
 
 class ApiError(Exception):
@@ -167,7 +200,9 @@ def corrector_seats(evals, cache, lookup):
     seats = {}
     for e in evals:
         key = str(e["id"])
-        if e["other_host_checked"]:
+        if e["corrector"]["login"] == HIDDEN:  # never asked, and one saved before they opted out goes
+            cache.pop(key, None)
+        elif e["other_host_checked"]:
             seats[e["id"]] = e["other_host"]
         elif key in cache:
             seats[e["id"]] = cache[key]
@@ -820,7 +855,10 @@ def main():
         else:
             print(f"Using the extraction saved {(time.time() - saved.stat().st_mtime) / 60:.0f} min ago (--fresh repeats it)")
 
-    doc = json.loads(saved.read_text())
+    raw = json.loads(saved.read_text())
+    doc = hide(raw, optouts(), raw["periods"]["all"]["profile"]["login"])
+    if api and doc != raw:  # the saved extraction stops naming them too (only then: its date says when to extract again)
+        saved.write_text(json.dumps(doc))
     rep = doc["periods"]["all"]
     teams = {a["team_id"] for p in selected(rep["projects"]) for a in p["attempts"]}
     evals = [e for e in rep["received"] if e["team_id"] in teams]
