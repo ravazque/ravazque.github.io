@@ -21,7 +21,8 @@ const (
 )
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Get("accept") != "1" {
+	// the landing's box is the consent: a link from another site can't tick it
+	if r.URL.Query().Get("accept") != "1" || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
 		http.Redirect(w, r, "/?error=consent", http.StatusSeeOther)
 		return
 	}

@@ -244,10 +244,23 @@ class OptOut(unittest.TestCase):
         got = json.dumps(rep)
         for gone in ("peer01", "Peer One", "cdn.invalid", "c1r1s1"):
             self.assertNotIn(gone, got)
-        self.assertEqual(rep["received"][0]["corrector"]["login"], h.HIDDEN)
+        self.assertEqual(rep["received"][0]["corrector"]["login"], f"{h.HIDDEN} 1")
         self.assertFalse(rep["received"][0]["other_host_checked"])
-        self.assertEqual(rep["seen"], {h.HIDDEN: 2, "peer02": 1})
-        self.assertEqual(rep["members"], [h.HIDDEN, "peer02"])
+        self.assertEqual(rep["seen"], {f"{h.HIDDEN} 1": 2, "peer02": 1})
+        self.assertEqual(rep["members"], [f"{h.HIDDEN} 1", "peer02"])
+
+    def test_a_hidden_login_goes_from_inside_other_texts_too(self):
+        doc = {"team": "tout's group", "comment": "With TOUT, tout2 and xtout.", "mine": "tself's group"}
+        out = h.hide(doc, {"tout", "tself"}, "tself")
+        self.assertEqual(out["team"], "Hidden 1's group")
+        self.assertEqual(out["comment"], "With Hidden 1, tout2 and xtout.")
+        self.assertEqual(out["mine"], "tself's group")
+
+    def test_two_hidden_students_stay_two(self):
+        out = h.hide({"people": [{"login": "peer01"}, {"login": "peer02"}, {"login": "peer01"}]}, {"peer01", "peer02"}, "tself")
+        self.assertEqual([p["login"] for p in out["people"]], ["Hidden 1", "Hidden 2", "Hidden 1"])
+        again = h.hide({"people": out["people"] + [{"login": "peer03"}]}, {"peer03"}, "tself")
+        self.assertEqual(again["people"][3]["login"], "Hidden 3")  # no number already in use
 
     def test_the_student_of_the_report_is_never_hidden(self):
         doc = {"profile": {"login": "tself", "name": "Test Self"}}

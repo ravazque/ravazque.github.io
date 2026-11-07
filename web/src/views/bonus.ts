@@ -90,7 +90,7 @@ export function tierRows(f: Fmt, tiers: Tier[], open: boolean, week: number, dro
       state = f.t("bonus.to_go", { n: f.num(t.need_h, 1) });
       lines = [soonest];
     }
-    return `<div class="tier ${t.state}"><b>${esc(f.t("bonus.tier", { hours: t.hours, points: f.num(t.points) }))}</b>`
+    return `<div class="tier ${esc(t.state)}"><b>${esc(f.t("bonus.tier", { hours: t.hours, points: f.num(t.points) }))}</b>`
       + `<div><p class="state">${esc(state)}</p>${lines.filter(Boolean).map((l) => `<p>${esc(l)}</p>`).join("")}</div></div>`;
   }).join("")}</div>`;
 }

@@ -2,7 +2,7 @@
 import type { Fmt } from "../fmt";
 import { esc, tipAttr } from "./h";
 
-export const GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "blackholed", "staff", "no-cursus"];
+export const GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "blackholed", "staff", "no-cursus", "deleted"];
 export const ACCENT: [string, string] = ["var(--ramp-hi)", "var(--ramp-lo)"];
 export const SLATE: [string, string] = ["var(--slate)", "var(--slate-lo)"];
 

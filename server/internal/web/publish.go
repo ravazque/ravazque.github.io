@@ -208,8 +208,3 @@ func (s *Server) commitSnapshot(snap *core.OMap) (string, error) {
 	json.NewDecoder(res.Body).Decode(&out)
 	return out.Commit.HTMLURL, nil
 }
-
-func decodeB64(s string) []byte {
-	b, _ := base64.StdEncoding.DecodeString(s)
-	return b
-}

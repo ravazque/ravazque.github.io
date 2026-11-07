@@ -91,30 +91,41 @@ def optouts():
     return {x.strip().lower() for x in env.get("OPTOUT_LOGINS", "").split(",") if x.strip()}
 
 
+def is_hidden(login):
+    return re.fullmatch(rf"{HIDDEN}( \d+)?", login or "") is not None
+
+
 def hide(v, logins, own):
-    """A copy with every opted-out student a label with no name, photo or seat, as the app's hide.go does; the student
-    of the report never is."""
-    gone = lambda x: x.lower() in logins and x != own
-    if isinstance(v, list):
-        return [hide(x, logins, own) for x in v]
-    if isinstance(v, str):
-        return HIDDEN if gone(v) else v
-    if not isinstance(v, dict):
-        return v
-    out = {}
-    for k, x in v.items():
-        key, n = (HIDDEN, 2) if gone(k) else (k, 0)
-        while n and key in out:  # two hidden logins as keys of one object keep both entries
-            key, n = f"{HIDDEN} {n}", n + 1
-        out[key] = hide(x, logins, own)
-    if isinstance(v.get("login"), str) and gone(v["login"]):
-        out.update({k: None for k in ("name", "image", "displayname", "host", "hosts") if k in out})
-    people = [out.get("corrector"), *(out.get("correcteds") or [])]
-    if "other_host_checked" in out and any(isinstance(p, dict) and p.get("login") == HIDDEN for p in people):
-        out["other_host_checked"] = False
-        if "other_host" in out:
-            out["other_host"] = None
-    return out
+    """A copy with every opted-out student a label with no name, photo or seat, as the app's hide.go does: the number only
+    tells them apart inside this report, so no count changes. The student of the report never is."""
+    gone = lambda x: x.lower() in logins and x.lower() != own.lower()
+    labels = {}
+    # a copy hidden before keeps its numbers: the new ones come after them
+    used = max((int(n) for n in re.findall(rf"{HIDDEN} (\d+)", json.dumps(v))), default=0)
+
+    def label(login):
+        if login.lower() not in labels:
+            labels[login.lower()] = f"{HIDDEN} {used + len(labels) + 1}"
+        return labels[login.lower()]
+
+    def walk(x):
+        if isinstance(x, list):
+            return [walk(e) for e in x]
+        if isinstance(x, str):  # also inside a text: a team's "peer's group", a comment
+            return re.sub(r"[A-Za-z0-9-]+", lambda m: label(m.group()) if gone(m.group()) else m.group(), x)
+        if not isinstance(x, dict):
+            return x
+        out = {label(k) if gone(k) else k: walk(e) for k, e in x.items()}
+        if isinstance(x.get("login"), str) and gone(x["login"]):
+            out.update({k: None for k in ("name", "image", "displayname", "host", "hosts") if k in out})
+        people = [out.get("corrector"), *(out.get("correcteds") or [])]
+        if "other_host_checked" in out and any(isinstance(p, dict) and is_hidden(p.get("login")) for p in people):
+            out["other_host_checked"] = False
+            if "other_host" in out:
+                out["other_host"] = None
+        return out
+
+    return walk(v)
 
 
 class ApiError(Exception):
@@ -200,7 +211,7 @@ def corrector_seats(evals, cache, lookup):
     seats = {}
     for e in evals:
         key = str(e["id"])
-        if e["corrector"]["login"] == HIDDEN:  # never asked, and one saved before they opted out goes
+        if is_hidden(e["corrector"]["login"]):  # never asked, and one saved before they opted out goes
             cache.pop(key, None)
         elif e["other_host_checked"]:
             seats[e["id"]] = e["other_host"]

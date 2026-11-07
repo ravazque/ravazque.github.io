@@ -417,3 +417,21 @@ func TestFailedExtractionWaitsBeforeTheNextTry(t *testing.T) {
 		t.Fatal("a failed run was retried at once")
 	}
 }
+
+func TestAConsentLogItCannotReadWholeIsLeftAsItIs(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "consent.log")
+	body := `{"h":"a","v":3,"at":"2026-11-01T10:00:00+00:00"}` + "\n" + strings.Repeat("x", 70_000) + "\n" + `{"h":"b","v":3,"at":"2026-11-02T10:00:00+00:00"}` + "\n"
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st := testSettings()
+	st.ConsentLog = path
+	now := time.Date(2026, 11, 7, 0, 0, 0, 0, time.UTC)
+	s := NewStore(NewMemory(func() time.Time { return now }), st, func() time.Time { return now })
+	if err := LoadConsent(s, now); err == nil {
+		t.Fatal("no error for a log it could not read to the end")
+	}
+	if got, _ := os.ReadFile(path); string(got) != body {
+		t.Fatal("the legal record was rewritten from a partial read")
+	}
+}

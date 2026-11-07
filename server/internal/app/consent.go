@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"encoding/json"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -12,8 +13,8 @@ import (
 // years after their last sign-in. It names nobody and survives "Delete my data". It is the one thing written to disk
 // (CONSENT_LOG, one JSON line per acceptance, pruned at start-up).
 const (
-	ConsentVersion = 3
-	ConsentUpdated = "2026-11-04"
+	ConsentVersion = 4
+	ConsentUpdated = "2026-11-07"
 	consentKeep    = 2 * 365 * 24 * time.Hour
 )
 
@@ -35,12 +36,14 @@ func RecordConsent(s *Store, uid int, now time.Time) error {
 		return nil
 	}
 	f, err := os.OpenFile(s.settings.ConsentLog, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-	if err != nil {
-		return err
+	if err == nil {
+		defer f.Close()
+		b, _ := json.Marshal(e)
+		_, err = f.Write(append(b, '\n'))
 	}
-	defer f.Close()
-	b, _ := json.Marshal(e)
-	_, err = f.Write(append(b, '\n'))
+	if err != nil { // the proof is missing: someone must know (it says nothing about who)
+		slog.Error("consent log", "error", err.Error())
+	}
 	return err
 }
 
@@ -79,10 +82,18 @@ func LoadConsent(s *Store, now time.Time) error {
 		}
 	}
 	f.Close()
+	if err := sc.Err(); err != nil { // read in part: rewriting it would lose the rest of the legal record
+		return err
+	}
 	var b strings.Builder
 	for _, e := range kept {
 		j, _ := json.Marshal(e)
 		b.Write(append(j, '\n'))
 	}
-	return os.WriteFile(path, []byte(b.String()), 0o600)
+	// whole or not at all: a crash here must not leave the record empty
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, []byte(b.String()), 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }

@@ -221,9 +221,9 @@ func (s *Server) avatar(w http.ResponseWriter, r *http.Request, si signedIn) {
 }
 
 // coalitionImage serves a coalition's logo or banner from the intra CDN (the page's CSP keeps every image on this
-// origin): only coalition paths of the CDN, cached for a day for everyone, and an SVG never runs (sandboxed, no sniffing).
+// origin): only the bloc's own, cached for a day for everyone, and an SVG never runs (sandboxed, no sniffing).
 func (s *Server) coalitionImage(w http.ResponseWriter, r *http.Request, si signedIn) {
-	ct, b := s.coalitionImageBytes(r.Context(), r.URL.Query().Get("u"))
+	ct, b := s.coalitionImageBytes(r.Context(), s.blocImage(r.URL.Query().Get("u")))
 	if len(b) == 0 {
 		w.WriteHeader(404)
 		return
@@ -233,6 +233,19 @@ func (s *Server) coalitionImage(w http.ResponseWriter, r *http.Request, si signe
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Cache-Control", "private, max-age=86400")
 	w.Write(b)
+}
+
+// blocImage is the address of a logo or cover of the Madrid bloc: a request can only name one of those, so it never
+// chooses where the server goes with its token, nor spends the shared budget on what does not exist.
+func (s *Server) blocImage(asked string) string {
+	for _, c := range core.Objs(s.API.LastBloc(), "coalitions") {
+		for _, k := range []string{"image_url", "cover_url"} {
+			if u := core.Str(c, k); u != "" && u == asked {
+				return u
+			}
+		}
+	}
+	return ""
 }
 
 // coalitionImageBytes is a coalition's logo or cover from the intra CDN (coalition paths only), kept in memory 24 h;

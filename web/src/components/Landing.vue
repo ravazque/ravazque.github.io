@@ -21,8 +21,9 @@ const devGroups = computed(() => (["test", "real"] as const).map((kind) => ({ ki
   .filter((g) => g.items.length));
 const devPick = ref<HTMLElement | null>(null);
 function enterDev(ev: Event) {
-  const href = (ev.target as HTMLFormElement).querySelector("select")?.value;
-  if (href?.startsWith("/dev/login?")) location.href = href;
+  const picked = (ev.target as HTMLFormElement).querySelector("select")?.value;
+  const known = devGroups.value.flatMap((g) => g.items).find((i) => i.href === picked); // the session's own list, not the page's
+  if (known) location.href = known.href;
 }
 
 onMounted(async () => {

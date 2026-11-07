@@ -22,7 +22,6 @@ type Session struct {
 	CoalitionColor string  `json:"coalition_color,omitempty"`
 	CSRF           string  `json:"csrf"`
 	Created        float64 `json:"created"`
-	App            int     `json:"app"` // the limiter slot of the app that issued the user's token
 }
 
 type Sessions struct {

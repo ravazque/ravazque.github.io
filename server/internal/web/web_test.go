@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -162,6 +163,10 @@ func TestHealthUICSSAndSPA(t *testing.T) {
 
 func TestLoginNeedsConsent(t *testing.T) {
 	e := newEnv(t, nil)
+	cross := map[string]string{"Sec-Fetch-Site": "cross-site"} // a link from elsewhere can't tick the box for you
+	if r := e.do(t, "GET", "/auth/login?accept=1", nil, cross); r.StatusCode != 303 || r.Header.Get("Location") != "/?error=consent" {
+		t.Fatalf("a link from another site accepted the policy: %d %s", r.StatusCode, r.Header.Get("Location"))
+	}
 	if r := e.do(t, "GET", "/auth/login", nil, nil); r.StatusCode != 303 || r.Header.Get("Location") != "/?error=consent" {
 		t.Fatal(r.StatusCode, r.Header.Get("Location"))
 	}
@@ -346,7 +351,7 @@ func TestPublishOwnerOnlyAndWhitelisted(t *testing.T) {
 	}
 	var b struct{ Content string }
 	json.Unmarshal(put, &b)
-	snap := string(decodeB64(b.Content))
+	snap := string(mustB64(b.Content))
 	for _, bad := range []string{"@", "c2r", "c3r", "peer", "990002", "hours", "image", "email", "location"} {
 		if strings.Contains(snap, bad) {
 			t.Fatalf("snapshot carries %q", bad)
@@ -481,6 +486,11 @@ func TestCoalitionImagesOnlyFromTheCDNAndNeverRunning(t *testing.T) {
 	}))
 	defer cdnSrv.Close()
 	e.s.API.CDN = cdnSrv.URL + "/"
+	e.f.bloc.Store([]any{map[string]any{"id": 1.0, "coalitions": []any{map[string]any{"id": 7.0, "name": "A", "score": 1.0, "color": "#000000",
+		"image_url": cdnSrv.URL + "/coalition/image/1/logo.svg"}}}})
+	if _, err := e.s.API.Bloc(context.Background(), time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	logo := "/api/me/coalition-image?u=" + url.QueryEscape(cdnSrv.URL+"/coalition/image/1/logo.svg")
 	if r := e.do(t, "GET", logo, nil, nil); r.StatusCode != 401 {
 		t.Fatalf("signed out: %d", r.StatusCode)
@@ -498,10 +508,14 @@ func TestCoalitionImagesOnlyFromTheCDNAndNeverRunning(t *testing.T) {
 	if cdn.Load() != 1 {
 		t.Fatalf("the CDN was asked %d times", cdn.Load())
 	}
-	for _, u := range []string{cdnSrv.URL + "/users/x.jpg", "https://example.com/coalition/a.svg", cdnSrv.URL + "/coalition/../users/x.jpg"} {
+	for _, u := range []string{cdnSrv.URL + "/users/x.jpg", "https://example.com/coalition/a.svg", cdnSrv.URL + "/coalition/../users/x.jpg",
+		cdnSrv.URL + "/coalition/%2e%2e/users/x.jpg", cdnSrv.URL + "/coalition/image/2/other.svg"} {
 		if r := e.do(t, "GET", "/api/me/coalition-image?u="+url.QueryEscape(u), nil, nil); r.StatusCode != 404 {
 			t.Fatalf("%s: %d", u, r.StatusCode)
 		}
+	}
+	if cdn.Load() != 1 { // asking for what the bloc does not have spends nothing of the shared budget
+		t.Fatalf("the CDN was asked %d times", cdn.Load())
 	}
 }
 
@@ -586,4 +600,9 @@ func TestTestProfilesNeverReachThe42API(t *testing.T) {
 	if r := d.do(t, "GET", "/api/me/view", nil, nil); r.StatusCode != 200 {
 		t.Fatalf("the test profile's report after deleting: %d", r.StatusCode)
 	}
+}
+
+func mustB64(s string) []byte {
+	b, _ := base64.StdEncoding.DecodeString(s)
+	return b
 }

@@ -9,6 +9,18 @@ import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBloc
 /** A histogram's bins from its edges, each with its unit: "0–1h", "1–3h", "3+h". */
 export const binLabels = (edges: number[], unit: string) => edges.map((x, i) => `${i < edges.length - 1 ? `${x}–${edges[i + 1]}` : `${x}+`}${unit}`);
 
+/** By milestone with the deleted accounts on a row of their own: the report counts them with whoever has no 42cursus. The
+ * evaluations themselves all stay. */
+export function deletedApart(byGroup: Record<string, any>, received: any[], given: any[], me?: string): Record<string, any> {
+  const row = { received: 0, received_out: 0, given: 0, given_out: 0 };
+  for (const e of received) if (erased(e.corrector?.login)) { row.received++; if (e.outstanding) row.received_out++; }
+  for (const e of given) for (const c of e.correcteds || []) if (c.login !== me && erased(c.login)) { row.given++; if (e.outstanding) row.given_out++; }
+  if (!row.received && !row.given) return byGroup;
+  const { "no-cursus": rest = {}, ...others } = byGroup;
+  const left = { received: (rest.received || 0) - row.received, received_out: (rest.received_out || 0) - row.received_out, given: (rest.given || 0) - row.given, given_out: (rest.given_out || 0) - row.given_out };
+  return { ...others, ...(left.received > 0 || left.given > 0 ? { "no-cursus": left } : {}), deleted: row };
+}
+
 export function evaluations(pg: Page): Section[] {
   const f = pg.f, D = pg.D, S = D.summary, W = D.when;
   const out: Section[] = [];
@@ -33,8 +45,8 @@ export function evaluations(pg: Page): Section[] {
       + `<span class="frac">${esc(f.t("stats.of", { n: r.n, total: r.total }))}</span></p>${bar(r.n, r.total, " bad")}<p class="k">${esc(f.t(key))}</p></div>`;
     const recip = (n: number, total: number, text: string) => `<div class="recip-row">${bar(n, total, " good")}<p class="s">${esc(text)}</p></div>`;
     const R = st.outstanding_reciprocity;
-    const order = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "blackholed", "no-cursus"];
-    const groups = Object.entries(st.by_group || {}).map(([g, v]: [string, any]) => ({ g, ...v, i: order.includes(g) ? order.indexOf(g) : 99,
+    const order = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "blackholed", "no-cursus", "deleted"];
+    const groups = Object.entries(deletedApart(st.by_group || {}, D.received, D.given, D.profile?.login)).map(([g, v]: [string, any]) => ({ g, ...v, i: order.includes(g) ? order.indexOf(g) : 99,
       in_pct: v.received ? (100 * v.received_out) / v.received : null, out_pct: v.given ? (100 * v.given_out) / v.given : null }));
     const pctCell = (v: number | null) => (v === null ? "–" : `${f.num(v)}%`);
     statBlocks = [

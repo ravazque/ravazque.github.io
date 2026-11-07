@@ -57,10 +57,10 @@ const erasedNote = (f: Page["f"], n: number) => (n ? f.plural(n, "who.erased_not
 const staffLogins = (pg: Page) => new Set<string>(pg.D.people.filter((p: any) => p.staff).map((p: any) => p.login));
 const noErased = (e: any) => ({ ...e, correcteds: (e.correcteds || []).filter((c: any) => !erased(c.login)) });
 
-/** Everyone met with their group today; staff accounts (no cursus) get a group of their own. */
+/** Everyone met with their group today; staff and deleted accounts (no cursus) get a group of their own. */
 function connections(pg: Page): any[] {
   const staff = staffLogins(pg);
-  return (pg.v.connections || []).map((c: any) => (staff.has(c.login) ? { ...c, group: "staff" } : c));
+  return (pg.v.connections || []).map((c: any) => (erased(c.login) ? { ...c, group: "deleted" } : staff.has(c.login) ? { ...c, group: "staff" } : c));
 }
 
 export function people(pg: Page): Section[] {
