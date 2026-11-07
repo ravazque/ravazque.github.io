@@ -1,7 +1,0 @@
-<section id="rhythm">
-  <h2>{{ s.title }}</h2>
-  <p class="lede">{{ s.lede }}</p>
-  <div class="cols" data-grid><div class="block" data-panel="kpis"><div class="kpis">
-    {% for k, v, subs in s.kpis %}<div><h3>{{ k }}</h3><p class="v">{{ v }}</p>{% for x in subs %}<p class="s">{{ x }}</p>{% endfor %}</div>{% endfor %}
-  </div></div></div>
-</section>

@@ -111,7 +111,6 @@ La política completa está en la página de Privacidad de la aplicación. Probl
   La imagen se construye por etapas (Node 26 → Go 1.27 → distroless) y corre sin root; todas las imágenes base van
   fijadas por digest.
 - **Tests**: `testing` de Go, Vitest 5 y `node --test`.
-- `.v1_old/`: la primera versión (Python, FastAPI, htmx), archivada y sin compilar.
 
 ## Compilar y arrancar
 
@@ -249,8 +248,8 @@ La aplicación web no la despliega el CI: producción corre en la máquina del a
 
 `make test` lo ejecuta todo:
 
-- los tests de Go junto a su código en `server/`. El análisis se compara con ficheros golden que generó la primera
-  versión a partir de los mismos datos, incluido el orden de las claves;
+- los tests de Go junto a su código en `server/`. El análisis se compara con ficheros golden guardados, incluido el
+  orden de las claves;
 - los tests de la aplicación del navegador en `web/src/` (Vitest), que también comprueban que cada texto existe en
   los dos idiomas;
 - los tests del sitio en `site/tests/`;

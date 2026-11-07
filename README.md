@@ -104,7 +104,6 @@ The full policy is on the Privacy page of the app. Security issues: see [SECURIT
   image is built in stages (Node 26 → Go 1.27 → distroless) and runs as a non-root user; every base image is pinned by
   digest.
 - **Tests**: Go's `testing`, Vitest 5 and `node --test`.
-- `.v1_old/`: the first version (Python, FastAPI, htmx), archived and not built.
 
 ## Build and run
 
@@ -240,8 +239,8 @@ The web app itself is not deployed by CI: production runs on the owner's machine
 
 `make test` runs everything:
 
-- the Go tests next to their code in `server/`. The analysis is checked against golden files that the first version
-  produced from the same data, key order included;
+- the Go tests next to their code in `server/`. The analysis is checked against saved golden files, key order
+  included;
 - the browser app's tests in `web/src/` (Vitest), which also check that every text key exists in both languages;
 - the site's tests in `site/tests/`;
 - the evaluation report's tests in `tools/evaluation-report/`.
