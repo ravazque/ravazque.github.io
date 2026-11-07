@@ -10,6 +10,5 @@ services:
     environment:
       DEV_PROFILES: ${DEV_PROFILES-/preview/test-*.json}
       BASE_URL: https://localhost
-      OAUTH_APP: "2"
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     volumes: ["./web/preview:/preview:ro", "consent:/data"]

@@ -1,15 +1,14 @@
-// Profile (the home page): who you are, the logtime bonus and what changes today, three figures of your history, your
-// campuses, and the sections of other pages the student added as widgets (kept in this browser).
+// Profile (the home page): who you are, three figures of your history, the sections of other pages kept as widgets (in
+// this browser; Contribution, Rhythm and the bonus to begin with), and what 42 gave you along the way with your campuses.
 import { trend } from "../lib/charts";
 import { badge, esc, initials, safeColor } from "../lib/h";
 import { madridParts } from "../fmt";
-import { home, type Today } from "./home";
-import { Page, type PageKey, type Section, monthsBetween, myRank, myTrack } from "./page";
+import { Page, type PageKey, type Section, block, cols, monthsBetween, myRank, myTrack, section } from "./page";
 import { projects } from "./projects";
 import { evaluations } from "./evaluations";
 import { coalition } from "./coalition";
 import { people } from "./people";
-import { campus, campuses } from "./campus";
+import { campus } from "./campus";
 
 const num = (f: Page["f"], v: number, d = 0, unit = "") =>
   `<span data-count="${v}" data-dec="${d}">${esc(f.num(v, d))}</span>${unit ? `<small>${esc(unit)}</small>` : ""}`;
@@ -80,11 +79,54 @@ function modules(pg: Page): string {
       + x.lines.filter(Boolean).map((l) => `<p class="line">${esc(l)}</p>`).join("") + x.trend + "</article>").join("") + "</div></section>";
 }
 
+/** The level an achievement's description names ("Attended 21 events." → 21, "1.000 points" → 1000); 0 when none. */
+const achLevel = (a: any) => +((/\d{1,3}(?:[.,]\d{3})+|\d+/.exec(a.description || "") || ["0"])[0].replace(/[.,]/g, ""));
+
+/** Achievements of one series (same name) as one entry: the highest level on top, the others below it, highest
+ * first; series ordered by when their top level was earned, newest first. */
+export function achievementSeries(list: any[]): { top: any; rest: any[] }[] {
+  const by = new Map<string, any[]>();
+  for (const a of list) by.set(a.name, [...(by.get(a.name) || []), a]);
+  return [...by.values()].map((xs) => xs.sort((a, b) => achLevel(b) - achLevel(a) || String(b.at || "").localeCompare(String(a.at || ""))))
+    .map(([top, ...rest]) => ({ top, rest })).sort((a, b) => String(b.top.at || "").localeCompare(String(a.top.at || "")));
+}
+
+/** What 42 gave you along the way (achievements, events, titles, expertises and quests) and the campuses you have been
+ * to; the student can fold it to its title ("min") or take it off the page ("off"). */
+export function activity(pg: Page, state: "" | "min" | "off" = ""): Section[] {
+  if (state === "off") return [];
+  const f = pg.f, D = pg.D, X = D.extras;
+  if (state === "min") return [{ id: "activity", nav: f.t("activity.title"), html: section("activity", f.t("activity.title"), "") }];
+  const none = `<li class="note">${esc(f.t("empty.period"))}</li>`;
+  const evKind = (k: string) => (f.has(`event.${k}`) ? f.t(`event.${k}`) : String(k).replace(/_/g, " "));
+  const tier = (a: any) => (a.tier && a.tier !== "none" ? " " + badge(f.has(`tier.${a.tier}`) ? f.t(`tier.${a.tier}`) : a.tier) : "");
+  const ach = achievementSeries(X.achievements).map(({ top, rest }) => `<li><span><b>${esc(top.name)}</b>${tier(top)}<br>`
+    + `<span class="note">${esc(top.description || "")}</span></span><span class="when">${esc(f.day(top.at))}</span>`
+    + (rest.length ? `<details class="ach-more"><summary>${esc(f.plural(rest.length, "extras.ach_more"))}</summary><ul>${rest.map((a) =>
+      `<li><span class="note">${esc(a.description || "")}${tier(a)}</span><span class="when">${esc(f.day(a.at))}</span></li>`).join("")}</ul></details>` : "") + "</li>").join("");
+  const evs = [...X.events].reverse().map((e: any) => `<li><span>${esc(e.name)}<br><span class="note">${esc(evKind(e.kind))}${e.location ? " · " + esc(e.location) : ""}`
+    + `${e.hours ? ` · ${esc(f.nb(e.hours, "h"))}` : ""}</span></span><span class="when">${esc(f.day(e.begin))}</span></li>`).join("");
+  const misc = [...X.titles.map((x: any) => `<li><span><b>${esc(f.t("extras.title_item"))}</b> ${esc(x.name)}</span><span class="when">${esc(f.day(x.at))}</span></li>`),
+    ...X.expertises.map((x: any) => `<li><span><b>${esc(f.t("extras.expertise"))}</b> ${esc(x.name)}</span><span class="when">${esc(x.value)} / 5</span></li>`),
+    ...X.quests.map((q: any) => `<li><span><b>${esc(f.t("extras.quest"))}</b> ${esc(q.name)}<br><span class="note">${esc(q.description || "")}</span></span><span class="when">${esc(q.validated ? f.day(q.validated) : f.t("extras.in_progress"))}</span></li>`)].join("");
+  const kinds = Object.entries(X.event_kinds || {}).map(([k, v]) => `${evKind(k)}: ${v}`).join(" · ");
+  const places = (D.campuses || []).map((c: any) => {
+    const time = c.sessions ? f.t("foot.time", { hours: f.num(c.hours, 1), sessions: f.num(c.sessions) }) : f.t("foot.no_sessions");
+    return `<li><span><b>${esc(c.name || "?")}</b>${c.city ? ` <span class="note">${esc(c.city)}</span>` : ""}<br><span class="note">${esc(`${f.t("foot.joined", { when: f.day(c.joined) })} · ${time}`)}</span></span>`
+      + (c.first ? `<span class="when">${esc(f.t("foot.span", { first: f.day(c.first), last: f.day(c.last) }))}</span>` : "") + "</li>";
+  }).join("");
+  return [{ id: "activity", nav: f.t("activity.title"), html: section("activity", f.t("activity.title"), cols(
+    block("achievements", `<ul class="list">${ach || none}</ul>`, f.t("extras.achievements_title")),
+    `<div class="block" data-panel="events"><h3>${esc(f.t("extras.events_title"))}</h3><p class="note">${esc(kinds)}</p><ul class="list">${evs || none}</ul></div>`,
+    block("misc", `<ul class="list">${misc || none}</ul>`, f.t("extras.misc_title")),
+    block("campuses", `<ul class="list">${places || none}</ul>`, f.t("foot.campuses")))) }];
+}
+
 /** Every section of the other pages a student can add under their profile, in the order of the band, with its title.
- * The ones in HALF start in one column (left or right); the rest take both (the student can change either). */
+ * All start at full width; the student can make any of them half width. */
 export const WIDGETS: [Exclude<PageKey, "home">, string, string][] = [
   ["projects", "pace", "nav.pace"], ["projects", "skills", "extras.skills_title"], ["projects", "projects-table", "nav.projects_table"],
-  ["projects", "exams", "nav.exams"], ["projects", "domains", "domains.title"], ["projects", "timeline", "nav.projects"], ["projects", "activity", "activity.title"],
+  ["projects", "exams", "nav.exams"], ["projects", "domains", "domains.title"], ["projects", "timeline", "nav.projects"],
   ["evaluations", "community", "community.title"], ["evaluations", "by-group", "stats.group_section"], ["evaluations", "over-time", "over_time.title"],
   ["evaluations", "when", "nav.when"], ["evaluations", "feedback", "nav.feedback"], ["evaluations", "points", "nav.points"],
   ["evaluations", "log", "nav.log"],
@@ -92,13 +134,12 @@ export const WIDGETS: [Exclude<PageKey, "home">, string, string][] = [
   ["people", "who", "nav.who"], ["people", "crossed", "nav.crossed"], ["people", "connections", "nav.connections"], ["people", "circle", "nav.network"],
   ["campus", "rhythm", "rhythm.title"], ["campus", "seats", "nav.seats"], ["campus", "days", "nav.days"], ["campus", "sessions", "nav.sessions"], ["campus", "where", "nav.where"],
 ];
-export const HALF = new Set(["exams", "by-group", "points", "standing", "bonus", "coal-points", "rhythm", "community"]);
 const BUILD: Record<string, (pg: Page) => Section[]> = { projects, evaluations, coalition, people, campus };
 
 /** The added sections on a two-column grid, each built by its own page (once per page), in the student's order, size
- * and column; then the picker for more. */
-function widgets(pg: Page, chosen: { page: string; id: string; wide?: boolean; side?: string }[]): Section[] {
-  const f = pg.f, built = new Map<string, Section[]>(), out: Section[] = [], cells: string[] = [];
+ * and column. */
+export function widgets(pg: Page, chosen: { page: string; id: string; wide?: boolean; side?: string }[]): Section[] {
+  const f = pg.f, built = new Map<string, Section[]>(), cells: string[] = [];
   const title = (page: string, id: string) => {
     const w = WIDGETS.find(([p, i]) => p === page && i === id);
     return w ? f.t(w[2]) : id;
@@ -108,25 +149,29 @@ function widgets(pg: Page, chosen: { page: string; id: string; wide?: boolean; s
     if (!built.has(page)) built.set(page, BUILD[page](pg));
     const s = built.get(page)!.find((x) => x.id === id);
     const html = s ? s.html : `<section id="${esc(id)}"><h2>${esc(title(page, id))}</h2><p class="note">${esc(f.t("widgets.none"))}</p></section>`;
-    const big = wide ?? !HALF.has(id);
+    const big = wide ?? true;
     cells.push(`<div class="widget ${big ? "wide" : "half"}${!big && side ? ` ${side}` : ""}" data-widget="${esc(page)}:${esc(id)}" data-i="${i}" data-name="${esc(s?.nav || title(page, id))}">${html}</div>`);
   });
-  if (cells.length) out.push({ id: "widget-grid", nav: f.t("widgets.title"), html: `<div class="widgets">${cells.join("")}</div>` });
-  const left = WIDGETS.filter(([p, i]) => !chosen.some((c) => c.page === p && c.id === i));
-  if (left.length) out.push({ id: "widgets", nav: f.t("widgets.title"), html: `<section id="widgets" class="widget-add">`
-    + `<label class="field"><span>${esc(f.t("widgets.add_label"))}</span><select name="widget">${left.map(([p, i, k]) =>
-      `<option value="${p}:${i}">${esc(`${f.t(`pages.${p}`)} · ${f.t(k)}`)}</option>`).join("")}</select></label>`
-    + `<button class="btn secondary" type="button" data-widget-add>${esc(f.t("widgets.add"))}</button></section>` });
-  return out;
+  return cells.length ? [{ id: "widget-grid", nav: f.t("widgets.title"), html: `<div class="widgets">${cells.join("")}</div>` }] : [];
 }
 
-export function profile(pg: Page, td: Today | null, chosen: { page: string; id: string }[] = []): Section[] {
+/** The picker for more sections, Activity among them while it is off the page. */
+export function widgetPicker(pg: Page, chosen: { page: string; id: string }[], state: "" | "min" | "off" = ""): Section[] {
+  const f = pg.f;
+  const left = WIDGETS.filter(([p, i]) => !chosen.some((c) => c.page === p && c.id === i)).map(([p, i, k]) => [`${p}:${i}`, `${f.t(`pages.${p}`)} · ${f.t(k)}`]);
+  if (state === "off") left.unshift(["home:activity", `${f.t("pages.home")} · ${f.t("activity.title")}`]);
+  return left.length ? [{ id: "widgets", nav: f.t("widgets.title"), html: `<section id="widgets" class="widget-add">`
+    + `<label class="field"><span>${esc(f.t("widgets.add_label"))}</span><select name="widget">${left.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select></label>`
+    + `<button class="btn secondary" type="button" data-widget-add>${esc(f.t("widgets.add"))}</button></section>` }] : [];
+}
+
+export function profile(pg: Page, chosen: { page: string; id: string }[] = [], state: "" | "min" | "off" = ""): Section[] {
   const f = pg.f;
   return [
     { id: "profile", nav: f.t("profile.title"), html: card(pg) },
-    ...(td ? home(f, td) : []),
     { id: "home-kpis", nav: f.t("nav.home_kpis"), html: modules(pg) },
-    ...campuses(pg),
     ...widgets(pg, chosen),
+    ...widgetPicker(pg, chosen, state),
+    ...activity(pg, state),
   ];
 }

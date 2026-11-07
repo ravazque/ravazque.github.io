@@ -17,6 +17,12 @@ export function niceMax(v: number): number {
   return 10 * mag;
 }
 
+/** A scale that ends at the first tick over the value, a quarter of the round number at a time (28k: up to 37.5k, not 50k). */
+export function tightAxis(v: number): { top: number; steps: number } {
+  const step = niceMax(v) / 4, steps = v > 0 ? Math.ceil(v / step) : 4;
+  return { top: step * steps, steps };
+}
+
 export const legend = (items: [string, string][]) =>
   `<div class="legend">${items.map(([l, c]) => `<span><i style="background:${c}"></i>${esc(l)}</span>`).join("")}</div>`;
 
@@ -25,15 +31,14 @@ export const empty = (text: string) => `<p class="note chart-empty">${esc(text)}
 /** An axis tick: thousands as "k" from 10,000 up, so six-digit scales fit a phone's axis. */
 const tick = (f: Fmt, v: number, d: number) => (Math.abs(v) >= 10000 ? `${f.num(v / 1000, 1)}k` : f.num(v, d));
 
-function yaxis(f: Fmt, top: number) {
-  const q = top / 4;
+function yaxis(f: Fmt, top: number, steps = 4) {
+  const q = top / steps;
   const d = q % 1 === 0 ? 0 : (q * 10) % 1 === 0 ? 1 : 2; // quarter ticks keep their decimals
-  return `<div class="ch-y" aria-hidden="true">${[0, 1, 2, 3, 4]
-    .map((k) => `<span style="bottom:${pct((top * k) / 4, top)}">${esc(tick(f, (top * k) / 4, d))}</span>`).join("")}</div>`;
+  return `<div class="ch-y" aria-hidden="true">${Array.from({ length: steps + 1 }, (_, k) => `<span style="bottom:${pct(q * k, top)}">${esc(tick(f, q * k, d))}</span>`).join("")}</div>`;
 }
 
 type VOpts = {
-  label: string; stacked?: boolean; xtitle?: string; peak?: string; line?: [string, number[], string]; barTips?: boolean;
+  label: string; stacked?: boolean; tight?: boolean; xtitle?: string; peak?: string; line?: [string, number[], string]; barTips?: boolean;
   fmt?: (v: number) => string; every?: number; tips?: string[]; emptyText?: string;
 };
 
@@ -43,7 +48,7 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
   const fmt = o.fmt || ((v: number) => f.num(v, 1));
   const totals = labels.map((_, i) =>
     o.stacked ? series.reduce((s, [, v]) => s + (v[i] || 0), 0) : Math.max(...series.map(([, v]) => v[i] || 0)));
-  const top = niceMax(Math.max(...totals));
+  const { top, steps } = o.tight ? tightAxis(Math.max(...totals)) : { top: niceMax(Math.max(...totals)), steps: 4 };
   const every = o.every || Math.max(1, Math.ceil(labels.length / 12));
   const best = totals.indexOf(Math.max(...totals));
   const colTip = series.length === 1 && !o.stacked && !o.barTips; // one series: the whole column opens the tip
@@ -77,7 +82,7 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
     + `<span class="axis-key line" style="background:${line[2]}" aria-hidden="true"></span>` : "";
   const summary = `${o.label}: ` + labels.flatMap((lab, i) => (totals[i] ? [`${lab} ${fmt(totals[i])}`] : [])).join(", ");
   return `<figure class="vchart${line ? " has-line" : ""}" role="img" aria-label="${esc(summary)}">`
-    + `<div class="ch-plot">${keys}${yaxis(f, top)}<div class="ch-cols" style="--n:${labels.length}">${cols.join("")}</div>${overlay}</div>`
+    + `<div class="ch-plot">${keys}${yaxis(f, top, steps)}<div class="ch-cols" style="--n:${labels.length}">${cols.join("")}</div>${overlay}</div>`
     + `<div class="ch-x" style="--n:${labels.length}" aria-hidden="true">${xs}</div>`
     + (o.xtitle ? `<figcaption class="ch-title">${esc(o.xtitle)}</figcaption>` : "") + "</figure>";
 }

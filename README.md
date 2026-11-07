@@ -17,15 +17,14 @@ small 42 snapshot published from the app.
 Six pages. Every choice (period, filters, views) lives in the address, so any view can be bookmarked or shared.
 
 - **Profile**, the home page. Your card (photo, milestone, C or Python track, grade, groups such as mentor, level,
-  promo rank, wallet, correction points, kickoff and piscine, the estimated alumni date), the coalition logtime bonus
-  (hours in the rolling seven days against 50 h and 80 h, when each one is due, which sessions are about to leave the
-  window), where you are sitting, your next evaluation, the projects you have open, this month, three summary
-  modules (projects, evaluations and logged time) and your campuses. Under them, any section of the other pages you add
-  as a widget, half or full width, dragged into place (kept in your browser).
+  promo rank, wallet, correction points, kickoff and piscine, the estimated alumni date), three summary modules
+  (projects, evaluations and logged time) and the sections of the other pages you keep there as widgets: Contribution,
+  Rhythm and the logtime bonus to begin with; add, remove, resize and drag them into place (kept in your browser). At the
+  bottom your activity, which you can fold or hide: achievements (one line per series, the earlier levels folded),
+  events, titles and quests beside your campuses.
 - **Projects**: your pace (level, XP per month, your promo by level, the estimated alumni date), skills, every project
   and attempt with filters, grouped by milestone (0 = Libft … 6) for the C and the Python Common Core (a project done
-  in both tracks says which), CSV export, exams, technical domains (the intra's RNCP tags), a timeline of every attempt
-  and your achievements (one line per series, the earlier levels folded), events, titles and quests.
+  in both tracks says which), CSV export, exams, technical domains (the intra's RNCP tags) and a timeline of every attempt.
 - **Evaluations**: what you give back (hours, people, rating, how many ended below 50, Outstanding both ways, by the
   other person's milestone), received and given over time, when they happen (weekday × hour, duration, how far
   ahead they were booked), your feedback (as a student, only the 42cursus counts; Discovery
@@ -112,11 +111,12 @@ The full policy is on the Privacy page of the app. Security issues: see [SECURIT
 ```
 make                 # list the commands
 make certs           # HTTPS certificates for https://localhost (mkcert if present, else openssl)
-make dev             # build and start https://localhost with no saved profiles (real 42 sign-in only)
-make dev-build       # build and start https://localhost with the synthetic test profiles
-make dev-real        # the same plus the real profiles of DEV_REAL_LOGINS (fetched once, ~120 requests each)
-make dev-live        # edit live: the browser app from web/src at http://localhost:5173 (start dev first)
+make dev             # build, start and open https://localhost in Chrome with no saved profiles (real 42 sign-in only)
+make dev-build       # dev plus the synthetic test profiles
+make dev-real        # dev-build plus the real profiles of DEV_REAL_LOGINS (fetched once, ~120 requests each)
+make dev-live        # dev-real plus editing live: opens the browser app from web/src at http://localhost:5173 in Chrome
 make dev-logs        # follow dev's logs
+                     # every dev level attaches to a dev already up, unless the code, settings or level changed; make dev-down lowers a level
 make dev-down        # stop dev (browsers keep their reports)
 make test            # Go tests, type check and Vitest, the site's and the evaluation report's tests
 make production      # build and start https://ravazque.info through the Cloudflare tunnel
@@ -125,6 +125,7 @@ make logs            # follow production's logs
 make site            # build the CV page into site/_build and serve it at http://localhost:8080
 make snapshot        # site/data/42.json from the saved report: what the publish button would send
 make eval-report     # ask for a 42 login and write its evaluation history as one private HTML page (~130 requests)
+make report          # the same, then open the page in Chrome
 make clean           # dev-down and generated files
 make fclean          # clean, dev's image, volumes and saved reports, and web/node_modules
 make re              # fclean and dev-build
@@ -142,15 +143,15 @@ for `make test` and the dev tools.
    the redirect URI `https://localhost/auth/callback`, one for production with `https://ravazque.info/auth/callback`.
    A third one is optional and only adds request budget.
 2. Run `make`: it copies `.env.example` to `.env`. Fill it (below) and keep it private (`chmod 600 .env`).
-3. `make certs`, then `make dev-build`, and open https://localhost.
+3. `make certs`, then `make dev-build`: https://localhost opens in Chrome.
 
 ### Configuration
 
 Everything lives in one `.env`, never committed. `.env.example` explains each value:
 
 ```
-FT_UID, FT_SECRET            # 42 app that signs users in to production
-FT_UID_2, FT_SECRET_2        # 42 app that signs users in to dev
+FT_UID, FT_SECRET            # 42 app that signs users in, production and dev; also answers requests
+FT_UID_2, FT_SECRET_2        # optional: more request budget, never signs anyone in
 FT_UID_3, FT_SECRET_3        # optional: more request budget, never signs anyone in
 SESSION_SECRET               # openssl rand -hex 32
 CONTROLLER_NAME              # data controller named by the privacy policy

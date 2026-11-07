@@ -60,7 +60,8 @@ input[type=search]::placeholder { color: var(--c-input-placeholder); }
 .btn.ghost { background: var(--c-button-ghost-bg); color: var(--c-button-ghost-fg); border-color: var(--c-button-ghost-border); }
 .btn.ghost:hover:not(:disabled) { color: var(--c-button-ghost-fg-hover); background: var(--c-button-ghost-bg-hover); }
 .btn.on-band { background: transparent; color: var(--on-accent); border-color: var(--on-accent); }
-.btn.on-band:hover:not(:disabled) { background: var(--on-accent); color: var(--accent); }
+.btn.on-band:hover:not(:disabled) { background: var(--band-pick, var(--on-accent)); color: var(--band-pick-ink, var(--accent)); }
+.btn.on-band:disabled { opacity: .7; }  /* still reads on the band: 3:1 at least on every accent */
 
 /* on/off switch: role="switch" button with a drawn track and knob */
 .switch { display: inline-flex; align-items: center; gap: var(--c-switch-gap); border: 0; background: none; padding: 4px 0; cursor: pointer; font-size: var(--c-switch-font-size); color: inherit; }

@@ -1,5 +1,5 @@
-// Campus: your rhythm, the seat plan with every computer, the days, every session and where evaluations happen (your
-// campuses are on Profile).
+// Campus: your rhythm, the seat plan with every computer, the days, every session and where evaluations happen (the
+// campuses you have been to are on Profile, under Activity).
 import { S1, S2, legend, vbars } from "../lib/charts";
 import { ACCENT, calendar, heat, seatPlan } from "../lib/graphs";
 import { esc } from "../lib/h";
@@ -24,7 +24,7 @@ export function campus(pg: Page): Section[] {
   const any = total > 0;
   const topPart = parts.reduce((a, b) => (b[1] > a[1] ? b : a))[0];
   const day = `<span class="day24" role="img" aria-label="${esc(f.t("rhythm.k_time"))}">${byHour.map((v, h) => {
-    const tip = `${h}–${h + 1} h · ${f.nb(v, "h")}`;
+    const tip = `${h}–${h + 1}h · ${f.nb(v, "h")}`;
     return `<i class="${partOf(h)}" style="height:${((100 * v) / peak).toFixed(1)}%" data-tip="${esc(tip)}" title="${esc(tip)}"></i>`;
   }).join("")}</span><span class="day24-axis" aria-hidden="true">${[0, 6, 12, 18, 24].map((h) => `<b style="left:${(h / 24) * 100}%">${h}</b>`).join("")}</span>`;
   out.push({ id: "rhythm", nav: f.t("rhythm.title"), html: section("rhythm", f.t("rhythm.title"), cols(block("kpis", kpis([
@@ -39,7 +39,7 @@ export function campus(pg: Page): Section[] {
   const seatsHead = `<h2>${esc(f.t("seats.title"))}`
     + (overlap >= 60 ? ` ${info(capital(f.t("seats.lede_overlap", { overlap: f.hm(overlap) })))}` : "") + "</h2>";
   const info_ = new Map<string, any>(L.seats.map((s: any) => [s.host, s]));
-  const hm = (sec: number) => { const m = Math.floor(sec / 60); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} h`; };
+  const hm = (sec: number) => { const m = Math.floor(sec / 60); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}h`; };
   const [plan] = seatPlan(f, layout, Object.fromEntries(L.seats.map((s: any) => [s.host, s.seconds])), { unit: "h", toUnit: (v) => v / 3600, anchor: true,
     detail: (h) => { const s = info_.get(h); return [`${h} · ${hm(s.seconds)}`, f.plural(s.sessions, "count.sessions"), f.t("plan.first", { date: f.day(s.first) }), f.t("plan.last", { date: f.day(s.last) })].join("\n"); } });
   const seatLink = (s: any) => `<a class="code" href="#seat-${esc(s.host)}" title="${esc(f.t("computers.show_on_plan", { seat: s.host }))}">${esc(s.host)}</a>`;
@@ -85,17 +85,6 @@ export function campus(pg: Page): Section[] {
   return out;
 }
 
-/** Your campuses: when you joined each and your time there (shown on Profile). */
-export function campuses(pg: Page): Section[] {
-  const f = pg.f, list = pg.D.campuses || [];
-  if (!list.length) return [];
-  return [{ id: "campuses", nav: f.t("foot.campuses"), html: section("campuses", f.t("foot.campuses"), cols(block("campuses", `<ul class="list">${list.map((c: any) => {
-    const time = c.sessions ? f.t("foot.time", { hours: f.num(c.hours, 1), sessions: f.num(c.sessions) }) : f.t("foot.no_sessions");
-    return `<li><span><b>${esc(c.name || "?")}</b>${c.city ? ` <span class="note">${esc(c.city)}</span>` : ""}<br><span class="note">${esc(`${f.t("foot.joined", { when: f.day(c.joined) })} · ${time}`)}</span></span>`
-      + (c.first ? `<span class="when">${esc(f.t("foot.span", { first: f.day(c.first), last: f.day(c.last) }))}</span>` : "") + "</li>";
-  }).join("")}</ul>`))) }];
-}
-
 /** c1r2s3 sorts before c1r10s1: cluster, row and seat as numbers; other hosts after, by name. */
 const seatOrder = (h: string) => {
   const m = /^c(\d+)r(\d+)s(\d+)$/.exec(h || "");
@@ -117,10 +106,10 @@ export function notLoggedRows(role: string, evs: any[]): { project: string; me: 
 
 const capital = (s: string) => s.slice(0, 1).toUpperCase() + s.slice(1);
 
-/** For the "not logged" bar's tip: the projects evaluated with no session of yours open, most first. */
-export function notLoggedProjects(rows: { project: string; me: number; other: number }[]): string {
-  return rows.filter((r) => r.me).sort((a, b) => b.me - a.me || a.project.localeCompare(b.project))
-    .map((r) => (r.me > 1 ? `${r.project} (x${r.me})` : r.project)).join(", ");
+/** For the "not logged" bar's tip: the projects evaluated with no session open on that side, most first. */
+export function notLoggedProjects(rows: { project: string; me: number; other: number }[], side: "me" | "other" = "me"): string {
+  return rows.filter((r) => r[side]).sort((a, b) => b[side] - a[side] || a.project.localeCompare(b.project))
+    .map((r) => (r[side] > 1 ? `${r.project} (x${r[side]})` : r.project)).join(", ");
 }
 
 /** The seat plan of "Where · evaluations": off, its code kept. */
@@ -146,7 +135,7 @@ function where(pg: Page): Section {
   // group evaluations happen at the leader's computer: how many of the received ones you led
   const led = D.projects.flatMap((p: any) => p.attempts).filter((a: any) => a.leader && (a.members || []).length).reduce((n: number, a: any) => n + (a.evals || []).length, 0);
   const away = notLoggedRows(role, recv ? D.received : D.given);
-  const mineList = NOT_LOGGED_TABLE ? "" : notLoggedProjects(away);
+  const awayLists = NOT_LOGGED_TABLE ? ["", ""] : [notLoggedProjects(away), notLoggedProjects(away, "other")];
   const toLog = (o: Record<string, string>) => pg.url("evaluations", { log: role, ...o }) + "#log";
   const linked = (n: number, o: Record<string, string>) => (n ? `<a class="code" href="${esc(toLog(o))}">${f.num(n)}</a>` : "–");
   const awayTable = NOT_LOGGED_TABLE && away.length ? headBlock("where-not-logged", f.t("where.nl_title"), `<a class="code" href="${esc(toLog({ seat: "me" }))}">${esc(f.t("where.nl_all"))}</a>`,
@@ -155,10 +144,8 @@ function where(pg: Page): Section {
       { k: "me", t: f.t("col.nl_you"), num: true, cls: "ctr", f: (r) => linked(r.me, { project: r.project, seat: "me" }) },
       { k: "other", t: f.t(recv ? "col.nl_corrector" : "col.nl_evaluated"), num: true, cls: "ctr", f: (r) => linked(r.other, { project: r.project, seat: "other" }) },
     ], away, { label: f.t("where.nl_title"), sort: ["me", -1] })}</div>`, pg.seats ? f.t("where.nl_note", { days: pg.seats }) : "") : "";
-  // the "not logged" bar speaks of you alone: your count with your projects beside it
-  const tips = ckeys.map((k) => [lab(k), ...(k === "not logged" && !NOT_LOGGED_TABLE
-    ? [`${series[0][0]}: ${f.num(series[0][1][k] || 0)}` + (mineList ? ` · ${mineList}` : "")]
-    : series.map(([n, v]) => `${n}: ${f.num(v[k] || 0)}`)),
+  // the "not logged" bar: each side's count with its projects beside it
+  const tips = ckeys.map((k) => [lab(k), ...series.map(([n, v], i) => `${n}: ${f.num(v[k] || 0)}` + (k === "not logged" && awayLists[i] ? ` · ${awayLists[i]}` : "")),
     ...(k === "not logged" && recv ? [f.t("where.note_not_logged"), f.plural(led, "where.leader")] : [])].join("\n"));
   // the seat plan of evaluations is kept but not drawn (WHERE_PLAN): the cluster chart says it more plainly
   const shown: Record<string, number> = {};

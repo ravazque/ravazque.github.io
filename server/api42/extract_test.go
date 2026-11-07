@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -55,17 +54,7 @@ func TestExtractMatchesV1(t *testing.T) {
 			if got := strconv.Itoa(c.Requests()); got != strings.TrimSpace(string(wantReq)) {
 				t.Errorf("requests %s, v1 made %s", got, strings.TrimSpace(string(wantReq)))
 			}
-			up, _ := report.Get("upcoming")
-			if _, ok := up.([]core.UpcomingEval); !ok {
-				t.Fatalf("upcoming = %T", up)
-			}
-			trimmed := core.NewOMap()
-			for _, k := range report.Keys() {
-				if k != "upcoming" {
-					trimmed.Set(k, report.V(k))
-				}
-			}
-			gb, _ := json.Marshal(trimmed)
+			gb, _ := json.Marshal(report)
 			g, _ := core.ParseOrdered(gb)
 			wb, _ := os.ReadFile("../core/testdata/golden/" + key + ".report.json")
 			w, _ := core.ParseOrdered(wb)
@@ -106,7 +95,7 @@ func TestBlackholedIsRefusedUnlessAnyAccount(t *testing.T) {
 	}
 }
 
-func TestUpcomingHiddenEvaluationsAreKept(t *testing.T) {
+func TestHiddenEvaluationsStayOutOfTheAnalysis(t *testing.T) {
 	d := readJSON(t, "../core/testdata/api/mid.json")
 	recv := d["evals_received"].([]any)
 	hidden := map[string]any{"id": 7999999.0, "begin_at": "2026-10-29T15:30:00.000Z", "corrector": "invisible", "correcteds": []any{},
@@ -117,17 +106,10 @@ func TestUpcomingHiddenEvaluationsAreKept(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	up := report.V("upcoming").([]core.UpcomingEval)
-	if len(up) != 1 || up[0].Role != "corrected" || up[0].Project == "" {
-		t.Fatalf("upcoming %+v", up)
-	}
 	for _, e := range report.Obj("periods").Obj("all").Os("received") {
 		if e.F("id") == 7999999 {
 			t.Fatal("the hidden evaluation reached the analysis")
 		}
-	}
-	if slices.Contains(report.Keys(), "upcoming") == false {
-		t.Fatal("no upcoming key")
 	}
 }
 

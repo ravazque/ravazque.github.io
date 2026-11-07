@@ -22,6 +22,6 @@ test("the seat filter by cluster keeps the evaluations you had in that cluster",
 });
 
 test("a histogram's bins carry their unit beside the numbers", () => {
-  expect(binLabels([0, 1, 3], "h")).toEqual(["0–1 h", "1–3 h", "3+ h"]);
-  expect(binLabels([0, 15], "m")).toEqual(["0–15 m", "15+ m"]);
+  expect(binLabels([0, 1, 3], "h")).toEqual(["0–1h", "1–3h", "3+h"]);
+  expect(binLabels([0, 15], "m")).toEqual(["0–15m", "15+m"]);
 });

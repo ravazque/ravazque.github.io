@@ -8,6 +8,8 @@ offer later (see [Future integration with the web](#future-integration-with-the-
 
 ```sh
 make eval-report
+# the same, then open the page in Chrome
+make report
 # or
 python3 tools/evaluation-report/evaluation_report.py
 ```

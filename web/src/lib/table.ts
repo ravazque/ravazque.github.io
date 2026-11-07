@@ -10,6 +10,7 @@ export type Col<R> = {
 type Opts<R> = {
   label: string; sort?: [string, 1 | -1]; empty?: string; sticky?: boolean; detail?: (r: R) => string;
   group?: { key: (r: R) => string; order: string[]; label: (g: string) => string }; id?: string;
+  minRows?: number; // the table keeps this many rows' room with empty ones (in a foot: sorting never moves them)
 };
 
 const cmp = (a: unknown, b: unknown) => (typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b)));
@@ -59,8 +60,10 @@ export function table<R extends Record<string, any>>(f: Fmt, cols: Col<R>[], inp
     }
     body = parts.join("");
   } else body = "<tbody>" + rows.map(line).join("") + "</tbody>";
+  const missing = (o.minRows || 0) - Math.max(rows.length, 1);
+  const blanks = missing > 0 ? `<tfoot class="blank-rows" aria-hidden="true">${`<tr><td colspan="${cols.length}"></td></tr>`.repeat(missing)}</tfoot>` : "";
   return `<table${o.id ? ` id="${o.id}"` : ""} class="${o.sticky ? "sticky-first" : ""}" aria-label="${esc(o.label)}">`
-    + `<thead><tr>${cols.map(th).join("")}</tr></thead>${body}</table>`;
+    + `<thead><tr>${cols.map(th).join("")}</tr></thead>${body}${blanks}</table>`;
 }
 
 export const facts = (rows: [string, string][]) => rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join("");

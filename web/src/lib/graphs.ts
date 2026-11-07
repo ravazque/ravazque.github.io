@@ -12,7 +12,7 @@ export const mix = (c: [string, string], v: number) => `color-mix(in oklab, ${c[
 export function scale(f: Fmt, top: number, unit: string, colors = ACCENT) {
   return `<span class="grp"><i style="background:var(--seat-empty)"></i>${esc(f.t("scale.none"))}</span>`
     + `<span class="grp">${esc(f.t("scale.less"))}${[0, 0.25, 0.5, 0.75, 1].map((s) => `<i style="background:${mix(colors, s)}"></i>`).join("")}`
-    + `${esc(f.t("scale.more", { max: f.num(top, 1), unit }))}</span>`;
+    + `${esc(f.t("scale.more", { max: f.nb(top, unit) }))}</span>`;
 }
 
 const roving = (f: Fmt, label: string) => ` data-roving role="group" aria-label="${esc(f.t("a11y.grid", { label }))}"`;
@@ -44,13 +44,13 @@ export function seatPlan(f: Fmt, layout: Layout, values: Record<string, number>,
       }
       rows.push(`<div class="row" style="--seats:${shape.seats}"><span class="rn" aria-hidden="true">r${r}</span>${cells.join("")}</div>`);
     }
-    out.push(`<figure class="cluster"><figcaption><b>${esc(c)}<i class="n"> - ${f.num(shape.rows * shape.seats)}</i></b><span>${f.num(toUnit(total), 1)} ${esc(o.unit)}</span></figcaption>${rows.join("")}</figure>`);
+    out.push(`<figure class="cluster"><figcaption><b>${esc(c)}<i class="n"> - ${f.num(shape.rows * shape.seats)}</i></b><span>${esc(f.nb(toUnit(total), o.unit))}</span></figcaption>${rows.join("")}</figure>`);
   }
   // computers outside the clusters: under the plan, centred in a framed key, each name beside a square in its shade
   const other = entries.filter(([h]) => !seen.has(h));
   const off = other.length ? `<div class="plan-other"><b>${esc(f.t("plan.off"))}</b>${other.map(([h, v]) => {
     const label = o.detail(h, v);
-    return `<span class="grp"><span>${esc(`${h} · ${f.num(toUnit(v), 1)} ${o.unit}`)}</span><span class="seat on${h === topHost ? " top" : ""}" data-cell role="img"`
+    return `<span class="grp"><span>${esc(`${h} · ${f.nb(toUnit(v), o.unit)}`)}</span><span class="seat on${h === topHost ? " top" : ""}" data-cell role="img"`
       + ` style="--v:${ramp(v, top).toFixed(3)}" aria-label="${esc(label)}"${tipAttr(label)}></span></span>`;
   }).join("")}</div>` : "";
   let sc = top ? scale(f, toUnit(top), o.unit) : `<span>${esc(f.t("empty.period"))}</span>`;
@@ -67,7 +67,7 @@ export function heat(f: Fmt, grid: number[][], colors: [string, string], unit: s
     cells.push(`<span>${esc(f.weekdays[w])}</span>`);
     row.forEach((v, h) => {
       if (!v) { cells.push('<span class="c"></span>'); return; }
-      const label = `${f.weekdays[w]} ${String(h).padStart(2, "0")}:00 · ${f.num(v, 1)} ${unit}`;
+      const label = `${f.weekdays[w]} ${String(h).padStart(2, "0")}:00 · ${f.nb(v, unit)}`;
       cells.push(`<span class="c" data-cell role="img" aria-label="${esc(label)}"${tipAttr(label)} style="background:${mix(colors, ramp(v, top))}"></span>`);
     });
   });
@@ -99,7 +99,7 @@ export function calendar(f: Fmt, days: string[], hours: number[]): string {
       const area = `grid-area:${(i % 7) + 2}/${Math.floor(i / 7) + 1}`;
       if (i < offset || i >= offset + len || d < firstDay || d > lastDay) return `<span class="d pre" style="${area}"></span>`;
       const v = have.get(d) || 0, start = d === firstDay;
-      const label = `${f.day(d, true)} · ${v ? `${f.num(v, 1)} h` : f.t("calendar.not_logged")}${start ? ` · ${f.t("calendar.start")}` : ""}`;
+      const label = `${f.day(d, true)} · ${v ? f.nb(v, "h") : f.t("calendar.not_logged")}${start ? ` · ${f.t("calendar.start")}` : ""}`;
       return v ? `<span class="d on${start ? " start" : ""}" data-cell role="img" style="${area};--v:${ramp(v, top).toFixed(3)}" aria-label="${esc(label)}"${tipAttr(label)}></span>`
         : `<span class="d${start ? " start" : ""}" style="${area}"${tipAttr(label)}></span>`;
     }).join("");

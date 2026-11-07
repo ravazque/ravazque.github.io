@@ -1,10 +1,32 @@
 // Coalition (student period only): where the coalitions of Madrid stand and every point you gave yours, the logtime
 // bonus in detail and every bonus so far, and your points by source and month.
-import { S1, S2, hbars, legend, vbars } from "../lib/charts";
+import { madridParts } from "../fmt";
+import { BAD, S1, S2, hbars, legend, vbars } from "../lib/charts";
 import { esc, safeColor } from "../lib/h";
-import { Page, Section, block, cols, headBlock, info, kpis, monthsBetween, msOf, section } from "./page";
+import { leaving, rule, tierRows, weekFigure } from "./bonus";
+import { Page, Section, block, cols, fillRows, headBlock, info, monthsBetween, msOf, section } from "./page";
 
 const when = (pg: Page, iso: string) => `<span class="nw">${esc(pg.f.stamp(msOf(iso)))}</span>`;
+
+const isTig = (a: any) => a.key === "other" && a.points < 0;
+const SOURCES = ["evaluations", "projects", "exams", "logtime_50", "logtime_80", "wallet", "other", "tigs"];
+
+/** Everything that gives or takes points, the ones at nothing too: biggest first, what took points away last. */
+export const everySource = (src: any[]) => [...src, ...SOURCES.filter((key) => !src.some((s) => s.key === key)).map((key) => ({ key, points: 0, count: 0 }))]
+  .sort((a, b) => b.points - a.points);
+
+/** Points taken away are TIGs (the API's CommunityService; reports keep them under "other"), told apart from the rest of
+ * "other" by source and by month. A report without every award can't tell: it stays as it was. */
+export function tigSplit(P: any): { sources: any[]; months: any[] } {
+  const tigs = (P.awards || []).filter(isTig);
+  const byMonth = new Map<string, number>();
+  for (const a of tigs) { const k = madridParts(msOf(a.at)).iso.slice(0, 7); byMonth.set(k, (byMonth.get(k) || 0) + a.points); }
+  const months = (P.months || []).map((m: any) => { const t = byMonth.get(m.month) || 0; return { ...m, other: m.other - t, tigs: t }; });
+  if (!tigs.length) return { sources: P.sources || [], months };
+  const sum = tigs.reduce((s: number, a: any) => s + a.points, 0);
+  const sources = P.sources.flatMap((s: any) => (s.key !== "other" ? [s] : s.count > tigs.length ? [{ ...s, points: s.points - sum, count: s.count - tigs.length }] : []));
+  return { sources: [...sources, { key: "tigs", points: sum, count: tigs.length }], months };
+}
 
 export function coalition(pg: Page): Section[] {
   const f = pg.f, D = pg.D, dv = pg.v.derive || {};
@@ -36,44 +58,40 @@ export function coalition(pg: Page): Section[] {
   // the logtime bonus in detail (inferred rule) and every bonus given so far
   const W = D.logtime_bonus, tiers = dv.logtime_bonus as any[] | null, P = D.coalition_points;
   if (W && tiers && pg.period !== "piscine") {
-    const sessions = W.sessions || [];
-    const items: [string, string, string[]][] = [[f.t("coal.k_window"), `${f.num(tiers[0].window_h, 1)}<small> h</small>`,
-      [W.open && sessions.length ? f.t("coal.s_open", { since: when(pg, sessions[sessions.length - 1][0]) }) : esc(f.t("coal.s_closed")), f.t("coal.s_as_of", { time: when(pg, W.at) })]]];
-    for (const t of tiers) {
-      const p = Math.min(100, (100 * t.window_h) / t.hours);
-      const meter = `<span class="hbar" aria-hidden="true"><i style="width:${p.toFixed(1)}%"></i></span>` + esc(f.t("coal.s_meter", { have: f.num(t.window_h, 1), need: t.hours }));
-      const head = ({ ready: esc(f.t("coal.v_ready")), cooldown: esc(f.t("coal.v_cooldown")), short: `${f.num(t.need_h, 1)}<small> ${esc(f.t("coal.v_short"))}</small>` } as Record<string, string>)[t.state];
-      const until = t.state === "ready" && W.open ? esc(f.t("coal.s_next_logout"))
-        : t.until && t.until !== t.from ? f.t(W.open ? "coal.s_until" : "coal.s_login_until", { time: when(pg, t.until) }) : "";
-      items.push([f.t("coal.k_tier", { hours: t.hours, points: f.num(t.points) }), head,
-        [meter, t.from ? f.t("coal.s_from", { time: when(pg, t.from) }) : "", until, t.last ? f.t("coal.s_last", { time: when(pg, t.last) }) : esc(f.t("coal.s_never"))]]);
-    }
+    const sessions = W.sessions || [], week = tiers[0].window_h, drops = dv.logtime_drops || [];
+    const status = [W.open && sessions.length ? f.t("coal.s_open", { since: when(pg, sessions[sessions.length - 1][0]) }) : esc(f.t("coal.s_closed")), f.t("coal.s_as_of", { time: when(pg, W.at) })].join(" · ");
+    const detail = `<div class="tp bonus-detail">${weekFigure(f, week)}<p class="line note">${status}</p>${rule(f, week)}${tierRows(f, tiers, !!W.open, week, drops)}`
+      + `${leaving(f, drops, week, D.logtime?.log || [])}</div>`;
     const bonuses = P?.bonuses || [];
     const list = bonuses.map((b: any) => `<li><span><b>${esc(f.t("bonus.got", { hours: b.hours }))}</b><br><span class="note">${esc(f.stamp(msOf(b.at)))}</span></span>`
       + `<span class="when">+${esc(f.num(b.points))}</span></li>`).join("") || `<li class="note">${esc(f.t("bonus.none"))}</li>`;
-    out.push({ id: "bonus", nav: f.t("bonus.title"), html: section("bonus", "", cols(block("coal-bonus", kpis(items)),
-      block("bonus-history", `<ol class="list" tabindex="0" aria-label="${esc(f.t("bonus.history"))}">${list}</ol>`, f.t("bonus.history"),
+    out.push({ id: "bonus", nav: f.t("bonus.title"), html: section("bonus", "", cols(block("coal-bonus", detail),
+      block("bonus-history", `<ol class="list" tabindex="0" aria-label="${esc(f.t("bonus.history"))}">${list}${fillRows(bonuses.length, f.t("bonus.room"))}</ol>`, f.t("bonus.history"),
         bonuses.length ? f.t("bonus.history_note", { n: f.plural(bonuses.length, "coal.awards"), points: f.num(bonuses.reduce((s: number, b: any) => s + b.points, 0)) }) : "")),
     { head: `<h2>${esc(f.t("bonus.title"))} ${info(f.t("bonus.rule"))}</h2>` }) });
   }
 
-  if (P && P.count) {
-    const src = P.sources, byMonth = new Map<string, any>(P.months.map((m: any) => [m.month, m]));
+  if (P) {
+    const { sources, months: split } = tigSplit(P), src = everySource(sources), byMonth = new Map<string, any>(split.map((m: any) => [m.month, m]));
     // the months up to the report's, the quiet ones as zero
-    const months = P.months.length ? monthsBetween(P.months[0].month, [P.months[P.months.length - 1].month, pg.asOf.slice(0, 7)].sort()[1])
-      .map((k) => byMonth.get(k) || { month: k, logtime: 0, other: 0 }) : [];
+    const months = split.length ? monthsBetween(split[0].month, [split[split.length - 1].month, pg.asOf.slice(0, 7)].sort()[1])
+      .map((k) => byMonth.get(k) || { month: k, logtime: 0, other: 0, tigs: 0 }) : [];
     const month = (m: string) => `${f.months[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}`;
     const names = src.map((s: any) => f.t(`coal.src.${s.key}`));
     const minus = src.some((s: any) => s.points < 0) || months.some((m: any) => m.logtime < 0 || m.other < 0);
-    const total = f.t("coal.total", { points: f.num(P.total), n: f.plural(P.count, "coal.awards"),
-      coalition: D.profile.coalition?.name || "–", span: P.months.length ? f.t("coal.span", { first: month(P.months[0].month), last: month(P.months[P.months.length - 1].month) }) : f.t("empty.period") });
+    const tigName = f.t("coal.src.tigs"), anyTig = months.some((m: any) => m.tigs < 0);
+    // like the bars by source, TIGs draw in red at their size; the tip says how many points they took away
+    const monthSeries: [string, number[], string][] = [[f.t("coal.src.logtime"), months.map((m: any) => m.logtime), S1], [f.t("coal.rest"), months.map((m: any) => m.other), S2],
+      ...(anyTig ? [[tigName, months.map((m: any) => -m.tigs), BAD] as [string, number[], string]] : [])];
+    const monthTips = months.map((m: any) => [f.monthLabel(m.month), `${f.t("coal.src.logtime")} ${f.num(m.logtime)}`, `${f.t("coal.rest")} ${f.num(m.other)}`, ...(m.tigs ? [`${tigName}: ${f.num(m.tigs)}`] : [])].join("\n"));
+    const total = f.t("coal.total", { points: f.num(P.total || 0), n: f.plural(P.count || 0, "coal.awards"),
+      coalition: D.profile?.coalition?.name || "–", span: split.length ? f.t("coal.span", { first: month(split[0].month), last: month(split[split.length - 1].month) }) : f.t("empty.period") });
     out.push({ id: "coal-points", nav: f.t("nav.coal"), html: section("coal-points", f.t("coal.title"), cols(
-      block("coal-sources", `<div class="centred">${hbars(f, names, [[f.t("coal.points"), src.map((s: any) => s.points), S1]],
+      block("coal-sources", hbars(f, names, [[f.t("coal.points"), src.map((s: any) => s.points), S1]],
         { label: f.t("coal.sources"), end: (_i, v) => f.num(v), tips: names.map((n: string, i: number) => `${n} · ${f.num(src[i].points)} · ${f.plural(src[i].count, "coal.awards")}`),
-          emptyText: f.t("empty.period"), big: true })}</div>`, f.t("coal.sources")),
-      headBlock("coal-months", f.t("coal.months"), legend([[f.t("coal.src.logtime"), S1], [f.t("coal.rest"), S2]]), vbars(f, months.map((m: any) => f.monthLabel(m.month)),
-        [[f.t("coal.src.logtime"), months.map((m: any) => m.logtime), S1], [f.t("coal.rest"), months.map((m: any) => m.other), S2]],
-        { label: f.t("coal.months"), stacked: true, fmt: (v) => f.num(v), every: Math.ceil(months.length / 6) || 1, emptyText: f.t("empty.period") }))),
+          emptyText: f.t("empty.period"), big: true }), f.t("coal.sources")),
+      headBlock("coal-months", f.t("coal.months"), legend(monthSeries.map(([n, , c]) => [n, c])), vbars(f, months.map((m: any) => f.monthLabel(m.month)), monthSeries,
+        { label: f.t("coal.months"), stacked: true, tight: true, fmt: (v) => f.num(v), tips: monthTips, every: Math.ceil(months.length / 6) || 1, emptyText: f.t("empty.period") }))),
     { lede: esc(total) + (minus ? ` ${esc(f.t("coal.minus"))}` : "") }) });
   }
   return out;
@@ -93,8 +111,8 @@ export function allPoints(pg: Page): string {
   for (const e of pg.D.given) names.set(`evaluations|${e.id}`, e.project);
   return recent.map((r: any) => {
     const name = names.get(`${r.key}|${r.id}`);
-    const what = name || r.key.startsWith("logtime") ? f.t(`coal.why.${r.key}`, { name: name || "" }) : f.t(`coal.src.${r.key}`);
+    const what = isTig(r) ? f.t("coal.src.tigs") : name || r.key.startsWith("logtime") ? f.t(`coal.why.${r.key}`, { name: name || "" }) : f.t(`coal.src.${r.key}`);
     const pts = r.points < 0 ? `<span class="when neg">${esc(f.num(r.points))}</span>` : `<span class="when">+${esc(f.num(r.points))}</span>`;
     return `<li><span>${esc(what)}<br><span class="note">${esc(f.stamp(msOf(r.at)))}</span></span>${pts}</li>`;
-  }).join("");
+  }).join("") + fillRows(recent.length, f.t("standing.room"));
 }

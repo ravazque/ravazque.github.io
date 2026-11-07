@@ -73,12 +73,17 @@ export const settings = store;
 /** Sections a student keeps, in this browser and per login: starred ones (shortcuts in the star menu) and widgets
  * (shown under Profile). A star keeps its section's title in the language it was seen in until its page shows again. */
 export type Pin = { page: string; id: string; label: string; wide?: boolean; side?: "left" | "right" };
-export const pins = reactive({ login: "", stars: [] as Pin[], widgets: [] as Pin[] });
+export const pins = reactive({ login: "", stars: [] as Pin[], widgets: [] as Pin[], activity: "" as ActivityState });
+export type ActivityState = "" | "min" | "off";
+
+/** What a profile starts with: given once, so that taking one away stays that way. */
+const FIRST_WIDGETS: Pin[] = [{ page: "evaluations", id: "community", label: "" }, { page: "campus", id: "rhythm", label: "" }, { page: "coalition", id: "bonus", label: "" }];
 
 function readPins(key: string): Pin[] {
   try {
     const v = JSON.parse(store.get(key) || "[]");
-    return Array.isArray(v) ? v.filter((p) => p && typeof p.page === "string" && typeof p.id === "string").map((p) => ({
+    // Activity moved to Profile, where it always shows: an old star of it could never be taken away
+    return Array.isArray(v) ? v.filter((p) => p && typeof p.page === "string" && typeof p.id === "string" && !(p.page === "projects" && p.id === "activity")).map((p) => ({
       page: p.page, id: p.id, label: String(p.label || ""),
       ...(typeof p.wide === "boolean" ? { wide: p.wide } : {}), ...(p.side === "left" || p.side === "right" ? { side: p.side } : {}) })) : [];
   } catch { return []; }
@@ -86,7 +91,21 @@ function readPins(key: string): Pin[] {
 
 export function loadPins(login: string) {
   if (pins.login === login) return;
-  Object.assign(pins, { login, stars: readPins(`stars:${login}`), widgets: readPins(`widgets:${login}`) });
+  const key = `widgets:${login}`;
+  let widgets = readPins(key);
+  if (!store.get(`${key}:seeded`)) {
+    widgets = [...FIRST_WIDGETS.filter((d) => !widgets.some((w) => w.page === d.page && w.id === d.id)), ...widgets];
+    store.set(`${key}:seeded`, "1");
+    store.set(key, JSON.stringify(widgets));
+  }
+  const a = store.get(`activity:${login}`);
+  Object.assign(pins, { login, stars: readPins(`stars:${login}`), widgets, activity: a === "min" || a === "off" ? a : "" });
+}
+
+/** Activity on Profile: open, folded to its title ("min") or off the page ("off", the picker brings it back). */
+export function setActivity(state: ActivityState) {
+  pins.activity = state;
+  store.set(`activity:${pins.login}`, state);
 }
 
 export function hasPin(kind: "stars" | "widgets", page: string, id: string) {

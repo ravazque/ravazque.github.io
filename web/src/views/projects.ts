@@ -1,5 +1,4 @@
-// Projects: your level and pace, skills, every project and attempt, exams, technical domains, the timeline and what
-// 42 gave you for it (achievements, titles, quests, events).
+// Projects: your level and pace, skills, every project and attempt, exams, technical domains and the timeline.
 import { BAD, GOOD, NEUTRAL, S1, S2, hbars, legend, lines, timeline, vbars, empty } from "../lib/charts";
 import { radar } from "../lib/graphs";
 import { ARROW, badge, esc } from "../lib/h";
@@ -59,18 +58,6 @@ export function portfolioCsv(pg: Page): string {
 const csvButtons = (pg: Page, kind: string, title: string, button: string) =>
   `<span class="head-actions"><button class="btn secondary" type="button" data-preview="${kind}" data-title="${esc(title)}" aria-haspopup="dialog">${esc(pg.f.t("common.preview"))}</button>`
   + `<button class="btn secondary" type="button" data-download="${kind}">${esc(button)}</button></span>`;
-
-/** The level an achievement's description names ("Attended 21 events." → 21, "1.000 points" → 1000); 0 when none. */
-const achLevel = (a: any) => +((/\d{1,3}(?:[.,]\d{3})+|\d+/.exec(a.description || "") || ["0"])[0].replace(/[.,]/g, ""));
-
-/** Achievements of one series (same name) as one entry: the highest level on top, the others below it, highest
- * first; series ordered by when their top level was earned, newest first. */
-export function achievementSeries(list: any[]): { top: any; rest: any[] }[] {
-  const by = new Map<string, any[]>();
-  for (const a of list) by.set(a.name, [...(by.get(a.name) || []), a]);
-  return [...by.values()].map((xs) => xs.sort((a, b) => achLevel(b) - achLevel(a) || String(b.at || "").localeCompare(String(a.at || ""))))
-    .map(([top, ...rest]) => ({ top, rest })).sort((a, b) => String(b.top.at || "").localeCompare(String(a.top.at || "")));
-}
 
 /** One exam try: its mark in green (passed) or red, or a grey "–" when it has none. */
 export const tryChip = (f: Page["f"], x: any) =>
@@ -189,24 +176,6 @@ export function projects(pg: Page): Section[] {
     block("cum-validated", lines(f, [[f.t("outcome.validated"), validated, GOOD]], { label: f.t("projects.validated_title"), emptyText: f.t("empty.period") }), f.t("projects.validated_title"), f.t("projects.validated_note"))),
   ) });
 
-  // what 42 gave you along the way
-  const none = `<li class="note">${esc(f.t("empty.period"))}</li>`;
-  const evKind = (k: string) => (f.has(`event.${k}`) ? f.t(`event.${k}`) : String(k).replace(/_/g, " "));
-  const tier = (a: any) => (a.tier && a.tier !== "none" ? " " + badge(f.has(`tier.${a.tier}`) ? f.t(`tier.${a.tier}`) : a.tier) : "");
-  const ach = achievementSeries(X.achievements).map(({ top, rest }) => `<li><span><b>${esc(top.name)}</b>${tier(top)}<br>`
-    + `<span class="note">${esc(top.description || "")}</span></span><span class="when">${esc(f.day(top.at))}</span>`
-    + (rest.length ? `<details class="ach-more"><summary>${esc(f.plural(rest.length, "extras.ach_more"))}</summary><ul>${rest.map((a) =>
-      `<li><span class="note">${esc(a.description || "")}${tier(a)}</span><span class="when">${esc(f.day(a.at))}</span></li>`).join("")}</ul></details>` : "") + "</li>").join("");
-  const evs = [...X.events].reverse().map((e: any) => `<li><span>${esc(e.name)}<br><span class="note">${esc(evKind(e.kind))}${e.location ? " · " + esc(e.location) : ""}`
-    + `${e.hours ? ` · ${esc(f.num(e.hours, 1))} h` : ""}</span></span><span class="when">${esc(f.day(e.begin))}</span></li>`).join("");
-  const misc = [...X.titles.map((x: any) => `<li><span><b>${esc(f.t("extras.title_item"))}</b> ${esc(x.name)}${x.selected ? " " + badge(f.t("extras.selected")) : ""}</span><span class="when">${esc(f.day(x.at))}</span></li>`),
-    ...X.expertises.map((x: any) => `<li><span><b>${esc(f.t("extras.expertise"))}</b> ${esc(x.name)}</span><span class="when">${esc(x.value)} / 5</span></li>`),
-    ...X.quests.map((q: any) => `<li><span><b>${esc(f.t("extras.quest"))}</b> ${esc(q.name)}<br><span class="note">${esc(q.description || "")}</span></span><span class="when">${esc(q.validated ? f.day(q.validated) : f.t("extras.in_progress"))}</span></li>`)].join("");
-  const kinds = Object.entries(X.event_kinds || {}).map(([k, v]) => `${evKind(k)}: ${v}`).join(" · ");
-  out.push({ id: "activity", nav: f.t("activity.title"), html: section("activity", f.t("activity.title"), cols(
-    block("achievements", `<ul class="list">${ach || none}</ul>`, f.t("extras.achievements_title")),
-    `<div class="block" data-panel="events"><h3>${esc(f.t("extras.events_title"))}</h3><p class="note">${esc(kinds)}</p><ul class="list">${evs || none}</ul></div>`,
-    block("misc", `<ul class="list">${misc || none}</ul>`, f.t("extras.misc_title")))) });
   return out;
 }
 

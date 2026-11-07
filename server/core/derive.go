@@ -280,13 +280,14 @@ func Derive(r, all *OMap, now time.Time) *OMap {
 			break
 		}
 	}
-	var bonus any
+	var bonus, drops any
 	if w, ok := r.Get("logtime_bonus"); ok && w != nil {
 		bonus = LogtimeBonus(w.(*OMap), now)
+		drops = BonusDrops(w.(*OMap), now, week)
 	}
 	return M("alumni_due", AlumniDue(all.Os("projects"), grade), "my_rank", MyRank(r.Obj("extras")),
 		"streak", Streak(days, hours), "active_weeks", ActiveWeeks(days, hours), "day_split", DaySplit(L.L("heat")),
 		"resilience", Resilience(r.Os("projects")), "domains", Domains(r.Os("projects")),
 		"community", Community(r.Os("given"), r.Os("received")), "portfolio", PortfolioRows(r.Os("projects")),
-		"logtime_bonus", bonus)
+		"logtime_bonus", bonus, "logtime_drops", drops)
 }

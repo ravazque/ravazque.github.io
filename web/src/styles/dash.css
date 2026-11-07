@@ -83,7 +83,7 @@
 }
 :where(body:not(.site)) .widget.dragging { opacity: .4; }
 /* where the dragged widget lands: a bar in the accent on that side of the widget under the pointer */
-:where(body:not(.site)) .widget[data-drop]::after { content: ""; position: absolute; z-index: 3; background: var(--accent); pointer-events: none; }
+:where(body:not(.site)) .widget[data-drop]::after { content: ""; position: absolute; z-index: 3; background: var(--accent-line, var(--accent)); pointer-events: none; }
 :where(body:not(.site)) .widget[data-drop="before"]::after { left: 0; right: 0; top: 0; height: 4px; }
 :where(body:not(.site)) .widget[data-drop="after"]::after { left: 0; right: 0; bottom: -6px; height: 4px; }
 :where(body:not(.site)) .widget[data-drop="left"]::after { top: 0; bottom: 0; left: -26px; width: 4px; }
@@ -112,7 +112,7 @@
 :where(body:not(.site)) .menu-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 :where(body:not(.site)) .menu-btn .shut, :where(body:not(.site)) details.menu-wrap[open] .menu-btn .open { display: none; }
 :where(body:not(.site)) details.menu-wrap[open] .menu-btn .shut { display: block; }
-:where(body:not(.site)) details.menu-wrap[open] > .gear { background: var(--on-accent); color: var(--accent); }
+:where(body:not(.site)) details.menu-wrap[open] > .gear { background: var(--band-pick, var(--on-accent)); color: var(--band-pick-ink, var(--accent)); }
 @media (max-width: 959.98px) {
   :where(body:not(.site)) .topbar .pages { display: none; }
   :where(body:not(.site)) .menu-wrap { display: block; }
@@ -159,9 +159,9 @@
   background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); opacity: .7; }
 :where(body:not(.site)) .ch-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-items: end; }
 :where(body:not(.site)) .ch-col { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 0 min(var(--c-chart-bar-gap), 15%); } /* dense months on a phone keep a bar */
-:where(body:not(.site)) .ch-col i { flex: 1 1 0; max-width: var(--c-chart-bar-max); border-radius: 2px 2px 0 0; min-height: 0; }
+:where(body:not(.site)) .ch-col i { flex: 1 1 0; max-width: var(--bar-max, var(--c-chart-bar-max)); border-radius: 2px 2px 0 0; min-height: 0; }
 :where(body:not(.site)) .ch-col.stack { flex-direction: column-reverse; align-items: center; justify-content: flex-start; gap: 2px; }
-:where(body:not(.site)) .ch-col.stack i { flex: none; width: 100%; max-width: var(--c-chart-bar-max); border-radius: 1px; }
+:where(body:not(.site)) .ch-col.stack i { flex: none; width: 100%; max-width: var(--bar-max, var(--c-chart-bar-max)); border-radius: 1px; }
 :where(body:not(.site)) .ch-col.stack i[style^="height:0%"], :where(body:not(.site)) .ch-col.stack i[style^="height:0.00%"] { display: none; }  /* empty segments add no gap */
 :where(body:not(.site)) .ch-col i:hover, :where(body:not(.site)) .hb-track i:hover { filter: brightness(1.12); }
 /* only the pace chart (the one with a total line) dims the rest to bring the hovered month forward;
@@ -329,7 +329,7 @@
 :where(body:not(.site)) .module .trend rect.now { fill: var(--accent-data); }
 :where(body:not(.site)) .module .trend .base { stroke: var(--rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 /* the live module: the accent marks what can still be earned */
-:where(body:not(.site)) .module.live .tab { border-top-color: var(--accent); border-top-width: 6px; padding-top: 6px; }
+:where(body:not(.site)) .module.live .tab { border-top-color: var(--accent-line, var(--accent)); border-top-width: 6px; padding-top: 6px; }
 :where(body:not(.site)) .meter { position: relative; display: block; height: 12px; margin: 4px 0 12px; background: var(--seat-empty); }
 :where(body:not(.site)) .meter i { position: absolute; inset: 0 auto 0 0; background: var(--accent-data); }
 :where(body:not(.site)) .meter em { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
@@ -444,8 +444,6 @@
 @media (min-width: 1280px) {
   :where(body:not(.site)) [data-panel="coal-recent"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }
   :where(body:not(.site)) [data-panel="coal-recent"] .list { flex: 1; min-height: 0; max-height: none; }
-  /* the bonus's three figures leave the fourth column to every bonus so far */
-  :where(body:not(.site)) [data-panel="coal-bonus"] .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* bars that are read by name (skills, domains): sizes in ui.json → chart.big-* */
@@ -457,18 +455,19 @@
 /* when you work: the day in three parts, in the order the line below reads them */
 /* When you work: the 24 hours of the day as bars, each in its part of the day's colour, the parts' shares under them */
 @media (min-width: 600px) { :where(body:not(.site)) .kpis > .wide { grid-column: span 2; } }
-:where(body:not(.site)) .kpis .day24 { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); align-items: end; gap: 2px; height: 64px; margin: 4px 0 0; }
+:where(body:not(.site)) .kpis .day24 { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); align-items: end; gap: max(0px, var(--hours-gap, 2px)); height: 64px; margin: var(--hours-title-gap, 16px) 0 0; }
+:where(body:not(.site)) .kpis .wide .v { margin-bottom: 0; }  /* the space under the big text is --hours-title-gap alone */
 :where(body:not(.site)) .kpis .day24 i { display: block; min-height: 1px; border-radius: 1px 1px 0 0; }
 :where(body:not(.site)) .kpis :is(.day24, .part) .early { background: var(--day-early); }
 :where(body:not(.site)) .kpis :is(.day24, .part) .morning { background: var(--day-morning); }
 :where(body:not(.site)) .kpis :is(.day24, .part) .afternoon { background: var(--day-afternoon); }
 :where(body:not(.site)) .kpis :is(.day24, .part) .night { background: var(--day-night); }
-:where(body:not(.site)) .kpis .day24-axis { position: relative; display: block; height: 18px; margin-bottom: 8px; border-top: var(--axis-line) solid var(--rule-strong); }
+:where(body:not(.site)) .kpis .day24-axis { position: relative; display: block; height: 18px; border-top: var(--axis-line) solid var(--rule-strong); }
 :where(body:not(.site)) .kpis .day24-axis b { position: absolute; top: 3px; transform: translateX(-50%); font: 500 12px var(--type-font-text); color: var(--text-2); }
 :where(body:not(.site)) .kpis .day24-axis b:first-child { transform: none; }
 :where(body:not(.site)) .kpis .day24-axis b:last-child { transform: translateX(-100%); }
 :where(body:not(.site)) .kpis .parts { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 20px; width: fit-content; max-width: 100%;
-  margin: 2px auto 0; padding: 5px 12px; border: var(--key-box) solid var(--rule); }  /* the shares in a framed key, centred under the day */
+  margin: var(--hours-key-gap, 12px) auto 0; padding: 5px 12px; border: var(--key-box) solid var(--rule); }  /* the shares in a framed key, centred under the day */
 /* Rhythm on a laptop: the two figures as wide as their lines need, the day's hours the rest (its key on one line) */
 @media (min-width: 1280px) {
   :where(body:not(.site)) #rhythm .kpis { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.3fr) minmax(0, 2.25fr); }
@@ -555,8 +554,7 @@ html body:not(.site) .seg > a[aria-pressed="true"]:hover, html body:not(.site) .
 :where(body:not(.site)) .graph .group-bg { fill: var(--sunken); }
 
 /* a chart in the middle of its panel when the panel beside it is taller */
-:where(body:not(.site)) [data-panel="by-hour"], :where(body:not(.site)) [data-panel="coal-sources"] { display: flex; flex-direction: column; }
-:where(body:not(.site)) [data-panel="coal-sources"] > .centred { margin-block: auto; }
+:where(body:not(.site)) [data-panel="by-hour"] { display: flex; flex-direction: column; }
 
 /* connections: the key clear of the groups (the bubbles float in dash.js) */
 :where(body:not(.site)) [data-panel="connections"] > .legend { margin-bottom: 16px; }

@@ -224,7 +224,7 @@ func makeProfiles(dir string) error {
 		srv := httptest.NewServer(fake42.Handler(data, func(string) {}))
 		lim := app.NewLimiter(1, time.Now, nil)
 		lim.PerSecond(1000)
-		c := api42.New([]api42.App{{UID: "fake", Secret: "fake"}}, 0, "", lim, srv.Client())
+		c := api42.New([]api42.App{{UID: "fake", Secret: "fake"}}, "", lim, srv.Client())
 		c.Base = srv.URL
 		uid := int(data["user"].(map[string]any)["id"].(float64)) // the base's: fake42 answers for it
 		report, err := api42.Extract(context.Background(), c, uid, func(float64) {}, func() time.Time { return now })
@@ -262,7 +262,7 @@ func client42() (*api42.Client, error) {
 	for i, a := range apps {
 		keys[i] = api42.App{UID: a.UID, Secret: a.Secret}
 	}
-	return api42.New(keys, 0, "", app.NewLimiter(len(apps), time.Now, nil), nil), nil
+	return api42.New(keys, "", app.NewLimiter(len(apps), time.Now, nil), nil), nil
 }
 
 func fetch(uidArg, out string) error {

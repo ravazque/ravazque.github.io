@@ -31,6 +31,7 @@ test("days carried on to a later day with zeros, untouched when already there", 
 test("every section Profile offers as a widget is built by its page and has a title in both languages", async () => {
   const { readFileSync } = await import("node:fs");
   const { WIDGETS } = await import("./profile");
+  expect(WIDGETS.some(([, id]) => id === "activity")).toBe(false); // always on Profile
   const en = (await import("@data/i18n/en.json")).default as Record<string, unknown>;
   const es = (await import("@data/i18n/es.json")).default as Record<string, unknown>;
   for (const [page, id, key] of WIDGETS) {
@@ -67,6 +68,7 @@ test("the not logged bar's tip names your projects beside your count", async () 
   const { notLoggedProjects } = await import("./campus");
   const rows = [{ project: "libft", me: 2, other: 0 }, { project: "push_swap", me: 1, other: 1 }, { project: "minishell", me: 0, other: 3 }];
   expect(notLoggedProjects(rows)).toBe("libft (x2), push_swap");
+  expect(notLoggedProjects([{ project: "minishell", me: 0, other: 3 }, { project: "libft", me: 2, other: 0 }], "other")).toBe("minishell (x3)");
   expect(notLoggedProjects([{ project: "minishell", me: 0, other: 3 }])).toBe("");
 });
 

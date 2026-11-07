@@ -32,7 +32,7 @@ func newTestClient(t *testing.T, h http.HandlerFunc) (*Client, *nopLimiter) {
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	lim := &nopLimiter{}
-	c := New([]App{{"u1", "s1"}, {"u2", "s2"}}, 0, "https://localhost/auth/callback", lim, srv.Client())
+	c := New([]App{{"u1", "s1"}, {"u2", "s2"}}, "https://localhost/auth/callback", lim, srv.Client())
 	c.Base, c.CDN = srv.URL, srv.URL+"/cdn/"
 	c.sleep = func(ctx context.Context, d time.Duration) error { return ctx.Err() }
 	return c, lim

@@ -22,3 +22,8 @@ test("every literal text key the app uses exists in English and Spanish", () => 
   const missing = [...keys].filter((k) => !(k in en) || !(k in es));
   expect(missing).toEqual([]);
 });
+
+test("hours and minutes stick to their number, in every text", () => {
+  const texts = (o: any): string[] => (typeof o === "string" ? [o] : Array.isArray(o) ? o.flatMap(texts) : o && typeof o === "object" ? Object.values(o).flatMap(texts) : []);
+  for (const dict of [en, es]) expect(texts(dict).filter((t) => /(\d|\})[\s\u00a0](h|m|min)(?!\p{L})/u.test(t))).toEqual([]);
+});

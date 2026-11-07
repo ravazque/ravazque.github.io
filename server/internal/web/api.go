@@ -157,19 +157,6 @@ func (s *Server) view(w http.ResponseWriter, r *http.Request, si signedIn) {
 	})
 }
 
-func (s *Server) today(w http.ResponseWriter, r *http.Request, si signedIn) {
-	data, ok := s.load(w, si)
-	if !ok {
-		return
-	}
-	all := data.Obj("periods").Obj("all")
-	var up []core.UpcomingEval
-	if raw, err := json.Marshal(data.V("upcoming")); err == nil {
-		json.Unmarshal(raw, &up)
-	}
-	writeJSON(w, 200, core.BuildToday(all, up, s.now()))
-}
-
 // reportCopy is the stored report for the browser to keep, with the signature it must show to hand it back.
 func (s *Server) reportCopy(w http.ResponseWriter, r *http.Request, si signedIn) {
 	if _, ok := s.load(w, si); !ok { // the same opted-out students hidden as on the pages

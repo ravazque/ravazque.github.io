@@ -19,17 +19,15 @@ Seis páginas. Cada elección (periodo, filtros, vistas) queda en la dirección,
 guardar o compartir.
 
 - **Perfil**, la página de inicio. Tu ficha (foto, milestone, curso de C o de Python, grado, grupos como mentor, nivel,
-  puesto en la promo, wallet, puntos de corrección, inicio del 42cursus y piscina, la fecha estimada de alumni), el
-  bonus de horas de la coalición (horas en los últimos siete días frente a 50 h y 80 h, cuándo toca cada uno y qué
-  sesiones están a punto de salir de la ventana), dónde estás sentado, tu próxima evaluación, los proyectos que tienes
-  abiertos, este mes, tres módulos de resumen (proyectos, evaluaciones y horas) y tus campus. Debajo, cualquier sección
-  de las otras páginas que añadas como widget, a media o toda la anchura y colocada arrastrándola (se guarda en tu
-  navegador).
+  puesto en la promo, wallet, puntos de corrección, inicio del 42cursus y piscina, la fecha estimada de alumni), tres
+  módulos de resumen (proyectos, evaluaciones y horas) y las secciones de las otras páginas que guardes como widgets:
+  para empezar, Contribución, Ritmo y el bonus de horas; añádelos, quítalos, cambia su tamaño y arrástralos a su sitio (se
+  guarda en tu navegador). Al final tu actividad, que puedes plegar u ocultar: logros (una línea por serie, con los
+  niveles anteriores plegados), eventos, títulos y quests junto a tus campus.
 - **Proyectos**: tu avance (nivel, XP por mes, tu promo por nivel, la fecha estimada de alumni), skills, cada proyecto
   e intento con filtros, agrupados por milestone (0 = Libft … 6) para el Common Core de C y el de Python (un proyecto
   hecho en los dos cursos dice cuál es cuál), exportación a CSV, exámenes, dominios técnicos (las etiquetas RNCP de la
-  intra), una línea de tiempo con todos los intentos y tus logros (una línea por serie, con los niveles anteriores
-  plegados), eventos, títulos y quests.
+  intra), una línea de tiempo con todos los intentos.
 - **Evaluaciones**: lo que devuelves (horas, personas, valoración, cuántas acabaron por debajo de 50, Outstanding en
   los dos sentidos, según el milestone de la otra persona), recibidas y hechas a lo largo del tiempo, cuándo ocurren
   (día × hora, duración, con cuánta antelación se reservaron), tu feedback (como estudiante solo
@@ -120,11 +118,12 @@ La política completa está en la página de Privacidad de la aplicación. Probl
 ```
 make                 # lista los comandos
 make certs           # certificados HTTPS para https://localhost (mkcert si está, si no openssl)
-make dev             # compila y arranca https://localhost sin perfiles guardados (solo inicio de sesión real con 42)
-make dev-build       # compila y arranca https://localhost con los perfiles de prueba sintéticos
-make dev-real        # lo mismo más los perfiles reales de DEV_REAL_LOGINS (se descargan una vez, ~120 peticiones cada uno)
-make dev-live        # edición en vivo: la app del navegador desde web/src en http://localhost:5173 (arranca dev antes)
+make dev             # compila, arranca y abre https://localhost en Chrome sin perfiles guardados (solo inicio de sesión real con 42)
+make dev-build       # dev más los perfiles de prueba sintéticos
+make dev-real        # dev-build más los perfiles reales de DEV_REAL_LOGINS (se descargan una vez, ~120 peticiones cada uno)
+make dev-live        # dev-real más edición en vivo: abre en Chrome la app del navegador desde web/src en http://localhost:5173
 make dev-logs        # sigue los logs de dev
+                     # cada nivel de dev se engancha a un dev ya levantado, salvo que cambien el código, los ajustes o el nivel; make dev-down baja de nivel
 make dev-down        # para dev (los navegadores conservan sus informes)
 make test            # tests de Go, comprobación de tipos y Vitest, tests del sitio y del informe de evaluaciones
 make production      # compila y arranca https://ravazque.info a través del túnel de Cloudflare
@@ -133,6 +132,7 @@ make logs            # sigue los logs de producción
 make site            # compila la página del CV en site/_build y la sirve en http://localhost:8080
 make snapshot        # site/data/42.json a partir del informe guardado: lo que enviaría el botón de publicar
 make eval-report     # pide un login de 42 y escribe su historial de evaluaciones en una página HTML privada (~130 peticiones)
+make report          # lo mismo, y abre la página en Chrome
 make clean           # dev-down y los ficheros generados
 make fclean          # clean, la imagen, volúmenes e informes guardados de dev, y web/node_modules
 make re              # fclean y dev-build
@@ -150,15 +150,15 @@ para `make test` y las herramientas de desarrollo.
    con la redirect URI `https://localhost/auth/callback` y otra para producción con
    `https://ravazque.info/auth/callback`. Una tercera es opcional y solo añade presupuesto de peticiones.
 2. Ejecuta `make`: copia `.env.example` a `.env`. Rellénalo (abajo) y mantenlo privado (`chmod 600 .env`).
-3. `make certs`, después `make dev-build`, y abre https://localhost.
+3. `make certs`, después `make dev-build`: https://localhost se abre en Chrome.
 
 ### Configuración
 
 Todo vive en un único `.env`, que nunca se sube al repositorio. `.env.example` explica cada valor:
 
 ```
-FT_UID, FT_SECRET            # app de 42 con la que se entra en producción
-FT_UID_2, FT_SECRET_2        # app de 42 con la que se entra en dev
+FT_UID, FT_SECRET            # app de 42 con la que se entra, en producción y en dev; también responde peticiones
+FT_UID_2, FT_SECRET_2        # opcional: más presupuesto de peticiones, nunca inicia sesión
 FT_UID_3, FT_SECRET_3        # opcional: más presupuesto de peticiones, nunca inicia sesión
 SESSION_SECRET               # openssl rand -hex 32
 CONTROLLER_NAME              # responsable del tratamiento que nombra la política de privacidad

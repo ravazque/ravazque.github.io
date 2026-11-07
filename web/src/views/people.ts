@@ -3,7 +3,7 @@ import { GOOD, S1, hbars, legend } from "../lib/charts";
 import { GROUPS, bubbles, netClass, ring } from "../lib/graphs";
 import { avatar, esc } from "../lib/h";
 import { table } from "../lib/table";
-import { Page, Section, cols, deletedName, filters, info, search, section, erased, shownLogin } from "./page";
+import { Page, Section, cols, deletedName, filters, info, myRank, search, section, erased, shownLogin } from "./page";
 
 /** The circle's links with the student's own side rebuilt from their evaluations (contacts' lists only see "→ me"). */
 function circleLinks(net: any, me: string, given: any[], received: any[]) {
@@ -30,6 +30,12 @@ export function evaluatedBy(f: Page["f"], received: any[], login: string): strin
   const evs = received.filter((e) => e.corrector?.login === login).sort((a, b) => String(b.begin).localeCompare(String(a.begin)));
   const seat = (e: any) => (!e.other_host_checked ? "–" : e.other_host || f.t("log.not_logged"));
   return evs.length ? [f.t("who.details_tip"), ...evs.map((e) => `${e.project} · ${f.day(e.begin)} · ${seat(e)}`)].join("\n") : "";
+}
+
+/** What a person gave you in Outer Core projects: their OKs and outstandings on your projects of that group. */
+export function outerTip(f: Page["f"], received: any[], login: string, outer: Set<string>): string {
+  const evs = received.filter((e) => e.corrector?.login === login && outer.has(e.project) && e.mark !== null && e.mark !== undefined);
+  return evs.length ? f.t("who.tip_outer", { ok: evs.filter((e) => !e.outstanding && !e.negative_flag).length, out: evs.filter((e) => e.outstanding).length }) : "";
 }
 
 /** The first project and how many more ("libft +3 more"); "–" for none. */
@@ -68,9 +74,13 @@ export function people(pg: Page): Section[] {
     const projs = Object.entries(p.projects_on_me || {}).map(([k, v]: [string, any]) => (v > 1 ? `${k} (x${v})` : k));
     return whoDetails(f, projs, evaluatedBy(f, D.received, p.login));
   };
-  const tip = (p: any) => [p.login, f.t("who.tip_mark", { mark: f.num(p.avg_mark_to_me, 1), rating: f.num(p.my_rating_of_them, 2) }),
-    f.t("who.tip_cross", { you: p.evaluated_by_me, team: p.teammate })].join(" · ");
   const groupOf = new Map<string, string>(connections(pg).map((c: any) => [c.login, c.group]));
+  // an Outer Core student's tips say which correctors are there too, and what they gave them in Outer Core projects
+  const inOuter = ["outer-core", "alumni"].includes(myRank(D.extras) || "");
+  const outerGroup = f.t("groups.outer-core"), outerProjects = new Set<string>(pg.allProjects.filter((p: any) => p.group === "outer-core").map((p: any) => p.name));
+  const isOuter = (p: any) => inOuter && groupOf.get(p.login) === "outer-core";
+  const tip = (p: any) => [isOuter(p) ? `${p.login} (${outerGroup})` : p.login,
+    f.t("who.tip_cross", { you: p.evaluated_by_me, team: p.teammate }), ...(inOuter ? [outerTip(f, D.received, p.login, outerProjects)].filter(Boolean) : [])].join(" · ");
   const order = (g?: string) => (g && GROUPS.includes(g) ? GROUPS.indexOf(g) : 99);
   const lede = esc(f.t("who.lede", { correctors: S.unique_correctors, mutual: S.mutual }));
   out.push({ id: "who", nav: f.t("nav.who"), html: section("who", f.t("who.title"), cols(

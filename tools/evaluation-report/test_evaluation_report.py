@@ -165,7 +165,7 @@ class Page(unittest.TestCase):
         page = h.render(report(evaluation()), {})
         self.assertIn("Libft", page)
         self.assertNotIn('id="p-42cursus-libft"', page)
-        for fact in ("17,01", "3 de 424", "485 h", "Coal", "1 de 1"):
+        for fact in ("17,01", "3 de 424", "485h", "Coal", "1 de 1"):
             self.assertIn(fact, page)
 
     def test_project_and_attempt_are_two_columns_of_the_chart(self):

@@ -53,7 +53,6 @@ type Client struct {
 	Base, CDN   string
 	AnyAccount  bool // dev tools only: extract someone the site refuses (blackholed, frozen…) for a local dev report
 	apps        []App
-	oauth       int
 	redirectURI string
 	lim         Limiter
 	hc          *http.Client
@@ -66,11 +65,12 @@ type Client struct {
 	blocAt      time.Time // the quarter of the hour the bloc was asked in
 }
 
-func New(apps []App, oauthIndex int, redirectURI string, lim Limiter, hc *http.Client) *Client {
+// New: apps[0] signs users in; requests with an app token are spread over all of them.
+func New(apps []App, redirectURI string, lim Limiter, hc *http.Client) *Client {
 	if hc == nil {
 		hc = &http.Client{Timeout: 60 * time.Second}
 	}
-	return &Client{Base: "https://api.intra.42.fr", CDN: "https://cdn.intra.42.fr/", apps: apps, oauth: oauthIndex,
+	return &Client{Base: "https://api.intra.42.fr", CDN: "https://cdn.intra.42.fr/", apps: apps,
 		redirectURI: redirectURI, lim: lim, hc: hc, tokens: map[int]token{}, sleep: sleepCtx}
 }
 
@@ -137,7 +137,7 @@ func (c *Client) do(ctx context.Context, path string, params url.Values, userTok
 	for attempt := 0; attempt <= retries; attempt++ {
 		pin := -1
 		if userToken != "" {
-			pin = c.oauth // a user token belongs to the sign-in app
+			pin = 0 // a user token belongs to the sign-in app
 		}
 		app, err := c.lim.Acquire(ctx, pin)
 		if err != nil {
@@ -246,10 +246,10 @@ func (c *Client) GetAll(ctx context.Context, path string, params url.Values) ([]
 
 // ExchangeCode returns the signed-in user's access token: used once to read /v2/me, never stored.
 func (c *Client) ExchangeCode(ctx context.Context, code string) (string, error) {
-	if _, err := c.lim.Acquire(ctx, c.oauth); err != nil {
+	if _, err := c.lim.Acquire(ctx, 0); err != nil {
 		return "", err
 	}
-	a := c.apps[c.oauth]
+	a := c.apps[0]
 	tok, _, err := c.postToken(ctx, url.Values{"grant_type": {"authorization_code"}, "client_id": {a.UID}, "client_secret": {a.Secret},
 		"code": {code}, "redirect_uri": {c.redirectURI}})
 	return tok, err

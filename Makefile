@@ -3,35 +3,71 @@ COMPOSE_DEV := $(COMPOSE) -p ravazque-info-dev -f compose.yaml -f compose.dev.ya
 # nothing but production's own targets (production, production-down, logs) ever touches production's containers, image or volumes
 # the dev tools run here (Go); fetch reads the 42 apps from the root .env itself, without printing them
 DEVTOOLS := cd server && go run ./cmd/devtools
+CHROME := google-chrome-stable
+OPEN_DEV := nohup $(CHROME) https://localhost >/dev/null 2>&1 &
+TEST_PROFILES := /preview/test-*.json
+REAL_PROFILES := /preview/real-*.json
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-build dev-real dev-live dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot eval-report site certs clean fclean re
+.PHONY: help dev dev-build dev-real dev-live dev-up dev-vite profiles-test profiles-real dev-down dev-fclean dev-logs production production-down logs down ps test preview snapshot eval-report report site certs clean fclean re
 
 help: ## Show this help
-	@echo "ravazque.info — dev at https://localhost (signs in with FT_UID_2), production at https://ravazque.info (FT_UID)"
+	@echo "ravazque.info — dev at https://localhost, production at https://ravazque.info (both sign in with FT_UID)"
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  make %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-dev: .env web/Caddyfile.local ## Build and start dev at https://localhost with no saved profiles: real 42 sign-in only (FT_UID_2)
-	@mkdir -p web/preview
-	@DEV_PROFILES= $(COMPOSE_DEV) up -d --build
-	@echo "Up at https://localhost — sign in with 42 (the FT_UID_2 app needs the redirect URI https://localhost/auth/callback)"
+# each level serves what the one before serves, plus its own; a single build and start, not one per level
+dev: dev-up ## Build, start and open https://localhost in Chrome with no saved profiles: real 42 sign-in only (FT_UID)
+	@$(OPEN_DEV)
+	@echo "Up at https://localhost — sign in with 42 (the FT_UID app needs the redirect URI https://localhost/auth/callback)"
 
-dev-build: .env web/Caddyfile.local ## Build and start dev at https://localhost with the synthetic test profiles only (made again, 0 requests)
-	@mkdir -p web/preview
-	@$(DEVTOOLS) profiles $(CURDIR)/web/preview
-	@DEV_PROFILES='/preview/test-*.json' $(COMPOSE_DEV) up -d --build
+dev-build: SERVE := $(TEST_PROFILES)
+dev-build: profiles-test dev-up ## dev + the synthetic test profiles (made again, 0 requests)
+	@$(OPEN_DEV)
 	@echo "Up at https://localhost — 'Test · …' on the landing enters as a synthetic profile"
-	@echo "Real sign-in: the FT_UID_2 app needs the redirect URI https://localhost/auth/callback"
+	@echo "Real sign-in: the FT_UID app needs the redirect URI https://localhost/auth/callback"
 
-dev-real: .env web/Caddyfile.local ## dev-build plus the real profiles of DEV_REAL_LOGINS (fetched only when missing, ~120 requests each)
-	@mkdir -p web/preview
-	@if ! ls web/preview/test-*.json >/dev/null 2>&1; then $(DEVTOOLS) profiles $(CURDIR)/web/preview; fi
-	@$(DEVTOOLS) real $(CURDIR)/web/preview || echo "Starting without them: run make dev-real again later (only the missing ones are fetched)"
-	@DEV_PROFILES='/preview/test-*.json /preview/real-*.json' $(COMPOSE_DEV) up -d --build
+dev-real: SERVE := $(TEST_PROFILES) $(REAL_PROFILES)
+dev-real: profiles-real dev-up ## dev-build + the real profiles of DEV_REAL_LOGINS (fetched only when missing, ~120 requests each)
+	@$(OPEN_DEV)
 	@echo "Up at https://localhost — 'Test · …' and 'Real · …' on the landing (delete web/preview/real-<login>.json to fetch it again)"
 
-dev-live: ## Edit live: the browser app straight from web/src at http://localhost:5173, a saved change shows at once (start dev first; Ctrl+C stops)
-	@curl -sk -o /dev/null https://localhost/healthz || { echo "Dev is not running: make dev-build or make dev-real first"; exit 1; }
-	@cd web && { test -x node_modules/.bin/vite || npm ci --no-audit --no-fund --silent; } && API=https://localhost node_modules/.bin/vite --port 5173 --strictPort
+dev-live: SERVE := $(TEST_PROFILES) $(REAL_PROFILES)
+dev-live: profiles-real dev-up dev-vite ## dev-real + edit live: opens http://localhost:5173 in Chrome, a saved change in web/src shows at once (Ctrl+C stops Vite)
+
+dev-vite:
+	@if curl -s -o /dev/null -m 2 http://localhost:5173/; then \
+	   echo "Vite is already running: attached"; nohup $(CHROME) http://localhost:5173 >/dev/null 2>&1 & \
+	 else \
+	   cd web && { test -x node_modules/.bin/vite || npm ci --no-audit --no-fund --silent; } && API=https://localhost BROWSER=$(CHROME) node_modules/.bin/vite --port 5173 --strictPort --open; \
+	 fi
+
+# made again only when missing, from another day (they are moved to today) or older than the server's code and data
+profiles-test: .env
+	@mkdir -p web/preview
+	@oldest=$$(ls -t web/preview/test-*.json 2>/dev/null | tail -1); \
+	 if [ -z "$$oldest" ] || [ -n "$$(find "$$oldest" ! -newermt 'today 00:00')" ] || [ -n "$$(find server -type f -newer "$$oldest" -print -quit)" ]; then \
+	   $(DEVTOOLS) profiles $(CURDIR)/web/preview; \
+	 fi
+
+profiles-real: profiles-test
+	@$(DEVTOOLS) real $(CURDIR)/web/preview || echo "Starting without them: run make dev-real again later (only the missing ones are fetched)"
+
+# compose's build cache and config hash leave a running dev alone when the code and settings have not changed.
+# It keeps a running dev that already serves this level's profiles, replaces one that does not answer, and restarts
+# the server when a profile changed after it started (it reads them only at the start).
+dev-up: .env web/Caddyfile.local
+	@mkdir -p web/preview
+	@set -f; api=ravazque-info-dev-api-1; state() { docker inspect -f "$$1" $$api 2>/dev/null; }; \
+	 before=$$(state '{{.State.StartedAt}}'); serve='$(SERVE)'; force=; \
+	 if [ "$$(state '{{.State.Running}}')" = true ]; then \
+	   running=$$(state '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^DEV_PROFILES=//p'); covers=yes; \
+	   for g in $$serve; do case " $$running " in *" $$g "*) ;; *) covers=no ;; esac; done; \
+	   [ $$covers = no ] || serve=$$running; \
+	   curl -sfk -m 3 -o /dev/null https://localhost/healthz || force=--force-recreate; \
+	 fi; \
+	 DEV_PROFILES="$$serve" $(COMPOSE_DEV) up -d --build $$force || exit 1; \
+	 if [ -n "$$(find web/preview \( -name 'test-*.json' -o -name 'real-*.json' \) -newermt "$$(state '{{.State.StartedAt}}')")" ]; then $(COMPOSE_DEV) restart api; fi; \
+	 timeout 60 sh -c 'until curl -sfk -o /dev/null https://localhost/healthz; do sleep 1; done' || { echo "Dev did not answer in 60 s: make dev-logs"; exit 1; }; \
+	 [ "$$before" != "$$(state '{{.State.StartedAt}}')" ] || echo "Nothing to update: attached to the running dev"
 
 dev-down: ## Stop dev and remove its containers (its sessions and server copies go; browsers keep theirs)
 	@$(COMPOSE_DEV) down --remove-orphans
@@ -73,6 +109,9 @@ snapshot: ## Write site/data/42.json from web/preview/data.json (what the publis
 
 eval-report: .env ## Ask for a 42 login and write its evaluation history as one private HTML page (about 130 requests)
 	@python3 tools/evaluation-report/evaluation_report.py
+
+report: eval-report ## make eval-report, then open the page it wrote in Chrome
+	@nohup $(CHROME) "$$(ls -t $(CURDIR)/tools/evaluation-report/out/*.html | head -1)" >/dev/null 2>&1 &
 
 site: ## Build the GitHub Pages site into site/_build and serve it at http://localhost:8080
 	@sh site/build.sh site/_build

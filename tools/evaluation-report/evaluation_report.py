@@ -280,8 +280,8 @@ def span(minutes):
     if minutes is None:
         return "–"
     if abs(minutes) < 90:
-        return f"{num(minutes, 0)} min"
-    return f"{num(minutes / 60)} h" if abs(minutes) < 2880 else f"{num(minutes / 1440)} días"
+        return f"{num(minutes, 0)}m"
+    return f"{num(minutes / 60)}h" if abs(minutes) < 2880 else f"{num(minutes / 1440)} días"
 
 
 def icon(kind):
@@ -338,7 +338,7 @@ def profile(doc):
         figure(f"{sum(bool(x['passed']) for x in exams)} de {len(exams)}", "Exámenes aprobados", f"{sum(x['attempts'] for x in exams)} intentos"),
         figure(sm["received"], "Evaluaciones recibidas", f"{sm['received_outstanding']} outstanding"),
         figure(sm["given"], "Evaluaciones dadas", f"{sm['given_outstanding']} outstanding"),
-        figure(f"{lt['total_hours']:.0f} h", "Tiempo logeado", f"{lt['days_present']} días · {lt['sessions']} sesiones"),
+        figure(f"{lt['total_hours']:.0f}h", "Tiempo logeado", f"{lt['days_present']} días · {lt['sessions']} sesiones"),
         figure(coal.get("name") or "–", "Coalición",
                f"puesto {coal['rank']} · {thousands(coal['score'])} puntos" if coal else ""),
     ))
@@ -468,7 +468,7 @@ def evaluation_rows(e, seats, after, max_min, max_lead):
     meter_lead = f'<span class="meter"><i style="width:{100 * (lead or 0) / max_lead:.1f}%"></i></span>'
     meter_dur = (f'<span class="meter"><i style="width:{100 * max(dur or 0, 0) / max_min:.1f}%"></i>'
                  f'<u style="left:{100 * e["planned_min"] / max_min:.1f}%"></u></span>')
-    took = f"{span(dur)} de {e['planned_min']} min" if dur is not None else "Sin rellenar"
+    took = f"{span(dur)} de {e['planned_min']}m" if dur is not None else "Sin rellenar"
     said = [f"<p><b>Comentario del corrector.</b> {esc(e['comment'])}</p>"] if e["comment"] else []
     said += [f"<p><b>Valoración del alumno, {esc(f['rating'])} de 5.</b> {esc(f['comment'] or '')}</p>" for f in e["feedbacks"]]
     note = f'<tr class="note"><td colspan="9">{"".join(said)}</td></tr>' if said else ""

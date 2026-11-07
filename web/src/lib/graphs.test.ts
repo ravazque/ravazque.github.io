@@ -15,7 +15,7 @@ test("a group clusters with its biggest bubble in the middle and none overlappin
 });
 
 test("every calendar year is a full rectangle of weeks, the days outside the data drawn as empty squares", () => {
-  const f = { t: (k: string) => k, day: (d: string) => d, num: (v: number) => String(v), months: Array(12).fill("m") } as any;
+  const f = { t: (k: string) => k, day: (d: string) => d, num: (v: number) => String(v), nb: (v: number, u: string) => `${v}${u}`, months: Array(12).fill("m") } as any;
   const html = calendar(f, ["2025-12-30", "2025-12-31", "2026-01-01"], [2, 0, 3]);
   const years = html.split('class="cal-year"').slice(1);
   // 2025 starts on a Wednesday (53 weeks), 2026 on a Thursday (53 weeks): 7 cells a week, data or not

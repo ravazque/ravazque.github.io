@@ -103,7 +103,7 @@ func TestBonusDrops(t *testing.T) {
 		t.Fatalf("drops = %+v", drops)
 	}
 	// 168 real hours later: the DST change on the 25th moves the local time back an hour
-	if !drops[0].At.Equal(thu.Add(week)) || drops[0].Hours != 6.2 || !drops[0].SessionBegin.Equal(thu) {
+	if !drops[0].At.Equal(thu.Add(week)) || drops[0].Hours != 6.2 {
 		t.Fatalf("first = %+v", drops[0])
 	}
 	if !drops[1].At.Equal(fri.Add(week)) || drops[1].Hours != 8.5 {
@@ -148,4 +148,3 @@ func TestActiveWeeksNeverExceedTheSpan(t *testing.T) {
 		t.Fatalf("got %v", got)
 	}
 }
-

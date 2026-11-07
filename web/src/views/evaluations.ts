@@ -4,10 +4,10 @@ import { GOOD, BAD, S1, S2, legend, lines, vbars } from "../lib/charts";
 import { ACCENT, SLATE, heat } from "../lib/graphs";
 import { ARROW, avatar, esc } from "../lib/h";
 import { facts, table } from "../lib/table";
-import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased } from "./page";
+import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased, LIST_ROWS } from "./page";
 
-/** A histogram's bins from its edges, each with its unit: "0–1 h", "1–3 h", "3+ h". */
-export const binLabels = (edges: number[], unit: string) => edges.map((x, i) => `${i < edges.length - 1 ? `${x}–${edges[i + 1]}` : `${x}+`} ${unit}`);
+/** A histogram's bins from its edges, each with its unit: "0–1h", "1–3h", "3+h". */
+export const binLabels = (edges: number[], unit: string) => edges.map((x, i) => `${i < edges.length - 1 ? `${x}–${edges[i + 1]}` : `${x}+`}${unit}`);
 
 export function evaluations(pg: Page): Section[] {
   const f = pg.f, D = pg.D, S = D.summary, W = D.when;
@@ -51,7 +51,7 @@ export function evaluations(pg: Page): Section[] {
   }
 
   out.push({ id: "community", nav: f.t("community.title"), html: section("community", f.t("community.title"), cols(block("kpis", kpis([
-    [f.t("community.k_hours"), esc(f.nb(cm.hours, "h")), [esc(f.t("community.s_hours", { n: f.num(D.given.length) }))]],
+    [f.t("community.k_hours"), `${esc(f.num(cm.hours, 1))}&nbsp;h`, [esc(f.t("community.s_hours", { n: f.num(D.given.length) }))]],
     [f.t("community.k_people"), f.num(cm.people), [esc(f.t("community.s_people"))]],
     [f.t("community.k_correctors"), f.num(cm.correctors), [esc(f.t("community.s_correctors"))]],
     [f.t("community.k_rating"), cm.rating !== null ? f.num(cm.rating, 2) : "–", [esc(f.t("community.s_rating", { n: f.num(cm.rated) }))]],
@@ -188,7 +188,8 @@ function correctedTable(pg: Page): string {
   return table(f, [
     { k: "project", t: f.t("col.project") }, { k: "times", t: f.t("col.times"), num: true },
     { k: "avg", t: f.t("col.avg_mark"), s: f.t("abbr.avg_mark"), num: true, f: (r) => (r.avg !== null ? f.num(r.avg, 1) : noMark(f, r.last_e)) },
-  ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t("empty.period") });
+  ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t("empty.period"),
+    minRows: Math.max(LIST_ROWS, Object.keys(pg.D.stats?.by_group || {}).length) }); // as tall as the table beside it, by milestone
 }
 
 /** The log's "Seat" filter: who had no session open (false: no such filter, a seat in a link is ignored). */

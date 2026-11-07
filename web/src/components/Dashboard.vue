@@ -1,15 +1,14 @@
 <script setup lang="ts">
-// The six app pages. Asks for the status first (consent, a report, an extraction running), then the period's view
-// (and Profile's today), builds the sections as markup and lets the browser behaviours take it from there.
+// The six app pages. Asks for the status first (consent, a report, an extraction running), then the period's view,
+// builds the sections as markup and lets the browser behaviours take it from there.
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setWidget, state, togglePin, untilQuarter, type Status } from "../state";
-import { closePops, hideTip, settle } from "../lib/behave";
+import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setActivity, setWidget, state, togglePin, untilQuarter, type ActivityState, type Status } from "../state";
+import { closePops, dragScroll, hideTip, settle } from "../lib/behave";
 import { idbShelf, keepCopy, restore } from "../lib/copy";
 import { esc } from "../lib/h";
 import { parseCsv } from "../lib/table";
 import { Page, pagePeriod, type PageKey, type Section, type View } from "../views/page";
-import type { Today } from "../views/home";
 import { profile as profileSections } from "../views/profile";
 import { portfolioCsv, projects, projectsCsv } from "../views/projects";
 import { evaluations } from "../views/evaluations";
@@ -23,7 +22,6 @@ const route = useRoute(), router = useRouter();
 const f = computed(() => fmt.value);
 const key = computed<PageKey>(() => ((route.params.page as string) || "home") as PageKey);
 const view = shallowRef<View | null>(null);
-const today = shallowRef<Today | null>(null);
 const screen = ref<"loading" | "consent" | "boot" | "restore" | "page">("loading");
 const consentOk = ref(false);
 const main = ref<HTMLElement | null>(null);
@@ -35,7 +33,7 @@ const pg = computed(() => (view.value ? new Page(f.value, view.value, key.value,
 const sections = computed<Section[]>(() => {
   if (!pg.value) return [];
   const pv = pg.value;
-  if (key.value === "home") return profileSections(pv, today.value, pins.widgets);
+  if (key.value === "home") return profileSections(pv, pins.widgets, pins.activity);
   return key.value === "projects" ? projects(pv) : key.value === "evaluations" ? evaluations(pv)
     : key.value === "people" ? people(pv) : key.value === "campus" ? campus(pv) : key.value === "coalition" ? coalition(pv) : [];
 });
@@ -85,12 +83,7 @@ async function load() {
 
 async function fetchView() {
   const period = pagePeriod(key.value, params.value.period || "");
-  const [v, td] = await Promise.all([
-    api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`),
-    key.value === "home" ? api<Today>("/api/me/today") : Promise.resolve(null),
-  ]);
-  view.value = v;
-  today.value = td;
+  view.value = await api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`);
   screen.value = "page";
   followCoalitions();
   const u = state.session?.user, last = state.status?.last || "";
@@ -142,7 +135,12 @@ watch(sections, async () => {
     } else main.value.querySelector<HTMLElement>(`form[data-filter="${typingIn.form}"] .seg, form[data-filter="${typingIn.form}"]`)?.focus?.();
     typingIn = null;
   }
-  if (refocus) { main.value.querySelector<HTMLElement>(`[data-widget="${refocus}"] [data-widget-grip]`)?.focus({ preventScroll: true }); refocus = ""; }
+  if (refocus) { // moved with the keys: the page goes where the widget went
+    const grip = main.value.querySelector<HTMLElement>(`[data-widget="${refocus}"] [data-widget-grip]`);
+    grip?.focus({ preventScroll: true });
+    grip?.scrollIntoView({ block: "center" });
+    refocus = "";
+  }
   const hash = route.hash;
   if (hash && hash !== anchored) {
     anchored = hash;
@@ -163,6 +161,8 @@ const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M1
 const GRIP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="dots" d="M9 5.5h.01M15 5.5h.01M9 12h.01M15 12h.01M9 18.5h.01M15 18.5h.01"/></svg>';
 const WIDEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
 const NARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h7M15 12h7M6 8l4 4-4 4M18 8l-4 4 4 4"/></svg>';
+const FOLD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
+const UNFOLD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
 let refocus = "";
 const tool = (cls: string, icon: string, label: string, data: Record<string, string>) => {
   const b = Object.assign(document.createElement("button"), { type: "button", className: `pin ${cls}`, innerHTML: icon, title: label });
@@ -176,7 +176,15 @@ function markSections(root: HTMLElement) {
     const widget = sec.parentElement?.dataset.widget;
     const page = widget ? widget.split(":")[0] : key.value;
     const h2 = sec.querySelector<HTMLElement>(":scope > h2, :scope > .panel-head > h2");
-    if (page === "home" || !h2 || h2.classList.contains("visually-hidden") || h2.querySelector(".pin")) return;
+    if (!h2 || h2.classList.contains("visually-hidden") || h2.querySelector(".pin")) return;
+    if (page === "home") { // on Profile only Activity has tools: fold it, or take it off (the picker brings it back)
+      if (sec.id !== "activity") return;
+      const label = h2.textContent || sec.id, min = pins.activity === "min";
+      const fold = tool("widget-size", min ? UNFOLD : FOLD, f.value.t(min ? "widgets.expand" : "widgets.minimize", { name: label }), { activity: min ? "" : "min" });
+      fold.setAttribute("aria-expanded", String(!min));
+      h2.append(fold, tool("widget-off", CROSS, f.value.t("widgets.remove", { name: label }), { activity: "off" }));
+      return;
+    }
     const on = hasPin("stars", page, sec.id), name = labels.get(sec.id) || h2.textContent || sec.id;
     if (!widget) {
       const star = Object.assign(document.createElement("button"), { type: "button", className: "pin star-pin", innerHTML: STAR });
@@ -211,6 +219,8 @@ function onClick(ev: MouseEvent) {
     star.title = star.getAttribute("aria-label")!;
     return;
   }
+  const fold = el.closest?.("[data-activity]") as HTMLElement | null;
+  if (fold) return setActivity(fold.dataset.activity as ActivityState);
   const size = el.closest?.("[data-widget-size]") as HTMLElement | null;
   if (size) {
     const [page, id] = size.dataset.widgetSize!.split(":");
@@ -225,7 +235,11 @@ function onClick(ev: MouseEvent) {
   if (el.closest?.("[data-widget-add]")) {
     const pick = main.value?.querySelector<HTMLSelectElement>("#widgets select")?.value || "";
     const [page, id] = pick.split(":");
-    if (page && id && !hasPin("widgets", page, id)) { togglePin("widgets", { page, id, label: "" }); anchored = ""; router.replace({ query: route.query, hash: `#${id}` }); }
+    if (page === "home") setActivity("");
+    else if (page && id && !hasPin("widgets", page, id)) togglePin("widgets", { page, id, label: "" });
+    else return;
+    anchored = "";
+    router.replace({ query: route.query, hash: `#${id}` });
     return;
   }
   const btn = el.closest?.("[data-preview], [data-download]") as HTMLElement | null;
@@ -243,6 +257,25 @@ function onClick(ev: MouseEvent) {
 // widgets on Profile: drag a handle onto another widget (before or after it, in the left or right column), or move
 // it with the arrow keys on its handle (up and down: the order; left and right: the column of a half widget)
 let dragFrom = -1;
+// while dragging the page follows the pointer to the band and the window's bottom, so a widget reaches any other
+let dragY = -1, following = 0;
+const trackDrag = (ev: DragEvent) => { dragY = ev.clientY; };
+const dragLeft = (ev: DragEvent) => { if (!ev.relatedTarget) dragY = -1; };
+function followDrag() {
+  window.scrollBy(0, dragScroll(dragY, document.querySelector(".topbar")?.getBoundingClientRect().bottom || 0, window.innerHeight));
+  following = requestAnimationFrame(followDrag);
+}
+function startFollowing() {
+  document.addEventListener("dragover", trackDrag);
+  document.addEventListener("dragleave", dragLeft);
+  following = requestAnimationFrame(followDrag);
+}
+function stopFollowing() {
+  document.removeEventListener("dragover", trackDrag);
+  document.removeEventListener("dragleave", dragLeft);
+  cancelAnimationFrame(following);
+  dragY = -1;
+}
 function widgetAt(ev: DragEvent) {
   const grid = main.value?.querySelector<HTMLElement>(".widgets");
   if (!grid || dragFrom < 0) return null;
@@ -267,9 +300,10 @@ function onDragStart(ev: DragEvent) {
   dragFrom = +w.dataset.i!;
   ev.dataTransfer.effectAllowed = "move";
   ev.dataTransfer.setData("text/plain", w.dataset.widget!);
-  ev.dataTransfer.setDragImage(w, 24, 24);
+  ev.dataTransfer.setDragImage(w.querySelector("h2") || w, 24, 24); // its title: a tall widget's image would hide where it lands
   hideTip();
   w.classList.add("dragging");
+  startFollowing();
 }
 function onDragOver(ev: DragEvent) {
   const t = widgetAt(ev);
@@ -280,6 +314,7 @@ function onDragOver(ev: DragEvent) {
 function onDrop(ev: DragEvent) {
   const t = widgetAt(ev);
   clearDrop();
+  stopFollowing(); // the drop redraws the page: dragend may never reach the handle
   if (!t) return;
   ev.preventDefault();
   const moved = pins.widgets[dragFrom];
@@ -290,6 +325,7 @@ function onDrop(ev: DragEvent) {
 }
 function onDragEnd() {
   dragFrom = -1;
+  stopFollowing();
   clearDrop();
   main.value?.querySelectorAll(".widget.dragging").forEach((w) => w.classList.remove("dragging"));
 }

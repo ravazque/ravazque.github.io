@@ -33,3 +33,43 @@ test("null and invalid fall back to the intra blue, the default accent", () => {
 });
 
 test("contrast of black on white is 21", () => assert.equal(Math.round(contrast("#000000", "#ffffff")), 21));
+
+test("a dark accent stays dark mode in dark mode: what is picked on the band is the page's ground, not a white block", () => {
+  for (const hex of ["#1b5971", "#c2301d"]) {
+    const { light, dark } = accentTokens(hex);
+    assert.equal(dark["--on-accent"], "#ffffff");
+    assert.equal(dark["--band-pick"], "#0f1214");
+    assert.ok(contrast(dark["--band-pick-ink"], dark["--band-pick"]) >= 4.5);
+    assert.equal(light["--band-pick"], light["--on-accent"]);
+  }
+});
+
+test("a light accent keeps its dark text on the band and its pick, as before", () => {
+  const { dark } = accentTokens("#e39f0b");
+  assert.equal(dark["--band-pick"], dark["--on-accent"]);
+  assert.equal(dark["--band-pick-ink"], dark["--accent"]);
+});
+
+test("lightened for a dark page, a colour keeps its hue and saturation instead of going grey", () => {
+  const sat = (hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255); const hi = Math.max(r, g, b), lo = Math.min(r, g, b); return (hi - lo) / (1 - Math.abs(hi + lo - 1)); };
+  const { dark } = accentTokens("#1b5971");
+  assert.ok(contrast(dark["--accent-ink"], "#0f1214") >= 4.5);
+  assert.ok(sat(dark["--accent-ink"]) > 0.5, dark["--accent-ink"]);
+  assert.ok(sat(dark["--accent-data"]) > 0.5, dark["--accent-data"]);
+});
+
+test("the accent's rules over live panels: the raw colour in light, the data colour in dark", () => {
+  const { light, dark } = accentTokens("#1b5971");
+  assert.equal(light["--accent-line"], light["--accent"]);
+  assert.equal(dark["--accent-line"], dark["--accent-data"]);
+});
+
+test("a coalition's colour stays apart from the charts' red and green", () => {
+  const { light, dark } = accentTokens("#c2301d");
+  assert.notEqual(light["--accent-data"], "#c2301d");
+  assert.ok(contrast(light["--accent-data"], "#c2402f") > 1.3, light["--accent-data"]);
+  assert.equal(light["--accent"], "#c2301d");
+  assert.equal(accentTokens("#1b5971").light["--accent-data"], "#1b5971");
+  assert.equal(accentTokens("#e39f0b").dark["--accent-data"], "#e39f0b");
+  assert.ok(dark["--accent-data"]);
+});

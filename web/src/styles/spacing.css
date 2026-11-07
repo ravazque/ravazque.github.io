@@ -1,6 +1,6 @@
 /* ============================================================================================================
    SPACING AND LINES YOU CAN TUNE BY HAND
-   One part per page (Projects, Evaluations, Coalition, People, Campus). Each starts with the page's own lines (its
+   One part per page (Profile's Activity, Projects, Evaluations, Coalition, People, Campus). Each starts with the page's own lines (its
    big title, the section index, the footer), then one block per section, top to bottom, with every distance and
    every line of that section, each on its own line: change one and nothing else moves. Values are in px.
 
@@ -59,6 +59,31 @@
   --divider-line: 1px;
   --indent-line: 2px;
   --foot-line: 4px;
+  --bar-max: 96px;             /* the widest a chart's bar gets: few bars grow up to this, many get thinner on their own (a section can set its own) */
+}
+
+/* ================================================ PROFILE ================================================== */
+main[data-page="web-home"] #activity {
+  --sections: 56px;            /* the three figures → "Activity", phones */
+  --sections-laptop: 88px;     /* the same, laptops */
+  --charts-top: 36px;          /* "Activity" → the lists */
+  --charts-y: 40px;            /* lists one under the other */
+  --charts-x: 12px;            /* lists side by side, phones and tablets */
+  --charts-x-laptop: 48px;     /* the same, laptops */
+  /* lines (0 hides one), and under each titled chart the space between its title and it */
+  --title-line: 4px;           /* under "Activity" */
+  --title-pad: 12px;           /* "Activity" → its line */
+  --achievements-line: 2px;    /* over "Achievements" */
+  --achievements-gap: 10px;    /* "Achievements" → the list */
+  --events-line: 2px;          /* over "Events attended" */
+  --events-gap: 10px;          /* "Events attended": its note → the list */
+  --misc-line: 2px;            /* over "Titles, expertises and quests" */
+  --campuses-line: 2px;        /* over "Campuses" */
+  --campuses-gap: 10px;        /* "Campuses" → the list */
+  --misc-gap: 10px;            /* "Titles, expertises and quests" → the list */
+  --block-pad: 12px;           /* each of those lines → what is under it */
+  --list-line: 1px;            /* between the rows of the lists */
+  --indent-line: 2px;          /* left of an achievement's other levels */
 }
 
 /* ================================================ PROJECTS ================================================= */
@@ -149,26 +174,6 @@ main[data-page="web-projects"] #timeline {
   --axis-line: 2px;            /* the charts' baselines */
   --key-box: 1px;              /* the frames of the keys */
 }
-main[data-page="web-projects"] #activity {
-  --sections: 56px;            /* Projects and retries → "Activity", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --charts-top: 36px;          /* "Activity" → the lists */
-  --charts-y: 40px;            /* lists one under the other */
-  --charts-x: 12px;            /* lists side by side, phones and tablets */
-  --charts-x-laptop: 48px;     /* the same, laptops */
-  /* lines (0 hides one), and under each titled chart the space between its title and it */
-  --title-line: 4px;           /* under "Activity" */
-  --title-pad: 12px;           /* "Activity" → its line */
-  --achievements-line: 2px;    /* over "Achievements" */
-  --achievements-gap: 10px;    /* "Achievements" → the list */
-  --events-line: 2px;          /* over "Events attended" */
-  --events-gap: 10px;          /* "Events attended": its note → the list */
-  --misc-line: 2px;            /* over "Titles, expertises and quests" */
-  --misc-gap: 10px;            /* "Titles, expertises and quests" → the list */
-  --block-pad: 12px;           /* each of those lines → what is under it */
-  --list-line: 1px;            /* between the rows of the lists */
-  --indent-line: 2px;          /* left of an achievement's other levels */
-}
 
 /* ================================================ EVALUATIONS ============================================== */
 main[data-page="web-evaluations"] {
@@ -245,6 +250,8 @@ main[data-page="web-evaluations"] #when {
   --facts-gap: 36px;           /* the facts → the charts */
   --charts-y: 40px;            /* charts one under the other, phones and tablets */
   --charts-y-laptop: 0px;      /* the two grids on top → Duration and Booking lead time, laptops */
+  --duration-top: 0px;         /* more space over the lines of Duration and Booking lead time, phones and tablets */
+  --duration-top-laptop: 32px; /* the same, laptops */
   --charts-x: 12px;            /* charts side by side, phones and tablets */
   --charts-x-laptop: 48px;     /* the same, laptops */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
@@ -343,19 +350,21 @@ main[data-page="web-coalition"] #standing {
 main[data-page="web-coalition"] #bonus {
   --sections: 56px;            /* Coalitions → "Logtime bonus", phones */
   --sections-laptop: 88px;     /* the same, laptops */
-  --charts-top: 36px;          /* "Logtime bonus" → its figures */
-  --charts-y: 40px;            /* the figures and the bonus history one under the other */
-  --charts-x: 12px;            /* the figures and the bonus history side by side, phones and tablets */
+  --charts-top: 36px;          /* "Logtime bonus" → its hours */
+  --charts-y: 40px;            /* the hours and the bonus history one under the other */
+  --charts-x: 12px;            /* the hours and the bonus history side by side, phones and tablets */
   --charts-x-laptop: 48px;     /* the same, laptops */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Logtime bonus" */
   --title-pad: 12px;           /* "Logtime bonus" → its line */
-  --last-week-line: 2px;       /* over "Last 7 days" */
-  --tier-50-line: 2px;         /* over "50 h · +500" */
-  --tier-80-line: 2px;         /* over "80 h · +1,000" */
-  --kpi-pad: 10px;             /* each of those three lines → what is under it */
+  --last-week-line: 2px;       /* over the hours of the last 7 days */
+  --tier-50-line: 2px;         /* over "50h · +500" */
+  --tier-80-line: 2px;         /* over "80h · +1,000" */
+  --kpi-pad: 10px;             /* the line over each bonus → what is under it */
+  --drops-gap: 24px;           /* the bonuses → "Next hours leaving the window" */
   --history-line: 2px;         /* over "Every bonus so far" */
   --history-gap: 10px;         /* "Every bonus so far": its note (when it has one) → the list */
+  --history-height: 340px;     /* "Every bonus so far" on phones and half widgets; on a laptop it reaches the base of the panel beside it */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the bonuses */
 }
@@ -376,7 +385,7 @@ main[data-page="web-coalition"] #coal-points {
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the baseline of Points per month */
   --key-box: 1px;              /* the frame of the key */
-  /* "Points by source" sits centred in its column: the space above it follows the chart beside it */
+  --sources-gap: 16px;         /* "Points by source" → the bars */
 }
 
 /* ================================================ PEOPLE =================================================== */
@@ -458,9 +467,14 @@ main[data-page="web-campus"] #rhythm {
   --axis-line: 2px;            /* the baseline of the day's 24 hours */
   --key-box: 1px;              /* the frame of the day's parts */
 }
+#rhythm {                      /* "When you work", here and as a widget on Profile */
+  --hours-title-gap: 22px;     /* its big text ("Early hours", "Afternoon") → the bars */
+  --hours-gap: 2px;            /* between the bars of the 24 hours (0 joins them) */
+  --hours-key-gap: 16px;       /* the numbers under the bars → the key */
+}
 main[data-page="web-campus"] #seats {
   --sections: 30px;            /* Rhythm → "Where you sat", phones */
-  --sections-laptop: 0px;      /* the same, laptops */
+  --sections-laptop: -10px;      /* the same, laptops */
   --charts-top: 36px;          /* "Where you sat" → the plan */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Where you sat" */
@@ -518,6 +532,8 @@ main[data-page="web-campus"] #where {
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the chart's baseline */
   --key-box: 1px;              /* the frame of the chart's key */
+  --where-key-x: 0px;          /* move the key sideways: to the right, negative to the left */
+  --where-key-y: 0px;          /* move the key: down, negative up */
   --table-head-line: 2px;      /* under the table's column names */
   --table-row-line: 1px;       /* between the table's rows */
 }
@@ -528,31 +544,31 @@ main[data-page="web-campus"] #where {
    ============================================================================================================ */
 /* a negative value is invalid for padding and gaps (the browser reads 0), so in each of them a margin takes what is
    under 0: min(0px, x) is 0 until x goes negative */
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section { padding-top: var(--sections, 56px); margin-top: min(0px, var(--sections, 56px)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section, main[data-page="web-home"] section#activity { padding-top: var(--sections, 56px); margin-top: min(0px, var(--sections, 56px)); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .toc + .sec > section:first-child { padding-top: var(--page-top, 40px); margin-top: min(0px, var(--page-top, 40px)); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) [data-panel]::before, main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) :is(.kpis, .rates) > div::before { content: ""; display: block; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) [data-panel]::before { margin-bottom: min(0px, var(--block-pad)); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) :is(.kpis, .rates) > div::before { margin-bottom: min(0px, var(--kpi-pad)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) [data-panel]::before, main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) :is(.kpis, .rates) > div::before, main[data-page="web-home"] #activity [data-panel]::before, main[data-page="web-home"] #activity :is(.kpis, .rates) > div::before { content: ""; display: block; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) [data-panel]::before, main[data-page="web-home"] #activity [data-panel]::before { margin-bottom: min(0px, var(--block-pad)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) :is(.kpis, .rates) > div::before, main[data-page="web-home"] #activity :is(.kpis, .rates) > div::before { margin-bottom: min(0px, var(--kpi-pad)); }
 /* each space is one value: the margin on the other side of it is 0 (two margins would merge into the larger) */
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) { margin-bottom: var(--title-gap, 20px); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .panel-head > h2 { margin-bottom: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head):has(+ .cols) { margin-bottom: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + .cols { margin-top: var(--charts-top, 36px); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + :not(.cols) { margin-top: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede { margin-bottom: 0; padding-bottom: var(--info-pad, 0px); border-bottom: var(--info-line, 0px) solid var(--rule-strong); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede::after { content: ""; display: block; margin-top: min(0px, var(--info-pad, 0px)); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede + * { margin-top: var(--info-gap, 20px); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls) { margin-bottom: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls) + * { margin-top: var(--facts-gap, 36px); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .controls + * > .controls-after:first-child { margin-top: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .controls-after + .cols { margin-top: var(--count-gap, 36px); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .controls-after + .cols .table-wrap { margin-top: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols { --cols-y: var(--charts-y, 40px); --cols-x: var(--charts-x, 12px); row-gap: var(--cols-y); column-gap: var(--cols-x);
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head), main[data-page="web-home"] section#activity > :is(h2, .panel-head) { margin-bottom: var(--title-gap, 20px); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .panel-head > h2, main[data-page="web-home"] section#activity > .panel-head > h2 { margin-bottom: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head):has(+ .cols), main[data-page="web-home"] section#activity > :is(h2, .panel-head):has(+ .cols) { margin-bottom: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + .cols, main[data-page="web-home"] section#activity > :is(h2, .panel-head) + .cols { margin-top: var(--charts-top, 36px); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + :not(.cols), main[data-page="web-home"] section#activity > :is(h2, .panel-head) + :not(.cols) { margin-top: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede, main[data-page="web-home"] section#activity > .lede { margin-bottom: 0; padding-bottom: var(--info-pad, 0px); border-bottom: var(--info-line, 0px) solid var(--rule-strong); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede::after, main[data-page="web-home"] section#activity > .lede::after { content: ""; display: block; margin-top: min(0px, var(--info-pad, 0px)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede + *, main[data-page="web-home"] section#activity > .lede + * { margin-top: var(--info-gap, 20px); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls), main[data-page="web-home"] section#activity > :is(.facts, .note, .controls) { margin-bottom: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls) + *, main[data-page="web-home"] section#activity > :is(.facts, .note, .controls) + * { margin-top: var(--facts-gap, 36px); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .controls + * > .controls-after:first-child, main[data-page="web-home"] section#activity > .controls + * > .controls-after:first-child { margin-top: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .controls-after + .cols, main[data-page="web-home"] #activity .controls-after + .cols { margin-top: var(--count-gap, 36px); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .controls-after + .cols .table-wrap, main[data-page="web-home"] #activity .controls-after + .cols .table-wrap { margin-top: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols, main[data-page="web-home"] #activity .cols { --cols-y: var(--charts-y, 40px); --cols-x: var(--charts-x, 12px); row-gap: var(--cols-y); column-gap: var(--cols-x);
   margin-bottom: max(0px, calc(0px - var(--cols-y))); margin-right: max(0px, calc(0px - var(--cols-x))); }  /* gives back what the last row and column lose */
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols > * { margin-bottom: min(0px, var(--cols-y)); margin-right: min(0px, var(--cols-x)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols > *, main[data-page="web-home"] #activity .cols > * { margin-bottom: min(0px, var(--cols-y)); margin-right: min(0px, var(--cols-x)); }
 @media (min-width: 960px) {
-  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section { padding-top: var(--sections-laptop, 88px); margin-top: min(0px, var(--sections-laptop, 88px)); }
-  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols { --cols-y: var(--charts-y-laptop, var(--charts-y, 40px)); --cols-x: var(--charts-x-laptop, 48px); }
+  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section, main[data-page="web-home"] section#activity { padding-top: var(--sections-laptop, 88px); margin-top: min(0px, var(--sections-laptop, 88px)); }
+  main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) .cols, main[data-page="web-home"] #activity .cols { --cols-y: var(--charts-y-laptop, var(--charts-y, 40px)); --cols-x: var(--charts-x-laptop, 48px); }
 }
 /* Everyone you met: the search → its table, one value */
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls { margin-bottom: 0; }
@@ -566,9 +582,10 @@ main[data-page="web-projects"] #domains [data-panel="domains"] { border-top-widt
 main[data-page="web-projects"] #timeline [data-panel="timeline"] { border-top-width: var(--attempts-line, var(--block-line)); }
 main[data-page="web-projects"] #timeline [data-panel="cum-retries"] { border-top-width: var(--cum-retries-line, var(--block-line)); }
 main[data-page="web-projects"] #timeline [data-panel="cum-validated"] { border-top-width: var(--cum-validated-line, var(--block-line)); }
-main[data-page="web-projects"] #activity [data-panel="achievements"] { border-top-width: var(--achievements-line, var(--block-line)); }
-main[data-page="web-projects"] #activity [data-panel="events"] { border-top-width: var(--events-line, var(--block-line)); }
-main[data-page="web-projects"] #activity [data-panel="misc"] { border-top-width: var(--misc-line, var(--block-line)); }
+main[data-page="web-home"] #activity [data-panel="achievements"] { border-top-width: var(--achievements-line, var(--block-line)); }
+main[data-page="web-home"] #activity [data-panel="events"] { border-top-width: var(--events-line, var(--block-line)); }
+main[data-page="web-home"] #activity [data-panel="misc"] { border-top-width: var(--misc-line, var(--block-line)); }
+main[data-page="web-home"] #activity [data-panel="campuses"] { border-top-width: var(--campuses-line, var(--block-line)); }
 main[data-page="web-evaluations"] #community [data-panel="kpis"] .kpis > div:nth-child(1) { border-top-width: var(--hours-line, var(--kpi-line)); }
 main[data-page="web-evaluations"] #community [data-panel="kpis"] .kpis > div:nth-child(2) { border-top-width: var(--evaluated-line, var(--kpi-line)); }
 main[data-page="web-evaluations"] #community [data-panel="kpis"] .kpis > div:nth-child(3) { border-top-width: var(--evaluators-line, var(--kpi-line)); }
@@ -594,9 +611,11 @@ main[data-page="web-evaluations"] #log [data-panel="table-log"] { border-top-wid
 main[data-page="web-coalition"] #standing [data-panel="coalitions"] { border-top-width: var(--madrid-line, var(--block-line)); }
 main[data-page="web-coalition"] #standing [data-panel="coal-recent"] { border-top-width: var(--all-points-line, var(--block-line)); }
 main[data-page="web-coalition"] #bonus [data-panel="bonus-history"] { border-top-width: var(--history-line, var(--block-line)); }
-main[data-page="web-coalition"] #bonus [data-panel="coal-bonus"] .kpis > div:nth-child(1) { border-top-width: var(--last-week-line, var(--kpi-line)); }
-main[data-page="web-coalition"] #bonus [data-panel="coal-bonus"] .kpis > div:nth-child(2) { border-top-width: var(--tier-50-line, var(--kpi-line)); }
-main[data-page="web-coalition"] #bonus [data-panel="coal-bonus"] .kpis > div:nth-child(3) { border-top-width: var(--tier-80-line, var(--kpi-line)); }
+#bonus [data-panel="coal-bonus"] { border-top: var(--last-week-line, var(--block-line)) solid var(--rule-strong); padding-top: var(--block-pad); }
+main[data-page="web-coalition"] #bonus .tier { padding-top: var(--kpi-pad); }
+main[data-page="web-coalition"] #bonus .tier:nth-child(1) { border-top-width: var(--tier-50-line, var(--kpi-line)); }
+main[data-page="web-coalition"] #bonus .tier:nth-child(2) { border-top-width: var(--tier-80-line, var(--kpi-line)); }
+main[data-page="web-coalition"] #bonus .drops-title { margin-top: var(--drops-gap); }
 main[data-page="web-coalition"] #coal-points [data-panel="coal-sources"] { border-top-width: var(--sources-line, var(--block-line)); }
 main[data-page="web-coalition"] #coal-points [data-panel="coal-months"] { border-top-width: var(--months-line, var(--block-line)); }
 main[data-page="web-people"] #who [data-panel="correctors"] { border-top-width: var(--correctors-line, var(--block-line)); }
@@ -609,6 +628,9 @@ main[data-page="web-campus"] #days [data-panel="hours-month"] { border-top-width
 main[data-page="web-campus"] #days [data-panel="heat-presence"] { border-top-width: var(--weekday-hour-line, var(--block-line)); }
 main[data-page="web-campus"] #sessions [data-panel="table-sessions"] { border-top-width: var(--sessions-table-line, var(--block-line)); }
 main[data-page="web-campus"] #where [data-panel="where-clusters"] { border-top-width: var(--where-chart-line, var(--block-line)); }
+main[data-page="web-campus"] #where [data-panel="where-clusters"] .legend { position: relative; left: var(--where-key-x, 0px); top: var(--where-key-y, 0px); }
+main[data-page="web-evaluations"] #when :is([data-panel="duration"], [data-panel="lead"]) { margin-top: var(--duration-top, 0px); }
+@media (min-width: 960px) { main[data-page="web-evaluations"] #when :is([data-panel="duration"], [data-panel="lead"]) { margin-top: var(--duration-top-laptop, var(--duration-top, 0px)); } }
 main[data-page="web-campus"] #where [data-panel="where-not-logged"] { border-top-width: var(--not-logged-line, var(--block-line)); }
 /* the space between each block title and its chart: one value (the margin on the other side is 0); laptops
    take the -laptop value when there is one */
@@ -621,9 +643,10 @@ main[data-page="web-projects"] #pace [data-panel="promo"] > :is(h3, .block-head)
 main[data-page="web-projects"] #timeline [data-panel="timeline"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #timeline [data-panel="timeline"] > :is(h3, .block-head) + .note + * { margin-top: var(--attempts-gap); }
 main[data-page="web-projects"] #timeline [data-panel="cum-retries"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #timeline [data-panel="cum-retries"] > :is(h3, .block-head) + .note + * { margin-top: var(--cum-retries-gap); }
 main[data-page="web-projects"] #timeline [data-panel="cum-validated"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #timeline [data-panel="cum-validated"] > :is(h3, .block-head) + .note + * { margin-top: var(--cum-validated-gap); }
-main[data-page="web-projects"] #activity [data-panel="achievements"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #activity [data-panel="achievements"] > :is(h3, .block-head) + .note + * { margin-top: var(--achievements-gap); }
-main[data-page="web-projects"] #activity [data-panel="events"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #activity [data-panel="events"] > :is(h3, .block-head) + .note + * { margin-top: var(--events-gap); }
-main[data-page="web-projects"] #activity [data-panel="misc"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #activity [data-panel="misc"] > :is(h3, .block-head) + .note + * { margin-top: var(--misc-gap); }
+main[data-page="web-home"] #activity [data-panel="achievements"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="achievements"] > :is(h3, .block-head) + .note + * { margin-top: var(--achievements-gap); }
+main[data-page="web-home"] #activity [data-panel="events"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="events"] > :is(h3, .block-head) + .note + * { margin-top: var(--events-gap); }
+main[data-page="web-home"] #activity [data-panel="misc"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="misc"] > :is(h3, .block-head) + .note + * { margin-top: var(--misc-gap); }
+main[data-page="web-home"] #activity [data-panel="campuses"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="campuses"] > :is(h3, .block-head) + .note + * { margin-top: var(--campuses-gap); }
 main[data-page="web-evaluations"] :is([data-panel="by-group"], [data-panel="depth-projects"], [data-panel="recv-monthly"], [data-panel="marks"], [data-panel="cum-evals"], [data-panel="cum-out"], [data-panel="heat-recv"], [data-panel="heat-given"], [data-panel="duration"], [data-panel="lead"], [data-panel="low-feedback"], [data-panel="table-feedback"], [data-panel="points"], [data-panel="table-reasons"]) > :is(h3, .block-head):not(:has(+ .note)),
 main[data-page="web-evaluations"] :is([data-panel="by-group"], [data-panel="depth-projects"], [data-panel="recv-monthly"], [data-panel="marks"], [data-panel="cum-evals"], [data-panel="cum-out"], [data-panel="heat-recv"], [data-panel="heat-given"], [data-panel="duration"], [data-panel="lead"], [data-panel="low-feedback"], [data-panel="table-feedback"], [data-panel="points"], [data-panel="table-reasons"]) > :is(h3, .block-head) + .note { margin-bottom: 0; }
 main[data-page="web-evaluations"] :is([data-panel="by-group"], [data-panel="depth-projects"], [data-panel="recv-monthly"], [data-panel="marks"], [data-panel="cum-evals"], [data-panel="cum-out"], [data-panel="heat-recv"], [data-panel="heat-given"], [data-panel="duration"], [data-panel="lead"], [data-panel="low-feedback"], [data-panel="table-feedback"], [data-panel="points"], [data-panel="table-reasons"]) > :is(h3, .block-head) + :not(.note) > :first-child,
@@ -642,13 +665,14 @@ main[data-page="web-evaluations"] #feedback [data-panel="low-feedback"] > :is(h3
 main[data-page="web-evaluations"] #feedback [data-panel="table-feedback"] > :is(h3, .block-head) + :not(.note), main[data-page="web-evaluations"] #feedback [data-panel="table-feedback"] > :is(h3, .block-head) + .note + * { margin-top: var(--criteria-gap); }
 main[data-page="web-evaluations"] #points [data-panel="points"] > :is(h3, .block-head) + :not(.note), main[data-page="web-evaluations"] #points [data-panel="points"] > :is(h3, .block-head) + .note + * { margin-top: var(--balance-gap); }
 main[data-page="web-evaluations"] #points [data-panel="table-reasons"] > :is(h3, .block-head) + :not(.note), main[data-page="web-evaluations"] #points [data-panel="table-reasons"] > :is(h3, .block-head) + .note + * { margin-top: var(--reasons-gap); }
-main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-months"]) > :is(h3, .block-head):not(:has(+ .note)),
-main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-months"]) > :is(h3, .block-head) + .note { margin-bottom: 0; }
-main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-months"]) > :is(h3, .block-head) + :not(.note) > :first-child,
-main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-months"]) > :is(h3, .block-head) + .note + * > :first-child { margin-top: 0; }
+main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-sources"], [data-panel="coal-months"]) > :is(h3, .block-head):not(:has(+ .note)),
+main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-sources"], [data-panel="coal-months"]) > :is(h3, .block-head) + .note { margin-bottom: 0; }
+main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-sources"], [data-panel="coal-months"]) > :is(h3, .block-head) + :not(.note) > :first-child,
+main[data-page="web-coalition"] :is([data-panel="coalitions"], [data-panel="coal-recent"], [data-panel="bonus-history"], [data-panel="coal-sources"], [data-panel="coal-months"]) > :is(h3, .block-head) + .note + * > :first-child { margin-top: 0; }
 main[data-page="web-coalition"] #standing [data-panel="coalitions"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #standing [data-panel="coalitions"] > :is(h3, .block-head) + .note + * { margin-top: var(--madrid-gap); }
 main[data-page="web-coalition"] #standing [data-panel="coal-recent"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #standing [data-panel="coal-recent"] > :is(h3, .block-head) + .note + * { margin-top: var(--all-points-gap); }
 main[data-page="web-coalition"] #bonus [data-panel="bonus-history"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #bonus [data-panel="bonus-history"] > :is(h3, .block-head) + .note + * { margin-top: var(--history-gap); }
+main[data-page="web-coalition"] #coal-points [data-panel="coal-sources"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #coal-points [data-panel="coal-sources"] > :is(h3, .block-head) + .note + * { margin-top: var(--sources-gap); }
 main[data-page="web-coalition"] #coal-points [data-panel="coal-months"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #coal-points [data-panel="coal-months"] > :is(h3, .block-head) + .note + * { margin-top: var(--months-gap); }
 main[data-page="web-people"] :is([data-panel="correctors"]) > :is(h3, .block-head):not(:has(+ .note)),
 main[data-page="web-people"] :is([data-panel="correctors"]) > :is(h3, .block-head) + .note { margin-bottom: 0; }
@@ -670,9 +694,10 @@ main[data-page="web-campus"] #where [data-panel="where-not-logged"] > :is(h3, .b
   main[data-page="web-projects"] #timeline [data-panel="timeline"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #timeline [data-panel="timeline"] > :is(h3, .block-head) + .note + * { margin-top: var(--attempts-gap-laptop, var(--attempts-gap)); }
   main[data-page="web-projects"] #timeline [data-panel="cum-retries"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #timeline [data-panel="cum-retries"] > :is(h3, .block-head) + .note + * { margin-top: var(--cum-retries-gap-laptop, var(--cum-retries-gap)); }
   main[data-page="web-projects"] #timeline [data-panel="cum-validated"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #timeline [data-panel="cum-validated"] > :is(h3, .block-head) + .note + * { margin-top: var(--cum-validated-gap-laptop, var(--cum-validated-gap)); }
-  main[data-page="web-projects"] #activity [data-panel="achievements"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #activity [data-panel="achievements"] > :is(h3, .block-head) + .note + * { margin-top: var(--achievements-gap-laptop, var(--achievements-gap)); }
-  main[data-page="web-projects"] #activity [data-panel="events"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #activity [data-panel="events"] > :is(h3, .block-head) + .note + * { margin-top: var(--events-gap-laptop, var(--events-gap)); }
-  main[data-page="web-projects"] #activity [data-panel="misc"] > :is(h3, .block-head) + :not(.note), main[data-page="web-projects"] #activity [data-panel="misc"] > :is(h3, .block-head) + .note + * { margin-top: var(--misc-gap-laptop, var(--misc-gap)); }
+  main[data-page="web-home"] #activity [data-panel="achievements"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="achievements"] > :is(h3, .block-head) + .note + * { margin-top: var(--achievements-gap-laptop, var(--achievements-gap)); }
+  main[data-page="web-home"] #activity [data-panel="events"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="events"] > :is(h3, .block-head) + .note + * { margin-top: var(--events-gap-laptop, var(--events-gap)); }
+  main[data-page="web-home"] #activity [data-panel="misc"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="misc"] > :is(h3, .block-head) + .note + * { margin-top: var(--misc-gap-laptop, var(--misc-gap)); }
+  main[data-page="web-home"] #activity [data-panel="campuses"] > :is(h3, .block-head) + :not(.note), main[data-page="web-home"] #activity [data-panel="campuses"] > :is(h3, .block-head) + .note + * { margin-top: var(--campuses-gap-laptop, var(--campuses-gap)); }
   main[data-page="web-evaluations"] #by-group [data-panel="by-group"] > :is(h3, .block-head) + :not(.note), main[data-page="web-evaluations"] #by-group [data-panel="by-group"] > :is(h3, .block-head) + .note + * { margin-top: var(--by-milestone-gap-laptop, var(--by-milestone-gap)); }
   main[data-page="web-evaluations"] #by-group [data-panel="depth-projects"] > :is(h3, .block-head) + :not(.note), main[data-page="web-evaluations"] #by-group [data-panel="depth-projects"] > :is(h3, .block-head) + .note + * { margin-top: var(--corrected-gap-laptop, var(--corrected-gap)); }
   main[data-page="web-evaluations"] #over-time [data-panel="recv-monthly"] > :is(h3, .block-head) + :not(.note), main[data-page="web-evaluations"] #over-time [data-panel="recv-monthly"] > :is(h3, .block-head) + .note + * { margin-top: var(--received-month-gap-laptop, var(--received-month-gap)); }
@@ -690,6 +715,7 @@ main[data-page="web-campus"] #where [data-panel="where-not-logged"] > :is(h3, .b
   main[data-page="web-coalition"] #standing [data-panel="coalitions"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #standing [data-panel="coalitions"] > :is(h3, .block-head) + .note + * { margin-top: var(--madrid-gap-laptop, var(--madrid-gap)); }
   main[data-page="web-coalition"] #standing [data-panel="coal-recent"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #standing [data-panel="coal-recent"] > :is(h3, .block-head) + .note + * { margin-top: var(--all-points-gap-laptop, var(--all-points-gap)); }
   main[data-page="web-coalition"] #bonus [data-panel="bonus-history"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #bonus [data-panel="bonus-history"] > :is(h3, .block-head) + .note + * { margin-top: var(--history-gap-laptop, var(--history-gap)); }
+  main[data-page="web-coalition"] #coal-points [data-panel="coal-sources"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #coal-points [data-panel="coal-sources"] > :is(h3, .block-head) + .note + * { margin-top: var(--sources-gap-laptop, var(--sources-gap)); }
   main[data-page="web-coalition"] #coal-points [data-panel="coal-months"] > :is(h3, .block-head) + :not(.note), main[data-page="web-coalition"] #coal-points [data-panel="coal-months"] > :is(h3, .block-head) + .note + * { margin-top: var(--months-gap-laptop, var(--months-gap)); }
   main[data-page="web-people"] #who [data-panel="correctors"] > :is(h3, .block-head) + :not(.note), main[data-page="web-people"] #who [data-panel="correctors"] > :is(h3, .block-head) + .note + * { margin-top: var(--correctors-gap-laptop, var(--correctors-gap)); }
   main[data-page="web-campus"] #days [data-panel="calendar"] > :is(h3, .block-head) + :not(.note), main[data-page="web-campus"] #days [data-panel="calendar"] > :is(h3, .block-head) + .note + * { margin-top: var(--every-day-gap-laptop, var(--every-day-gap)); }

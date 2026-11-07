@@ -107,7 +107,14 @@ export class Fmt {
     return this.t("unit.hm", { h: Math.floor(mins / 60), m: String(mins % 60).padStart(2, "0") });
   };
 
-  nb = (v: number | null | undefined, unit: string, d = 1) => `${this.num(v, d)} ${unit}`;
+  /** A number and its unit: hours and minutes stick to it ("12.5h"), the others keep their space. */
+  nb = (v: number | null | undefined, unit: string, d = 1) => `${this.num(v, d)}${unit === "h" || unit === "m" ? "" : "\u00a0"}${unit}`;
+
+  /** A span of time ahead, in the two units that matter: "5d 23h", under a day "3h 05m". */
+  left = (ms: number) => {
+    const h = Math.max(0, Math.round(ms / 36e5));
+    return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : this.hm(Math.max(0, ms) / 1000);
+  };
 
   monthLabel = (ym: string) => `${this.months[+ym.slice(5, 7) - 1]} ${ym.slice(2, 4)}`;
 

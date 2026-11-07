@@ -22,7 +22,7 @@ import (
 const secret = "0123456789abcdef0123456789abcdef-test"
 
 func settings() app.Settings {
-	return app.Settings{BaseURL: "https://localhost", FTUID: "u1", FTSecret: "s1", OAuthApp: 1, SessionSecret: secret,
+	return app.Settings{BaseURL: "https://localhost", FTUID: "u1", FTSecret: "s1", SessionSecret: secret,
 		CooldownS: 3600, CacheS: 3600, SessionS: 604800, InsecureCookies: true, ContactEmail: "c@example.invalid",
 		ControllerName: "Test", OwnerLogin: "tmidway"}
 }
@@ -248,10 +248,6 @@ func TestViewTodayAndConsent(t *testing.T) {
 	}
 	if r := e.do(t, "GET", "/api/me/view?period=bogus", nil, nil); r.StatusCode != 200 || !strings.Contains(readAll(r), `"period":"student"`) {
 		t.Fatal("unknown period falls back to the default")
-	}
-	r = e.do(t, "GET", "/api/me/today", nil, nil)
-	if body := readAll(r); r.StatusCode != 200 || !strings.Contains(body, `"week"`) || !strings.Contains(body, `"bonus"`) {
-		t.Fatal(body)
 	}
 	e.s.M.Delete(e.s.M.Keys("consent:*")...)
 	if r := e.do(t, "GET", "/api/me/view", nil, nil); r.StatusCode != 409 {

@@ -5,6 +5,13 @@ import { enhanceSelect } from "../legacy/controls.js";
 
 const $$ = <T extends Element = HTMLElement>(s: string, root: ParentNode = document) => [...root.querySelectorAll<T>(s)] as T[];
 
+/** How far the page moves in a frame while dragging: near the band or the window's bottom, faster the closer to the edge. */
+export function dragScroll(y: number, top: number, height: number, zone = 110, most = 24): number {
+  if (y < 0) return 0;
+  const up = top + zone - y, down = y - (height - zone);
+  return up > 0 ? -Math.ceil(most * Math.min(1, up / zone)) : down > 0 ? Math.ceil(most * Math.min(1, down / zone)) : 0;
+}
+
 /** rows of a table body (or one tbody per record) by a column's data-v, numbers numerically */
 export function sortRows<T extends Element>(rows: T[], index: number, dir: number, numeric: boolean): T[] {
   const value = (r: Element) => (r.querySelectorAll(":scope > td, :scope > tr:first-child > td")[index] as HTMLElement | undefined)?.dataset.v ?? "";

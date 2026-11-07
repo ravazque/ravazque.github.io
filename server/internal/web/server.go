@@ -73,7 +73,7 @@ func New(s app.Settings, static fs.FS, o Options) *Server {
 	for i, a := range apps {
 		keys[i] = api42.App{UID: a.UID, Secret: a.Secret}
 	}
-	srv.API = api42.New(keys, max(s.OAuthIndex(), 0), s.BaseURL+"/auth/callback", srv.Lim, nil)
+	srv.API = api42.New(keys, s.BaseURL+"/auth/callback", srv.Lim, nil)
 	if o.APIBase != "" {
 		srv.API.Base = o.APIBase
 	}
@@ -180,7 +180,6 @@ func (s *Server) routes() {
 	m.HandleFunc("POST /api/me/consent", s.user(s.csrf(s.consent)))
 	m.HandleFunc("POST /api/me/publish", s.user(s.csrf(s.publish)))
 	m.HandleFunc("GET /api/me/view", s.user(s.view))
-	m.HandleFunc("GET /api/me/today", s.user(s.today))
 	m.HandleFunc("GET /api/me/report.json", s.user(s.reportCopy))
 	m.HandleFunc("POST /api/me/report", s.user(s.csrf(s.reportBack)))
 	m.HandleFunc("GET /api/stats", s.user(s.stats))

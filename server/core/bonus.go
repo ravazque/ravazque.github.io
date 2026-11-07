@@ -114,9 +114,8 @@ func iso(t time.Time) *string { s := pyISO(t); return &s }
 
 // Drop is a past session leaving the rolling week: from At on, its hours stop counting.
 type Drop struct {
-	At           time.Time `json:"at"`
-	Hours        float64   `json:"hours"`
-	SessionBegin time.Time `json:"session_begin"`
+	At    time.Time `json:"at"`
+	Hours float64   `json:"hours"`
 }
 
 // BonusDrops lists, oldest first, the sessions of the window that start leaving it within horizon from now.
@@ -128,7 +127,7 @@ func BonusDrops(w *OMap, now time.Time, horizon time.Duration) []Drop {
 		if !at.After(now) && !s.e.Add(week).After(now) || at.After(now.Add(horizon)) {
 			continue
 		}
-		out = append(out, Drop{at, pyRound(totalSeconds(s.e.Sub(b))/3600, 1), s.b})
+		out = append(out, Drop{at, pyRound(totalSeconds(s.e.Sub(b))/3600, 2)})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].At.Before(out[j].At) })
 	return out

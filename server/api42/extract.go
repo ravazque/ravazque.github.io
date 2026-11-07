@@ -234,7 +234,6 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 	sort.SliceStable(cus, func(i, j int) bool { return orderOf(cus[i]) < orderOf(cus[j]) })
 	d["coalitions"], d["coalitions_users"] = toAny(cs), toAny(cus)
 
-	upcomingRecv, upcomingGiven := core.Objs(d, "evals_received"), core.Objs(d, "evals_given") // before the hidden ones go
 	core.DropHiddenEvaluations(d)
 	met := core.PeopleIDs(d, uid)
 
@@ -371,7 +370,6 @@ func Extract(ctx context.Context, c *Client, uid int, progress func(float64), cl
 	for _, k := range standing.Keys() {
 		out.Set(k, standing.V(k))
 	}
-	out.Set("upcoming", core.Upcoming(upcomingRecv, upcomingGiven, core.Objs(d, "projects"), now))
 	return out, nil
 }
 

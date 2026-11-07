@@ -2,7 +2,7 @@ name: ravazque-info
 
 # Run through the root Makefile. This file alone is production (make production: https://ravazque.info through the tunnel,
 # signs in with FT_UID); with compose.dev.yaml it is make dev, a separate project on https://localhost that signs in with
-# FT_UID_2. Both can run at once. Every service reads the one root .env.
+# the same app. Both can run at once. Every service reads the one root .env.
 # No database: sessions, report copies and limits live in the api's memory; the only file it writes is the
 # consent log in the consent volume.
 services:
@@ -22,7 +22,6 @@ services:
     environment:
       CONSENT_LOG: /data/consent.log
       BASE_URL: https://ravazque.info
-      OAUTH_APP: "1"
       GITHUB_TOKEN: ""  # production never publishes: the token only reaches make dev
     volumes: ["consent:/data"]
     restart: unless-stopped

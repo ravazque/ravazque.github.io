@@ -39,7 +39,7 @@ func (c *clock) add(d time.Duration) { c.mu.Lock(); c.t = c.t.Add(d); c.mu.Unloc
 const secret = "0123456789abcdef0123456789abcdef-test"
 
 func testSettings() Settings {
-	return Settings{BaseURL: "https://localhost", FTUID: "u1", FTSecret: "s1", OAuthApp: 1, SessionSecret: secret,
+	return Settings{BaseURL: "https://localhost", FTUID: "u1", FTSecret: "s1", SessionSecret: secret,
 		CooldownS: 3600, CacheS: 3600, SessionS: 604800, ContactEmail: "c@example.invalid", ControllerName: "Test"}
 }
 
@@ -381,7 +381,6 @@ func TestSettingsChecks(t *testing.T) {
 		"no contact":    func(s *Settings) { s.ContactEmail = "" },
 		"no controller": func(s *Settings) { s.ControllerName = "" },
 		"dev elsewhere": func(s *Settings) { s.DevProfiles = "x/test-*.json"; s.BaseURL = "https://ravazque.info" },
-		"app 2 unset":   func(s *Settings) { s.OAuthApp = 2 },
 	} {
 		bad := testSettings()
 		mod(&bad)
@@ -390,9 +389,8 @@ func TestSettingsChecks(t *testing.T) {
 		}
 	}
 	s.FTUID2, s.FTSecret2, s.FTUID3, s.FTSecret3 = "u2", "s2", "u3", "s3"
-	s.OAuthApp = 2
-	if len(s.Apps()) != 3 || s.OAuthIndex() != 1 {
-		t.Fatalf("apps %v index %d", s.Apps(), s.OAuthIndex())
+	if len(s.Apps()) != 3 || s.Apps()[0] != s.OAuth() || s.OAuth().UID != "u1" { // one app signs in, the three answer
+		t.Fatalf("apps %v oauth %v", s.Apps(), s.OAuth())
 	}
 }
 
