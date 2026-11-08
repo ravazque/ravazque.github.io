@@ -47,4 +47,7 @@ export async function restore(shelf: Shelf, login: string, csrf: string, fetcher
   return false;
 }
 
-export const forget = (shelf: Shelf, login: string) => shelf.del(login).catch(() => {});
+/** A copy extracted over an hour ago (or at an unknown time) is worth a fresh extraction: one per hour is the limit. */
+export const stale = (extractedAt: string | null, now = Date.now()) => !(now - Date.parse(extractedAt || "") < 3600e3);
+
+export const forget =(shelf: Shelf, login: string) => shelf.del(login).catch(() => {});

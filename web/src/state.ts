@@ -77,7 +77,8 @@ export const pins = reactive({ login: "", stars: [] as Pin[], widgets: [] as Pin
 export type ActivityState = "" | "min" | "off";
 
 /** What a profile starts with: given once, so that taking one away stays that way. */
-const FIRST_WIDGETS: Pin[] = [{ page: "evaluations", id: "community", label: "" }, { page: "campus", id: "rhythm", label: "" }, { page: "coalition", id: "bonus", label: "" }];
+const LOG: Pin = { page: "evaluations", id: "log", label: "" };
+const FIRST_WIDGETS: Pin[] = [{ page: "evaluations", id: "community", label: "" }, { page: "campus", id: "rhythm", label: "" }, { page: "coalition", id: "bonus", label: "" }, LOG];
 
 function readPins(key: string): Pin[] {
   try {
@@ -93,9 +94,14 @@ export function loadPins(login: string) {
   if (pins.login === login) return;
   const key = `widgets:${login}`;
   let widgets = readPins(key);
-  if (!store.get(`${key}:seeded`)) {
-    widgets = [...FIRST_WIDGETS.filter((d) => !widgets.some((w) => w.page === d.page && w.id === d.id)), ...widgets];
-    store.set(`${key}:seeded`, "1");
+  const seeded = store.get(`${key}:seeded`), has = (d: Pin) => widgets.some((w) => w.page === d.page && w.id === d.id);
+  if (!seeded) widgets = [...FIRST_WIDGETS.filter((d) => !has(d)), ...widgets];
+  else if (seeded === "1" && !has(LOG)) { // given the first three before the log joined them: it comes once, under the bonus
+    const bonus = widgets.findIndex((w) => w.page === "coalition" && w.id === "bonus");
+    widgets.splice(bonus < 0 ? widgets.length : bonus + 1, 0, LOG);
+  }
+  if (seeded !== "2") {
+    store.set(`${key}:seeded`, "2");
     store.set(key, JSON.stringify(widgets));
   }
   const a = store.get(`activity:${login}`);

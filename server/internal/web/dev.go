@@ -69,7 +69,7 @@ func (s *Server) devLogin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	if s.Store.LoadRaw(d.session.ID) == nil { // deleted (or expired) in this session: the saved file is still there
+	if s.frozen(d.session.ID) && s.Store.LoadRaw(d.session.ID) == nil { // deleted (or expired) in this session: the saved file is still there
 		if raw, err := os.ReadFile(s.devFiles[d.session.ID]); err == nil {
 			s.Store.SaveRaw(d.session.ID, raw)
 			s.Store.SetStatus(d.session.ID, app.Status{State: "done", Progress: 1, Last: s.now().UTC().Format(time.RFC3339)})
@@ -79,4 +79,24 @@ func (s *Server) devLogin(w http.ResponseWriter, r *http.Request) {
 	app.RecordConsent(s.Store, d.session.ID, s.now())
 	s.setCookie(w, app.SessionCookie, sid, s.S.SessionS)
 	http.Redirect(w, r, "/app", http.StatusSeeOther)
+}
+
+// frozen: a saved report of make dev, never extracted from 42 (unless the owner turned it live).
+func (s *Server) frozen(uid int) bool {
+	_, live := s.devLive.Load(uid)
+	return s.devFiles[uid] != "" && !live
+}
+
+// devGoLive (owner, make dev only) tests coming back after an hour with a real extraction: the server forgets the saved
+// report as after an hour unused and it turns live, so the browser's copy comes back and the refresh asks 42 (~110
+// requests of the shared budget, once an hour as for anyone) until the dev server restarts.
+func (s *Server) devGoLive(w http.ResponseWriter, r *http.Request, si signedIn) {
+	if !s.isOwner(si.u) || s.devFiles[si.u.ID] == "" {
+		writeJSON(w, http.StatusForbidden, errBody("owner"))
+		return
+	}
+	s.devLive.Store(si.u.ID, true)
+	s.Store.DropReport(si.u.ID)
+	s.Store.ForgetStatus(si.u.ID)
+	w.WriteHeader(http.StatusNoContent)
 }

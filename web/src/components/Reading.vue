@@ -4,7 +4,6 @@ import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { fmt, loadSession, state } from "../state";
 import SiteLinks from "./SiteLinks.vue";
-import Mark from "./Mark.vue";
 
 const props = defineProps<{ page: "about" | "privacy" }>();
 const f = computed(() => fmt.value);
@@ -13,14 +12,14 @@ const heading = computed(() => f.value.t(`${props.page}.title`));
 const raw = (k: string) => fmt.value.raw(k) as any;
 const sections = computed(() => (raw("policy.sections") as string[] | undefined) || []);
 const fill = (s: string) => s.replace("{controller}", state.session?.controller || "").replace("{email}", state.session?.contact_email || "");
-const back = computed(() => (window.history.state?.back as string | null) || "/");
+// signed in: back to Profile; otherwise the landing (going back through history loops between About and Privacy)
+const back = computed(() => (state.session?.user ? "/app" : "/"));
 onMounted(() => { if (!state.session) loadSession().catch(() => {}); });
 const title = computed(() => `${heading.value} · ${f.value.t("site.name")}`);
 onMounted(() => { document.title = title.value; });
 </script>
 
 <template>
-  <header class="site-head"><RouterLink class="brand" to="/"><Mark /><span>{{ f.t("site.name") }}</span></RouterLink><SiteLinks :current="page" /></header>
   <main class="site-main reading">
     <h1>{{ heading }}</h1>
     <template v-if="page === 'about'">

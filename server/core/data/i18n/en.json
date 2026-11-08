@@ -506,7 +506,7 @@
  "connections.legend_given": "You corrected",
  "connections.tip_counts": "corrected you {received}× · you corrected {given}×",
  "connections.tip_last": "last {when}",
- "publish.button": "Publish to ravazque.github.io",
+ "publish.button": "ravazque.github.io",
  "publish.title": "Publish your public profile?",
  "publish.confirm": "This commits site/data/42.json to the ravazque.github.io repository: level, cursus status, validated projects, evaluation counts, coalition and top skills. No contact data, seats, hours or other students. The page updates a minute later.",
  "publish.yes": "Publish",

@@ -296,6 +296,23 @@ func TestReportRoundTripNeedsTheSignature(t *testing.T) {
 	}
 }
 
+// With no report on the server, the status alone starts nothing (the browser hands its copy back first); with kick it
+// starts an extraction, also while the status still says done.
+func TestStatusExtractsOnlyWhenKicked(t *testing.T) {
+	e := newEnv(t, nil)
+	e.signIn(t)
+	e.s.Jobs.Drain()
+	e.seed(t, 990002, "../../core/testdata/golden/new.report.json")
+	e.s.Store.DropReport(990002)
+	e.s.M.Delete(e.s.M.Keys("cooldown:*")...)
+	if r := readAll(e.do(t, "GET", "/api/me/status", nil, nil)); !strings.Contains(r, `"state":"done"`) || !strings.Contains(r, `"has_report":false`) {
+		t.Fatal(r)
+	}
+	if r := readAll(e.do(t, "GET", "/api/me/status?kick=1", nil, nil)); !strings.Contains(r, `"state":"queued"`) {
+		t.Fatal("kick with a done status and no report:", r)
+	}
+}
+
 func TestDeleteLeavesNothingNamingTheUser(t *testing.T) {
 	e := newEnv(t, nil)
 	e.signIn(t)
@@ -599,6 +616,47 @@ func TestTestProfilesNeverReachThe42API(t *testing.T) {
 	}
 	if r := d.do(t, "GET", "/api/me/view", nil, nil); r.StatusCode != 200 {
 		t.Fatalf("the test profile's report after deleting: %d", r.StatusCode)
+	}
+}
+
+// make dev only: the owner's button forgets the saved report on the server (as after an hour unused) and turns it live,
+// so the next refresh asks 42; refused to anyone else, absent without dev profiles.
+func TestDevLiveTurnsTheOwnersSavedReportLive(t *testing.T) {
+	dir := t.TempDir()
+	var rep map[string]any
+	raw, _ := os.ReadFile("../../core/testdata/golden/new.report.json")
+	json.Unmarshal(raw, &rep)
+	rep["test_profile"] = 990001
+	raw, _ = json.Marshal(rep)
+	os.WriteFile(dir+"/real-tnova.json", raw, 0o600)
+	devAs := func(owner string) *env {
+		d := newEnv(t, func(s *app.Settings) { s.DevProfiles = dir + "/real-*.json"; s.OwnerLogin = owner })
+		d.do(t, "GET", "/dev/login?as=tnova", nil, nil)
+		var sess struct{ User struct{ CSRF string } }
+		json.Unmarshal([]byte(readAll(d.do(t, "GET", "/api/session", nil, nil))), &sess)
+		d.csrf = sess.User.CSRF
+		return d
+	}
+	d := devAs("tnova")
+	if r := d.do(t, "POST", "/api/me/refresh", nil, nil); r.StatusCode != http.StatusConflict {
+		t.Fatal("a saved report is frozen until it turns live:", r.StatusCode)
+	}
+	if r := d.do(t, "POST", "/dev/live", nil, nil); r.StatusCode != http.StatusNoContent {
+		t.Fatal(r.StatusCode)
+	}
+	if st := readAll(d.do(t, "GET", "/api/me/status", nil, nil)); !strings.Contains(st, `"state":"none"`) || !strings.Contains(st, `"has_report":false`) || strings.Contains(st, `"frozen"`) {
+		t.Fatal(st)
+	}
+	if r := d.do(t, "POST", "/api/me/refresh", nil, nil); r.StatusCode != http.StatusAccepted {
+		t.Fatal("live: the refresh extracts", r.StatusCode)
+	}
+	if r := devAs("someone").do(t, "POST", "/dev/live", nil, nil); r.StatusCode != http.StatusForbidden {
+		t.Fatal("not the owner:", r.StatusCode)
+	}
+	p := newEnv(t, nil)
+	p.signIn(t)
+	if r := p.do(t, "POST", "/dev/live", nil, nil); r.StatusCode == http.StatusNoContent {
+		t.Fatal("without dev profiles there is no /dev/live")
 	}
 }
 

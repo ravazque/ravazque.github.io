@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { type Copy, type Shelf, keepCopy, restore } from "./copy";
+import { type Copy, type Shelf, keepCopy, restore, stale } from "./copy";
 
 function memShelf(): Shelf & { m: Map<string, Copy> } {
   const m = new Map<string, Copy>();
@@ -35,4 +35,12 @@ test("a refused copy is forgotten; no copy means a fresh extraction", async () =
   expect(await restore(shelf, "tnova", "C", async () => new Response(null, { status: 400 }))).toBe(false);
   expect(shelf.m.has("tnova")).toBe(false);
   expect(await restore(shelf, "tnova", "C", async () => new Response(null, { status: 204 }))).toBe(false);
+});
+
+test("a copy is stale an hour after its extraction, or when its time is unknown", () => {
+  const now = Date.parse("2026-11-08T12:00:00Z");
+  expect(stale("2026-11-08T11:30:00Z", now)).toBe(false);
+  expect(stale("2026-11-08T10:59:59Z", now)).toBe(true);
+  expect(stale(null, now)).toBe(true);
+  expect(stale("garbage", now)).toBe(true);
 });

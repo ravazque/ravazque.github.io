@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // The band on top of every app page: brand, pages, the sync state, the sections you starred, and your settings and
 // account.
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { api, fmt, pins, setLang, settings, state } from "../state";
 import { applyAccentChoice, applyTheme, setTheme, type Theme } from "../lib/look";
@@ -40,6 +40,9 @@ async function refresh() {
   try { state.status = { ...state.status!, ...(await api("/api/me/refresh", { method: "POST" })) }; } catch (e: any) { if (e.body?.state) state.status = { ...state.status!, ...e.body }; }
   emit("refreshed");
 }
+
+// make dev-live only (production builds drop it): the owner's button to test coming back after an hour
+const DevLive = import.meta.env.DEV ? defineAsyncComponent(() => import("./DevLive.vue")) : null;
 
 function pickPeriod(p: string) { closePops(); router.push({ query: { ...router.currentRoute.value.query, period: p } }); }
 function pickTheme(t: Theme) { theme.value = t; setTheme(t); accent.value = applyAccentChoice(settings.get("accent"), user.value?.coalition_color); }
@@ -120,10 +123,10 @@ function go(path: string) { closePops(); router.push(path); }
           <template v-if="!offline">
           <p class="s-label">{{ f.t("settings.account") }}</p>
           <div v-if="user?.can_publish" class="publish">
-            <a class="btn primary" href="/app/publish" :aria-disabled="!fresh || busy" @click.prevent="fresh && !busy && go('/app/publish')">{{ f.t("publish.button") }}</a>
-            <p v-if="!fresh && !busy" class="wait">{{ f.t("publish.stale") }}</p>
-            <p v-else-if="status?.published" class="wait">{{ f.t("publish.last", { when: f.stamp(new Date(status.published).getTime()) }) }}</p>
+            <a class="btn primary" href="/app/publish" :aria-disabled="!fresh || busy" :title="!fresh && !busy ? f.t('publish.stale') : undefined"
+              @click.prevent="fresh && !busy && go('/app/publish')">{{ f.t("publish.button") }}</a>
           </div>
+          <component :is="DevLive" v-if="DevLive && state.session?.dev && user?.owner" />
           <div class="row-links">
             <a v-if="user?.owner" class="btn secondary go" href="/app/stats" @click.prevent="go('/app/stats')">{{ f.t("stats.button") }}</a>
             <button class="btn secondary" type="button" @click="signOut">{{ f.t("signout.button") }}</button>

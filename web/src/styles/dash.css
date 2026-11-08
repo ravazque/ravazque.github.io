@@ -3,8 +3,7 @@
 :where(body:not(.site)) .js .no-js { display: none; }
 :where(body:not(.site)) main.solo { display: grid; place-items: center; min-height: 70vh; }
 :where(body:not(.site)) .boot-panel { width: 100%; max-width: var(--c-boot-max-width); display: grid; gap: 14px; }
-:where(body:not(.site)) .boot-panel .bar { height: var(--c-boot-bar-height); border-radius: var(--radius-pill); background: var(--seat-empty); overflow: hidden; }
-:where(body:not(.site)) .boot-panel .bar i { display: block; height: 100%; background: var(--accent-data); transition: width var(--motion-settle) var(--motion-ease); }
+:where(body:not(.site)) .boot-panel .row-btns { display: flex; flex-wrap: wrap; gap: 12px; }
 :where(body:not(.site)) .controls-after { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; }
 :where(body:not(.site)) section { scroll-margin-top: 80px; }
 
@@ -118,12 +117,16 @@
   :where(body:not(.site)) .menu-wrap { display: block; }
   :where(body:not(.site)) .menu, :where(body:not(.site)) .best-menu { min-width: 0; width: min(320px, calc(100vw - 24px)); }
 }
-@media (max-width: 519.98px) {  /* one row on a phone: the mark alone stands for the brand */
-  :where(body:not(.site)) .topbar .brand > span { display: none; }
+@media (max-width: 519.98px) {  /* one row on a phone: no brand, the pages' menu leads back to Profile */
+  :where(body:not(.site)) .topbar .brand { display: none; }
   :where(body:not(.site)) .topbar-end { gap: 8px; }
   /* every menu hangs from the band's right edge: from its own button it would run off the left of a phone */
   :where(body:not(.site)) .topbar-end { position: relative; }
   :where(body:not(.site)) .topbar-end .best-anchor, :where(body:not(.site)) .topbar-end details.pop { position: static; }
+  /* with no brand, the pages' menu takes the band's left edge and opens from there */
+  :where(body:not(.site)) .topbar-end { flex: 1; }
+  :where(body:not(.site)) .topbar-end .menu-wrap { order: -1; margin-right: auto; }
+  :where(body:not(.site)) .menu { left: 0; right: auto; }
   :where(body:not(.site)) .tour::before { display: none; }
 }
 
@@ -353,6 +356,7 @@
   :where(body:not(.site)) .list li { flex-wrap: wrap; gap: 2px 16px; }
   :where(body:not(.site)) .list li > :first-child { flex: 1 1 60%; min-width: 0; }
   :where(body:not(.site)) .page-head .periods { justify-self: stretch; display: flex; }
+  :where(body:not(.site)) .page-head .periods.only { display: block; }
   :where(body:not(.site)) .page-head .periods > a { flex: 1; padding: 6px 8px; }
 }
 

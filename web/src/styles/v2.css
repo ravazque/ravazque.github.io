@@ -244,5 +244,11 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .skel .sk:nth-child(2) { width: 60%; }
 :where(body:not(.site)) .skel .sk.tall { height: 200px; margin-top: 20px; }
 :where(body:not(.site)) .skel h2 .sk { width: min(320px, 60%); height: .8em; margin: 0; }
+/* the first extraction: Profile's card and modules at their own size, so the page doesn't jump when the data arrives */
+:where(body:not(.site)) .skel .pf-stacks .sk { width: 45%; margin: 4px 0; }
+:where(body:not(.site)) .skel .pf-stacks dd .sk { width: 60%; height: 22px; }
+:where(body:not(.site)) .skel .module .tab .sk { width: 40%; margin: 0; }
+:where(body:not(.site)) .skel .module .figure .sk { width: 45%; height: .8em; margin: 0; }
+:where(body:not(.site)) .skel .module .sk.tall { height: 36px; margin: auto 0 0; }
 @keyframes sk-pulse { to { opacity: .4; } }
 @media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .skel .sk { animation: none; } }

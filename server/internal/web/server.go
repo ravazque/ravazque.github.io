@@ -48,6 +48,7 @@ type Server struct {
 	devLogins map[string]devLogin
 	devOrder  []string
 	devFiles  map[int]string // the saved reports of make dev, by user id: never extracted from 42
+	devLive   sync.Map       // ...unless the owner turned theirs live (POST /dev/live): user id → true, until a restart
 	stop      chan struct{}
 }
 
@@ -172,6 +173,7 @@ func (s *Server) routes() {
 	m.HandleFunc("POST /auth/logout", s.user(s.csrf(s.logout)))
 	if s.S.DevProfiles != "" {
 		m.HandleFunc("GET /dev/login", s.devLogin)
+		m.HandleFunc("POST /dev/live", s.user(s.csrf(s.devGoLive)))
 	}
 	m.HandleFunc("GET /api/session", s.session)
 	m.HandleFunc("GET /api/me/status", s.user(s.status))

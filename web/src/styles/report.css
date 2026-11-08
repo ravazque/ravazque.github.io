@@ -69,6 +69,7 @@
 :where(body:not(.site)) .page-head .periods { align-self: end; justify-self: start; }
 :where(body:not(.site)) .page-head .periods.only { color: var(--text-2); font-size: 15px; max-width: 40ch; }
 :where(body:not(.site)) .page-head .periods.only b { color: var(--ink); }
+:where(body:not(.site)) .page-head .periods.only .btn { margin-top: 12px; }
 @media (min-width: 960px) {
   :where(body:not(.site)) .page-head { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: end; }
   :where(body:not(.site)) .page-head h1 { grid-row: 1 / 3; }

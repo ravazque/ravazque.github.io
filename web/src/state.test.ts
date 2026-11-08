@@ -4,7 +4,7 @@ import { hasPin, loadPins, moveWidget, pins, relabelStars, setActivity, setWidge
 beforeEach(() => { localStorage.clear(); pins.login = ""; });
 
 /** A profile that has been through the first load: the tests below look at what they add themselves. */
-const fresh = (login: string) => { localStorage.setItem(`widgets:${login}:seeded`, "1"); loadPins(login); };
+const fresh = (login: string) => { localStorage.setItem(`widgets:${login}:seeded`, "2"); loadPins(login); };
 
 test("stars and widgets are kept per login, in the order they were added, and a second toggle takes one away", () => {
   fresh("peer01");
@@ -59,19 +59,34 @@ test("the next refresh falls on the next quarter of the hour", async () => {
   expect(untilQuarter(new Date(2026, 10, 1, 12, 59, 59, 500))).toBe(500);
 });
 
-test("a new profile starts with Contribution, Rhythm and the bonus, once: taken away, they stay away", () => {
+test("a new profile starts with Contribution, Rhythm, the bonus and the evaluation log, once: taken away, they stay away", () => {
   loadPins("peer05");
-  expect(pins.widgets.map((p) => `${p.page}:${p.id}`)).toEqual(["evaluations:community", "campus:rhythm", "coalition:bonus"]);
+  expect(pins.widgets.map((p) => `${p.page}:${p.id}`)).toEqual(["evaluations:community", "campus:rhythm", "coalition:bonus", "evaluations:log"]);
   togglePin("widgets", { page: "campus", id: "rhythm", label: "" });
   pins.login = "";
   loadPins("peer05");
-  expect(pins.widgets.map((p) => p.id)).toEqual(["community", "bonus"]);
+  expect(pins.widgets.map((p) => p.id)).toEqual(["community", "bonus", "log"]);
 });
 
-test("a list saved before keeps its own and gains the three once", () => {
+test("a list saved before keeps its own and gains the four once", () => {
   localStorage.setItem("widgets:peer06", JSON.stringify([{ page: "projects", id: "exams", label: "" }, { page: "campus", id: "rhythm", label: "" }]));
   loadPins("peer06");
-  expect(pins.widgets.map((p) => p.id)).toEqual(["community", "bonus", "exams", "rhythm"]);
+  expect(pins.widgets.map((p) => p.id)).toEqual(["community", "bonus", "log", "exams", "rhythm"]);
+});
+
+test("a profile given the first three gets the evaluation log once, under the bonus", () => {
+  localStorage.setItem("widgets:peer08", JSON.stringify([{ page: "evaluations", id: "community", label: "" }, { page: "coalition", id: "bonus", label: "" }, { page: "projects", id: "exams", label: "" }]));
+  localStorage.setItem("widgets:peer08:seeded", "1");
+  loadPins("peer08");
+  expect(pins.widgets.map((p) => p.id)).toEqual(["community", "bonus", "log", "exams"]);
+  togglePin("widgets", { page: "evaluations", id: "log", label: "" });
+  pins.login = "";
+  loadPins("peer08");
+  expect(pins.widgets.map((p) => p.id)).toEqual(["community", "bonus", "exams"]);
+  localStorage.setItem("widgets:peer09", JSON.stringify([{ page: "projects", id: "exams", label: "" }]));
+  localStorage.setItem("widgets:peer09:seeded", "1");
+  loadPins("peer09"); // the bonus taken away: the log goes last
+  expect(pins.widgets.map((p) => p.id)).toEqual(["exams", "log"]);
 });
 
 test("Activity can be minimized or hidden, per login", () => {

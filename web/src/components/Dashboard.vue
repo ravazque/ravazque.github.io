@@ -5,8 +5,8 @@ import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue
 import { useRoute, useRouter } from "vue-router";
 import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setActivity, setWidget, state, togglePin, untilQuarter, type ActivityState, type Status } from "../state";
 import { closePops, dragScroll, hideTip, settle } from "../lib/behave";
-import { idbShelf, keepCopy, restore } from "../lib/copy";
-import { esc } from "../lib/h";
+import { idbShelf, keepCopy, restore, stale } from "../lib/copy";
+import { esc, initials } from "../lib/h";
 import { parseCsv } from "../lib/table";
 import { Page, pagePeriod, type PageKey, type Section, type View } from "../views/page";
 import { profile as profileSections } from "../views/profile";
@@ -39,6 +39,7 @@ const sections = computed<Section[]>(() => {
 });
 
 const profile = computed(() => view.value?.report.profile);
+const me = computed(() => state.session?.user);
 
 const title = computed(() => {
   if (key.value !== "home") return f.value.t(`pages.${key.value}`);
@@ -46,8 +47,8 @@ const title = computed(() => {
 });
 watch([title, () => f.value], () => { document.title = `${title.value} · ${f.value.t("site.name")}`; }, { immediate: true });
 
-async function status(): Promise<Status> {
-  const s = await api<Status>("/api/me/status?kick=1");
+async function status(kick = false): Promise<Status> {
+  const s = await api<Status>(`/api/me/status${kick ? "?kick=1" : ""}`);
   state.status = s;
   return s;
 }
@@ -58,17 +59,20 @@ async function load() {
     if (!state.session?.user) await loadSession();
     if (!state.session?.user) return router.replace("/");
     loadPins(state.session.user.login);
-    const s = await status();
+    let s = await status();
     if (s.state === "refused") return router.replace(`/refused?reason=${encodeURIComponent(s.message || "campus")}`);
     if (!s.consent) { screen.value = "consent"; return; }
-    if (!s.has_report) {
-      if (s.state === "done") { // the server's copy is gone (an hour unused, a restart): this browser hands its own back
-        screen.value = "restore";
-        const login = state.session.user.login;
-        if (await restore(idbShelf, login, state.session.user.csrf, (p, i) => fetch(p, { credentials: "same-origin", ...i }))) return load();
-        await api("/api/me/refresh", { method: "POST" }).catch(() => {});
-        return load();
+    if (!s.has_report && ["none", "done"].includes(s.state)) {
+      // the server's copy is gone (an hour unused, a restart): this browser hands its own back before anything is extracted
+      const login = state.session.user.login;
+      if (screen.value !== "page") screen.value = "restore";
+      if (await restore(idbShelf, login, state.session.user.csrf, (p, i) => fetch(p, { credentials: "same-origin", ...i }))) {
+        await fetchView();
+        return freshen(login);
       }
+      s = await status(true);
+    }
+    if (!s.has_report) {
       screen.value = "boot";
       if (s.state !== "failed") poll = window.setTimeout(load, 2000);
       return;
@@ -83,13 +87,27 @@ async function load() {
 
 async function fetchView() {
   const period = pagePeriod(key.value, params.value.period || "");
-  view.value = await api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`);
+  try {
+    view.value = await api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`);
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 404) return load(); // forgotten while the page sat open: the copy goes back
+    throw e;
+  }
   screen.value = "page";
   followCoalitions();
   const u = state.session?.user, last = state.status?.last || "";
   if (u && last && localStorage.getItem(`copy:${u.login}`) !== last) {
     keepCopy(idbShelf, u.login, (p, i) => fetch(p, { credentials: "same-origin", ...i })).then(() => localStorage.setItem(`copy:${u.login}`, last)).catch(() => {});
   }
+}
+
+/** A copy handed back shows at once; extracted over an hour ago, a fresh extraction follows in the band. */
+async function freshen(login: string) {
+  if (!stale(localStorage.getItem(`copy:${login}`))) return;
+  const s = await api<Status>("/api/me/refresh", { method: "POST" }).catch((e) => e?.body);
+  if (!s?.state) return;
+  state.status = { ...state.status!, ...s };
+  if (["queued", "running"].includes(s.state)) poll = window.setTimeout(watchSync, 2000);
 }
 
 /** While an extraction runs from the band: the bar follows it, the page reloads its data once it is over. */
@@ -409,14 +427,8 @@ const locked = computed(() => pagePeriod(key.value, "") !== "");
       <p class="foot-note">{{ f.t(view?.light && !view?.seat_days ? "footer.light" : "footer.full", { when: f.dayTime(view?.report.generated) }) }}</p>
     </footer>
   </main>
-  <main v-else-if="screen === 'loading' || screen === 'restore'" id="main" class="skel" aria-busy="true">
-    <header class="page-head"><h1>{{ title }}</h1>
-      <p :class="screen === 'restore' ? 'periods only' : 'visually-hidden'" role="status">{{ f.t(screen === "restore" ? "restore.lede" : "boot.title") }}</p></header>
-    <section v-for="n in 2" :key="n" aria-hidden="true"><h2><i class="sk"></i></h2>
-      <div class="cols"><div v-for="b in 2" :key="b" class="block"><i class="sk"></i><i class="sk"></i><i class="sk tall"></i></div></div></section>
-  </main>
-  <main v-else id="main" class="solo">
-    <div v-if="screen === 'consent'" class="boot-panel">
+  <main v-else-if="screen === 'consent'" id="main" class="solo">
+    <div class="boot-panel">
       <h2>{{ f.t("consent.title") }}</h2>
       <p>{{ f.t("consent.lede", { version: state.session?.consent_version ?? "" }) }}</p>
       <form class="signin" @submit.prevent="consentOk && accept()">
@@ -425,22 +437,26 @@ const locked = computed(() => pagePeriod(key.value, "") !== "");
         <p class="row-btns"><button class="btn primary" type="submit" :disabled="!consentOk">{{ f.t("consent.continue") }}</button></p>
       </form>
     </div>
-    <div v-else-if="screen === 'boot'" class="boot-panel" aria-live="polite">
-      <h2>{{ f.t("boot.title") }}</h2>
-      <template v-if="state.status?.state === 'failed'">
-        <p>{{ f.t("boot.failed") }}</p>
-        <p><button class="btn primary" type="button" @click="retry">{{ f.t("boot.retry") }}</button></p>
-      </template>
-      <template v-else-if="state.status && state.status.next_refresh_in > 0 && ['none', 'done'].includes(state.status.state)">
-        <p>{{ state.status.next_refresh_in < 60 ? f.t("refresh.wait_s", { count: state.status.next_refresh_in }) : f.t("refresh.wait", { count: Math.ceil(state.status.next_refresh_in / 60) }) }}</p>
-        <p class="note">{{ f.t("boot.wait_note") }}</p>
-      </template>
-      <template v-else>
-        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(100 * (state.status?.progress || 0))"><i :style="{ width: Math.round(100 * (state.status?.progress || 0)) + '%' }"></i></div>
-        <p>{{ f.t(state.status?.message || `status.${state.status?.state || 'queued'}`) }}</p>
-        <p class="note">{{ f.t("boot.first") }}</p>
-      </template>
-    </div>
+  </main>
+  <!-- loading, a copy coming back from this browser or the first extraction: on Profile your card, the rest in grey -->
+  <main v-else id="main" class="skel" :data-page="`web-${key}`" :aria-busy="screen !== 'boot' || state.status?.state !== 'failed'">
+    <header class="page-head"><h1>{{ title }}</h1>
+      <p v-if="screen !== 'boot'" :class="screen === 'restore' ? 'periods only' : 'visually-hidden'" role="status">{{ f.t(screen === "restore" ? "restore.lede" : "boot.title") }}</p>
+      <p v-else-if="state.status?.state === 'failed'" class="periods only" role="status"><b>{{ f.t("boot.failed") }}</b><br />
+        <button class="btn primary" type="button" @click="retry">{{ f.t("boot.retry") }}</button></p>
+      <p v-else-if="state.status && state.status.next_refresh_in > 0 && ['none', 'done'].includes(state.status.state)" class="periods only" role="status">
+        <b>{{ state.status.next_refresh_in < 60 ? f.t("refresh.wait_s", { count: state.status.next_refresh_in }) : f.t("refresh.wait", { count: Math.ceil(state.status.next_refresh_in / 60) }) }}</b> {{ f.t("boot.wait_note") }}</p>
+      <p v-else class="periods only" role="status"><b>{{ f.t(state.status?.message || `status.${state.status?.state || 'queued'}`) }}</b> {{ f.t("boot.first") }}</p>
+    </header>
+    <section v-if="me && key === 'home'" id="profile" :aria-label="f.t('profile.title')"><div class="pf">
+      <div class="avatar-lg pf-photo"><span aria-hidden="true">{{ initials(me.name || me.login) }}</span>
+        <img v-if="me.has_image" :src="'/avatar/me'" alt="" @error="($event.target as HTMLElement).remove()" /></div>
+      <div class="pf-main"><p class="pf-name">{{ me.name || me.login }}</p><p class="pf-sub"><span>{{ me.login }}</span></p>
+        <div class="pf-stacks" aria-hidden="true"><dl v-for="n in 3" :key="n"><div v-for="r in 2" :key="r"><dt><i class="sk"></i></dt><dd><i class="sk"></i></dd></div></dl></div></div>
+    </div></section>
+    <section class="modules-wrap" aria-hidden="true"><div class="modules">
+      <article v-for="n in 3" :key="n" class="module"><h3 class="tab"><i class="sk"></i></h3><p class="figure"><i class="sk"></i></p><i class="sk"></i><i class="sk"></i><i class="sk tall"></i></article>
+    </div></section>
   </main>
   <div id="tip" role="tooltip"></div>
   <Teleport to="#dialogs">
