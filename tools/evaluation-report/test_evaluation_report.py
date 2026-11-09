@@ -249,6 +249,13 @@ class OptOut(unittest.TestCase):
         self.assertEqual(rep["seen"], {f"{h.HIDDEN} 1": 2, "peer02": 1})
         self.assertEqual(rep["members"], [f"{h.HIDDEN} 1", "peer02"])
 
+    def test_a_hidden_student_keeps_no_minutes_late(self):
+        e = evaluation(role="given", other_host_checked=True,
+                       correcteds=[{"login": "peer01", "host": "c1r1s1", "late_min": 41}, {"login": "peer02", "host": "c2r2s2", "late_min": 17}])
+        rep = h.hide({"given": [e]}, self.OUT, "tself")
+        self.assertIsNone(rep["given"][0]["correcteds"][0]["late_min"])
+        self.assertEqual(rep["given"][0]["correcteds"][1]["late_min"], 17)
+
     def test_a_hidden_login_goes_from_inside_other_texts_too(self):
         doc = {"team": "tout's group", "comment": "With TOUT, tout2 and xtout.", "mine": "tself's group"}
         out = h.hide(doc, {"tout", "tself"}, "tself")

@@ -1,8 +1,8 @@
 // Coalition (student period only): where the coalitions of Madrid stand and every point you gave yours, the logtime
 // bonus in detail and every bonus so far, and your points by source and month.
 import { madridParts } from "../fmt";
-import { BAD, S1, S2, hbars, legend, vbars } from "../lib/charts";
-import { esc, safeColor } from "../lib/h";
+import { BAD, S1, legend, vbars } from "../lib/charts";
+import { esc, safeColor, tipAttr } from "../lib/h";
 import { leaving, rule, tierRows, weekFigure } from "./bonus";
 import { Page, Section, block, cols, fillRows, headBlock, info, monthsBetween, msOf, section } from "./page";
 
@@ -11,7 +11,38 @@ const when = (pg: Page, iso: string) => `<span class="nw">${esc(pg.f.stamp(msOf(
 const isTig = (a: any) => a.key === "other" && a.points < 0;
 const SOURCES = ["evaluations", "projects", "exams", "logtime_50", "logtime_80", "wallet", "other", "tigs"];
 
-/** Everything that gives or takes points, the ones at nothing too: biggest first, what took points away last. */
+/** Each source's colour, the same in the sources and in the months (which need no key of their own): the page's accent,
+ * a tone of it toward the text for the hours (the logtime bonuses: darker in light mode, lighter in dark), red for TIGs. */
+const sourceColor = (key: string, base: string) =>
+  key === "tigs" ? BAD : key.startsWith("logtime") ? `color-mix(in oklab, ${base} 55%, var(--ink))` : base;
+
+/** The sources of your points: one bar split by share (points given), then a row for every source, the ones at nothing
+ * too (an empty square, grey), with its colour, points, share and awards (TIGs in red, last). */
+function sourcesShare(f: Page["f"], src: any[], tone: (k: string) => string): string {
+  const sum = src.reduce((t, s) => t + Math.max(0, s.points), 0), share = (p: number) => (sum && p > 0 ? (100 * p) / sum : 0);
+  const name = (s: any) => f.t(`coal.src.${s.key}`);
+  const meta = (s: any) => [s.points > 0 ? `${f.num(share(s.points), 1)}%` : "", f.plural(s.count, "coal.awards")].filter(Boolean).join(" · ");
+  const tip = (s: any) => [name(s), f.num(s.points), meta(s)].join(" · ");
+  return `<div class="src-share"><div class="src-stack" role="img" aria-label="${esc(src.filter((s) => s.points).map(tip).join("; "))}">`
+    + src.map((s) => (s.points > 0 ? `<i style="width:${share(s.points).toFixed(2)}%;background:${tone(s.key)}"${tipAttr(tip(s))}></i>` : "")).join("") + "</div>"
+    + `<ul class="src-list">${src.map((s) => `<li${s.points ? "" : ' class="zero"'}${tipAttr(tip(s))}><i class="sw"${s.points ? ` style="background:${tone(s.key)}"` : ""}></i>`
+      + `<span class="src-name">${esc(name(s))}</span><span class="src-meta">${esc(meta(s))}</span>`
+      + `<b${s.points < 0 ? ' class="neg"' : ""}>${esc(f.num(s.points))}</b></li>`).join("")}</ul></div>`;
+}
+
+/** Points per month by source, from every award (TIGs apart): one row per source with points, a value per month asked;
+ * null for a report saved before every award was kept. */
+export function monthsBySource(P: any, months: string[]): Record<string, number[]> | null {
+  if (!Array.isArray(P.awards)) return null;
+  const at = new Map(months.map((m, i) => [m, i])), out: Record<string, number[]> = {};
+  for (const a of P.awards) {
+    const i = at.get(madridParts(msOf(a.at)).iso.slice(0, 7)), key = isTig(a) ? "tigs" : a.key;
+    if (i === undefined || !a.points) continue;
+    (out[key] ||= months.map(() => 0))[i] += a.points;
+  }
+  return out;
+}
+
 export const everySource = (src: any[]) => [...src, ...SOURCES.filter((key) => !src.some((s) => s.key === key)).map((key) => ({ key, points: 0, count: 0 }))]
   .sort((a, b) => b.points - a.points);
 
@@ -77,21 +108,31 @@ export function coalition(pg: Page): Section[] {
     const months = split.length ? monthsBetween(split[0].month, [split[split.length - 1].month, pg.asOf.slice(0, 7)].sort()[1])
       .map((k) => byMonth.get(k) || { month: k, logtime: 0, other: 0, tigs: 0 }) : [];
     const month = (m: string) => `${f.months[+m.slice(5, 7) - 1]} ${m.slice(0, 4)}`;
-    const names = src.map((s: any) => f.t(`coal.src.${s.key}`));
+    const given = src.filter((s: any) => s.points);
+    const bySource = monthsBySource(P, months.map((m: any) => m.month));
+    const base = S1, tone = (k: string) => sourceColor(k, base); // the page's accent: the 42 blue, or the coalition's when chosen
     const minus = src.some((s: any) => s.points < 0) || months.some((m: any) => m.logtime < 0 || m.other < 0);
     const tigName = f.t("coal.src.tigs"), anyTig = months.some((m: any) => m.tigs < 0);
-    // like the bars by source, TIGs draw in red at their size; the tip says how many points they took away
-    const monthSeries: [string, number[], string][] = [[f.t("coal.src.logtime"), months.map((m: any) => m.logtime), S1], [f.t("coal.rest"), months.map((m: any) => m.other), S2],
-      ...(anyTig ? [[tigName, months.map((m: any) => -m.tigs), BAD] as [string, number[], string]] : [])];
-    const monthTips = months.map((m: any) => [f.monthLabel(m.month), `${f.t("coal.src.logtime")} ${f.num(m.logtime)}`, `${f.t("coal.rest")} ${f.num(m.other)}`, ...(m.tigs ? [`${tigName}: ${f.num(m.tigs)}`] : [])].join("\n"));
+    // every month stacked by source, in the sources' colours (TIGs in red at their size); a report saved before every award
+    // was kept falls back to logtime and the rest
+    const order = [...given.map((s: any) => s.key), ...Object.keys(bySource || {}).filter((k) => !given.some((s: any) => s.key === k))];
+    const monthSeries: [string, number[], string][] = bySource
+      ? order.filter((k) => bySource[k]).map((k) => [f.t(`coal.src.${k}`), bySource[k].map((v) => (k === "tigs" ? -v : v)), tone(k)])
+      : [[f.t("coal.src.logtime"), months.map((m: any) => m.logtime), tone("logtime")], [f.t("coal.rest"), months.map((m: any) => m.other), base],
+        ...(anyTig ? [[tigName, months.map((m: any) => -m.tigs), BAD] as [string, number[], string]] : [])];
+    const monthTips = months.map((m: any, i: number) => (bySource
+      ? [f.monthLabel(m.month), ...order.filter((k) => bySource[k]?.[i]).map((k) => `${f.t(`coal.src.${k}`)}: ${f.num(bySource[k][i])}`)]
+      : [f.monthLabel(m.month), `${f.t("coal.src.logtime")} ${f.num(m.logtime)}`, `${f.t("coal.rest")} ${f.num(m.other)}`, ...(m.tigs ? [`${tigName}: ${f.num(m.tigs)}`] : [])]).join("\n"));
     const total = f.t("coal.total", { points: f.num(P.total || 0), n: f.plural(P.count || 0, "coal.awards"),
       coalition: D.profile?.coalition?.name || "–", span: split.length ? f.t("coal.span", { first: month(split[0].month), last: month(split[split.length - 1].month) }) : f.t("empty.period") });
     out.push({ id: "coal-points", nav: f.t("nav.coal"), html: section("coal-points", f.t("coal.title"), cols(
-      block("coal-sources", hbars(f, names, [[f.t("coal.points"), src.map((s: any) => s.points), S1]],
-        { label: f.t("coal.sources"), end: (_i, v) => f.num(v), tips: names.map((n: string, i: number) => `${n} · ${f.num(src[i].points)} · ${f.plural(src[i].count, "coal.awards")}`),
-          emptyText: f.t("empty.period"), big: true }), f.t("coal.sources")),
-      headBlock("coal-months", f.t("coal.months"), legend(monthSeries.map(([n, , c]) => [n, c])), vbars(f, months.map((m: any) => f.monthLabel(m.month)), monthSeries,
-        { label: f.t("coal.months"), stacked: true, tight: true, fmt: (v) => f.num(v), tips: monthTips, every: Math.ceil(months.length / 6) || 1, emptyText: f.t("empty.period") }))),
+      // what your points are made of: one bar split by source, then every source with its points, share and awards, in its
+      // colour (the key to the months beside it)
+      block("coal-sources", sourcesShare(f, src, tone), f.t("coal.sources")),
+      // stacked by source, the bars beside are its key; the older two-part chart keeps a key of its own
+      ((chart: string) => (bySource ? block("coal-months", chart, f.t("coal.months")) : headBlock("coal-months", f.t("coal.months"), legend(monthSeries.map(([n, , c]) => [n, c])), chart)))(
+        vbars(f, months.map((m: any) => f.monthLabel(m.month)), monthSeries,
+          { label: f.t("coal.months"), stacked: true, tight: true, colTips: !!bySource, fmt: (v) => f.num(v), tips: monthTips, every: Math.ceil(months.length / 6) || 1, emptyText: f.t("empty.period") }))),
     { lede: esc(total) + (minus ? ` ${esc(f.t("coal.minus"))}` : "") }) });
   }
   return out;

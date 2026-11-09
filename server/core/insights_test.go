@@ -2,7 +2,9 @@ package core
 
 import (
 	"fmt"
+	"slices"
 	"testing"
+	"time"
 )
 
 func TestCoalitionStandingsCarryTheirLogoAndBanner(t *testing.T) {
@@ -39,5 +41,41 @@ func TestEveryCoalitionAwardIsKeptNewestFirst(t *testing.T) {
 	}
 	if !v2Keys["awards"] {
 		t.Fatal("v1's golden files have no awards: it must be a v2 key")
+	}
+}
+
+func TestMadridLevelsKeepStudentsOuterCoreFrozenAndAlumniOnly(t *testing.T) {
+	now := time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC)
+	row := func(level float64, user Raw, cu Raw) any {
+		r := Raw{"cursus_id": 21.0, "begin_at": "2024-10-07T08:00:00.000Z", "level": level, "user": user}
+		for k, v := range cu {
+			r[k] = v
+		}
+		return r
+	}
+	on := Raw{"staff?": false, "alumni?": false, "active?": true}
+	rows := []any{
+		row(5.5, on, nil), // student
+		row(12.25, on, Raw{"grade": "Transcender"}),
+		row(7, Raw{"staff?": false, "alumni?": false, "active?": false}, nil), // frozen
+		row(16, Raw{"staff?": false, "alumni?": true, "active?": true}, nil),
+		row(3, on, Raw{"end_at": "2025-01-01T00:00:00.000Z"}),                  // blackholed
+		row(0, Raw{"staff?": true, "alumni?": false, "active?": true}, nil),   // staff
+		row(0, on, Raw{"begin_at": "2027-01-01T00:00:00.000Z"}),                // not started
+	}
+	got := MadridLevels(rows, now)
+	slices.Sort(got)
+	if fmt.Sprint(got) != "[5.5 7 12.25 16]" {
+		t.Fatalf("levels %v", got)
+	}
+}
+
+func TestMadridStandingIsYourPlaceAmongThem(t *testing.T) {
+	s := MadridStanding([]float64{1, 2, 3, 4, 5, 6, 7, 8}, 7)
+	if s.I("size") != 8 || s.I("rank") != 2 || s.F("top") != 25 {
+		t.Fatalf("standing %v", s)
+	}
+	if MadridStanding(nil, 7) != nil {
+		t.Fatal("a standing with no levels")
 	}
 }

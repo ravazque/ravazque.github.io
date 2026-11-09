@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -33,6 +34,7 @@ type fake42 struct {
 	me       map[string]any
 	bloc     atomic.Value
 	blocs    atomic.Int64
+	madrid   atomic.Int64
 	requests atomic.Int64
 }
 
@@ -45,6 +47,10 @@ func (f *fake42) handler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(f.me)
 	case strings.HasSuffix(r.URL.Path, "/coalitions"):
 		w.Write([]byte(`[{"slug":"zefiria","color":"#E39F0B","name":"Zefiria"}]`))
+	case r.URL.Path == "/v2/cursus/21/cursus_users" && r.URL.Query().Get("filter[campus_id]") == "22" && !r.URL.Query().Has("range[begin_at]"):
+		f.madrid.Add(1)
+		row := `{"cursus_id":21,"begin_at":"2024-10-07T08:00:00.000Z","level":%v,"user":{"staff?":false,"alumni?":false,"active?":true}}`
+		fmt.Fprintf(w, "["+row+","+row+","+row+"]", 3.5, 9.1, 12)
 	case r.URL.Path == "/v2/blocs" && f.bloc.Load() != nil:
 		f.blocs.Add(1)
 		json.NewEncoder(w).Encode(f.bloc.Load())
@@ -663,4 +669,29 @@ func TestDevLiveTurnsTheOwnersSavedReportLive(t *testing.T) {
 func mustB64(s string) []byte {
 	b, _ := base64.StdEncoding.DecodeString(s)
 	return b
+}
+
+func TestViewTellsYourPlaceInMadridReadInTheBackgroundOncePerHour(t *testing.T) {
+	e := newEnv(t, nil)
+	e.signIn(t)
+	e.s.Jobs.Drain()
+	e.seed(t, 990002, "../../core/testdata/golden/mid.report.json")
+	view := func() map[string]any {
+		var v map[string]any
+		json.Unmarshal([]byte(readAll(e.do(t, "GET", "/api/me/view", nil, nil))), &v)
+		return v
+	}
+	if v := view(); v["madrid"] != nil {
+		t.Fatalf("a standing before Madrid was read: %v", v["madrid"])
+	}
+	var m map[string]any
+	for end := time.Now().Add(5 * time.Second); m == nil && time.Now().Before(end); time.Sleep(20 * time.Millisecond) {
+		m, _ = view()["madrid"].(map[string]any)
+	}
+	if m == nil || m["size"] != 3.0 || m["rank"] != 3.0 || m["top"] != 100.0 { // level 8.41 under 9.1 and 12, over 3.5
+		t.Fatalf("madrid %v", m)
+	}
+	if n := e.f.madrid.Load(); n != 1 {
+		t.Fatalf("Madrid read %d times in one hour", n)
+	}
 }

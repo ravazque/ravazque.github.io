@@ -37,8 +37,8 @@
 /* the bonus: the rolling week against 50 h and 80 h */
 :where(body:not(.site)) .tmeter { position: relative; height: 14px; margin: 6px 0 4px; background: var(--seat-empty); }
 :where(body:not(.site)) .tmeter i { position: absolute; inset: 0 auto 0 0; background: var(--accent-data); transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
-:where(body:not(.site)) .js .tp:not(.in) .tmeter i { clip-path: inset(0 100% 0 0); }
-@media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .js .tp:not(.in) .tmeter i { clip-path: none; } }
+:where(html.js body:not(.site)) .tp:not(.in) .tmeter i { clip-path: inset(0 100% 0 0); }
+@media (prefers-reduced-motion: reduce) { :where(html.js body:not(.site)) .tp:not(.in) .tmeter i { clip-path: none; } }
 :where(body:not(.site)) .tmeter em { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
 :where(body:not(.site)) .tmeter em.end { right: 0; }
 :where(body:not(.site)) .tticks { position: relative; height: 18px; font-size: 13px; color: var(--text-2); }
@@ -129,31 +129,106 @@
 }
 :where(body:not(.site)) #today > h2 { margin-top: 40px; }
 
-/* Profile card: photo in a rounded square, the name as a poster, three stacks of facts under a 2 px rule */
-:where(body:not(.site)) .pf { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 28px; align-items: start; }
-:where(body:not(.site)) .pf .pf-photo { width: 132px; height: 132px; border-radius: 20px; font-size: 34px; background: var(--sunken); }
-:where(body:not(.site)) .pf-name { color: var(--ink); font: 900 40px/1 var(--type-font-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
-:where(body:not(.site)) .pf-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 8px 0 14px; color: var(--text-2); font-size: 15px; line-height: 1.5; }
+/* Profile card: the photo in a soft frame, "name | login", who you are; four figures between rules; your path on a
+   timeline. Sizes in spacing.css (#profile) */
+:where(body:not(.site)) #profile { padding-bottom: max(0px, var(--card-line-pad, 24px)); margin-bottom: min(0px, var(--card-line-pad, 24px)); border-bottom: var(--card-line, 0px) solid var(--rule-strong); }
+:where(body:not(.site)) .pf-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--card-gap, 24px); align-items: center;
+  padding-bottom: var(--card-head-pad, 0px); border-bottom: var(--card-head-line, 0px) solid var(--rule-strong); } /* a line across the card under your name (spacing.css) */
+:where(body:not(.site)) .pf-head .pf-photo { width: var(--card-photo, 132px); height: var(--card-photo, 132px); border-radius: calc(var(--card-photo, 132px) * .15);
+  font-size: calc(var(--card-photo, 132px) * .26); background: var(--sunken);
+  margin: var(--card-photo-frame, 4px); box-shadow: 0 0 0 var(--card-photo-frame, 4px) var(--rule); }
+:where(body:not(.site)) .pf-name { margin: 0; color: var(--ink); font: 900 var(--card-name, 40px)/1 var(--type-font-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
+/* "name · login": the login lighter, after a middle dot */
+:where(body:not(.site)) .pf-login { display: inline-block; margin-left: .3em; color: var(--text-2); font-weight: 500; font-size: .5em; letter-spacing: 0; vertical-align: .32em; line-height: 1; }
+:where(body:not(.site)) .pf-login::before { content: "·"; margin-right: .3em; }
+:where(body:not(.site)) .pf-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: var(--card-who-gap, 8px) 0 0; color: var(--text-2); font-size: var(--card-sub, 15px); line-height: 1.5; }
+:where(body:not(.site)) .pf-sub + .pf-tags { margin-top: var(--card-tags-gap, 2px); }
 :where(body:not(.site)) .pf-sub > span { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
-:where(body:not(.site)) .pf-sub .dot { display: inline-block; width: 9px; height: 9px; margin-right: 2px; outline: 1px solid var(--rule-strong); }
-:where(body:not(.site)) .pf-stacks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
-:where(body:not(.site)) .pf-stacks dl { display: grid; align-content: start; gap: 10px; margin: 0; padding: 10px 18px 0; border-left: 1px solid var(--rule); }
-:where(body:not(.site)) .pf-stacks dl:first-child { padding-left: 0; border-left: 0; }
-:where(body:not(.site)) .pf-stacks dt { color: var(--text-2); font-size: 14px; }
-:where(body:not(.site)) .pf-stacks dd { margin: 2px 0 0; color: var(--ink); font: 800 22px/1.1 var(--type-font-display); letter-spacing: -.02em; }
+:where(body:not(.site)) .pf-sub .dot { box-sizing: border-box; display: inline-block; width: 11px; height: 11px; margin-right: 6px; border: 1px solid var(--rule); border-radius: 50%; }
+/* the timeline under the three modules: --card-time-top alone sets the distance (no section padding of its own) */
+:where(body:not(.site)) #path { padding-top: 0; margin-top: 0; padding-bottom: max(0px, var(--card-time-bottom, 0px)); margin-bottom: min(0px, var(--card-time-bottom, 0px)); }
+/* the four figures under your name, drawn like the three modules below them, larger; the figure never outgrows its
+   column (cqi). Sizes: spacing.css (--card-module-*) */
+:where(body:not(.site)) .pf-modules { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--card-figures-top, 28px); }
+@media (min-width: 760px) { :where(body:not(.site)) .pf-modules { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+:where(body:not(.site)) .pf-modules .module .tab { font-size: var(--card-module-title, 19px); border-top-width: var(--card-figures-line, 2px); }
+:where(body:not(.site)) .pf-modules .module .tab span { font-size: var(--card-module-aside, 16px); }
+:where(body:not(.site)) .pf-modules .module .tab .tab-t { display: inline-flex; align-items: center; gap: 8px; color: inherit; font: inherit; overflow: visible; } /* the name and its ⓘ */
+:where(body:not(.site)) .pf-modules .module .figure { font-size: min(var(--card-module-value, 64px), 24cqi); }
+:where(body:not(.site)) .pf-modules .module .line { font-size: var(--card-module-line, 17px); }
+/* the timeline: each stretch in its colour (Piscine grey, Common Core light accent, Outer Core accent) with a key under
+   it, dashed ahead of today; every stop a ring on the line (campus moves square, a date still ahead lighter), the
+   milestones (Transcender, alumni) filled in the accent with a double ring, today an accent diamond; each name and date in
+   a framed chip, above or below by the room it has (Dashboard placeMarks). The side margin keeps the end stops in.
+   Weights and distances: spacing.css (--card-time-*) */
+:where(body:not(.site)) .pf-time { --tl: var(--card-time-line, 6px); --td: var(--card-time-dot, 22px); --tside: calc(var(--td) / 2 + 8px); --tfar: 0px;
+  position: relative; height: var(--card-time-height, 150px); margin: var(--tfar) var(--tside) 0; }
+/* the line over it, across the card, --card-time-top under the three modules; then, --card-time-rule-pad under the line,
+   the box around the timeline, framed like the charts' keys: its frame, the room inside and how wide it is (centred) */
+:where(body:not(.site)) #path::before { content: ""; display: block; margin-top: var(--card-time-top, 20px); border-top: var(--card-time-rule, 0px) solid var(--rule-strong); }
+:where(body:not(.site)) .pf-box { box-sizing: border-box; width: min(100%, var(--card-time-box-width, 100%)); margin: var(--card-time-rule-pad, 16px) auto 0;
+  padding: var(--card-time-box-pad-y, 20px) var(--card-time-box-pad-x, 24px);
+  border: var(--card-time-box-line, 1px) solid var(--card-time-box-color, var(--rule)); }
+:where(body:not(.site)) .pf-line { position: absolute; left: 0; right: 0; top: 50%; height: 0; }
+:where(body:not(.site)) .pf-line > span { position: absolute; top: calc(var(--tl) / -2); height: var(--tl); }
+:where(body:not(.site)) .pf-line .done { left: 0; background: var(--rule-strong); }
+:where(body:not(.site)) .pf-line .ahead { right: 0; height: 0; border-top: var(--tl) dashed var(--rule-strong); }
+:where(body:not(.site)) .pf-line .phase.pisc { background: var(--neutral); }
+:where(body:not(.site)) .pf-line .phase.cc { background: color-mix(in oklab, var(--accent-data) 45%, var(--ground)); }
+:where(body:not(.site)) .pf-line .phase.oc { background: var(--accent-data); }
+:where(body:not(.site)) .pf-line i { box-sizing: border-box; position: absolute; top: calc(var(--td) / -2); width: var(--td); height: var(--td); margin-left: calc(var(--td) / -2);
+  background: var(--ground); border: max(4px, var(--tl) * .8) solid var(--ink); border-radius: 50%; }
+:where(body:not(.site)) .pf-line i.key { --k: calc(var(--td) + 4px); top: calc(var(--k) / -2); width: var(--k); height: var(--k); margin-left: calc(var(--k) / -2);
+  background: var(--accent-data); border: 0; box-shadow: 0 0 0 3px var(--ground), 0 0 0 6px var(--accent-data); }
+:where(body:not(.site)) .pf-line i.move { border-radius: 3px; }
+:where(body:not(.site)) .pf-line i.now { background: var(--accent-data); border-color: var(--accent-data); border-radius: 3px; transform: rotate(45deg); }
+:where(body:not(.site)) .pf-line i.future { border: 2px dashed var(--text-2); }  /* a date still ahead: a fine ring of short dashes */
+:where(body:not(.site)) .pf-mark { position: absolute; transform: translateX(-50%); display: grid; gap: 1px; padding: 5px 10px; border: 1px solid var(--rule);
+  background: var(--ground); text-align: center; color: var(--text-2); font-size: 14px; white-space: nowrap; }
+:where(body:not(.site)) .pf-mark b { color: var(--ink); font: 700 16px/1.2 var(--type-font-display); }
+:where(body:not(.site)) .pf-mark.key b { font-weight: 800; }
+:where(body:not(.site)) .pf-mark.now b { color: var(--accent-ink); }
+/* where each name sits, from its stop (the origin: the stop's place in % of the width, so it holds at every width): the
+   gap from the line, then a shift across and away; the milestones (Transcender, alumni) have their own (spacing.css) */
+:where(body:not(.site)) .pf-mark { --gap: var(--card-time-label-gap, 12px); --dy: var(--card-time-label-y, 0px); margin-left: var(--card-time-label-x, 0px); }
+:where(body:not(.site)) .pf-mark.key { --gap: calc(var(--card-time-label-gap, 12px) + var(--card-time-key-gap, 2px)); --dy: var(--card-time-key-y, 0px);
+  margin-left: var(--card-time-key-x, 0px); }
+:where(body:not(.site)) .pf-mark.up { bottom: calc(50% + var(--td) / 2 + var(--gap) + var(--dy)); }
+:where(body:not(.site)) .pf-mark.down { top: calc(50% + var(--td) / 2 + var(--gap) + var(--dy)); }
+:where(body:not(.site)) .pf-mark.left { transform: translateX(-16px); text-align: left; }  /* near the ends: lined up with the stop, the tail over it */
+:where(body:not(.site)) .pf-mark.right { transform: translateX(calc(-100% + 16px)); text-align: right; }
+/* each name is a speech bubble: its tail (a square turned on its corner, edged like the bubble) points at its stop */
+:where(body:not(.site)) .pf-mark::after { content: ""; position: absolute; left: calc(50% - var(--shift, 0px)); width: 10px; height: 10px; margin-left: -5px;
+  background: var(--ground); border: 1px solid var(--rule); transform: rotate(45deg); }
+:where(body:not(.site)) .pf-mark { --shift: var(--card-time-label-x, 0px); }
+:where(body:not(.site)) .pf-mark.key { --shift: var(--card-time-key-x, 0px); border-color: var(--accent-data); }
+:where(body:not(.site)) .pf-mark.key::after { border-color: var(--accent-data); }
+:where(body:not(.site)) .pf-mark.left::after { left: calc(16px - var(--shift)); }
+:where(body:not(.site)) .pf-mark.right::after { left: calc(100% - 16px - var(--shift)); }
+:where(body:not(.site)) .pf-mark.up::after { bottom: -6px; border-top-color: transparent; border-left-color: transparent; }
+:where(body:not(.site)) .pf-mark.down::after { top: -6px; border-bottom-color: transparent; border-right-color: transparent; }
+:where(body:not(.site)) .pf-mark.far.up { bottom: calc(50% + var(--td) / 2 + var(--gap) + var(--dy) + 62px); }  /* one row further out, when both sides were taken */
+:where(body:not(.site)) .pf-mark.far.down { top: calc(50% + var(--td) / 2 + var(--gap) + var(--dy) + 62px); }
+:where(body:not(.site)) .pf-time.far-up { --tfar: 62px; }  /* room for that row, on its side only */
+:where(body:not(.site)) .pf-time.far-down { margin-bottom: 62px; }
 @media (max-width: 719.98px) {
-  :where(body:not(.site)) .pf { gap: 0 16px; }
-  :where(body:not(.site)) .pf .pf-photo { width: 72px; height: 72px; border-radius: 14px; font-size: 22px; }
-  :where(body:not(.site)) .pf-name { font-size: 26px; }
-  :where(body:not(.site)) .pf-sub { gap: 2px 14px; font-size: 14px; }
-  :where(body:not(.site)) .pf-main { display: contents; }
-  :where(body:not(.site)) .pf-name, :where(body:not(.site)) .pf-sub { grid-column: 2; }
-  :where(body:not(.site)) .pf-name { align-self: end; }
-  :where(body:not(.site)) .pf-stacks { grid-column: 1 / -1; }
-  :where(body:not(.site)) .pf-stacks { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
-  :where(body:not(.site)) .pf-stacks dl { display: contents; }
-  :where(body:not(.site)) .pf-stacks dl > div { padding: 8px 0; border-bottom: 1px solid var(--rule); }
-  :where(body:not(.site)) .pf-stacks dd { font-size: 19px; }
+  :where(body:not(.site)) .pf-head { gap: 0 16px; }
+  :where(body:not(.site)) .pf-sub { gap: 2px 14px; }
+  /* phones: the timeline runs down, one stop per row (its mark, its name, its date), the line on the left */
+  :where(body:not(.site)) .pf-time { --tside: 0px; height: auto; }
+  :where(body:not(.site)) .pf-time::before { content: ""; position: absolute; left: 11px; top: 18px; bottom: 18px; width: var(--tl); margin-left: calc(var(--tl) / -2); background: var(--rule-strong); }
+  :where(body:not(.site)) .pf-line { display: none; }
+  :where(body:not(.site)) .pf-mark { position: relative; left: auto !important; bottom: auto; top: auto; transform: none; display: flex; justify-content: space-between;
+    align-items: baseline; gap: 12px; padding: 9px 0 9px 36px; border: 0; background: none; text-align: left; }
+  :where(body:not(.site)) :is(.pf-mark.up, .pf-mark.down, .pf-mark.left, .pf-mark.right, .pf-mark.far) { top: auto; bottom: auto; transform: none; text-align: left; }
+  :where(body:not(.site)) :is(.pf-mark, .pf-mark.key) { margin-left: 0; }  /* the list on phones keeps its own place */
+  :where(body:not(.site)) .pf-mark::after { display: none; }
+  :where(body:not(.site)) .pf-mark::before { content: ""; box-sizing: border-box; position: absolute; left: 1px; top: 11px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--ground); border: 4px solid var(--ink); }
+  :where(body:not(.site)) .pf-mark.key::before { left: 2px; top: 12px; width: 18px; height: 18px; border: 0; background: var(--accent-data); box-shadow: 0 0 0 2px var(--ground), 0 0 0 4px var(--accent-data); }
+  :where(body:not(.site)) .pf-mark.move::before { border-radius: 3px; }
+  :where(body:not(.site)) .pf-mark.now::before { border-radius: 3px; background: var(--accent-data); border-color: var(--accent-data); transform: rotate(45deg) scale(.85); }
+  :where(body:not(.site)) .pf-mark.future::before { border: 2px dashed var(--text-2); }
 }
 
 /* Achievements of one series: the highest level shows, the earlier ones open underneath */
@@ -245,10 +320,48 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .skel .sk.tall { height: 200px; margin-top: 20px; }
 :where(body:not(.site)) .skel h2 .sk { width: min(320px, 60%); height: .8em; margin: 0; }
 /* the first extraction: Profile's card and modules at their own size, so the page doesn't jump when the data arrives */
-:where(body:not(.site)) .skel .pf-stacks .sk { width: 45%; margin: 4px 0; }
-:where(body:not(.site)) .skel .pf-stacks dd .sk { width: 60%; height: 22px; }
 :where(body:not(.site)) .skel .module .tab .sk { width: 40%; margin: 0; }
 :where(body:not(.site)) .skel .module .figure .sk { width: 45%; height: .8em; margin: 0; }
-:where(body:not(.site)) .skel .module .sk.tall { height: 36px; margin: auto 0 0; }
 @keyframes sk-pulse { to { opacity: .4; } }
 @media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .skel .sk { animation: none; } }
+
+/* Coalition points: what your points are made of, a bar split by source over one row per source, the rows sharing the
+   height of the months beside them (colours: coalition.ts) */
+:where(body:not(.site)) [data-panel="coal-sources"] { display: flex; flex-direction: column; }
+:where(body:not(.site)) .src-share { flex: 1; display: flex; flex-direction: column; }
+:where(body:not(.site)) .src-stack { flex: none; display: flex; height: 14px; margin: 4px 0 6px; gap: 2px; }
+:where(body:not(.site)) .src-stack i { min-width: 3px; }
+:where(body:not(.site)) .src-list { flex: 1; display: grid; grid-auto-rows: minmax(min-content, 1fr); margin: 0; padding: 0; list-style: none; }
+:where(body:not(.site)) .src-list li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto minmax(3.5em, auto); column-gap: 10px; align-items: center;
+  padding: 4px 0; border-bottom: var(--list-line, 1px) solid var(--rule); font-size: 15px; }
+:where(body:not(.site)) .src-list .sw { width: 12px; height: 12px; }
+:where(body:not(.site)) .src-list .src-name { color: var(--ink); font-weight: 600; }
+:where(body:not(.site)) .src-list .src-meta { color: var(--text-2); font-size: 13px; text-align: right; }
+:where(body:not(.site)) .src-list b { color: var(--ink); font: 700 16px/1 var(--type-font-display); text-align: right; }
+:where(body:not(.site)) .src-list b.neg { color: var(--critical); }
+:where(body:not(.site)) .src-list .zero :is(.src-name, b) { color: var(--text-2); font-weight: 500; }
+:where(body:not(.site)) .src-list .zero .sw { box-sizing: border-box; border: 2px solid var(--rule); }
+
+/* Cancelled evaluations: four cards, 40/20/20/20 from 760px; each one's tip lists them by date (evaluations.ts) */
+:where(body:not(.site)) #cancelled .kpis.cancel-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+:where(body:not(.site)) #cancelled .cancel-card.wide, :where(body:not(.site)) #cancelled .cancel-card:last-child { grid-column: 1 / -1; } /* phones: 1, then 2 and 3, then 4 */
+@media (min-width: 760px) {
+  :where(body:not(.site)) #cancelled .kpis.cancel-cards { grid-template-columns: 2fr 1fr 1fr 1fr; } /* 40% / 20% / 20% / 20% */
+  :where(body:not(.site)) #cancelled .cancel-card.wide, :where(body:not(.site)) #cancelled .cancel-card:last-child { grid-column: auto; }
+}
+:where(body:not(.site)) .cancel-card { cursor: help; }
+:where(body:not(.site)) #cancelled .cancel-card h3 { display: block; }
+:where(body:not(.site)) .cancel-card h3 .info { margin-left: 6px; vertical-align: -1px; } /* beside the last word, also when the title wraps */
+:where(body:not(.site)) .cancel-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+
+/* a login opens that student's page on acerezo.top (new tab): the text as it was, a faint line under it */
+:where(body:not(.site)) .login-link { color: inherit; text-decoration: underline 1px color-mix(in oklab, currentColor 35%, transparent); text-underline-offset: 3px; }
+:where(body:not(.site)) .login-link:hover, :where(body:not(.site)) .login-link:focus-visible { text-decoration-color: currentColor; }
+
+/* Profile's widgets, closer than the pages' sections (spacing.css, --widget-*): smaller titles, less room above each,
+   tables at half width without their secondary columns */
+:where(body:not(.site)) .widgets .widget > section { padding-top: var(--widget-top, 32px); }
+:where(body:not(.site)) .widgets .widget > section > :is(h2, .panel-head) h2, :where(body:not(.site)) .widgets .widget > section > h2 { font-size: var(--widget-title, 32px); }
+:where(body:not(.site)) .widgets .widget.half { container-type: inline-size; }
+@container (max-width: 720px) { :where(body:not(.site)) .widgets .narrow-hide { display: none; } }
+

@@ -60,12 +60,74 @@
   --indent-line: 2px;
   --foot-line: 4px;
   --bar-max: 96px;             /* the widest a chart's bar gets: few bars grow up to this, many get thinner on their own (a section can set its own) */
+  --title-tools-gap: 14px;     /* a title (or its ⓘ) → its first button: star, move, size, ×, enlarge; on every page and widget */
+  --title-tools-between: 9px;  /* between those buttons */
+  --title-count-color: color-mix(in oklab, var(--muted) 55%, transparent);  /* "· 90 evaluations" beside a title: a very soft grey */
+  --title-count-size: .7em;    /* its size, against the title's (.5em: half) */
+  --title-tools-off-dark: 50%;  /* the frame of × (remove a widget): the charts' red darkened this much, 0% none, 100% black */
 }
 
 /* ================================================ PROFILE ================================================== */
+/* the Rhythm widget → the widget under it, on laptops and on Profile only (0 as now; more moves the next one away,
+   negative brings it closer; with Rhythm at half width, only when it is the taller of its row) */
+main[data-page="web-home"] {
+  --rhythm-below-laptop: -50px;
+  --widget-top: 80px;              /* each widget's title → the widget above it (Activity too) */
+  --widget-title: 36px;            /* the size of each widget's title */
+}
+/* your card on top: each size grows with the screen between a least and a most, clamp(least, middle, most); the middle
+   follows the window's width (1vw is 1% of it). A plain value (40px) fixes a size on every screen. */
+#profile, #path {
+  --card-photo: clamp(72px, 10.4vw, 150px);    /* the photo's side */
+  --card-photo-frame: 4px;                     /* the soft grey frame around it (0: none) */
+  --card-gap: clamp(16px, 2.2vw, 32px);        /* the photo → your name */
+  --card-name: clamp(28px, 5vw, 72px);         /* your name */
+  --card-sub: clamp(14px, 1.32vw, 19px);       /* the lines under it: your title or login and campus; coalition, group, track */
+  --card-who-gap: 10px;                         /* your name → the line of your title (or login) and campus */
+  --card-tags-gap: 4px;                        /* that line → the line of coalition, group, grade and track */
+  --card-head-line: 2px;                       /* a line across the card under your name and photo, over the four figures (0: none; 2px to show it) */
+  --card-head-pad: 36px;                        /* your name and photo → that line (give it room when the line shows: 20px…) */
+  --card-figures-top: 16px;                    /* your name and photo (or that line) → the four figures (Level, Your promo, Wallet, Correction points) */
+  --card-figures-line: 2px;                    /* the line over each of them (0 hides it) */
+  --card-module-title: clamp(15px, 1.32vw, 19px);  /* each one's name (Level…) */
+  --card-module-aside: clamp(13px, 1.11vw, 16px);  /* the word on the right of its name (Transcender, Madrid) */
+  --card-module-value: clamp(40px, 4.6vw, 72px);  /* its figure (it never outgrows its column) */
+  --card-module-line: clamp(14px, 1.18vw, 17px);  /* the line under its figure (73% of the way to level 18…) */
+  --card-time-top: 38px;                       /* the three modules above → the line over the timeline (more separates them; negative brings it closer) */
+  --card-time-rule: 2px;                       /* that line (0: none) */
+  --card-time-rule-pad: 40px;                  /* that line → the timeline's box */
+  /* the box around the timeline */
+  --card-time-box-line: 1px;                   /* its frame (0: none) */
+  --card-time-box-color: var(--rule);          /* the frame's colour: var(--rule) light grey, var(--rule-strong) dark, or any colour */
+  --card-time-box-pad-y: 30px;                 /* the room inside, above and below the timeline's names */
+  --card-time-box-pad-x: 24px;                 /* the room inside, left and right */
+  --card-time-box-width: 100%;                 /* how wide it is, centred: 100% the whole card, or a value (1000px, 80%) */
+  --card-time-height: 160px;                   /* the timeline, with its names above and below the line */
+  --card-time-line: 5px;                       /* the timeline's thickness */
+  --card-time-dot: 22px;                       /* each ring on it (the milestones are a little bigger, with a double ring) */
+  /* the names on the timeline, laptops and tablets (phones list them): each hangs from its stop, centred on it (near the
+     ends lined up with its edge so it stays in the card); stops sit in % of the width, so these shifts hold at every width.
+     -y moves a name away from the line (negative: closer), -x to the right (negative: to the left) */
+  --card-time-label-gap: 12px;                 /* every name → its stop's ring */
+  --card-time-label-x: 0px;
+  --card-time-label-y: 0px;
+  --card-time-key-gap: 6px;                    /* a milestone's name (Transcender, alumni): this much more than the others */
+  --card-time-key-x: 0px;
+  --card-time-key-y: 0px;
+  --card-line: 0px;                            /* a line under the whole card, above the three modules (0 hides it) */
+  --card-line-pad: 0px;                        /* the four figures → the three modules (Projects, Evaluations, Logged time), → or that line when it shows; less brings them closer, negative closer still */
+  --card-time-bottom: 0px;                     /* the timeline (its names under the line) → the first widget under it: more separates them, negative brings them closer */
+}
+/* the picker of sections to add, always last on the page, centred under a line */
+#widgets {
+  --picker-top: 48px;              /* the last widget → the line over the picker */
+  --picker-line: 2px;              /* that line's thickness (0 hides it) */
+  --picker-line-color: var(--rule); /* its colour: var(--rule) light grey, var(--rule-strong) dark, or any colour (#c8ccd0) */
+  --picker-pad: 28px;              /* the line → the picker */
+}
 main[data-page="web-home"] #activity {
-  --sections: 56px;            /* the three figures → "Activity", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections: var(--widget-top, 32px);         /* the widget above → "Activity", like every widget (set above) */
+  --sections-laptop: var(--widget-top, 32px);  /* the same, laptops */
   --charts-top: 36px;          /* "Activity" → the lists */
   --charts-y: 40px;            /* lists one under the other */
   --charts-x: 12px;            /* lists side by side, phones and tablets */
@@ -309,12 +371,19 @@ main[data-page="web-evaluations"] #points {
   --table-head-line: 2px;      /* under the table's column names */
   --table-row-line: 1px;       /* between the table's rows */
 }
+main[data-page="web-evaluations"] #cancelled {
+  --sections: 56px;            /* Correction points → "Cancelled evaluations", phones */
+  --sections-laptop: 88px;     /* the same, laptops */
+  --charts-top: 36px;          /* "Cancelled evaluations" → its four cards */
+  --title-line: 4px;           /* under "Cancelled evaluations" */
+  --title-pad: 12px;           /* "Cancelled evaluations" → its line */
+  --kpi-line: 2px;             /* over each of the four cards */
+}
 main[data-page="web-evaluations"] #log {
   --sections: 56px;            /* Correction points → "Evaluation log", phones */
   --sections-laptop: 70px;     /* the same, laptops */
   --title-gap: 20px;           /* "Evaluation log" → the filters */
-  --facts-gap: 16px;           /* the filters → the count and the table */
-  --count-gap: 36px;           /* the count ("90 evaluations") → the table's line */
+  --facts-gap: 36px;           /* the filters → the table (the count is in the title now) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Evaluation log" */
   --title-pad: 12px;           /* "Evaluation log" → its line */
@@ -381,7 +450,7 @@ main[data-page="web-coalition"] #coal-points {
   --title-pad: 12px;           /* "Coalition points" → its line */
   --sources-line: 2px;         /* over "Points by source" */
   --months-line: 2px;          /* over "Points per month" */
-  --months-gap: 16px;          /* "Points per month" → the chart */
+  --months-gap: 24px;          /* "Points per month" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the baseline of Points per month */
   --key-box: 1px;              /* the frame of the key */
@@ -484,16 +553,16 @@ main[data-page="web-campus"] #seats {
 }
 main[data-page="web-campus"] #days {
   --sections: 56px;            /* Where you sat → "Days and hours", phones */
-  --sections-laptop: 48px;     /* the same, laptops */
+  --sections-laptop: 68px;     /* the same, laptops */
   --charts-top: 6px;          /* "Days and hours" → Every day */
   --charts-y: 40px;            /* Every day → Hours per month and Weekday × hour */
   --charts-x: 12px;            /* Hours per month ↔ Weekday × hour, phones and tablets */
-  --charts-x-laptop: 48px;     /* the same, laptops */
+  --charts-x-laptop: 38px;     /* the same, laptops */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Days and hours" */
   --title-pad: 12px;           /* "Days and hours" → its line */
   --every-day-line: 0px;       /* over "Every day" */
-  --every-day-gap: 18px;       /* "Every day" → the calendar */
+  --every-day-gap: 28px;       /* "Every day" → the calendar */
   --hours-month-line: 2px;     /* over "Hours per month" */
   --hours-month-gap: 42px;     /* "Hours per month" → the chart */
   --weekday-hour-line: 2px;    /* over "Weekday × hour" */
@@ -504,10 +573,9 @@ main[data-page="web-campus"] #days {
 }
 main[data-page="web-campus"] #sessions {
   --sections: 56px;            /* Days and hours → "Sessions log", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: 68px;     /* the same, laptops */
   --title-gap: 20px;           /* "Sessions log" → the search */
-  --facts-gap: 16px;           /* the search → the count and the table */
-  --count-gap: 0px;           /* the count ("391 of 391 sessions") → the table's line */
+  --facts-gap: -30px;           /* the search → the table (the count is in the title now) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Sessions log" */
   --title-pad: 12px;           /* "Sessions log" → its line */
@@ -518,7 +586,7 @@ main[data-page="web-campus"] #sessions {
 }
 main[data-page="web-campus"] #where {
   --sections: 56px;            /* Sessions log → "Where · evaluations", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: 68px;     /* the same, laptops */
   --title-gap: 20px;           /* "Where · evaluations" → its description */
   --info-gap: 20px;            /* the description → the chart */
   --charts-y: 40px;            /* the chart → "Without a login, by project" */
@@ -574,6 +642,7 @@ main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="w
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls { margin-bottom: 0; }
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls + * { margin-top: var(--search-gap); }
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls + * > :first-child { margin-top: 0; }
+@media (min-width: 960px) { main[data-page="web-home"] .widget[data-widget="campus:rhythm"] { margin-bottom: var(--rhythm-below-laptop, 0px); } }
 /* each line over a chart or table, and over each figure, reads its own value */
 main[data-page="web-projects"] #pace [data-panel="pace-xp"] { border-top-width: var(--xp-month-line, var(--block-line)); }
 main[data-page="web-projects"] #pace [data-panel="promo"] { border-top-width: var(--promo-line, var(--block-line)); }

@@ -17,7 +17,7 @@ func TestHiddenStudentsLoseTheSeatTheEvaluationCarries(t *testing.T) {
 		"received": [
 			{"corrector": {"login": "peer03", "host": "c1r1s1"}, "other_host": "c1r1s1", "other_host_checked": true},
 			{"corrector": {"login": "peer04", "host": "c2r2s2"}, "other_host": "c2r2s2", "other_host_checked": true}],
-		"given": [{"correcteds": [{"login": "peer03", "host": "c3r3s3"}], "other_host_checked": true}]}`))
+		"given": [{"correcteds": [{"login": "peer03", "host": "c3r3s3", "late_min": 41}, {"login": "peer05", "host": "c4r4s4", "late_min": 17}], "other_host_checked": true}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,6 +30,9 @@ func TestHiddenStudentsLoseTheSeatTheEvaluationCarries(t *testing.T) {
 		if strings.Contains(got, seat) {
 			t.Fatalf("a hidden student's seat %s is visible: %s", seat, got)
 		}
+	}
+	if strings.Contains(got, `"late_min":41`) || !strings.Contains(got, `"late_min":17`) {
+		t.Fatalf("how late a hidden student logged in must go with their seat, and only theirs: %s", got)
 	}
 	if !strings.Contains(got, "c2r2s2") {
 		t.Fatalf("the seat of someone not hidden went too: %s", got)

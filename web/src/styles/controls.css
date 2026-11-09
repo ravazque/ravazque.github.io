@@ -85,6 +85,7 @@ input[type=search]::placeholder { color: var(--c-input-placeholder); }
 #tip b, #tip span { display: block; }
 #tip b { font-weight: 700; margin-bottom: 2px; }
 #tip span + span { margin-top: 1px; }
+#tip hr { margin: 6px 0; border: 0; border-top: 1px solid color-mix(in oklab, currentColor 35%, transparent); }
 
 @media (prefers-reduced-motion: reduce) { .btn, .switch .track, .switch .knob { transition: none; } }
 

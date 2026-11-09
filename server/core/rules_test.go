@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"maps"
 	"slices"
 	"testing"
@@ -289,5 +290,13 @@ func TestEvaluationsCarryTheirProjectsCursus(t *testing.T) {
 	}
 	if withProject == 0 {
 		t.Fatal("no evaluation with a project")
+	}
+}
+
+func TestDropHiddenEvaluationsKeepsTheirIDs(t *testing.T) {
+	d := Raw{"evals_received": []any{Raw{"id": 1.0, "corrector": Raw{"login": "peer01"}}, Raw{"id": 2.0, "corrector": "invisible"}}, "evals_given": []any{}}
+	DropHiddenEvaluations(d)
+	if len(List(d, "evals_received")) != 1 || fmt.Sprint(d["hidden_received_ids"]) != "[2]" {
+		t.Fatalf("received %v, hidden ids %v", d["evals_received"], d["hidden_received_ids"])
 	}
 }

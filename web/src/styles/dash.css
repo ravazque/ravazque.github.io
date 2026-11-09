@@ -1,9 +1,23 @@
 /* Dashboard rendered on the server: charts, link and radio switches, the settings disclosure, wide/narrow graphs. */
 
-:where(body:not(.site)) .js .no-js { display: none; }
+:where(html.js body:not(.site)) .no-js { display: none; }
 :where(body:not(.site)) main.solo { display: grid; place-items: center; min-height: 70vh; }
 :where(body:not(.site)) .boot-panel { width: 100%; max-width: var(--c-boot-max-width); display: grid; gap: 14px; }
 :where(body:not(.site)) .boot-panel .row-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+/* the log's filters on a grid, every field as wide as the others and never under its control: one row on a wide screen
+   (Received/Given, five fields, Clear filters when shown), else as many columns as fit (phones: two, Received/Given across) */
+:where(body:not(.site)) form[data-filter="log"] { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 12px 16px; align-items: end; }
+:where(body:not(.site)) form[data-filter="log"] > .seg { justify-self: start; }
+@media (max-width: 519.98px) {
+  :where(body:not(.site)) form[data-filter="log"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+  :where(body:not(.site)) form[data-filter="log"] > .seg { grid-column: 1 / -1; }
+}
+:where(body:not(.site)) form[data-filter="log"] :is(.select-btn, input[type=search]) { min-width: 0; }
+:where(body:not(.site)) form[data-filter="log"] .log-clear { justify-self: start; white-space: nowrap; }
+@media (min-width: 1360px) {
+  :where(body:not(.site)) form[data-filter="log"] { grid-template-columns: max-content repeat(5, minmax(0, 1fr)); }
+  :where(body:not(.site)) form[data-filter="log"]:has(.log-clear) { grid-template-columns: max-content repeat(5, minmax(0, 1fr)) max-content; }
+}
 :where(body:not(.site)) .controls-after { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; }
 :where(body:not(.site)) section { scroll-margin-top: 80px; }
 
@@ -51,19 +65,18 @@
 /* the star by a section's title keeps it in the band's star menu; on a widget, the cross takes it off Profile */
 /* the tools by a title: a widget's handle, size and cross, boxed like the site's buttons */
 :where(body:not(.site)) h2 .pin { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; flex: none;
-  width: .7em; height: .7em; min-width: 30px; min-height: 30px; margin-left: .2em; padding: .12em; border: 2px solid var(--rule);
+  width: .7em; height: .7em; min-width: 30px; min-height: 30px; padding: .12em; border: 2px solid var(--rule);
   background: transparent; color: var(--ink); cursor: pointer; transition: border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
 :where(body:not(.site)) h2 .pin svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
 :where(body:not(.site)) h2 .pin:hover { border-color: var(--rule-strong); }
 :where(body:not(.site)) h2 .pin:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 :where(body:not(.site)) h2 .widget-grip { cursor: grab; }
-:where(body:not(.site)) h2 .widget-grip .dots { stroke-width: 3.4; }
 /* the star is never boxed: an outline that fills with gold once starred, edged in a deeper gold (clear on both grounds) */
 :where(body:not(.site)) h2 .star-pin { width: .9em; height: .9em; min-width: 34px; min-height: 34px; padding: .08em; border: 0; color: var(--muted); }
 :where(body:not(.site)) h2 .star-pin:hover { color: var(--ink); }
 :where(body:not(.site)) h2 .star-pin[aria-pressed="true"] { color: var(--star-edge); }
 :where(body:not(.site)) h2 .star-pin[aria-pressed="true"] svg { fill: var(--star); stroke-width: 1.3; }
-@media (max-width: 599.98px) { :where(body:not(.site)) h2 .pin { width: 28px; height: 28px; min-width: 28px; min-height: 28px; margin-left: .15em; padding: 4px; } }  /* titles keep one line on phones */
+@media (max-width: 599.98px) { :where(body:not(.site)) h2 .pin { width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 4px; } }  /* titles keep one line on phones */
 /* Profile's widgets: two columns from 960 px, a half widget in one of them (its own or the next free), a wide one across */
 :where(body:not(.site)) .widgets { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; align-items: start; }
 :where(body:not(.site)) .widget { position: relative; min-width: 0; }
@@ -88,8 +101,9 @@
 :where(body:not(.site)) .widget[data-drop="left"]::after { top: 0; bottom: 0; left: -26px; width: 4px; }
 :where(body:not(.site)) .widget[data-drop="right"]::after { top: 0; bottom: 0; right: -26px; width: 4px; }
 /* the picker under the widgets */
-:where(body:not(.site)) .widget-add { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
-:where(body:not(.site)) .widget-add .field { flex: 1 1 260px; max-width: 460px; }
+:where(body:not(.site)) .widget-add { margin-top: var(--picker-top, 48px); padding-top: var(--picker-pad, 28px); border-top: var(--picker-line, 2px) solid var(--picker-line-color, var(--rule)); }
+:where(body:not(.site)) .widget-add .add-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: 12px 16px; max-width: 760px; margin-inline: auto; }
+:where(body:not(.site)) .widget-add .field { flex: 1 1 300px; max-width: none; }
 :where(body:not(.site)) .best-menu a svg { flex: none; width: 18px; height: 18px; margin-right: 12px; fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 :where(body:not(.site)) .best-menu a span { display: flex; flex-direction: column; line-height: 1.2; padding: 6px 0; }
 :where(body:not(.site)) .best-menu a small { color: var(--muted); font: 500 13px var(--type-font-text); }
@@ -170,6 +184,10 @@
 /* only the pace chart (the one with a total line) dims the rest to bring the hovered month forward;
    other vbars (e.g. Over time) just brighten the hovered bar */
 :where(body:not(.site)) .has-line .ch-cols:hover .ch-col:not(:hover) i { opacity: .35; }
+/* a month told whole: its strip lights up, every part of its bar brighter, the other months as they are */
+:where(body:not(.site)) .col-tips .ch-col { cursor: default; }
+:where(body:not(.site)) .col-tips .ch-col:hover { background: color-mix(in oklab, var(--ink) 7%, transparent); }
+:where(body:not(.site)) .col-tips .ch-col:hover i { filter: brightness(1.15) saturate(1.1); }
 :where(body:not(.site)) .has-line .ch-cols:hover ~ .ch-line, :where(body:not(.site)) .has-line .ch-cols:hover ~ .ch-dot { opacity: .4; }
 :where(body:not(.site)) .ch-line polyline { stroke-width: 3; }  /* the total line, a touch bolder than the plain line charts */
 :where(body:not(.site)) .ch-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, 50%); z-index: 1; pointer-events: none; }
@@ -184,6 +202,7 @@
 :where(body:not(.site)) .ch-x { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-left: var(--c-chart-axis-width); padding-top: 6px; }
 :where(body:not(.site)) .has-line .ch-x { margin-left: calc(var(--c-chart-axis-width) + 36px); margin-right: calc(var(--c-chart-axis-width) + 36px); }
 :where(body:not(.site)) .ch-x span { text-align: center; white-space: nowrap; overflow: visible; }
+:where(body:not(.site)) .ch-x.edge span:last-child { display: flex; justify-content: flex-end; }  /* many narrow columns: wider than its column, it spills left, not off the chart */
 :where(body:not(.site)) .ch-title { text-align: center; margin-top: 4px; }
 :where(body:not(.site)) .ch-line, :where(body:not(.site)) .ch-lines { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 :where(body:not(.site)) .ch-line polyline, :where(body:not(.site)) .ch-lines path { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
@@ -297,18 +316,18 @@
 :where(body:not(.site)) .block:hover { border-color: color-mix(in oklab, var(--accent-data) 45%, var(--rule)); }
 
 /* charts draw themselves the first time they scroll into view (dash.js adds .in); without it they are simply there */
-:where(body:not(.site)) .js .vchart:not(.in) .ch-col i, :where(body:not(.site)) .js .hchart:not(.in) .hb-track i { transform: scale(0); }
+:where(html.js body:not(.site)) .vchart:not(.in) .ch-col i, :where(html.js body:not(.site)) .hchart:not(.in) .hb-track i { transform: scale(0); }
 :where(body:not(.site)) .vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease), opacity .14s; }
 :where(body:not(.site)) .hchart .hb-track i { transform-origin: left; transition: transform .6s var(--motion-ease); }
 /* stacked marks grow one after the other: the bottom (or first) segment, then the one above it */
 :where(body:not(.site)) .vchart .ch-col.stack i:nth-child(2), :where(body:not(.site)) .hchart .hb-track i:nth-child(2) { transition-delay: .45s; }
 :where(body:not(.site)) .vchart .ch-col.stack i:nth-child(3), :where(body:not(.site)) .hchart .hb-track i:nth-child(3) { transition-delay: .9s; }
 /* lines wipe in from the left: a dash trick on a non-scaling stroke measures the wrong length and leaves lines cut short */
-:where(body:not(.site)) .js .lchart:not(.in) .ch-lines, :where(body:not(.site)) .js .vchart:not(.in) .ch-line { clip-path: inset(0 100% 0 0); }
+:where(html.js body:not(.site)) .lchart:not(.in) .ch-lines, :where(html.js body:not(.site)) .vchart:not(.in) .ch-line { clip-path: inset(0 100% 0 0); }
 :where(body:not(.site)) .lchart .ch-lines, :where(body:not(.site)) .vchart .ch-line { clip-path: inset(0 0 0 0); transition: clip-path 1.1s var(--motion-ease), opacity .14s; }
 @media (prefers-reduced-motion: reduce) {
-  :where(body:not(.site)) .js .vchart:not(.in) .ch-col i, :where(body:not(.site)) .js .hchart:not(.in) .hb-track i { transform: none; }
-  :where(body:not(.site)) .js .lchart:not(.in) .ch-lines, :where(body:not(.site)) .js .vchart:not(.in) .ch-line { clip-path: none; }
+  :where(html.js body:not(.site)) .vchart:not(.in) .ch-col i, :where(html.js body:not(.site)) .hchart:not(.in) .hb-track i { transform: none; }
+  :where(html.js body:not(.site)) .lchart:not(.in) .ch-lines, :where(html.js body:not(.site)) .vchart:not(.in) .ch-line { clip-path: none; }
   :where(body:not(.site)) .btn:hover, :where(body:not(.site)) .periods > a:hover, :where(body:not(.site)) .toggle-check:hover span { transform: none; }
 }
 
@@ -326,21 +345,16 @@
 :where(body:not(.site)) .module .figure { font: 800 min(var(--c-kpi-size), 17cqi)/1 var(--type-font-display); letter-spacing: -.04em; margin: 14px 0 8px; white-space: nowrap; }
 :where(body:not(.site)) .module .figure small { font-size: .4em; font-weight: 700; letter-spacing: 0; word-spacing: .08em; color: var(--text-2); }
 :where(body:not(.site)) .module .line { color: var(--text-2); font-size: 17px; line-height: 1.45; }
-:where(body:not(.site)) .module .trend { display: block; width: 100%; height: 36px; margin-top: auto; padding-top: 12px; box-sizing: content-box; overflow: visible; }
-:where(body:not(.site)) .module .trend polyline { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
-:where(body:not(.site)) .module .trend rect { fill: var(--ink); }
-:where(body:not(.site)) .module .trend rect.now { fill: var(--accent-data); }
-:where(body:not(.site)) .module .trend .base { stroke: var(--rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 /* the live module: the accent marks what can still be earned */
 :where(body:not(.site)) .module.live .tab { border-top-color: var(--accent-line, var(--accent)); border-top-width: 6px; padding-top: 6px; }
 :where(body:not(.site)) .meter { position: relative; display: block; height: 12px; margin: 4px 0 12px; background: var(--seat-empty); }
 :where(body:not(.site)) .meter i { position: absolute; inset: 0 auto 0 0; background: var(--accent-data); }
 :where(body:not(.site)) .meter em { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
 :where(body:not(.site)) .chip-live { align-self: flex-start; background: var(--accent); color: var(--on-accent); font: 700 16px/1.3 var(--type-font-display); padding: 7px 12px; margin-bottom: 10px; }
-/* the signature move: each trend wipes in from the left, after the figure starts counting */
-:where(body:not(.site)) .module .trend, :where(body:not(.site)) .meter i { transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
-:where(body:not(.site)) .js .module:not(.in) .trend, :where(body:not(.site)) .js .module:not(.in) .meter i { clip-path: inset(0 100% 0 0); }
-@media (prefers-reduced-motion: reduce) { :where(body:not(.site)) .js .module:not(.in) .trend, :where(body:not(.site)) .js .module:not(.in) .meter i { clip-path: none; } }
+/* the signature move: a meter wipes in from the left, after the figure starts counting */
+:where(body:not(.site)) .meter i { transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
+:where(html.js body:not(.site)) .module:not(.in) .meter i { clip-path: inset(0 100% 0 0); }
+@media (prefers-reduced-motion: reduce) { :where(html.js body:not(.site)) .module:not(.in) .meter i { clip-path: none; } }
 @media (min-width: 760px) { :where(body:not(.site)) .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 :where(body:not(.site)) th .th-s { display: none; }
 @media (max-width: 599.98px) {
@@ -376,7 +390,7 @@
   :where(body:not(.site)) .has-line .ch-y:not(.right) { left: calc(-1 * var(--c-chart-axis-width)); width: calc(var(--c-chart-axis-width) - 6px); }
   :where(body:not(.site)) .ch-y.right, :where(body:not(.site)) .axis-key { display: none; }
   :where(body:not(.site)) .ch-x span.alt { visibility: hidden; }
-  :where(body:not(.site)) .ch-x span:last-child { display: flex; justify-content: flex-end; }  /* wider than its column, it spills left, not off the chart */
+  :where(body:not(.site)) .ch-x span:last-child { display: flex; justify-content: flex-end; }
   :where(body:not(.site)) .line-end { display: block; }
 }
 
@@ -530,6 +544,13 @@ html body:not(.site) [data-panel="low-feedback"]:only-child { grid-column: span 
 :where(body:not(.site)) .info { display: inline-flex; flex: none; width: .8em; height: .8em; cursor: help; color: var(--muted); outline-offset: 2px; }
 :where(body:not(.site)) .info svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
 :where(body:not(.site)) h2 .info { width: .42em; height: .42em; }
+/* a title's buttons (star, move, size, ×, enlarge): one distance from the title or its ⓘ, another between them, the
+   same with or without the ⓘ (spacing.css: --title-tools-gap, --title-tools-between) */
+:where(body:not(.site)) :is(h2, h3):has(> .pin) { display: flex; align-items: center; gap: 0; }
+:where(body:not(.site)) :is(h2, h3):has(> .pin) > .info { margin-left: .3em; }
+:where(body:not(.site)) :is(h2, h3) > .pin { margin-left: var(--title-tools-between, 9px); }
+:where(body:not(.site)) :is(h2, h3) > .pin:not(.pin + .pin) { margin-left: var(--title-tools-gap, 14px); }
+:where(body:not(.site)) h2 > .pin.widget-off { border-color: color-mix(in oklab, var(--critical), black var(--title-tools-off-dark, 45%)); }
 :where(body:not(.site)) .info:hover, :where(body:not(.site)) .info:focus-visible { color: var(--ink); }
 
 /* a little air between a title, its note or key and the table or chart under it */

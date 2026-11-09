@@ -31,11 +31,11 @@ test("days carried on to a later day with zeros, untouched when already there", 
 test("every section Profile offers as a widget is built by its page and has a title in both languages", async () => {
   const { readFileSync } = await import("node:fs");
   const { WIDGETS } = await import("./profile");
-  expect(WIDGETS.some(([, id]) => id === "activity")).toBe(false); // always on Profile
+  expect(WIDGETS.some(([page, id]) => page === "home" && id === "activity")).toBe(true); // a widget like the rest
   const en = (await import("@data/i18n/en.json")).default as Record<string, unknown>;
   const es = (await import("@data/i18n/es.json")).default as Record<string, unknown>;
   for (const [page, id, key] of WIDGETS) {
-    expect(readFileSync(`src/views/${page}.ts`, "utf8"), `${page}#${id}`).toMatch(new RegExp(`id: "${id}"`));
+    expect(readFileSync(`src/views/${page === "home" ? "profile" : page}.ts`, "utf8"), `${page}#${id}`).toMatch(new RegExp(`id: "${id}"`));
     expect(key in en && key in es, key).toBe(true);
   }
 });

@@ -251,9 +251,11 @@ func ProjectIDs(d Raw) []int {
 }
 
 // DropHiddenEvaluations: the API can hide who takes part in an upcoming evaluation ("invisible" instead of a user).
-// Such evaluations have no mark and nobody to count yet: drop them (and hidden correcteds) before any analysis.
+// Such evaluations have no mark and nobody to count yet: drop them (and hidden correcteds) before any analysis. Their
+// ids stay (hidden_received_ids), so that a booking for one is not taken for a cancelled one.
 func DropHiddenEvaluations(d Raw) Raw {
 	var kept []any
+	hidden := []any{}
 	for _, v := range List(d, "evals_received") {
 		e, _ := v.(Raw)
 		if e == nil {
@@ -261,8 +263,11 @@ func DropHiddenEvaluations(d Raw) Raw {
 		}
 		if _, isObj := e["corrector"].(Raw); isObj || e["corrector"] == nil {
 			kept = append(kept, e)
+		} else {
+			hidden = append(hidden, e["id"])
 		}
 	}
+	d["hidden_received_ids"] = hidden
 	if kept == nil {
 		kept = []any{}
 	}

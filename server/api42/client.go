@@ -63,6 +63,9 @@ type Client struct {
 	blocMu      sync.Mutex
 	bloc        raw
 	blocAt      time.Time // the quarter of the hour the bloc was asked in
+	madridMu    sync.Mutex // one read of Madrid's levels at a time
+	madrid      atomic.Pointer[[]float64]
+	madridAt    atomic.Int64 // the hour (Unix seconds) they were last asked for in; 0 never
 }
 
 // New: apps[0] signs users in; requests with an app token are spread over all of them.

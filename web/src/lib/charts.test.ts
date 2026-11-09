@@ -1,13 +1,6 @@
-import { describe, expect, it, test } from "vitest";
-import { BAD, S1, hbars, trend, tightAxis, vbars } from "./charts";
+import { expect, test } from "vitest";
+import { BAD, S1, hbars, tightAxis, vbars } from "./charts";
 import { Fmt } from "../fmt";
-
-describe("trend", () => {
-  it("draws no negative bar heights (net points can go below zero)", () => {
-    const svg = trend([5, -30, 10], { bars: true });
-    expect(svg).not.toMatch(/height="-/);
-  });
-});
 
 test("a negative value still draws its bar, as long as its size and in red", () => {
   const html = hbars(new Fmt("en"), ["Evaluations", "Other"], [["Points", [100, -300], S1]], { label: "Points" });
@@ -29,4 +22,10 @@ test("Points per month's scale: up to 37.5k for a best month of 28k, not 50k", (
   expect(tight).toContain("37.5k");
   expect(tight).not.toContain("50k");
   expect(vbars(f, ["Jan", "Feb"], series, { label: "x", stacked: true })).toContain("50k");
+});
+
+test("the last label of many columns (months) spills left, not off the chart; a few wide columns keep it under their bars", () => {
+  const f = new Fmt("en"), months = Array.from({ length: 12 }, (_, i) => `M${i}`);
+  expect(vbars(f, months, [["a", months.map(() => 1), "red"]], { label: "x" })).toContain('class="ch-x edge"');
+  expect(vbars(f, ["c1", "c2", "not logged"], [["a", [1, 2, 3], "red"]], { label: "x" })).toContain('class="ch-x"');
 });

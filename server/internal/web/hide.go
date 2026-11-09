@@ -66,7 +66,7 @@ func (h *hider) walk(v any) any {
 			out.Set(key, h.walk(x.V(k)))
 		}
 		if h.gone(x.S("login")) {
-			for _, k := range []string{"name", "image", "displayname", "host", "hosts"} {
+			for _, k := range []string{"name", "image", "displayname", "host", "hosts", "late_min"} {
 				if _, ok := x.Get(k); ok {
 					out.Set(k, nil)
 				}

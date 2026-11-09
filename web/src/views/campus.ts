@@ -5,6 +5,7 @@ import { ACCENT, calendar, heat, seatPlan } from "../lib/graphs";
 import { esc } from "../lib/h";
 import { table } from "../lib/table";
 import { Page, Section, block, cols, daysTo, filters, headBlock, info, kpis, monthsBetween, search, section } from "./page";
+import { withoutWorkLate } from "./evaluations";
 
 /** Two facts on one line of a description, split by a light rule. */
 const pair = (a: string, b: string) => `${esc(a)}<span class="sep" aria-hidden="true"> | </span>${esc(b)}`;
@@ -35,14 +36,17 @@ export function campus(pg: Page): Section[] {
   ])))) });
 
   const overlap = L.seats.reduce((s: number, x: any) => s + x.seconds, 0) - L.total_seconds;
-  const lede = L.seats.length ? "" : esc(f.t("empty.sessions"));
+  // sessions on other campuses (a move, a visit) count as time but are not on Madrid's plan: said in the lede
+  const awayList = Object.entries(L.away || {}).map(([c, n]) => `${c}: ${f.plural(n as number, "count.sessions")}`).join(" · ");
+  const lede = [L.seats.length ? "" : esc(f.t("empty.sessions")), awayList ? esc(f.t("seats.away", { list: awayList })) : ""].filter(Boolean).join(" ");
   const seatsHead = `<h2>${esc(f.t("seats.title"))}`
     + (overlap >= 60 ? ` ${info(capital(f.t("seats.lede_overlap", { overlap: f.hm(overlap) })))}` : "") + "</h2>";
   const info_ = new Map<string, any>(L.seats.map((s: any) => [s.host, s]));
   const hm = (sec: number) => { const m = Math.floor(sec / 60); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}h`; };
   const [plan] = seatPlan(f, layout, Object.fromEntries(L.seats.map((s: any) => [s.host, s.seconds])), { unit: "h", toUnit: (v) => v / 3600, anchor: true,
     detail: (h) => { const s = info_.get(h); return [`${h} · ${hm(s.seconds)}`, f.plural(s.sessions, "count.sessions"), f.t("plan.first", { date: f.day(s.first) }), f.t("plan.last", { date: f.day(s.last) })].join("\n"); } });
-  const seatLink = (s: any) => `<a class="code" href="#seat-${esc(s.host)}" title="${esc(f.t("computers.show_on_plan", { seat: s.host }))}">${esc(s.host)}</a>`;
+  const seatLink = (s: any) => (s.campus ? `${esc(s.host)} <span class="note">· ${esc(s.campus)}</span>` // not on the plan
+    : `<a class="code" href="#seat-${esc(s.host)}" title="${esc(f.t("computers.show_on_plan", { seat: s.host }))}">${esc(s.host)}</a>`);
   // every day and month up to the report's day, the quiet ones as zero
   const [days, hours] = daysTo(L.days, L.hours, pg.asOf);
   const keys = Object.keys(L.monthly || {}).sort();
@@ -63,8 +67,8 @@ export function campus(pg: Page): Section[] {
   out.push({ id: "days", nav: f.t("nav.days"), html: section("days", f.t("days.title"), cols(
     block("calendar", `<div class="cal-scroll">${cal}</div>`, f.t("days.calendar_title")),
     `<div class="block" data-panel="hours-month"><div class="block-head"><h3>${esc(f.t(daily ? "seats.day_title" : "seats.month_title"))}</h3>`
-    + (peakAt >= 0 ? `<span class="head-figure">${esc(f.t("seats.peak", { v: f.num(values[peakAt], 1), label: labels[peakAt] }))}</span>` : "") + "</div>"
-    + vbars(f, labels, [[f.t("unit.hours"), values, S1]], { label: f.t("seats.month_aria"), fmt: (v) => f.num(v, 1), emptyText: f.t("empty.sessions") }) + "</div>",
+    + (peakAt >= 0 ? `<span class="head-figure">${esc(f.t("seats.peak", { v: f.hmm(values[peakAt]), label: labels[peakAt] }))}</span>` : "") + "</div>"
+    + vbars(f, labels, [[f.t("unit.hours"), values, S1]], { label: f.t("seats.month_aria"), fmt: (v) => f.nb(v, "h"), emptyText: f.t("empty.sessions") }) + "</div>",
     block("heat-presence", `<div class="heat-wide">${hgrid}</div>`, f.t("days.heat_title"))),
   L.days_present ? { head: `<h2>${esc(f.t("days.title"))} ${info([f.t("days.l_span", { days: f.plural(L.days_present, "count.days"), first: f.day(L.first_day), last: f.day(L.last_day) }),
     f.t("days.l_avg", { avg: f.hm(L.total_seconds / L.days_present) })].join("\n"))}</h2>` } : { lede: esc(f.t("empty.sessions")) }) });
@@ -73,13 +77,14 @@ export function campus(pg: Page): Section[] {
   const log = L.log.filter((s: any) => !sq || `${s.begin} ${s.end} ${s.host} ${f.dayTime(s.begin)} ${f.dayTime(s.end)}`.toLowerCase().includes(sq.toLowerCase()));
   out.push({ id: "sessions", nav: f.t("nav.sessions"), html: section("sessions", f.t("sessions.title"),
     filters("sessions", search("sq", sq, f.t("common.search"), f.t("sessions.search_placeholder")))
-    + `<div id="sessions-results"><p class="controls-after"><span class="note">${esc(f.t("sessions.count", { shown: f.num(log.length), total: f.num(L.log.length) }))}</span></p>`
+    + `<div id="sessions-results">`
     + cols(block("table-sessions", `<div class="table-wrap">${table(f, [
       { k: "begin_ms", t: f.t("col.logged_in"), s: f.t("abbr.logged_in"), nw: true, f: (s) => esc(f.dayTime(s.begin)) },
       { k: "seconds", t: f.t("col.duration"), s: f.t("abbr.duration"), num: true, nw: true, f: (s) => f.hm(s.seconds) },
       { k: "host", t: f.t("col.computer"), s: f.t("abbr.computer"), f: seatLink, sv: (s) => seatOrder(s.host) },
       { k: "end", t: f.t("col.logged_out"), s: f.t("abbr.logged_out"), nw: true, hide: true, f: (s) => esc(s.end ? f.dayTime(s.end) : f.t("sessions.still_logged")) },
-    ], log, { label: f.t("sessions.table_aria"), sort: ["begin_ms", -1], empty: f.t(sq ? "empty.search_sessions" : "empty.sessions") })}</div>`)) + "</div>") });
+    ], log, { label: f.t("sessions.table_aria"), sort: ["begin_ms", -1], empty: f.t(sq ? "empty.search_sessions" : "empty.sessions") })}</div>`)) + "</div>",
+    { count: f.t("sessions.count", { shown: f.num(log.length), total: f.num(L.log.length) }) }) }); // the count in the title, as the evaluation log
 
   out.push(where(pg));
   return out;
@@ -118,6 +123,18 @@ const WHERE_PLAN = false;
  * (false: the "not logged" bar's tip names them instead, one line per side). */
 const NOT_LOGGED_TABLE = false;
 
+/** How many logged in late, by the cluster they sat in: you in the evaluations you received, each student you evaluated
+ * in the ones you gave (their seat looked up). */
+export function lateByCluster(role: string, evals: any[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  const add = (host: string | null | undefined) => { const c = (host || "").split("r")[0]; if (c) out[c] = (out[c] || 0) + 1; };
+  for (const e of evals) {
+    if (role === "received") { if (e.my_late_min) add(e.my_host); }
+    else if (e.other_host_checked) for (const c of e.correcteds || []) if (c.late_min) add(c.host);
+  }
+  return out;
+}
+
 function where(pg: Page): Section {
   const f = pg.f, D = pg.D, PL = D.place, S = D.summary, layout = pg.v.layout || {};
   // one set of evaluations at a time: the ones you received or the ones you gave; in each, where you were and, for the
@@ -144,8 +161,10 @@ function where(pg: Page): Section {
       { k: "me", t: f.t("col.nl_you"), num: true, cls: "ctr", f: (r) => linked(r.me, { project: r.project, seat: "me" }) },
       { k: "other", t: f.t(recv ? "col.nl_corrector" : "col.nl_evaluated"), num: true, cls: "ctr", f: (r) => linked(r.other, { project: r.project, seat: "other" }) },
     ], away, { label: f.t("where.nl_title"), sort: ["me", -1] })}</div>`, pg.seats ? f.t("where.nl_note", { days: pg.seats }) : "") : "";
-  // the "not logged" bar: each side's count with its projects beside it
+  // the "not logged" bar: each side's count with its projects beside it; a cluster: how many of the evaluated side logged in late
+  const late = lateByCluster(role, (recv ? D.received : D.given).map(withoutWorkLate));
   const tips = ckeys.map((k) => [lab(k), ...series.map(([n, v], i) => `${n}: ${f.num(v[k] || 0)}` + (k === "not logged" && awayLists[i] ? ` · ${awayLists[i]}` : "")),
+    ...(k !== "not logged" ? [`${f.t(recv ? "log.late_you" : "log.late_them")}: ${f.num(late[k] || 0)}`] : []),
     ...(k === "not logged" && recv ? [f.t("where.note_not_logged"), f.plural(led, "where.leader")] : [])].join("\n"));
   // the seat plan of evaluations is kept but not drawn (WHERE_PLAN): the cluster chart says it more plainly
   const shown: Record<string, number> = {};
@@ -155,7 +174,8 @@ function where(pg: Page): Section {
   const lede = pair(f.t("where.cov_me", { me: recv ? PL.me_located_received : PL.me_located_given, n: total }),
     !pg.seats ? f.t("where.cov_light") : checked.length || (recv ? PL.corrector_checked : PL.evaluated_checked)
       ? f.t("where.cov_other", { x: recv ? PL.corrector_located : PL.evaluated_located, y: recv ? PL.corrector_checked : PL.evaluated_checked })
-      : f.t("where.cov_none")) + (pg.seats ? ` <b>${esc(f.t("where.cov_window", { days: pg.seats }))}</b>` : "");
+      : f.t("where.cov_none")) + (pg.seats ? ` <b>${esc(f.t("where.cov_window", { days: pg.seats }))}</b>` : "")
+    + ((recv ? PL.received_away : PL.given_away) ? ` ${esc(f.plural(recv ? PL.received_away : PL.given_away, "where.away"))}` : "");
   const sw = pg.seg("where", [["received", f.t("where.role_received")], ["given", f.t("where.role_given")]], role, f.t("where.role_label"), "where");
   return { id: "where", nav: f.t("nav.where"), html: section("where", "", cols(
     ...(WHERE_PLAN ? [`<div class="block" data-panel="where-plan" id="where-plan"><div class="block-head">${wscale}</div>${wplan}</div>`] : []),

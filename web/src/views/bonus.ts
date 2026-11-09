@@ -64,12 +64,12 @@ export function underAt(week: number, drops: Drop[], line: number): number | nul
   return null;
 }
 
-export const weekFigure = (f: Fmt, week: number) => `<p class="figure">${esc(f.num(week, 1))}<small> h</small></p>`;
+export const weekFigure = (f: Fmt, week: number) => `<p class="figure">${esc(f.hmm(week))}<small> h</small></p>`;
 
 /** The rule from nothing to 80h with the week on it. */
 export function rule(f: Fmt, week: number) {
   const top = 80;
-  return `<div class="tmeter" role="img" aria-label="${esc(f.t("coal.s_meter", { have: f.num(week, 1), need: top }))}">`
+  return `<div class="tmeter" role="img" aria-label="${esc(f.t("coal.s_meter", { have: f.hmm(week), need: top }))}">`
     + `<i style="width:${Math.min(100, (100 * week) / top).toFixed(1)}%"></i><em style="left:62.5%"></em><em class="end"></em></div>`
     + `<div class="tticks" aria-hidden="true"><span style="left:0">0h</span><span style="left:62.5%">50h</span><span class="end">80h</span></div>`;
 }
@@ -87,7 +87,7 @@ export function tierRows(f: Fmt, tiers: Tier[], open: boolean, week: number, dro
       state = f.t("coal.v_ready");
       lines = [open ? f.t("coal.s_next_logout") : by ? f.t("bonus.due_by", { time: moment(f, new Date(by).toISOString()) }) : f.t("coal.s_ready_out", { hours: t.hours })];
     } else {
-      state = f.t("bonus.to_go", { n: f.num(t.need_h, 1) });
+      state = f.t("bonus.to_go", { n: f.hmm(t.need_h) });
       lines = [soonest];
     }
     return `<div class="tier ${esc(t.state)}"><b>${esc(f.t("bonus.tier", { hours: t.hours, points: f.num(t.points) }))}</b>`
@@ -101,7 +101,7 @@ export function leaving(f: Fmt, drops: Drop[], week: number, log: LogRow[] = [])
   const days = dropDays(f, drops, log);
   if (!days.length) return `<p class="line">${esc(f.t("bonus.no_drops"))}</p>`;
   const list = days.map((d) => `<details class="drop-day"><summary><span>${esc(d.day)}</span><b>−${esc(f.nb(d.hours, "h"))}</b>`
-    + `<span class="left">${esc(f.t("bonus.left", { n: f.num(d.left, 1) }))}</span></summary><ul>`
+    + `<span class="left">${esc(f.t("bonus.left", { n: f.hmm(d.left) }))}</span></summary><ul>`
     + d.rows.map((r) => `<li><span class="nw">${esc(r.from)}–${esc(r.to)}</span><span>${esc(f.t("bonus.session", { day: r.session }))}</span><b>−${esc(f.nb(r.hours, "h"))}</b></li>`).join("")
     + "</ul></details>").join("");
   const under = [80, 50].flatMap((h) => { const u = underAt(week, drops, h); return u ? [f.t("bonus.under", { hours: h, time: moment(f, new Date(u).toISOString()) })] : []; });

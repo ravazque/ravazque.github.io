@@ -149,12 +149,49 @@ func (s *Server) view(w http.ResponseWriter, r *http.Request, si signedIn) {
 	if _, has := periods.Get("all"); !has {
 		all = rep
 	}
+	var madrid any // your place by level in Madrid, live: no new extraction needed
+	if lv, ok := mainLevel(all); ok {
+		if st := core.MadridStanding(s.madridLevels(), lv); st != nil {
+			madrid = st
+		}
+	}
 	writeJSON(w, 200, map[string]any{
 		"period": p, "periods": periods.Keys(), "default_period": data.V("default_period"), "light": data.V("light"),
 		"seat_days": data.V("seat_days"), "report": rep, "derive": core.Derive(rep, all, s.now()),
 		"layout": data.V("layout"), "connections": data.Obj("connections").V(p), "network": data.Obj("network").V(p),
 		"promo": data.V("promo"), "coalitions": s.coalitionsFor(data), "all_projects": all.V("projects"), "all_cursus": all.Obj("extras").V("cursus"),
+		"madrid": madrid,
 	})
+}
+
+// mainLevel is the 42cursus level in a report.
+func mainLevel(rep *core.OMap) (float64, bool) {
+	for _, c := range rep.Obj("extras").Os("cursus") {
+		if c.S("name") == "42cursus" {
+			return c.F("level"), true
+		}
+	}
+	return 0, false
+}
+
+// madridLevels is Madrid's levels as read last; when they were not asked for this hour, a read starts in the background
+// (about 26 requests), so an hour in which nobody opens a page spends none.
+func (s *Server) madridLevels() []float64 {
+	levels, fresh := s.API.LastMadrid(s.now())
+	if !fresh && s.madridOn.CompareAndSwap(false, true) {
+		go func() {
+			defer s.madridOn.Store(false)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			before := s.API.Requests()
+			if _, err := s.API.Madrid(ctx, s.now()); err != nil {
+				slog.Warn("madrid levels", "error", err.Error())
+				return
+			}
+			slog.Info("madrid levels", "requests", s.API.Requests()-before) // counts only
+		}()
+	}
+	return levels
 }
 
 // reportCopy is the stored report for the browser to keep, with the signature it must show to hand it back.

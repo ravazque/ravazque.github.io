@@ -46,3 +46,16 @@ test("dates read as 29 Oct 2026, with the time when there is one", () => {
   expect(f.dayTime("2026-10-29")).toBe("29 oct 2026");
   expect(f.dayTime("")).toBe("–");
 });
+
+test("hours read as hours and minutes, not decimals: 30.88 is 30:53, grouped like any number", () => {
+  const en = new Fmt("en"), es = new Fmt("es");
+  expect(en.hmm(30.88)).toBe("30:53");
+  expect(en.hmm(0.5)).toBe("0:30");
+  expect(en.hmm(59.999)).toBe("60:00");
+  expect(en.hmm(1131.4)).toBe("1,131:24");
+  expect(es.hmm(1131.4)).toBe("1131:24");
+  expect(en.hmm(-4.8)).toBe("-4:48");
+  expect(en.hmm(null)).toBe("–");
+  expect(en.nb(1.6, "h")).toBe("1:36h");
+  expect(en.nb(15, "m")).toBe("15m");
+});

@@ -12,6 +12,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"ravazque.info/server/api42"
@@ -49,6 +50,7 @@ type Server struct {
 	devOrder  []string
 	devFiles  map[int]string // the saved reports of make dev, by user id: never extracted from 42
 	devLive   sync.Map       // ...unless the owner turned theirs live (POST /dev/live): user id → true, until a restart
+	madridOn  atomic.Bool    // a read of Madrid's levels is under way
 	stop      chan struct{}
 }
 

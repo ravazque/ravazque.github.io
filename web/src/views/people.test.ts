@@ -54,7 +54,7 @@ const whoPage = (extras: any) => new Page(new Fmt("en"), { all_projects: [{ name
 
 test("Top 25: the tip tells Outer Core and what they gave you there, with no mark, no rating and no square", () => {
   const html = people(whoPage({ cursus: [{ name: "42cursus", grade: "Transcender" }], quests: [] }))[0].html;
-  expect(html).toContain("peer01 (Outer Core) · you evaluated them");
+  expect(html).toContain("peer01 (OuterCore) · you evaluated them");
   expect(html).toContain("Outer projects: 0 OK, 1 outstanding");
   expect(html).not.toContain("hb-mark");
   expect(html).not.toContain("average mark");
@@ -63,5 +63,5 @@ test("Top 25: the tip tells Outer Core and what they gave you there, with no mar
 
 test("Top 25: nobody else's group in the tip unless you are in Outer Core yourself", () => {
   const html = people(whoPage({ cursus: [{ name: "42cursus", grade: "Learner" }], quests: [] }))[0].html;
-  expect(html).not.toContain("Outer Core");
+  expect(html).not.toContain("OuterCore");
 });

@@ -9,6 +9,7 @@ export type View = {
   period: string; periods: string[]; default_period: string; light: boolean; seat_days: number | null;
   report: Rep; derive: any; layout: Record<string, { rows: number; seats: number }>; connections: any[]; network: any;
   promo: any; coalitions: any[]; all_projects: any[]; all_cursus?: any[];
+  madrid?: { size: number; rank: number; top: number } | null; // your place by level in Madrid, live (the server's, hourly)
 };
 
 export const PAGES = ["home", "projects", "evaluations", "coalition", "people", "campus"] as const;
@@ -143,9 +144,15 @@ export function myTrack(extras: any): "c" | "python" | null {
 /** 42 renames an account it erased to "3b3-NNNNN": nobody can tell who it was. */
 export const erased = (login?: string | null) => /^3b3-\d+$/.test(login || "");
 
-/** A login as shown: an erased account has none ("–"); where no name follows, it reads "Deleted" instead. */
-export const shownLogin = (f: Fmt, login: string, named = true) =>
-  erased(login) ? (named ? "–" : deletedName(f)) : esc(login);
+/** A student who asked to be excluded: a label ("Hidden 3"), never a login. */
+const hiddenLabel = (login: string) => /^Hidden( \d+)?$/.test(login);
+
+/** A login as shown: an erased account has none ("–"; where no name follows, "Deleted"); a hidden one stays its label;
+ * any other opens that student's page on acerezo.top in a new tab, sending nothing else (link false: plain text, as
+ * inside a summary that opens a list). */
+export const shownLogin = (f: Fmt, login: string, named = true, link = true) =>
+  erased(login) ? (named ? "–" : deletedName(f)) : !link || hiddenLabel(login) ? esc(login)
+    : `<a class="login-link" href="https://acerezo.top/user/${esc(encodeURIComponent(login))}" target="_blank" rel="noopener noreferrer">${esc(login)}</a>`;
 
 /** The name of an erased account (42 replaces it with placeholder letters): "Deleted", in italics. */
 export const deletedName = (f: Fmt) => `<span class="erased">${esc(f.t("who.erased_name"))}</span>`;

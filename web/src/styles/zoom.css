@@ -1,0 +1,64 @@
+/* ============================================================================================================
+   ENLARGED CHARTS YOU CAN TUNE BY HAND
+   The button by the title of a chart that shares its row (on a phone, every chart: they all take the whole width)
+   opens that chart large in a panel over the page; a click outside the panel or Escape closes it.
+
+   See a change at once: keep make dev-live running and open http://localhost:5173.
+   Phones and laptops: a value that changes with the screen has two lines, the plain one for phones and tablets, the
+   one ending in -laptop for screens 960 px wide and up.
+   ============================================================================================================ */
+:root, ::backdrop {
+  --zoom-width: 100%;                 /* the panel's width (100%: all the window allows, inside --zoom-edge) */
+  --zoom-width-laptop: 1200px;
+  --zoom-height: fit-content;         /* the panel's height: fit-content fits the chart; a value fixes it (taller content scrolls inside) */
+  --zoom-height-laptop: fit-content;
+  --zoom-edge: 12px;                  /* the least room between the panel and the window's edges */
+  --zoom-edge-laptop: 32px;
+  --zoom-top: auto;                   /* where it sits: auto centres it up and down; a value puts its top that far from the window's top */
+  --zoom-left: auto;                  /* the same across: auto centres it; a value puts its left side that far from the window's left */
+  --zoom-pad: 16px;                   /* the space inside the panel, around the title and the chart */
+  --zoom-pad-laptop: 32px;
+  --zoom-line: 2px;                   /* the panel's frame (0: none) */
+  --zoom-title-size: 24px;            /* the chart's title on top of the panel */
+  --zoom-title-size-laptop: 34px;
+  --zoom-title-line: 4px;             /* the line under the title (0: none) */
+  --zoom-title-pad: 10px;             /* the title → its line */
+  --zoom-title-gap: 20px;             /* the title's line → the chart (its key and notes come with it) */
+  --zoom-chart-height: 360px;         /* the height of bar and line charts inside the panel */
+  --zoom-chart-height-laptop: 560px;
+  --zoom-row-height: 32px;            /* each row of horizontal bars (Points by source) */
+  --zoom-shade: 45%;                  /* how dark the page behind it gets: 0% not at all, 100% black */
+  --zoom-button: 26px;                /* the button by a chart's title */
+}
+
+/* ============================================================================================================
+   How the values above are used (no need to edit below this line)
+   ============================================================================================================ */
+:where(body:not(.site)) h3 .zoom-pin { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; flex: none;
+  width: var(--zoom-button, 26px); height: var(--zoom-button, 26px); padding: 4px; border: 2px solid var(--rule);
+  background: transparent; color: var(--ink); cursor: pointer; transition: border-color var(--motion-fast) ease-out; }
+:where(body:not(.site)) h3 .zoom-pin svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+:where(body:not(.site)) h3 .zoom-pin:hover { border-color: var(--rule-strong); }
+:where(body:not(.site)) h3 .zoom-pin:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* the panel; its padding sits on the box inside, so a click on the dialog itself is a click outside the panel */
+:where(body:not(.site)) dialog.zoom { box-sizing: border-box; max-width: none; padding: 0; border: var(--zoom-line, 2px) solid var(--rule-strong); border-radius: 0;
+  box-shadow: none; background: var(--ground); overflow: auto;
+  width: min(var(--zoom-width, 100%), calc(100vw - 2 * var(--zoom-edge, 12px)));
+  height: var(--zoom-height, fit-content); max-height: calc(100dvh - 2 * var(--zoom-edge, 12px));
+  margin: var(--zoom-top, auto) auto auto var(--zoom-left, auto); }
+:where(body:not(.site)) dialog.zoom::backdrop { background: color-mix(in oklab, var(--ink) var(--zoom-shade, 45%), transparent); }
+:where(body:not(.site)) .zoom-box { padding: var(--zoom-pad, 16px); }
+:where(body:not(.site)) .zoom-head { display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding-bottom: var(--zoom-title-pad, 10px); border-bottom: var(--zoom-title-line, 4px) solid var(--rule-strong); }
+:where(body:not(.site)) .zoom-head h2 { margin: 0; padding: 0; border: 0; font: 800 var(--zoom-title-size, 24px)/1.1 var(--type-font-display); letter-spacing: -.02em; }
+:where(body:not(.site)) .zoom-body { margin-top: var(--zoom-title-gap, 20px); --c-chart-height: var(--zoom-chart-height, 360px); --c-chart-row-height: var(--zoom-row-height, 32px); }
+:where(body:not(.site)) .zoom-body > .block-head:empty { display: none; }
+:where(body:not(.site)) .zoom-body .heat, :where(body:not(.site)) .zoom-body .heat-wide .heat { max-width: none; }
+@media (min-width: 960px) {
+  :where(body:not(.site)) dialog.zoom { width: min(var(--zoom-width-laptop, 1200px), calc(100vw - 2 * var(--zoom-edge-laptop, 32px)));
+    height: var(--zoom-height-laptop, fit-content); max-height: calc(100dvh - 2 * var(--zoom-edge-laptop, 32px)); }
+  :where(body:not(.site)) .zoom-box { padding: var(--zoom-pad-laptop, 32px); }
+  :where(body:not(.site)) .zoom-head h2 { font-size: var(--zoom-title-size-laptop, 34px); }
+  :where(body:not(.site)) .zoom-body { --c-chart-height: var(--zoom-chart-height-laptop, 560px); }
+}

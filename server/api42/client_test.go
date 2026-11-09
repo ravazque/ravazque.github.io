@@ -224,3 +224,36 @@ func TestBlocIsAskedOncePerQuarterOfTheHour(t *testing.T) {
 		t.Fatalf("last bloc %v", c.LastBloc())
 	}
 }
+
+func TestMadridIsReadOncePerHour(t *testing.T) {
+	var asked atomic.Int64
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/oauth/token" {
+			tokenOK(w, "T")
+			return
+		}
+		if r.URL.Path != "/v2/cursus/21/cursus_users" || r.URL.Query().Get("filter[campus_id]") != "22" || r.URL.Query().Has("range[begin_at]") {
+			t.Errorf("asked %s", r.URL)
+		}
+		asked.Add(1)
+		w.Write([]byte(`[{"cursus_id":21,"begin_at":"2024-10-07T08:00:00.000Z","level":9.5,"user":{"staff?":false,"alumni?":false,"active?":true}}]`))
+	})
+	at := time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC)
+	if l, fresh := c.LastMadrid(at); l != nil || fresh {
+		t.Fatal("levels before reading them")
+	}
+	for _, d := range []time.Duration{time.Minute, 59 * time.Minute, time.Hour, 90 * time.Minute} {
+		if _, err := c.Madrid(context.Background(), at.Add(d)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if asked.Load() != 2 {
+		t.Fatalf("asked %d times for two hours", asked.Load())
+	}
+	if l, fresh := c.LastMadrid(at.Add(90 * time.Minute)); len(l) != 1 || l[0] != 9.5 || !fresh {
+		t.Fatalf("last levels %v %v", l, fresh)
+	}
+	if _, fresh := c.LastMadrid(at.Add(2 * time.Hour)); fresh {
+		t.Fatal("last hour's levels are not this hour's")
+	}
+}

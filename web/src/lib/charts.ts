@@ -39,6 +39,7 @@ function yaxis(f: Fmt, top: number, steps = 4) {
 
 type VOpts = {
   label: string; stacked?: boolean; tight?: boolean; xtitle?: string; peak?: string; line?: [string, number[], string]; barTips?: boolean;
+  colTips?: boolean; // the whole column's strip opens the tip (a stacked month told whole), the others dim
   fmt?: (v: number) => string; every?: number; tips?: string[]; emptyText?: string;
 };
 
@@ -51,7 +52,7 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
   const { top, steps } = o.tight ? tightAxis(Math.max(...totals)) : { top: niceMax(Math.max(...totals)), steps: 4 };
   const every = o.every || Math.max(1, Math.ceil(labels.length / 12));
   const best = totals.indexOf(Math.max(...totals));
-  const colTip = series.length === 1 && !o.stacked && !o.barTips; // one series: the whole column opens the tip
+  const colTip = (series.length === 1 && !o.stacked && !o.barTips) || !!o.colTips; // one series: the whole column opens the tip
   const line = o.line;
   const cols = labels.map((lab, i) => {
     const tip = o.tips ? o.tips[i]
@@ -81,9 +82,9 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
   const keys = line ? `<span class="axis-key bar" style="background:${series[0][2]}" aria-hidden="true"></span>`
     + `<span class="axis-key line" style="background:${line[2]}" aria-hidden="true"></span>` : "";
   const summary = `${o.label}: ` + labels.flatMap((lab, i) => (totals[i] ? [`${lab} ${fmt(totals[i])}`] : [])).join(", ");
-  return `<figure class="vchart${line ? " has-line" : ""}" role="img" aria-label="${esc(summary)}">`
+  return `<figure class="vchart${line ? " has-line" : ""}${o.colTips ? " col-tips" : ""}" role="img" aria-label="${esc(summary)}">`
     + `<div class="ch-plot">${keys}${yaxis(f, top, steps)}<div class="ch-cols" style="--n:${labels.length}">${cols.join("")}</div>${overlay}</div>`
-    + `<div class="ch-x" style="--n:${labels.length}" aria-hidden="true">${xs}</div>`
+    + `<div class="ch-x${labels.length > 8 ? " edge" : ""}" style="--n:${labels.length}" aria-hidden="true">${xs}</div>`
     + (o.xtitle ? `<figcaption class="ch-title">${esc(o.xtitle)}</figcaption>` : "") + "</figure>";
 }
 
@@ -171,18 +172,3 @@ export function timeline(f: Fmt, rows: [string, [number, number, string, string]
     + `<div class="tl-axis" aria-hidden="true"><span></span><span class="ch-months">${monthTicks(f, lo, hi)}</span></div></figure>`;
 }
 
-/** A module's recent history under its figure: a hairline or thin columns, the newest in the accent when last. */
-export function trend(values: (number | null)[], o: { bars?: boolean; last?: boolean } = {}): string {
-  const vals = values.map((v) => Math.max(0, v || 0)).slice(-24); // deductions (net points below zero) draw as nothing
-  if (vals.length < 2 || !vals.some(Boolean)) return "";
-  const top = Math.max(...vals) || 1, n = vals.length;
-  let marks: string;
-  if (o.bars) {
-    const w = 100 / n;
-    marks = vals.map((v, i) => `<rect x="${(i * w + w * 0.18).toFixed(2)}" y="${(40 - (38 * v) / top).toFixed(2)}" width="${(w * 0.64).toFixed(2)}" height="${((38 * v) / top).toFixed(2)}"${o.last && i === n - 1 ? ' class="now"' : ""}/>`).join("")
-      + '<line class="base" x1="0" y1="40" x2="100" y2="40"/>';
-  } else {
-    marks = `<polyline points="${vals.map((v, i) => `${((100 * i) / (n - 1)).toFixed(2)},${(40 - (38 * v) / top).toFixed(2)}`).join(" ")}" pathLength="1"/>`;
-  }
-  return `<svg class="trend${o.bars ? " bars" : ""}" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true" focusable="false">${marks}</svg>`;
-}

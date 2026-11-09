@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { achievementSeries, activity, widgetPicker, widgets } from "./profile";
+import { achievementSeries, activity, profile, widgetPicker, widgets } from "./profile";
 import { Page } from "./page";
 import { Fmt } from "../fmt";
 import { tryChip } from "./projects";
@@ -37,7 +37,7 @@ test("Activity holds the campuses you have been to, beside titles, expertises an
   const panels = [...s.html.matchAll(/data-panel="([a-z-]+)"/g)].map((m) => m[1]);
   expect(panels).toEqual(["achievements", "events", "misc", "campuses"]);
   expect(s.html).toContain(f.t("foot.campuses"));
-  expect(s.html).toContain("12.5h");
+  expect(s.html).toContain("12:30h");
 });
 
 const extras = { achievements: [], events: [], titles: [{ name: "Mastermind", selected: true, at: "2026-05-18" }], expertises: [], quests: [], event_kinds: {} };
@@ -49,13 +49,44 @@ test("no tag on the selected title", () => {
   expect(s.html).not.toContain("selected");
 });
 
-test("Activity minimized keeps its title and nothing under it; hidden it is gone and the picker offers it back", () => {
-  const [min] = activity(activityPage(), "min");
-  expect(min.html).toContain(new Fmt("en").t("activity.title"));
-  expect(min.html).not.toContain("data-panel");
-  expect(activity(activityPage(), "off")).toEqual([]);
-  expect(widgetPicker(activityPage(), [], "off")[0].html).toContain('value="home:activity"');
-  expect(widgetPicker(activityPage(), [], "")[0].html).not.toContain('value="home:activity"');
+test("Activity is a widget like the rest: offered in the picker until added, then drawn with the others", () => {
+  expect(widgetPicker(activityPage(), [])[0].html).toContain('value="home:activity"');
+  expect(widgetPicker(activityPage(), [{ page: "home", id: "activity" }])[0].html).not.toContain('value="home:activity"');
+  const [grid] = widgets(activityPage(), [{ page: "home", id: "activity", wide: false }]);
+  expect(grid.html).toContain('class="widget half" data-widget="home:activity"');
+  expect(grid.html).toContain('data-panel="achievements"');
+  expect(profile(cardPage()).map((s) => s.id)).not.toContain("activity"); // only as a widget
+});
+
+const cardPage = (more: any = {}) => new Page(new Fmt("en"), { period: "student", report: {
+  profile: { login: "peer01", wallet: 576, correction_point: 5 }, extras: { ...extras, cursus: [{ name: "42cursus", level: 17.29, grade: "Transcender" }] },
+  correction_points: { earned: 12, spent: 8 }, summary: { validated: 0, projects: 0, attempts: 0, retries: 0, received: 0, given: 0 },
+  logtime: { total_seconds: 0, days_present: 0 }, projects: [{ status: "finished", validated: false }] }, all_projects: [],
+  promo: { rank: 3, size: 424, percentile: 99.5, median: 9.2 }, ...more } as any, "home", {});
+const cardLines = (pg: Page) => [...profile(pg)[0].html.matchAll(/<p class="line">(.*?)<\/p>/g)].map((m) => m[1].replace(/<[^>]*>/g, "").trim());
+
+test("the four figures of the card each carry a line: your place in Madrid, in your kickoff, the wallet, the points", () => {
+  const f = new Fmt("en");
+  expect(cardLines(cardPage({ madrid: { size: 913, rank: 30, top: 3.3 } }))).toEqual([f.t("profile.madrid_top", { pct: "3.3" }),
+    f.t("profile.promo_line", { pct: "99.5" }), f.t("profile.wallet_line"),
+    f.t("profile.points_line", { earned: "13", spent: "8" })]); // 5 = 12 - 8 + 1 left from the Piscine, counted as earned
+  expect(profile(cardPage({ madrid: { size: 913, rank: 30, top: 3.3 } }))[0].html).toContain(f.t("profile.madrid_tip", { n: "913" }));
+});
+
+test("low in Madrid it says how many you are above; with no Madrid figures yet, the way to the next level", () => {
+  const f = new Fmt("en");
+  expect(cardLines(cardPage({ madrid: { size: 1000, rank: 801, top: 80.1 } }))[0]).toBe(f.t("profile.madrid_above", { pct: "19.9" }));
+  expect(cardLines(cardPage())[0]).toBe(f.t("profile.level_next", { pct: 29, next: 18 }));
+});
+
+test("the projects module no longer counts the ones closed without validating", () => {
+  const html = profile(cardPage())[1].html;
+  expect(html).not.toContain(new Fmt("en").plural(1, "count.closed"));
+});
+
+test("the card's figures count up like the modules", () => {
+  const html = profile(cardPage())[0].html;
+  expect(html.match(/data-count=/g)?.length).toBe(4);
 });
 
 test("a widget starts at full width, and keeps the half width the student chose", () => {

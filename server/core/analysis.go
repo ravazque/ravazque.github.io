@@ -41,7 +41,15 @@ type span struct{ b, e time.Time }
 
 // SessionHost is the host of the session overlapping [start, end] the most, or nil.
 func SessionHost(sessions []Raw, start, end, now time.Time) any {
-	var best any
+	if s := sessionAt(sessions, start, end, now); s != nil {
+		return s["host"]
+	}
+	return nil
+}
+
+// sessionAt is the session that overlaps the window most; nil when none does.
+func sessionAt(sessions []Raw, start, end, now time.Time) Raw {
+	var best Raw
 	var bestOverlap time.Duration
 	for _, s := range sessions {
 		b, e := TS(Str(s, "begin_at")), TS(Str(s, "end_at"))
@@ -49,10 +57,56 @@ func SessionHost(sessions []Raw, start, end, now time.Time) any {
 			e = now
 		}
 		if o := minT(e, end).Sub(maxT(b, start)); o > bestOverlap {
-			best, bestOverlap = s["host"], o
+			best, bestOverlap = s, o
 		}
 	}
 	return best
+}
+
+// awayCampus names the campus of a session held outside Madrid (a move from another campus, a visit); "" in Madrid.
+func (r *report) awayCampus(s Raw) string {
+	c := Num(s, "campus_id")
+	if c == 0 || c == MadridCampus {
+		return ""
+	}
+	for _, cp := range Objs(r.user, "campus") {
+		if Num(cp, "id") == c {
+			if n := Str(cp, "name"); n != "" {
+				return n
+			}
+		}
+	}
+	return "campus " + strconv.Itoa(int(c))
+}
+
+// workExperience says whether an evaluation belongs to a work experience (its company mid and final evaluations, its peer
+// video): booked by the school, not between students, so lateness says nothing there.
+func workExperienceEval(slug, name any) bool {
+	s, _ := slug.(string)
+	n, _ := name.(string)
+	return strings.HasPrefix(strings.TrimPrefix(s, "42cursus-"), "work-experience-i") || strings.HasPrefix(strings.ToLower(n), "work experience")
+}
+
+// LateMinutes: whole minutes from an evaluation's start to the first login during it, when no session was open at the
+// start; nil when on time, under a minute late or never logged in before its end.
+func LateMinutes(sessions []Raw, start, end, now time.Time) any {
+	var first time.Time
+	for _, s := range sessions {
+		b, e := TS(Str(s, "begin_at")), TS(Str(s, "end_at"))
+		if e.IsZero() {
+			e = now
+		}
+		if !b.After(start) && e.After(start) {
+			return nil
+		}
+		if b.After(start) && b.Before(end) && (first.IsZero() || b.Before(first)) {
+			first = b
+		}
+	}
+	if m := int(first.Sub(start).Minutes()); !first.IsZero() && m >= 1 {
+		return m
+	}
+	return nil
 }
 
 func minT(a, b time.Time) time.Time {
@@ -223,6 +277,7 @@ func ForPeriod(d Raw, period string) Raw {
 	for k, v := range d {
 		out[k] = v
 	}
+	out["received_ids"] = receivedIDs(d) // every evaluation you booked that exists, in any period
 	user := Raw{}
 	for k, v := range Obj(d, "user") {
 		user[k] = v
@@ -399,6 +454,8 @@ func (r *report) noMark(e Raw, begin, filled time.Time, team Raw) any {
 	if begin.After(r.now) {
 		return "pending"
 	}
+	// truant is who reported the absence, the side that was there (the owner's three cases, 2026-11-09): absent_you = you
+	// marked the other side absent, absent_them = they marked you (the keys stay as v1 named them)
 	if truant := Str(Obj(e, "truant"), "login"); truant != "" {
 		if truant == r.login {
 			return "absent_you"
@@ -449,9 +506,17 @@ func (r *report) evaluation(e Raw, role string) *OMap {
 	}
 	scores := feedbackScores(fbs)
 	correcteds := []any{}
+	leaders := map[float64]bool{} // a team's users say who led it, by id
+	for _, u := range Objs(team, "users") {
+		leaders[Num(u, "id")] = Bool(u, "leader")
+	}
 	for _, c := range List(e, "correcteds") {
 		if o, ok := c.(Raw); ok {
-			correcteds = append(correcteds, r.person(o))
+			p := r.person(o)
+			if role == "given" {
+				p.Set("leader", leaders[Num(o, "id")])
+			}
+			correcteds = append(correcteds, p)
 		}
 	}
 	var leadH any
@@ -492,6 +557,18 @@ func (r *report) evaluation(e Raw, role string) *OMap {
 		"fb_rating", scores.V("rating"), "fb_scores", fbScores,
 		"my_host", SessionHost(r.mySessions, begin, end, r.now), "cursus", cursus,
 	)
+	if c := r.awayCampus(sessionAt(r.mySessions, begin, end, r.now)); c != "" { // held on another campus: off Madrid's "where"
+		out.Set("my_campus", c)
+	}
+	late := func(sessions []Raw) any {
+		if workExperienceEval(slug, r.projectName(pid)) {
+			return nil
+		}
+		return LateMinutes(sessions, begin, end, r.now)
+	}
+	if role == "received" { // you were the one evaluated
+		out.Set("my_late_min", late(r.mySessions))
+	}
 	// the other side's seat, looked up for recent evaluations only; it rides on the person so a hidden one loses it
 	if role == "received" {
 		looked := Obj(r.d, "corrector_sessions")
@@ -507,6 +584,7 @@ func (r *report) evaluation(e Raw, role string) *OMap {
 			co := c.(*OMap)
 			if checked {
 				co.Set("host", SessionHost(sessionsOf(looked[co.S("login")]), begin, end, r.now))
+				co.Set("late_min", late(sessionsOf(looked[co.S("login")]))) // rides on the person, like the seat
 			} else {
 				co.Set("host", nil)
 			}
@@ -756,6 +834,7 @@ func (r *report) logtimeSection(received, given []*OMap) *OMap {
 	}
 	seats, seatOrder := map[any]*seat{}, []any{}
 	clusters := newCounted()
+	away := newCounted()
 	var intervals []span
 	var log []*OMap
 	for _, s := range r.mySessions {
@@ -764,20 +843,29 @@ func (r *report) logtimeSection(received, given []*OMap) *OMap {
 			e = r.now
 		}
 		h := s["host"]
-		st := seats[h]
-		if st == nil {
-			st = &seat{host: h, first: b, last: e}
-			seats[h] = st
-			seatOrder = append(seatOrder, h)
+		campus := r.awayCampus(s)
+		if campus == "" { // Madrid's plan and clusters hold Madrid's seats only
+			st := seats[h]
+			if st == nil {
+				st = &seat{host: h, first: b, last: e}
+				seats[h] = st
+				seatOrder = append(seatOrder, h)
+			}
+			st.seconds += totalSeconds(e.Sub(b))
+			st.sessions++
+			st.first, st.last = minT(st.first, b), maxT(st.last, e)
+			host, _ := h.(string)
+			clusters.add(clusterAny(host), totalSeconds(e.Sub(b)))
+		} else {
+			away.add(campus, 1)
 		}
-		st.seconds += totalSeconds(e.Sub(b))
-		st.sessions++
-		st.first, st.last = minT(st.first, b), maxT(st.last, e)
-		host, _ := h.(string)
-		clusters.add(clusterAny(host), totalSeconds(e.Sub(b)))
 		intervals = append(intervals, span{b, e})
-		log = append(log, M("begin", fmtT(b), "begin_ms", msOf(b), "end", fmtT(tsAny(s["end_at"])), "host", h,
-			"seconds", pyRoundInt(totalSeconds(e.Sub(b)))))
+		entry := M("begin", fmtT(b), "begin_ms", msOf(b), "end", fmtT(tsAny(s["end_at"])), "host", h,
+			"seconds", pyRoundInt(totalSeconds(e.Sub(b))))
+		if campus != "" {
+			entry.Set("campus", campus)
+		}
+		log = append(log, entry)
 	}
 	var sessions []float64
 	for _, iv := range MergeIntervals(intervals) {
@@ -863,13 +951,17 @@ func (r *report) logtimeSection(received, given []*OMap) *OMap {
 	if len(sessions) > 0 {
 		longest = pyRound(slices.Max(sessions)/3600, 1)
 	}
-	return M(
+	out := M(
 		"days", list(allDays), "hours", hours, "evals", evals, "monthly", monthlyObj, "heat", heat, "seats", seatRows,
 		"log", list(log), "clusters", clusters.obj(func(f float64) any { return pyRound(f/3600, 1) }),
 		"total_seconds", pyRoundInt(total), "total_hours", pyRound(total/3600, 1),
 		"official_hours", officialHours(Obj(r.d, "locations_stats")), "days_present", len(daily),
 		"first_day", firstDay, "last_day", lastDay, "sessions", len(r.mySessions), "longest_session_h", longest,
 		"avg_day_h_eval_days", avg(onEval, 1), "avg_day_h_other_days", avg(other, 1))
+	if a := away.obj(asInt); len(a.Keys()) > 0 { // sessions on other campuses, by campus: kept off the plan
+		out.Set("away", a)
+	}
+	return out
 }
 
 func truthy(v any) bool { return v != nil && v != "" }
@@ -894,7 +986,7 @@ func (r *report) placeSection(received, given []*OMap) *OMap {
 		}
 		return c.obj(asInt)
 	}
-	sameHost, sameCluster := 0, 0
+	sameHost, sameCluster, recvAway, givenAway := 0, 0, 0, 0
 	var corrClusters, recvMine, givenMine, corrHosts, myHosts []any
 	corrChecked, corrLocated, meRecv, meGiven := 0, 0, 0, 0
 	for _, e := range received {
@@ -909,9 +1001,13 @@ func (r *report) placeSection(received, given []*OMap) *OMap {
 			corrClusters = append(corrClusters, clusterAny(oh))
 			corrChecked++
 		}
-		recvMine = append(recvMine, clusterAny(mh))
+		if e.Has("my_campus") {
+			recvAway++
+		} else {
+			recvMine = append(recvMine, clusterAny(mh))
+			myHosts = append(myHosts, mh)
+		}
 		corrHosts = append(corrHosts, oh)
-		myHosts = append(myHosts, mh)
 		if truthy(oh) {
 			corrLocated++
 		}
@@ -921,6 +1017,10 @@ func (r *report) placeSection(received, given []*OMap) *OMap {
 	}
 	var theirs []any
 	for _, e := range given {
+		if e.Has("my_campus") {
+			givenAway++
+			continue
+		}
 		givenMine = append(givenMine, clusterAny(e.V("my_host")))
 		myHosts = append(myHosts, e.V("my_host"))
 		if truthy(e.V("my_host")) {
@@ -948,7 +1048,7 @@ func (r *report) placeSection(received, given []*OMap) *OMap {
 		"corrector_checked", corrChecked, "received_my_cluster", counter(recvMine), "given_my_cluster", counter(givenMine),
 		"received_corrector_hosts", countTruthy(corrHosts), "my_eval_hosts", countTruthy(myHosts),
 		"same_host", sameHost, "same_cluster", sameCluster, "corrector_located", corrLocated,
-		"me_located_received", meRecv, "me_located_given", meGiven)
+		"me_located_received", meRecv, "me_located_given", meGiven, "received_away", recvAway, "given_away", givenAway)
 }
 
 func (r *report) whenSection(received, given []*OMap) *OMap {
@@ -1070,7 +1170,61 @@ func (r *report) correctionPointsSection() *OMap {
 	for _, k := range order {
 		ro.Set(keyStr(k), M("count", int(reasons[k].count), "sum", reasons[k].sum))
 	}
-	return M("series", series, "reasons", ro, "earned", earned, "spent", spent, "max", mx)
+	// cancelled evaluations by kind (42 deletes the evaluation; the history keeps its id, scale_team_id):
+	//   corrector  "Evaluator cancelled a defense" beside a booking of yours: your defense, its point given back
+	//   you        the same reason with no booking of yours: one you were to give and cancelled (−1)
+	//   self       a booking of yours alone, whose evaluation no longer exists: you cancelled it (no refund is written)
+	//   absent     "Refund for evaluator missing": your corrector didn't come (the evaluation stays, st names it)
+	// when the student you were to evaluate cancels, nothing is written on your side: it can't be counted
+	rowsOf := map[any]int{}
+	for _, c := range rows {
+		rowsOf[c["scale_team_id"]]++
+	}
+	exists := map[any]bool{}
+	for _, id := range receivedIDs(r.d) {
+		exists[id] = true
+	}
+	booked := map[any]bool{}
+	for _, c := range rows {
+		if Str(c, "reason") == "Defense plannification" && c["scale_team_id"] != nil {
+			booked[c["scale_team_id"]] = true
+		}
+	}
+	cancels := []any{}
+	add := func(kind string, c Raw, more ...any) {
+		cancels = append(cancels, M(append([]any{"kind", kind, "at", fmtT(tsAny(c["created_at"])), "at_ms", msT(tsAny(c["created_at"]))}, more...)...))
+	}
+	for _, c := range rows {
+		st := c["scale_team_id"]
+		switch Str(c, "reason") {
+		case "Evaluator cancelled a defense":
+			if st != nil && booked[st] {
+				add("corrector", c)
+			} else {
+				add("you", c)
+			}
+		case "Defense plannification":
+			if st != nil && Num(c, "sum") < 0 && rowsOf[st] == 1 && !exists[st] {
+				add("self", c)
+			}
+		case "Refund for evaluator missing":
+			add("absent", c, "st", st)
+		}
+	}
+	return M("series", series, "reasons", ro, "earned", earned, "spent", spent, "max", mx, "cancels", cancels)
+}
+
+// receivedIDs: the evaluations you booked that exist, as the API answered (the hidden upcoming ones too); a period
+// keeps the whole list (received_ids), so a booking near its edge still finds its evaluation.
+func receivedIDs(d Raw) []any {
+	if ids, ok := d["received_ids"].([]any); ok {
+		return ids
+	}
+	ids := append([]any{}, List(d, "hidden_received_ids")...)
+	for _, e := range Objs(d, "evals_received") {
+		ids = append(ids, e["id"])
+	}
+	return ids
 }
 
 func (r *report) extrasSection() *OMap {

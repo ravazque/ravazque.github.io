@@ -388,7 +388,7 @@ func idStr(v any) string {
 
 // otherSessions: the other side's login sessions around each evaluation of the last SeatDays days, to tell their
 // seat (the corrector of a received one, the evaluated students of a given one). One request per day with
-// evaluations; only begin, end and host are kept, and the analysis keeps nothing but the seat.
+// evaluations; only begin, end and host are kept, and the analysis keeps nothing but the seat (and, for the evaluated, how late they logged in).
 func otherSessions(ctx context.Context, c *Client, d raw, now time.Time) (raw, raw, error) {
 	since := now.AddDate(0, 0, -SeatDays)
 	type want struct {
@@ -588,6 +588,34 @@ func (c *Client) LastBloc() raw {
 	c.blocMu.Lock()
 	defer c.blocMu.Unlock()
 	return c.bloc
+}
+
+// Madrid reads the levels of Madrid's 42cursus students, OuterCore, frozen and alumni (core.MadridLevels: numbers only)
+// at most once per hour: about 26 requests (2,584 rows, measured 2026-11-09). A failed read waits for the next hour.
+func (c *Client) Madrid(ctx context.Context, now time.Time) ([]float64, error) {
+	c.madridMu.Lock()
+	defer c.madridMu.Unlock()
+	if h := now.Truncate(time.Hour).Unix(); c.madridAt.Swap(h) == h {
+		levels, _ := c.LastMadrid(now)
+		return levels, nil
+	}
+	rows, err := c.GetAll(ctx, "/v2/cursus/"+strconv.Itoa(core.MainCursus)+"/cursus_users", vals("filter[campus_id]", strconv.Itoa(core.MadridCampus)))
+	if err != nil {
+		return nil, err
+	}
+	levels := core.MadridLevels(rows, now)
+	c.madrid.Store(&levels)
+	return levels, nil
+}
+
+// LastMadrid is the levels read last (nil before the first read; the old ones while a new read runs), and whether they
+// were asked for this hour.
+func (c *Client) LastMadrid(now time.Time) ([]float64, bool) {
+	var levels []float64
+	if p := c.madrid.Load(); p != nil {
+		levels = *p
+	}
+	return levels, c.madridAt.Load() == now.Truncate(time.Hour).Unix()
 }
 
 // kickoff is the 42cursus start, where the student period begins.

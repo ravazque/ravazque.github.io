@@ -18,12 +18,15 @@ https://ravazque.github.io), que muestra un pequeño resumen de 42 publicado des
 Seis páginas. Cada elección (periodo, filtros, vistas) queda en la dirección, así que cualquier vista se puede
 guardar o compartir.
 
-- **Perfil**, la página de inicio. Tu ficha (foto, milestone, curso de C o de Python, grado, grupos como mentor, nivel,
-  puesto en la promo, wallet, puntos de corrección, inicio del 42cursus y piscina, la fecha estimada de alumni), tres
-  módulos de resumen (proyectos, evaluaciones y horas) y las secciones de las otras páginas que guardes como widgets:
-  para empezar, Contribución, Ritmo y el bonus de horas; añádelos, quítalos, cambia su tamaño y arrástralos a su sitio (se
-  guarda en tu navegador). Al final tu actividad, que puedes plegar u ocultar: logros (una línea por serie, con los
-  niveles anteriores plegados), eventos, títulos y quests junto a tus campus.
+- **Perfil**, la página de inicio. Tu ficha (foto, nombre y login, el título que elegiste en la intra, coalición,
+  milestone, curso de C o de Python, grado, grupos como mentor) con cuatro cifras, cada una con su línea: tu nivel y tu
+  posición entre los estudiantes, OuterCore, congelados y alumni de Madrid (se vuelve a leer cada hora), tu puesto en tu
+  kickoff, tu wallet y tus puntos de corrección ganados y gastados. Después tres módulos de resumen (proyectos,
+  evaluaciones y horas), tu recorrido en una línea de tiempo (piscina, 42cursus, cambios de campus, Transcender, alumni,
+  hoy y la fecha estimada de alumni) y las secciones de las otras páginas que guardes como widgets: para empezar,
+  Contribución, Ritmo, el bonus de horas, el registro de evaluaciones, las evaluaciones canceladas, el feedback y dónde
+  ocurren las evaluaciones. Añade más desde el selector del final (Actividad entre ellas: logros, eventos, títulos y
+  quests junto a tus campus), quítalos, cambia su tamaño y arrástralos a su sitio; se guarda en tu navegador.
 - **Proyectos**: tu avance (nivel, XP por mes, tu promo por nivel, la fecha estimada de alumni), skills, cada proyecto
   e intento con filtros, agrupados por milestone (0 = Libft … 6) para el Common Core de C y el de Python (un proyecto
   hecho en los dos cursos dice cuál es cuál), exportación a CSV, exámenes, dominios técnicos (las etiquetas RNCP de la
@@ -31,30 +34,41 @@ guardar o compartir.
 - **Evaluaciones**: lo que devuelves (horas, personas, valoración, cuántas acabaron por debajo de 50, Outstanding en
   los dos sentidos, según el milestone de la otra persona), recibidas y hechas a lo largo del tiempo, cuándo ocurren
   (día × hora, duración, con cuánta antelación se reservaron), tu feedback (como estudiante solo
-  cuenta el 42cursus; las piscinas Discovery van aparte), los puntos de corrección, los proyectos que has corregido y
-  el registro completo de evaluaciones con búsqueda y filtros.
+  cuenta el 42cursus; las piscinas Discovery van aparte), los puntos de corrección, las evaluaciones canceladas (las de
+  tus proyectos que cancelaste tú, con el proyecto que probablemente eran; las que canceló tu corrector; las que ibas a
+  hacer y cancelaste; las veces que tu corrector no vino), los proyectos que has corregido y el registro completo de
+  evaluaciones: búsqueda y filtros por flag (también ausencias), milestone del proyecto, proyecto y asiento (sin login,
+  login tarde, por clúster), quién marcó ausente a quién, cuánto tarde hizo login la parte evaluada, y el líder de un
+  equipo con el resto a un clic.
 - **Coalición**: las coaliciones de Madrid, actualizadas cada cuarto de hora, y cada punto que diste a la tuya, el bonus
-  de horas en detalle con todos los bonus hasta ahora, y tus puntos por origen y por mes.
+  de horas en detalle con todos los bonus hasta ahora, tus puntos por origen (todos, también los que están a cero) y por
+  mes y origen (pasa el ratón por un mes para ver sus partes). Las deducciones salen como TIGs.
 - **Personas**: quién te evaluó más, todas las personas con las que coincidiste (o solo tus compañeros de equipo), tus
   conexiones agrupadas por dónde están hoy y tu círculo. Las cuentas que 42 borró no aparecen en los gráficos (una nota dice
-  cuántas) y en las tablas salen como "Cuenta borrada"; el staff tiene su propio grupo.
+  cuántas) y en las tablas salen como "Cuenta borrada"; el staff tiene su propio grupo. Un login de una tabla o lista
+  abre la página de ese estudiante en acerezo.top, otro sitio independiente, en una pestaña nueva.
 - **Campus**: tu ritmo (racha, semanas activas, tu día hora a hora), el plano con cada ordenador que usaste (los que
   están fuera de los clústeres, aparte), días y horas (el primer año completo, con tu primer día marcado), el registro
   de sesiones, dónde ocurren las evaluaciones (las que recibiste o hiciste, por clúster, con el clúster de la otra
-  persona en los últimos 60 días).
+  persona en los últimos 60 días). Las sesiones en otros campus cuentan como horas pero no entran en los asientos ni
+  clústeres de Madrid.
 
 Cosas que merece la pena probar:
 
 - El **selector de periodo**: todo, solo el 42cursus o solo la piscina.
 - La **estrella** junto al título de cada sección: las secciones marcadas se reúnen en el menú de la estrella de la barra, a un clic.
-- **Actualizar** tus datos una vez por hora; la extracción va en segundo plano con una barra de progreso.
+- **Actualizar** tus datos una vez por hora; la extracción va en segundo plano con el progreso en la barra, y cuando
+  vuelves pasada una hora la copia de tu navegador dibuja la página al momento mientras se trae una nueva.
+- El botón de **ampliar** junto a una gráfica que comparte fila (en el móvil, todas) la abre en grande.
 - **Ajustes** (el engranaje): acento (el azul de 42 por defecto o el color de tu coalición, ajustado para que se lea
   bien en los dos temas), tema (sistema, claro u oscuro), periodo e idioma.
 - **Borrar mis datos**: elimina al momento todo lo que el servidor guarda de ti.
 
 Algunas cifras son deducciones, y la aplicación lo indica donde aparecen: la regla del bonus de horas (deducida de los
-premios porque la intra no la publica, comprobada con 11 estudiantes durante 12 días), la fecha de alumni y la XP por
-dominio.
+premios porque la intra no la publica, comprobada con 11 estudiantes durante 12 días), la fecha de alumni, la XP por
+dominio, los asientos y retrasos calculados con las sesiones de login, y qué evaluaciones canceladas cancelaste tú (con
+el proyecto que probablemente eran). 42 borra una evaluación cancelada, así que se leen de tus puntos de corrección;
+cuando cancela el estudiante al que ibas a evaluar no se escribe nada en tu lado y no se puede contar.
 
 <details>
 <summary>Capturas (perfil de prueba, no un estudiante real; modo oscuro)</summary>
@@ -88,12 +102,16 @@ blackhole o congeladas ven una página con el motivo. El acceso se comprueba de 
   durante una hora desde su último uso, y solo acepta la copia del navegador si lleva su propia firma para tu cuenta.
 - Tu token de 42 se usa una vez para saber quién eres y se descarta; los tokens nunca llegan al navegador.
 - De otros estudiantes solo se guarda login, nombre, grupo (milestone, alumni, blackhole…) y si son staff y, en tus
-  evaluaciones de los últimos 60 días, el asiento que usó la otra parte. Del feedback que recibiste, solo el tuyo.
+  evaluaciones de los últimos 60 días, el asiento que usó la otra parte (y cuánto tarde hicieron login los estudiantes que
+  evaluaste). Del feedback que recibiste, solo el tuyo.
 - El único fichero que escribe el servidor es el registro de aceptación: un hash con clave de tu id de 42, la versión
   de la política y la fecha, que se conserva dos años.
 - *Borrar mis datos* elimina la copia del servidor, cancela una actualización pendiente y le pide a tu navegador que
   borre lo que guarda.
 - Quien pide no aparecer sale como "Hidden", sin nombre ni asiento, en los informes de los demás (`OPTOUT_LOGINS`).
+- Para tu posición en Madrid, el servidor lee el nivel de todos los estudiantes del 42cursus de Madrid una vez por hora
+  (solo en las horas en que alguien abre una página) y guarda solo los números, en memoria: ningún login, nombre ni id.
+- Un enlace de login a acerezo.top solo le manda ese login a ese sitio cuando haces clic, sin decirle desde qué página llegas.
 - El servidor corre en Amazon Web Services, en la UE (Estocolmo), y se llega a él a través de Cloudflare.
 
 La política completa está en la página de Privacidad de la aplicación. Problemas de seguridad: mira
@@ -210,7 +228,9 @@ aplicación las cuida:
 - peticiones repartidas entre todas las apps configuradas.
 
 Una actualización completa son unas 120 peticiones y 40 segundos con tres apps, y cada actualización registra cuántas
-peticiones ha hecho. Cuando queda poco presupuesto en la hora, el trabajo espera a la siguiente.
+peticiones ha hecho. Cuando queda poco presupuesto en la hora, el trabajo espera a la siguiente. Los niveles de Madrid
+(tu posición en Perfil) cuestan unas 26 peticiones, como mucho una vez por hora, compartidas por todos, y solo en una
+hora en la que alguien abre una página.
 
 ## La página pública y su workflow
 
@@ -271,6 +291,8 @@ Los datos de prueba están anonimizados o son sintéticos.
   paneles, servido como `/ui.css`.
 - `web/src/styles/spacing.css`: cada distancia y línea de cada página, sección a sección, para ajustar a mano (los
   valores negativos acercan más).
+- `web/src/styles/zoom.css`: el panel que abre una gráfica en grande (ancho, alto, posición, márgenes, alto de la
+  gráfica, cuánto se oscurece la página de detrás).
 - `server/core/data/i18n/{en,es}.json`: todos los textos; los dos ficheros deben tener las mismas claves.
 - `server/core/data/tracks.json`: a qué milestone del Common Core pertenece cada proyecto, para los cursos de C y de
   Python. Cualquier otro proyecto del 42cursus cuenta como Outer Core.

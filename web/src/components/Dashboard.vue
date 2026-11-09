@@ -3,13 +3,13 @@
 // builds the sections as markup and lets the browser behaviours take it from there.
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setActivity, setWidget, state, togglePin, untilQuarter, type ActivityState, type Status } from "../state";
+import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setWidget, state, togglePin, untilQuarter, type Status } from "../state";
 import { closePops, dragScroll, hideTip, settle } from "../lib/behave";
 import { idbShelf, keepCopy, restore, stale } from "../lib/copy";
 import { esc, initials } from "../lib/h";
 import { parseCsv } from "../lib/table";
 import { Page, pagePeriod, type PageKey, type Section, type View } from "../views/page";
-import { profile as profileSections } from "../views/profile";
+import { WIDGETS, profile as profileSections } from "../views/profile";
 import { portfolioCsv, projects, projectsCsv } from "../views/projects";
 import { evaluations } from "../views/evaluations";
 import { people } from "../views/people";
@@ -33,12 +33,17 @@ const pg = computed(() => (view.value ? new Page(f.value, view.value, key.value,
 const sections = computed<Section[]>(() => {
   if (!pg.value) return [];
   const pv = pg.value;
-  if (key.value === "home") return profileSections(pv, pins.widgets, pins.activity);
+  if (key.value === "home") return profileSections(pv, pins.widgets);
   return key.value === "projects" ? projects(pv) : key.value === "evaluations" ? evaluations(pv)
     : key.value === "people" ? people(pv) : key.value === "campus" ? campus(pv) : key.value === "coalition" ? coalition(pv) : [];
 });
 
 const profile = computed(() => view.value?.report.profile);
+// the section index; on Profile: your card and every widget you keep (in their order: it follows as you add, move or
+// take one away)
+const toc = computed(() => key.value !== "home" ? sections.value.filter((s) => s.nav) : [
+  ...sections.value.filter((s) => s.id === "profile"),
+  ...pins.widgets.flatMap((w) => { const d = WIDGETS.find(([p, i]) => p === w.page && i === w.id); return d ? [{ id: w.id, nav: f.value.t(d[2]) }] : []; })]);
 const me = computed(() => state.session?.user);
 
 const title = computed(() => {
@@ -144,6 +149,8 @@ watch(sections, async () => {
   if (!main.value) return;
   settle(main.value);
   markSections(main.value);
+  markZoom(main.value);
+  placeMarks(main.value);
   hideTip();
   if (typingIn) {
     const el = main.value.querySelector<HTMLInputElement>(`form[data-filter="${typingIn.form}"] [name="${typingIn.name}"]`);
@@ -176,11 +183,10 @@ async function retry() { await api("/api/me/refresh", { method: "POST" }).catch(
 // every section of a page carries a star by its title; a widget on Profile a handle to move it, its size and a way off
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.2l-5.8 3.2 1.2-6.5-4.8-4.5 6.5-.8z"/></svg>';
 const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-const GRIP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="dots" d="M9 5.5h.01M15 5.5h.01M9 12h.01M15 12h.01M9 18.5h.01M15 18.5h.01"/></svg>';
+const GRIP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M10 5l2-2 2 2M10 19l2 2 2-2M5 10l-2 2 2 2M19 10l2 2-2 2"/></svg>'; // move: two crossed two-way arrows
 const WIDEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
 const NARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h7M15 12h7M6 8l4 4-4 4M18 8l-4 4 4 4"/></svg>';
-const FOLD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
-const UNFOLD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const ZOOM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>';
 let refocus = "";
 const tool = (cls: string, icon: string, label: string, data: Record<string, string>) => {
   const b = Object.assign(document.createElement("button"), { type: "button", className: `pin ${cls}`, innerHTML: icon, title: label });
@@ -195,14 +201,7 @@ function markSections(root: HTMLElement) {
     const page = widget ? widget.split(":")[0] : key.value;
     const h2 = sec.querySelector<HTMLElement>(":scope > h2, :scope > .panel-head > h2");
     if (!h2 || h2.classList.contains("visually-hidden") || h2.querySelector(".pin")) return;
-    if (page === "home") { // on Profile only Activity has tools: fold it, or take it off (the picker brings it back)
-      if (sec.id !== "activity") return;
-      const label = h2.textContent || sec.id, min = pins.activity === "min";
-      const fold = tool("widget-size", min ? UNFOLD : FOLD, f.value.t(min ? "widgets.expand" : "widgets.minimize", { name: label }), { activity: min ? "" : "min" });
-      fold.setAttribute("aria-expanded", String(!min));
-      h2.append(fold, tool("widget-off", CROSS, f.value.t("widgets.remove", { name: label }), { activity: "off" }));
-      return;
-    }
+    if (!widget && page === "home") return; // Profile's own sections (card, figures, path) have no tools
     const on = hasPin("stars", page, sec.id), name = labels.get(sec.id) || h2.textContent || sec.id;
     if (!widget) {
       const star = Object.assign(document.createElement("button"), { type: "button", className: "pin star-pin", innerHTML: STAR });
@@ -225,6 +224,68 @@ function markSections(root: HTMLElement) {
   if (key.value !== "home") relabelStars(key.value, labels);
 }
 
+/** A chart that shares its row (on a phone every chart: they all take the whole width) gets a button by its title that
+ * opens it large over the page (styles/zoom.css sizes it). */
+const chartTitle = (p: HTMLElement) => p.querySelector<HTMLElement>(":scope > h3, :scope > .block-head > h3");
+function markZoom(root: HTMLElement) {
+  const phone = innerWidth < 600, page = root.clientWidth;
+  root.querySelectorAll<HTMLElement>("[data-panel]").forEach((p) => {
+    const h3 = chartTitle(p);
+    if (!h3 || h3.querySelector(".zoom-pin") || !p.querySelector(".ch-plot, .heat, .hb-row")) return;
+    if (!phone && p.getBoundingClientRect().width > page * 0.75) return;
+    h3.append(tool("zoom-pin", ZOOM, f.value.t("zoom.open", { name: (h3.firstChild?.textContent || h3.textContent || "").trim() }), { zoom: "" }));
+  });
+}
+/** The timeline's names, once drawn: each goes above or below the line (taking turns) where it touches no other name,
+ * or one row further out when neither side has room (phones list the stops instead). */
+function placeMarks(root: HTMLElement) {
+  if (innerWidth < 720) return;
+  root.querySelectorAll<HTMLElement>(".pf-time").forEach((tl) => {
+    const marks = [...tl.querySelectorAll<HTMLElement>(".pf-mark")];
+    const taken: Record<string, [number, number][][]> = { up: [[], []], down: [[], []] };
+    marks.forEach((m, i) => {
+      m.classList.remove("far");
+      const r = m.getBoundingClientRect(), a = r.left - 10, b = r.right + 10;
+      for (const lvl of [0, 1]) for (const side of i % 2 ? ["down", "up"] : ["up", "down"]) {
+        if (taken[side][lvl].some(([x, y]) => a < y && x < b)) continue;
+        m.classList.toggle("up", side === "up");
+        m.classList.toggle("down", side === "down");
+        m.classList.toggle("far", lvl === 1);
+        taken[side][lvl].push([a, b]);
+        return;
+      }
+    });
+    tl.classList.toggle("far-up", marks.some((m) => m.matches(".far.up")));
+    tl.classList.toggle("far-down", marks.some((m) => m.matches(".far.down")));
+  });
+}
+let zoomResize = 0;
+const onResize = () => { cancelAnimationFrame(zoomResize); zoomResize = requestAnimationFrame(() => { if (main.value) { markZoom(main.value); placeMarks(main.value); } }); };
+window.addEventListener("resize", onResize);
+onBeforeUnmount(() => window.removeEventListener("resize", onResize));
+
+const zoom = ref<HTMLDialogElement | null>(null);
+const zoomTitle = ref(""), zoomHtml = ref("");
+let tipHome: [Node, Node | null] | null = null;
+function openZoom(panel: HTMLElement) {
+  const copy = panel.cloneNode(true) as HTMLElement, h3 = chartTitle(copy)!;
+  h3.querySelectorAll(".pin").forEach((b) => b.remove());
+  zoomTitle.value = h3.innerHTML; // the page's own markup, already escaped
+  h3.remove();
+  zoomHtml.value = copy.innerHTML;
+  hideTip();
+  zoom.value!.showModal();
+  // the dialog sits on the top layer, over the page's tooltip: the tooltip moves in while it is open
+  const tip = document.getElementById("tip");
+  if (tip) { tipHome = [tip.parentNode!, tip.nextSibling]; zoom.value!.append(tip); }
+}
+function zoomClosed() {
+  hideTip();
+  const tip = document.getElementById("tip");
+  if (tip && tipHome) tipHome[0].insertBefore(tip, tipHome[1]);
+  tipHome = null;
+}
+
 function onClick(ev: MouseEvent) {
   const el = ev.target as Element;
   const star = el.closest?.("[data-pin]") as HTMLElement | null;
@@ -237,8 +298,8 @@ function onClick(ev: MouseEvent) {
     star.title = star.getAttribute("aria-label")!;
     return;
   }
-  const fold = el.closest?.("[data-activity]") as HTMLElement | null;
-  if (fold) return setActivity(fold.dataset.activity as ActivityState);
+  const zoomBtn = el.closest?.("[data-zoom]") as HTMLElement | null;
+  if (zoomBtn) return openZoom(zoomBtn.closest<HTMLElement>("[data-panel]")!);
   const size = el.closest?.("[data-widget-size]") as HTMLElement | null;
   if (size) {
     const [page, id] = size.dataset.widgetSize!.split(":");
@@ -253,8 +314,7 @@ function onClick(ev: MouseEvent) {
   if (el.closest?.("[data-widget-add]")) {
     const pick = main.value?.querySelector<HTMLSelectElement>("#widgets select")?.value || "";
     const [page, id] = pick.split(":");
-    if (page === "home") setActivity("");
-    else if (page && id && !hasPin("widgets", page, id)) togglePin("widgets", { page, id, label: "" });
+    if (page && id && !hasPin("widgets", page, id)) togglePin("widgets", { page, id, label: "" });
     else return;
     anchored = "";
     router.replace({ query: route.query, hash: `#${id}` });
@@ -418,7 +478,7 @@ const locked = computed(() => pagePeriod(key.value, "") !== "");
       </nav>
       <p v-else-if="key === 'home' && state.status?.last" class="periods only">{{ f.t("today.as_of", { time: f.stamp(new Date(state.status.last).getTime()) }) }}</p>
     </header>
-    <nav v-if="sections.length > 1 && key !== 'home'" class="toc" :aria-label="f.t('rail.sections')"><a v-for="s in sections" :key="s.id" :href="`#${s.id}`">{{ s.nav }}</a></nav>
+    <nav v-if="toc.length > 1" class="toc" :aria-label="f.t('rail.sections')"><a v-for="s in toc" :key="s.id" :href="`#${s.id}`">{{ s.nav }}</a></nav>
     <div v-for="s in sections" :key="s.id + key" class="sec" v-html="s.html"></div>
     <footer class="site-foot">
       <SiteCredit />
@@ -448,14 +508,14 @@ const locked = computed(() => pagePeriod(key.value, "") !== "");
         <b>{{ state.status.next_refresh_in < 60 ? f.t("refresh.wait_s", { count: state.status.next_refresh_in }) : f.t("refresh.wait", { count: Math.ceil(state.status.next_refresh_in / 60) }) }}</b> {{ f.t("boot.wait_note") }}</p>
       <p v-else class="periods only" role="status"><b>{{ f.t(state.status?.message || `status.${state.status?.state || 'queued'}`) }}</b> {{ f.t("boot.first") }}</p>
     </header>
-    <section v-if="me && key === 'home'" id="profile" :aria-label="f.t('profile.title')"><div class="pf">
-      <div class="avatar-lg pf-photo"><span aria-hidden="true">{{ initials(me.name || me.login) }}</span>
+    <section v-if="me && key === 'home'" id="profile" class="pf" :aria-label="f.t('profile.title')">
+      <div class="pf-head"><div class="avatar-lg pf-photo"><span aria-hidden="true">{{ initials(me.name || me.login) }}</span>
         <img v-if="me.has_image" :src="'/avatar/me'" alt="" @error="($event.target as HTMLElement).remove()" /></div>
-      <div class="pf-main"><p class="pf-name">{{ me.name || me.login }}</p><p class="pf-sub"><span>{{ me.login }}</span></p>
-        <div class="pf-stacks" aria-hidden="true"><dl v-for="n in 3" :key="n"><div v-for="r in 2" :key="r"><dt><i class="sk"></i></dt><dd><i class="sk"></i></dd></div></dl></div></div>
-    </div></section>
+        <div class="pf-id"><p class="pf-name">{{ me.name || me.login }}</p><p class="pf-sub"><span>{{ me.login }}</span></p></div></div>
+      <div class="modules pf-modules" aria-hidden="true"><article v-for="n in 4" :key="n" class="module"><h3 class="tab"><i class="sk"></i></h3><p class="figure"><i class="sk"></i></p></article></div>
+    </section>
     <section class="modules-wrap" aria-hidden="true"><div class="modules">
-      <article v-for="n in 3" :key="n" class="module"><h3 class="tab"><i class="sk"></i></h3><p class="figure"><i class="sk"></i></p><i class="sk"></i><i class="sk"></i><i class="sk tall"></i></article>
+      <article v-for="n in 3" :key="n" class="module"><h3 class="tab"><i class="sk"></i></h3><p class="figure"><i class="sk"></i></p><i class="sk"></i><i class="sk"></i></article>
     </div></section>
   </main>
   <div id="tip" role="tooltip"></div>
@@ -463,6 +523,12 @@ const locked = computed(() => pagePeriod(key.value, "") !== "");
     <dialog ref="preview" class="preview" aria-labelledby="preview-title" @click="($event.target as Element) === preview && preview?.close()">
       <div class="preview-head"><h2 id="preview-title">{{ previewTitle }}</h2><button class="btn secondary" type="button" @click="preview?.close()">{{ f.t("landing.close") }}</button></div>
       <div class="table-wrap tall" v-html="previewHtml"></div>
+    </dialog>
+    <dialog ref="zoom" class="zoom" aria-labelledby="zoom-title" @click="($event.target as Element) === zoom && zoom?.close()" @close="zoomClosed">
+      <div class="zoom-box">
+        <div class="zoom-head"><h2 id="zoom-title" v-html="zoomTitle"></h2><button class="btn secondary" type="button" @click="zoom?.close()">{{ f.t("landing.close") }}</button></div>
+        <div class="zoom-body" v-html="zoomHtml"></div>
+      </div>
     </dialog>
   </Teleport>
 </template>

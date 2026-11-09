@@ -26,7 +26,7 @@ test("each day opens to the times and the session leaving, and what is left is s
   const html = leaving(f, [{ at: iso(1), hours: 4 }, { at: iso(24), hours: 48 }], 52, []);
   expect(html.match(/<details class="drop-day">/g)?.length).toBe(4);
   expect(html).toContain("Sat 7 Nov");
-  expect(html).toContain("48h left");
+  expect(html).toContain("48:00h left");
   expect(html).toContain("12:00–16:00");
   expect(html).toContain("session of Sat 31 Oct");
   expect(html).toContain("Under 50h from Sat 7 Nov, 14:00");
@@ -50,7 +50,7 @@ test("a bonus waiting says when it resets and how long is left", () => {
 
 test("a bonus with hours to go says how many and the earliest logout", () => {
   const html = tierRows(f, [tier("short", { hours: 80, points: 1000, need_h: 27.5, until: iso(30) })], true, 52.5, [], NOW);
-  expect(html).toContain("27.5h to go");
+  expect(html).toContain("27:30h to go");
   expect(html).toContain("earliest Sun 8 Nov, 17:00");
 });
 
@@ -74,9 +74,9 @@ test("Coalition: rows, the days leaving and the history, no chart of the coming 
   expect(html).not.toContain(f.t("bonus.got", { hours: 50 }) + "</b><p");
 });
 
-test("a big figure keeps the space before its unit, the rows and days do not", () => {
-  expect(weekFigure(f, 62.4)).toContain("62.4<small> h</small>");
-  expect(tierRows(f, [tier("short", { need_h: 27.5 })], true, 52.5, [], NOW)).toContain("27.5h to go");
+test("a big figure keeps the space before its unit, the rows and days do not; hours read as hours and minutes", () => {
+  expect(weekFigure(f, 62.4)).toContain("62:24<small> h</small>");
+  expect(tierRows(f, [tier("short", { need_h: 27.5 })], true, 52.5, [], NOW)).toContain("27:30h to go");
 });
 
 test("Every bonus so far shows templates of the rows to come while it has room, and none once it is full", () => {

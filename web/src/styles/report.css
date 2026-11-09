@@ -97,7 +97,7 @@
   font: 800 var(--c-section-h2-size)/1 var(--type-font-display); letter-spacing: -.03em;
   padding-bottom: var(--title-pad); border-bottom: var(--title-line) solid var(--rule-strong); margin-bottom: var(--c-section-h2-gap); text-wrap: balance;
 }
-:where(body:not(.site)) h2 .count { white-space: nowrap; }
+:where(body:not(.site)) h2 .count { white-space: nowrap; margin-left: .3em; font-size: var(--title-count-size, .5em); font-weight: 600; letter-spacing: 0; color: var(--title-count-color, var(--muted)); } /* a flex title drops the space before "·": the margin keeps it */
 :where(body:not(.site)) h3 { font: 700 var(--c-section-h3-size)/1.25 var(--type-font-display); margin-bottom: 4px; }
 :where(body:not(.site)) .lede { color: var(--text-2); font-size: var(--c-section-lede-size); max-width: none; margin-bottom: var(--c-section-lede-gap); text-wrap: pretty; }
 :where(body:not(.site)) .note { color: var(--muted); font-size: var(--c-section-note-size); max-width: 80ch; }
@@ -291,7 +291,7 @@
 
 @media (max-width: 959.98px) {
   :where(body:not(.site)) .narrow-hide { display: none; }
-  :where(body:not(.site)) h2 .count { display: block; font-size: .5em; letter-spacing: 0; color: var(--text-2); margin-top: 6px; } /* a quiet line under the title */
+  :where(body:not(.site)) h2 .count { display: block; margin-top: 6px; } /* a quiet line under the title */
   :where(body:not(.site)) h2 .sep { display: none; }
 }
 @media (min-width: 960px) {

@@ -1,9 +1,7 @@
-// Profile (the home page): who you are, three figures of your history, the sections of other pages kept as widgets (in
-// this browser; Contribution, Rhythm and the bonus to begin with), and what 42 gave you along the way with your campuses.
-import { trend } from "../lib/charts";
+// Profile (the home page): who you are, three figures of your history, the path so far, and the sections of other pages
+// kept as widgets (in this browser; Contribution, Rhythm and the bonus to begin with; Activity is one of them).
 import { badge, esc, initials, safeColor } from "../lib/h";
-import { madridParts } from "../fmt";
-import { Page, type PageKey, type Section, block, cols, monthsBetween, myRank, myTrack, section } from "./page";
+import { Page, type PageKey, type Section, block, cols, info, myRank, myTrack, section } from "./page";
 import { projects } from "./projects";
 import { evaluations } from "./evaluations";
 import { coalition } from "./coalition";
@@ -12,71 +10,114 @@ import { campus } from "./campus";
 
 const num = (f: Page["f"], v: number, d = 0, unit = "") =>
   `<span data-count="${v}" data-dec="${d}">${esc(f.num(v, d))}</span>${unit ? `<small>${esc(unit)}</small>` : ""}`;
+/** Hours as a big figure: hours and minutes ("1,131:24 h"), counting up the same way. */
+const hoursFigure = (f: Page["f"], h: number) => `<span data-count="${h}" data-hm="1">${esc(f.hmm(h))}</span><small> h</small>`;
 
-/** Who this is: the photo in a rounded square, the name as a poster, one line of identity (campus, coalition, milestone,
- * grade, track, groups) and three stacks of facts (cursus · economy · dates). */
+/** Who this is: the photo in a soft frame; "name | login"; the title chosen on the intra (or the login) and the campus; the
+ * coalition, group, grade, track and groups; four figures between rules; and the path so far on a timeline. */
 function card(pg: Page): string {
-  const f = pg.f, D = pg.D, P = D.profile, dv = pg.v.derive || {};
+  const f = pg.f, D = pg.D, P = D.profile;
   const cursus = new Map<string, any>((pg.v.all_cursus || D.extras.cursus || []).map((c: any) => [c.name, c]));
-  const main = cursus.get("42cursus"), piscine = cursus.get("C Piscine");
+  const main = cursus.get("42cursus");
   const coal = P.coalition, promo = pg.v.promo, rank = myRank(D.extras), track = myTrack(D.extras);
-  const month = (s: string) => `${f.months[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;
   const has = (v: any) => v !== null && v !== undefined;
-  const stacks = ([
-    [main ? [f.t("home.k_level"), f.level(main.level)] : null, promo ? [f.t("standing.promo"), f.t("home.promo_short", { rank: f.num(promo.rank), size: f.num(promo.size) })] : null],
-    [has(P.wallet) ? [f.t("head.wallet"), `${f.num(P.wallet)} ₳`] : null, has(P.correction_point) ? [f.t("head.points"), f.num(P.correction_point)] : null],
-    [main?.begin ? [f.t("profile.kickoff"), f.day(main.begin)] : null, piscine?.begin ? [f.t("profile.piscine"), month(piscine.begin)] : null,
-      dv.alumni_due ? [f.t("profile.alumni"), dv.alumni_due === "paused" ? f.t("profile.paused_short") : f.day(dv.alumni_due)] : null],
-  ].map((st) => st.filter(Boolean) as [string, string][]).filter((st) => st.length));
-  const sub = [esc(P.login) + (P.campus_current ? ` · ${esc(P.campus_current)}` : ""),
-    coal ? `<span><i class="dot" style="background:${safeColor(coal.color)}"></i>${esc(coal.name)}${coal.rank ? ` · ${esc(f.t("home.nth", { n: coal.rank }))}` : ""}</span>` : "",
+  const title = (D.extras.titles || []).find((t: any) => t.selected)?.name;
+  const who = esc(title || P.login) + (P.campus_current ? ` · ${esc(P.campus_current)}` : "");
+  const tags = [coal ? `<i class="dot" style="background:${safeColor(coal.color)}"></i>${esc(coal.name)}${coal.rank ? ` · ${esc(f.t("home.nth", { n: coal.rank }))}` : ""}` : "",
     esc(rank ? f.t(`groups.${rank}`) : f.t("home.no_cursus")),
     [main?.grade ? badge(main.grade) : "", track ? badge(f.t(`profile.track_${track}`)) : "", ...(P.groups || []).map((g: string) => badge(g))].join("")]
     .filter(Boolean).map((x) => `<span>${x}</span>`).join("");
-  return `<section id="profile" aria-label="${esc(f.t("profile.title"))}"><div class="pf">`
-    + `<div class="avatar-lg pf-photo"><span aria-hidden="true">${esc(initials(P.name || P.login))}</span>${P.image ? `<img src="${esc(P.image)}" alt="">` : ""}</div>`
-    + `<div class="pf-main"><p class="pf-name">${esc(P.name || P.login)}</p><p class="pf-sub">${sub}</p>`
-    + `<div class="pf-stacks">${stacks.map((st) => `<dl>${st.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd${v === f.t("profile.paused_short") ? ` title="${esc(f.t("profile.paused"))}" data-tip="${esc(f.t("profile.paused"))}"` : ""}>${esc(v)}</dd></div>`).join("")}</dl>`).join("")}</div>`
-    + `</div></div></section>`;
+  // the four figures, drawn like the three modules under the card (larger: spacing.css, --card-module-*) and counting up
+  // like them, each with a line (already escaped): your place by level in Madrid (live, the server reads it every hour;
+  // until it has, the way to the next level), in your kickoff, the wallet (the API keeps no history of it: staff only),
+  // and the correction points earned and spent in the period, with what the balance holds from the other one
+  const CP = D.correction_points, M = pg.v.madrid, hundredths = main ? Math.round(main.level * 100) : 0;
+  const level = !main ? "" : M ? esc(M.top <= 50 ? f.t("profile.madrid_top", { pct: f.num(M.top, 1) })
+    : f.t("profile.madrid_above", { pct: f.num((100 * (M.size - M.rank)) / M.size, 1) }))
+    : esc(f.t("profile.level_next", { pct: hundredths % 100, next: Math.floor(hundredths / 100) + 1 }));
+  // what the balance holds from outside the period (the Piscine's, seen from the student period) goes into earned or
+  // spent, so that the line adds up to the figure (the historics' sums do; their running totals don't)
+  const carried = CP && has(P.correction_point) ? P.correction_point - (CP.earned || 0) + (CP.spent || 0) : 0;
+  const points = !CP ? "" : esc(f.t("profile.points_line", { earned: f.num((CP.earned || 0) + Math.max(carried, 0)), spent: f.num((CP.spent || 0) + Math.max(-carried, 0)) }));
+  const figures = `<div class="modules pf-modules">` + ([
+    ["level", main && M ? `<span class="tab-t">${esc(f.t("home.k_level"))}${info(f.t("profile.madrid_tip", { n: f.num(M.size) }))}</span>` : esc(f.t("home.k_level")),
+      main?.grade || "42cursus", main ? num(f, main.level, 2) : "–", level],
+    ["promo", esc(f.t("standing.promo")), P.campus_current || "", promo ? `#${num(f, promo.rank)}<small> / ${esc(f.num(promo.size))}</small>` : "–",
+      promo ? esc(f.t("profile.promo_line", { pct: f.num(promo.percentile, 1) })) : ""],
+    ["wallet", esc(f.t("head.wallet")), "", has(P.wallet) ? num(f, P.wallet, 0, " ₳") : "–", has(P.wallet) ? esc(f.t("profile.wallet_line")) : ""],
+    ["points", esc(f.t("head.points")), "", has(P.correction_point) ? num(f, P.correction_point) : "–", points]] as [string, string, string, string, string][])
+    .map(([k, t, aside, v, line]) => `<article class="module" data-module="${k}"><h3 class="tab">${t}${aside ? `<span>${esc(aside)}</span>` : ""}</h3><p class="figure">${v}</p>`
+      + (line ? `<p class="line">${line}</p>` : "") + "</article>").join("") + "</div>";
+  return `<section id="profile" class="pf" aria-label="${esc(f.t("profile.title"))}">`
+    + `<div class="pf-head"><div class="avatar-lg pf-photo"><span aria-hidden="true">${esc(initials(P.name || P.login))}</span>${P.image ? `<img src="${esc(P.image)}" alt="">` : ""}</div>`
+    + `<div class="pf-id"><p class="pf-name">${esc(P.name || P.login)}<span class="pf-login">${esc(P.login)}</span></p>`
+    + `<p class="pf-sub"><span>${who}</span></p><p class="pf-sub pf-tags">${tags}</p></div></div>`
+    + figures
+    + "</section>";
 }
 
-/** Three figures of your history: projects, evaluations and logged time. */
+/** The path so far, one stop per moment by date: the Piscine, the 42cursus start, every campus moved to (and back home
+ * from), Transcender (the Common Core Rank 06 quest validated), alumni, today and the estimated alumni date; solid up to
+ * today, dashed after, each stretch in its colour (Piscine, Common Core, OuterCore). */
+function path(pg: Page): string {
+  const f = pg.f, D = pg.D, P = D.profile, dv = pg.v.derive || {};
+  const cursus = new Map<string, any>((pg.v.all_cursus || D.extras.cursus || []).map((c: any) => [c.name, c]));
+  const main = cursus.get("42cursus"), piscine = cursus.get("C Piscine");
+  const ms = (s: string) => Date.parse(String(s).slice(0, 10));
+  const month = (s: string) => `${f.months[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;
+  const today = pg.asOf ? ms(pg.asOf) : Date.now();
+  const stops: { k: string; d: string; t: number; cls: string; tip?: string }[] = [];
+  if (piscine?.begin) stops.push({ k: f.t("profile.piscine"), d: month(piscine.begin), t: ms(piscine.begin), cls: "" });
+  if (main?.begin) stops.push({ k: f.t("profile.kickoff"), d: f.day(main.begin), t: ms(main.begin), cls: "" });
+  // campuses by the day you joined them: one you moved to (your main one now), one you joined for a while and, when
+  // your main campus has sessions after your last one there, the day you were back
+  const camps = [...(D.campuses || [])].filter((c: any) => c.joined).sort((a: any, b: any) => String(a.joined).localeCompare(String(b.joined)));
+  const home = camps.find((c: any) => c.primary);
+  camps.slice(1).forEach((c: any) => {
+    if (c.primary) { stops.push({ k: f.t("profile.moved", { campus: c.name }), d: f.day(c.joined), t: ms(c.joined), cls: "move" }); return; }
+    stops.push({ k: f.t("profile.joined_campus", { campus: c.name }), d: f.day(c.joined), t: ms(c.joined), cls: "move" });
+    if (home && c.last && home.last && home.joined <= c.joined && home.last > c.last)
+      stops.push({ k: f.t("profile.back", { campus: home.name }), d: f.day(c.last), t: ms(c.last), cls: "move" });
+  });
+  const q6 = (D.extras.quests || []).find((q: any) => /rank 06/i.test(q.name || "") && q.validated);
+  const transcend = q6 ? ms(q6.validated) : NaN, alumnized = P.alumnized ? ms(P.alumnized) : NaN;
+  if (q6) stops.push({ k: f.t("profile.transcender"), d: f.day(q6.validated), t: transcend, cls: "key" });
+  if (P.alumnized) stops.push({ k: f.t("profile.alumnized"), d: f.day(P.alumnized), t: alumnized, cls: "key" });
+  const paused = dv.alumni_due === "paused";
+  stops.push({ k: f.t("profile.today"), d: f.day(new Date(today).toISOString()) + (paused ? ` · ${f.t("profile.paused_short")}` : ""), t: today, cls: "now",
+    tip: paused ? f.t("profile.paused") : undefined });
+  if (dv.alumni_due && !paused && !P.alumnized) stops.push({ k: f.t("profile.alumni"), d: f.day(dv.alumni_due), t: ms(dv.alumni_due), cls: ms(dv.alumni_due) > today ? "future" : "" });
+  const shown = stops.filter((s) => Number.isFinite(s.t)).sort((a, b) => a.t - b.t);
+  if (shown.length < 2) return "";
+  const lo = shown[0].t, hi = shown[shown.length - 1].t;
+  const at = (t: number) => (hi > lo ? (100 * (t - lo)) / (hi - lo) : 0), pc = (t: number) => at(t).toFixed(1);
+  const kick = main?.begin ? ms(main.begin) : NaN, pis = piscine?.begin ? ms(piscine.begin) : NaN;
+  const phases = ([["pisc", pis, kick], ["cc", kick, Number.isFinite(transcend) ? transcend : Math.min(today, hi)],
+    ["oc", transcend, Number.isFinite(alumnized) ? alumnized : Math.min(today, hi)]] as [string, number, number][])
+    .filter(([, a, b]) => Number.isFinite(a) && Number.isFinite(b) && b > a);
+  return `<div class="pf-box"><div class="pf-time" role="img" aria-label="${esc(shown.map((s) => `${s.k} ${s.d}`).join(" · "))}"><div class="pf-line" aria-hidden="true">`
+    + `<span class="done" style="width:${pc(today)}%"></span><span class="ahead" style="left:${pc(today)}%"></span>`
+    + phases.map(([c, a, b]) => `<span class="phase ${c}" style="left:${pc(a)}%;width:${(at(b) - at(a)).toFixed(1)}%"></span>`).join("")
+    + shown.map((s) => `<i class="${s.cls}" style="left:${pc(s.t)}%"></i>`).join("") + "</div>"
+    + shown.map((s, i) => `<span class="pf-mark ${i % 2 ? "down" : "up"}${at(s.t) > 75 ? " right" : at(s.t) < 25 ? " left" : ""}${s.cls ? ` ${s.cls}` : ""}" aria-hidden="true"`
+      + ` style="left:${pc(s.t)}%"${s.tip ? ` data-tip="${esc(s.tip)}" title="${esc(s.tip)}"` : ""}><b>${esc(s.k)}</b>${esc(s.d)}</span>`).join("") + "</div></div>";
+}
+
+/** Three figures of your history: projects, evaluations and logged time, with what they hold (no charts: the pages have them). */
 function modules(pg: Page): string {
   const f = pg.f, D = pg.D, S = D.summary, L = D.logtime;
-  const finished = D.projects.filter((p: any) => p.mark !== null && p.mark !== undefined);
-  const open = D.projects.filter((p: any) => p.status !== "finished" && !p.validated).length;
-  const closed = D.projects.filter((p: any) => p.status === "finished" && p.validated === false).length;
-  const failed = D.stats?.failed_given;
-  const months = D.insights?.pace?.months || [];
-  const perMonth: Record<string, number> = {};
-  for (const e of [...D.received, ...D.given]) {
-    const k = madridParts(e.begin_ms).iso.slice(0, 7);
-    perMonth[k] = (perMonth[k] || 0) + 1;
-  }
-  // a series of every month from its first up to the report's, the quiet ones as zero
-  const upToNow = (byMonth: Record<string, number>) => {
-    const keys = Object.keys(byMonth).sort();
-    return keys.length ? monthsBetween(keys[0], [keys[keys.length - 1], pg.asOf.slice(0, 7)].sort()[1]).map((k) => byMonth[k] || 0) : [];
-  };
-  const mods: { key: string; label: string; aside?: string; value: string; lines: string[]; trend: string }[] = [
+  const mods: { key: string; label: string; aside?: string; value: string; lines: string[] }[] = [
     { key: "projects", label: f.t("home.k_projects"), aside: f.t("home.validated"), value: num(f, S.validated, 0, ` / ${f.num(S.projects)}`),
-      lines: [f.t("home.attempts", { attempts: S.attempts, retries: S.retries }),
-        finished.length ? f.t("home.avg_mark", { mark: f.num(finished.reduce((s: number, p: any) => s + p.mark, 0) / finished.length, 1) }) : "",
-        [open ? f.plural(open, "count.open") : "", closed ? f.plural(closed, "count.closed") : ""].filter(Boolean).join(" · ")],
-      trend: trend(months.map((m: any) => m.validated), { bars: true, last: true }) },
+      lines: [f.t("home.attempts", { attempts: S.attempts, retries: S.retries })] },
     { key: "evals", label: f.t("home.k_evals"), aside: f.t("home.received_given"), value: num(f, S.received, 0, ` · ${f.num(S.given)}`),
-      lines: [f.t("home.out", { received: S.received_outstanding, given: S.given_outstanding }),
-        failed && failed.pct !== null && failed.pct !== undefined ? f.t("home.failed", { pct: `${f.num(failed.pct, 1)}%` }) : ""],
-      trend: trend(upToNow(perMonth)) },
-    { key: "hours", label: f.t("home.k_hours"), aside: f.t(`period.${pg.period}`), value: num(f, Math.round(L.total_seconds / 360) / 10, 1, " h"),
-      lines: [f.t("home.days", { days: f.plural(L.days_present, "count.days") }),
-        L.days_present ? f.t("home.hours_avg", { time: f.hm(L.total_seconds / L.days_present) }) : ""],
-      trend: trend(upToNow(L.monthly || {}), { bars: true, last: true }) },
+      lines: [f.t("home.out", { received: S.received_outstanding, given: S.given_outstanding })] },
+    { key: "hours", label: f.t("home.k_hours"), aside: f.t(`period.${pg.period}`), value: hoursFigure(f, L.total_seconds / 3600),
+      lines: [f.t("home.days", { days: f.plural(L.days_present, "count.days") })] },
   ];
   return `<section id="home-kpis" class="modules-wrap"><h2 class="visually-hidden">${esc(f.t("home.title"))}</h2><div class="modules">`
     + mods.map((x) => `<article class="module" data-module="${x.key}"><h3 class="tab">${esc(x.label)}${x.aside ? `<span>${esc(x.aside)}</span>` : ""}</h3>`
       + `<p class="figure">${x.value}</p>`
-      + x.lines.filter(Boolean).map((l) => `<p class="line">${esc(l)}</p>`).join("") + x.trend + "</article>").join("") + "</div></section>";
+      + x.lines.filter(Boolean).map((l) => `<p class="line">${esc(l)}</p>`).join("") + "</article>").join("") + "</div></section>";
 }
 
 /** The level an achievement's description names ("Attended 21 events." → 21, "1.000 points" → 1000); 0 when none. */
@@ -92,11 +133,9 @@ export function achievementSeries(list: any[]): { top: any; rest: any[] }[] {
 }
 
 /** What 42 gave you along the way (achievements, events, titles, expertises and quests) and the campuses you have been
- * to; the student can fold it to its title ("min") or take it off the page ("off"). */
-export function activity(pg: Page, state: "" | "min" | "off" = ""): Section[] {
-  if (state === "off") return [];
+ * to: a widget of Profile (taken away to begin with). */
+export function activity(pg: Page): Section[] {
   const f = pg.f, D = pg.D, X = D.extras;
-  if (state === "min") return [{ id: "activity", nav: f.t("activity.title"), html: section("activity", f.t("activity.title"), "") }];
   const none = `<li class="note">${esc(f.t("empty.period"))}</li>`;
   const evKind = (k: string) => (f.has(`event.${k}`) ? f.t(`event.${k}`) : String(k).replace(/_/g, " "));
   const tier = (a: any) => (a.tier && a.tier !== "none" ? " " + badge(f.has(`tier.${a.tier}`) ? f.t(`tier.${a.tier}`) : a.tier) : "");
@@ -111,7 +150,7 @@ export function activity(pg: Page, state: "" | "min" | "off" = ""): Section[] {
     ...X.quests.map((q: any) => `<li><span><b>${esc(f.t("extras.quest"))}</b> ${esc(q.name)}<br><span class="note">${esc(q.description || "")}</span></span><span class="when">${esc(q.validated ? f.day(q.validated) : f.t("extras.in_progress"))}</span></li>`)].join("");
   const kinds = Object.entries(X.event_kinds || {}).map(([k, v]) => `${evKind(k)}: ${v}`).join(" · ");
   const places = (D.campuses || []).map((c: any) => {
-    const time = c.sessions ? f.t("foot.time", { hours: f.num(c.hours, 1), sessions: f.num(c.sessions) }) : f.t("foot.no_sessions");
+    const time = c.sessions ? f.t("foot.time", { hours: f.hmm(c.hours), sessions: f.num(c.sessions) }) : f.t("foot.no_sessions");
     return `<li><span><b>${esc(c.name || "?")}</b>${c.city ? ` <span class="note">${esc(c.city)}</span>` : ""}<br><span class="note">${esc(`${f.t("foot.joined", { when: f.day(c.joined) })} · ${time}`)}</span></span>`
       + (c.first ? `<span class="when">${esc(f.t("foot.span", { first: f.day(c.first), last: f.day(c.last) }))}</span>` : "") + "</li>";
   }).join("");
@@ -124,17 +163,18 @@ export function activity(pg: Page, state: "" | "min" | "off" = ""): Section[] {
 
 /** Every section of the other pages a student can add under their profile, in the order of the band, with its title.
  * All start at full width; the student can make any of them half width. */
-export const WIDGETS: [Exclude<PageKey, "home">, string, string][] = [
+export const WIDGETS: [PageKey, string, string][] = [
+  ["home", "activity", "activity.title"],
   ["projects", "pace", "nav.pace"], ["projects", "skills", "extras.skills_title"], ["projects", "projects-table", "nav.projects_table"],
   ["projects", "exams", "nav.exams"], ["projects", "domains", "domains.title"], ["projects", "timeline", "nav.projects"],
   ["evaluations", "community", "community.title"], ["evaluations", "by-group", "stats.group_section"], ["evaluations", "over-time", "over_time.title"],
   ["evaluations", "when", "nav.when"], ["evaluations", "feedback", "nav.feedback"], ["evaluations", "points", "nav.points"],
-  ["evaluations", "log", "nav.log"],
+  ["evaluations", "cancelled", "cancel.title"], ["evaluations", "log", "nav.log"],
   ["coalition", "standing", "nav.standing"], ["coalition", "bonus", "bonus.title"], ["coalition", "coal-points", "nav.coal"],
   ["people", "who", "nav.who"], ["people", "crossed", "nav.crossed"], ["people", "connections", "nav.connections"], ["people", "circle", "nav.network"],
   ["campus", "rhythm", "rhythm.title"], ["campus", "seats", "nav.seats"], ["campus", "days", "nav.days"], ["campus", "sessions", "nav.sessions"], ["campus", "where", "nav.where"],
 ];
-const BUILD: Record<string, (pg: Page) => Section[]> = { projects, evaluations, coalition, people, campus };
+const BUILD: Record<string, (pg: Page) => Section[]> = { home: activity, projects, evaluations, coalition, people, campus };
 
 /** The added sections on a two-column grid, each built by its own page (once per page), in the student's order, size
  * and column. */
@@ -155,23 +195,22 @@ export function widgets(pg: Page, chosen: { page: string; id: string; wide?: boo
   return cells.length ? [{ id: "widget-grid", nav: f.t("widgets.title"), html: `<div class="widgets">${cells.join("")}</div>` }] : [];
 }
 
-/** The picker for more sections, Activity among them while it is off the page. */
-export function widgetPicker(pg: Page, chosen: { page: string; id: string }[], state: "" | "min" | "off" = ""): Section[] {
+/** The picker for the sections not added yet: centred, under a thin line (spacing.css, --picker-*), always last. */
+export function widgetPicker(pg: Page, chosen: { page: string; id: string }[]): Section[] {
   const f = pg.f;
   const left = WIDGETS.filter(([p, i]) => !chosen.some((c) => c.page === p && c.id === i)).map(([p, i, k]) => [`${p}:${i}`, `${f.t(`pages.${p}`)} · ${f.t(k)}`]);
-  if (state === "off") left.unshift(["home:activity", `${f.t("pages.home")} · ${f.t("activity.title")}`]);
-  return left.length ? [{ id: "widgets", nav: f.t("widgets.title"), html: `<section id="widgets" class="widget-add">`
-    + `<label class="field"><span>${esc(f.t("widgets.add_label"))}</span><select name="widget">${left.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select></label>`
-    + `<button class="btn secondary" type="button" data-widget-add>${esc(f.t("widgets.add"))}</button></section>` }] : [];
+  const pick = `<label class="field"><span>${esc(f.t("widgets.add_label"))}</span><select name="widget">${left.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select></label>`
+    + `<button class="btn secondary" type="button" data-widget-add>${esc(f.t("widgets.add"))}</button>`;
+  return left.length ? [{ id: "widgets", nav: f.t("widgets.title"), html: `<section id="widgets" class="widget-add"><div class="add-row">${pick}</div></section>` }] : [];
 }
 
-export function profile(pg: Page, chosen: { page: string; id: string }[] = [], state: "" | "min" | "off" = ""): Section[] {
+export function profile(pg: Page, chosen: { page: string; id: string }[] = []): Section[] {
   const f = pg.f;
   return [
     { id: "profile", nav: f.t("profile.title"), html: card(pg) },
     { id: "home-kpis", nav: f.t("nav.home_kpis"), html: modules(pg) },
+    ...((html) => (html ? [{ id: "path", nav: "", html: `<section id="path" class="pf-path" aria-label="${esc(f.t("profile.title"))}">${html}</section>` }] : []))(path(pg)),
     ...widgets(pg, chosen),
-    ...widgetPicker(pg, chosen, state),
-    ...activity(pg, state),
+    ...widgetPicker(pg, chosen), // always last
   ];
 }

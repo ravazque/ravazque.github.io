@@ -49,9 +49,10 @@ function placeTip(el: HTMLElement, x: number | null = null) {
   const tip = tipEl();
   if (!tip || (tipFor === el && tip.style.display === "block")) return;
   const text = el.dataset.tip || "";
-  // one fact per line, the first one as its heading: tips with their own breaks keep them, others split at " · "
+  // one fact per line, the first one as its heading: tips with their own breaks keep them, others split at " · "; a
+  // line "---" is a rule (between what a tip says and the list under it)
   const lines = (text.includes("\n") ? text.split("\n") : text.split(" · ")).map((l) => l.trim()).filter(Boolean);
-  tip.replaceChildren(...lines.map((l, i) => Object.assign(document.createElement(i ? "span" : "b"), { textContent: l })));
+  tip.replaceChildren(...lines.map((l, i) => (l === "---" ? document.createElement("hr") : Object.assign(document.createElement(i ? "span" : "b"), { textContent: l }))));
   tip.style.display = "block";
   tipFor = el;
   tip.style.left = tip.style.top = "0px";
@@ -247,9 +248,11 @@ function countUp(el: HTMLElement) {
   const to = Number(el.dataset.count), d = Number(el.dataset.dec || 0), t0 = performance.now(), ms = 900;
   if (still() || !Number.isFinite(to)) return;
   const nf = new Intl.NumberFormat(document.documentElement.lang === "es" ? "es-ES" : "en-GB", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const hm = el.dataset.hm ? new Intl.NumberFormat(document.documentElement.lang === "es" ? "es-ES" : "en-GB", { maximumFractionDigits: 0 }) : null;
+  const show = (v: number) => { const m = Math.round(v * 60); return hm ? `${hm.format(Math.floor(m / 60))}:${String(m % 60).padStart(2, "0")}` : nf.format(v); };
   const step = (t: number) => {
     const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(2, -10 * k);
-    el.textContent = nf.format(k < 1 ? to * e : to);
+    el.textContent = show(k < 1 ? to * e : to);
     if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -257,6 +260,17 @@ function countUp(el: HTMLElement) {
 
 let reveal: IntersectionObserver | null = null;
 let tocIO: IntersectionObserver | null = null;
+
+/** The pages already drawn in this tab's session: from then on their charts and figures show at once (no draw-in when a
+ * filter changes, the report is refreshed or the page is opened again). */
+function firstDraw(page: string): boolean {
+  try {
+    const done: string[] = JSON.parse(sessionStorage.getItem("drawn") || "[]");
+    if (done.includes(page)) return false;
+    sessionStorage.setItem("drawn", JSON.stringify([...done, page]));
+  } catch { /* private mode: every drawing is a first one */ }
+  return true;
+}
 
 /** After a render: tooltips (styled ones replace the native fallbacks), grids, scroll hints, selects, the draw-in. */
 export function settle(root: ParentNode) {
@@ -279,7 +293,10 @@ export function settle(root: ParentNode) {
     reveal!.unobserve(e.target);
     $$("[data-count]", e.target).forEach(countUp);
   }), { rootMargin: "0px 0px -10% 0px" }) : null;
-  $$(".vchart, .hchart, .lchart, .module, .tp", root).forEach((c) => (reveal ? reveal.observe(c) : c.classList.add("in")));
+  const parts = $$(".vchart, .hchart, .lchart, .module, .tp", root).filter((c) => !c.closest(".skel")); // a skeleton is no first drawing
+  const page = (root as HTMLElement).closest?.("[data-page]")?.getAttribute("data-page") || "";
+  if (parts.length && reveal && (!page || firstDraw(page))) parts.forEach((c) => reveal!.observe(c));
+  else parts.forEach((c) => c.classList.add("in"));
   // the section in view lights up in the section index
   tocIO?.disconnect();
   const links = Object.fromEntries($$<HTMLAnchorElement>(".toc a").map((a) => [a.hash.slice(1), a]));

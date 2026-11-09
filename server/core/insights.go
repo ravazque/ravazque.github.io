@@ -545,6 +545,9 @@ func AddInsights(r *OMap, d Raw, now time.Time) {
 		}
 	}
 	r.Obj("profile").Set("campus_current", current)
+	if a := Str(user, "alumnized_at"); len(a) >= 10 { // the day an alumnus became one, for the timeline
+		r.Obj("profile").Set("alumnized", a[:10])
+	}
 	r.Set("campuses", campusHistory(user, Objs(d, "locations"), now))
 	names := map[string]any{}
 	for _, p := range Objs(d, "people") {
@@ -573,3 +576,35 @@ func AddInsights(r *OMap, d Raw, now time.Time) {
 
 // keep json imported for json.Number use in toFloat callers.
 var _ = json.Number("")
+
+// MadridLevels keeps the levels of Madrid's 42cursus students in the Common Core or OuterCore, frozen or alumni (numbers
+// only: no one is named); staff, blackholed and those not started yet are left out.
+func MadridLevels(cursusUsers []any, now time.Time) []float64 {
+	out := []float64{}
+	for _, x := range cursusUsers {
+		cu, ok := x.(Raw)
+		if !ok {
+			continue
+		}
+		u := Obj(cu, "user")
+		switch ProfileKind(Raw{"staff?": u["staff?"], "alumni?": u["alumni?"], "active?": u["active?"], "cursus_users": []any{cu}}, now) {
+		case Student, Transcender, Frozen, Alumni:
+			out = append(out, Num(cu, "level"))
+		}
+	}
+	return out
+}
+
+// MadridStanding is your place by level among them: rank 1 is the highest, top the share at or above you (in %).
+func MadridStanding(levels []float64, mine float64) *OMap {
+	if len(levels) == 0 {
+		return nil
+	}
+	above := 0
+	for _, l := range levels {
+		if l > mine {
+			above++
+		}
+	}
+	return M("size", len(levels), "rank", 1+above, "top", pyRound(100*float64(1+above)/float64(len(levels)), 1))
+}

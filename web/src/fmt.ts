@@ -107,8 +107,16 @@ export class Fmt {
     return this.t("unit.hm", { h: Math.floor(mins / 60), m: String(mins % 60).padStart(2, "0") });
   };
 
-  /** A number and its unit: hours and minutes stick to it ("12.5h"), the others keep their space. */
-  nb = (v: number | null | undefined, unit: string, d = 1) => `${this.num(v, d)}${unit === "h" || unit === "m" ? "" : "\u00a0"}${unit}`;
+  /** Hours as hours and minutes, never decimals: 30.88 is "30:53" (to the minute; the hours grouped like any number). */
+  hmm = (hours: number | null | undefined): string => {
+    if (hours === null || hours === undefined || Number.isNaN(hours)) return "–";
+    const m = Math.round(Math.abs(Number(hours)) * 60);
+    return (hours < 0 && m ? "-" : "") + this.num(Math.floor(m / 60)) + ":" + String(m % 60).padStart(2, "0");
+  };
+
+  /** A number and its unit: hours ("12:30h") and minutes stick to it, the others keep their space. */
+  nb = (v: number | null | undefined, unit: string, d = 1) =>
+    unit === "h" ? `${this.hmm(v)}h` : `${this.num(v, d)}${unit === "m" ? "" : "\u00a0"}${unit}`;
 
   /** A span of time ahead, in the two units that matter: "5d 23h", under a day "3h 05m". */
   left = (ms: number) => {

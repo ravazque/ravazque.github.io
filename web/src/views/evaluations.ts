@@ -1,10 +1,20 @@
 // Evaluations: what you give back, received and given over time, when and how long, statistics, feedback, correction
 // points and the full log.
+import type { Fmt } from "../fmt";
 import { GOOD, BAD, S1, S2, legend, lines, vbars } from "../lib/charts";
 import { ACCENT, SLATE, heat } from "../lib/graphs";
-import { ARROW, avatar, esc } from "../lib/h";
+import { ARROW, avatar, badge, esc, tipAttr } from "../lib/h";
 import { facts, table } from "../lib/table";
 import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased, LIST_ROWS } from "./page";
+import tracks from "@data/tracks.json";
+
+/** Common Core project slug → its milestone (rank-00…rank-06), C and Python tracks alike. */
+const MILESTONE = new Map(Object.entries(tracks.common_core as Record<string, string[]>).flatMap(([rank, slugs]) => slugs.map((s) => [s, rank] as [string, string])));
+const MILESTONES = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "other"];
+
+/** An evaluation's project by milestone: the Common Core's from its list, the rest of the 42cursus OuterCore, anything
+ * else (the Piscine, other cursus) other. */
+export const milestoneOf = (e: any) => MILESTONE.get(e.slug) || ((e.cursus || []).includes("42cursus") ? "outer-core" : "other");
 
 /** A histogram's bins from its edges, each with its unit: "0–1h", "1–3h", "3+h". */
 export const binLabels = (edges: number[], unit: string) => edges.map((x, i) => `${i < edges.length - 1 ? `${x}–${edges[i + 1]}` : `${x}+`}${unit}`);
@@ -63,7 +73,7 @@ export function evaluations(pg: Page): Section[] {
   }
 
   out.push({ id: "community", nav: f.t("community.title"), html: section("community", f.t("community.title"), cols(block("kpis", kpis([
-    [f.t("community.k_hours"), `${esc(f.num(cm.hours, 1))}&nbsp;h`, [esc(f.t("community.s_hours", { n: f.num(D.given.length) }))]],
+    [f.t("community.k_hours"), `${esc(f.hmm(cm.hours))}&nbsp;h`, [esc(f.t("community.s_hours", { n: f.num(D.given.length) }))]],
     [f.t("community.k_people"), f.num(cm.people), [esc(f.t("community.s_people"))]],
     [f.t("community.k_correctors"), f.num(cm.correctors), [esc(f.t("community.s_correctors"))]],
     [f.t("community.k_rating"), cm.rating !== null ? f.num(cm.rating, 2) : "–", [esc(f.t("community.s_rating", { n: f.num(cm.rated) }))]],
@@ -98,7 +108,7 @@ export function evaluations(pg: Page): Section[] {
   const dp = D.insights?.evaluations;
   const dur = (d: any) => (d.avg === null || d.avg === undefined ? "–" : f.t("depth.minutes", { avg: f.num(d.avg), median: f.num(d.median) }));
   const factsHtml = dp ? `<dl class="facts">${facts([[f.t("depth.received_duration"), esc(dur(dp.received_duration))], [f.t("depth.given_duration"), esc(dur(dp.given_duration))],
-    [f.t("depth.lead"), esc(dp.received_lead_h === null || dp.received_lead_h === undefined ? "–" : f.t("depth.hours", { h: f.num(dp.received_lead_h, 1) }))],
+    [f.t("depth.lead"), esc(dp.received_lead_h === null || dp.received_lead_h === undefined ? "–" : f.t("depth.hours", { h: f.hmm(dp.received_lead_h) }))],
     [f.t("depth.streak"), f.num(dp.outstanding_streak)]])}</dl>` : "";
   out.push({ id: "when", nav: f.t("nav.when"), html: section("when", f.t("when.title"), factsHtml + cols(
     block("heat-recv", heat(f, W.heat_received, ACCENT, f.t("unit.evaluations")), f.t("when.heat_recv_title")),
@@ -165,7 +175,11 @@ export function evaluations(pg: Page): Section[] {
       Object.entries(CP.reasons || {}).map(([reason, v]: [string, any]) => ({ reason, ...v })), { label: f.t("points.reasons_title"), sort: ["count", -1] })}</div>`, f.t("points.reasons_title"))),
   { lede: esc(CP.series.length ? f.t("points.lede", { earned: CP.earned, spent: CP.spent, max: CP.max }) : f.t("empty.points")) }) });
 
+  const cancelled = cancelledSection(pg);
+  if (cancelled) out.push(cancelled);
   out.push(logSection(pg));
+  const fb = out.findIndex((s) => s.id === "feedback");
+  if (fb >= 0) out.push(...out.splice(fb, 1)); // Feedback closes the page, under the log
   return out;
 }
 
@@ -204,35 +218,131 @@ function correctedTable(pg: Page): string {
     minRows: Math.max(LIST_ROWS, Object.keys(pg.D.stats?.by_group || {}).length) }); // as tall as the table beside it, by milestone
 }
 
+/** How long after an evaluation's start the evaluated student logged in ("12m late", "1h 15m late"). */
+export const lateText = (f: Fmt, min: number) => f.t("log.late", { time: min < 60 ? f.t("unit.min", { n: min }) : f.hm(min * 60) });
+
+/** Work experience evaluations (company mid and final evaluations, peer video) are set by the school, not booked
+ * between students: no booking lead or lateness for them. */
+export const workExperience = (e: any) => /^(42cursus-)?work-experience-i/.test(e.slug || "") || /^work experience/i.test(e.project || "");
+
+/** No lateness in a work experience evaluation, also in reports saved before the server stopped working it out. */
+export const withoutWorkLate = (e: any) => (workExperience(e)
+  ? { ...e, my_late_min: null, correcteds: (e.correcteds || []).map((c: any) => ({ ...c, late_min: null })) } : e);
+
+const seatText = (f: Fmt, p: any, checked: boolean) => (checked ? (p.host ? f.t("log.at_seat", { seat: p.host }) : f.t("log.not_logged")) : "");
+
+/** Someone in the log: photo and login, and under them their seat (looked up for recent evaluations only) and how late
+ * they logged in. */
+const logPerson = (f: Fmt, p: any, checked: boolean) => {
+  const sub = [seatText(f, p, checked), p.late_min ? lateText(f, p.late_min) : ""].filter(Boolean).join(" · ");
+  return `${erased(p.login) ? "" : avatar(p)}${shownLogin(f, p.login, false)}` + (sub ? `<span class="sub">${esc(sub)}</span>` : "");
+};
+
+/** The students you evaluated: one alone as they are; a team on one line, its leader (the first one when not known) and
+ * "+N", which open every member with their seat and lateness, as in Everyone you met's details; the leader's seat under. */
+export function teamCell(f: Fmt, e: any): string {
+  const cs: any[] = e.correcteds || [];
+  if (cs.length < 2) return cs.map((c) => logPerson(f, c, e.other_host_checked)).join("");
+  const lead = cs.find((c) => c.leader) || cs[0];
+  const sub = (c: any) => [seatText(f, c, e.other_host_checked), c.late_min ? lateText(f, c.late_min) : ""].filter(Boolean).join(" · ");
+  const rest = (c: any) => [c === lead ? f.t("log.leader") : "", sub(c)].filter(Boolean).join(" · ");
+  return `<details class="pop who-pop team-pop" data-float><summary>${erased(lead.login) ? "" : avatar(lead)}${shownLogin(f, lead.login, false, false)}`
+    + ` <span class="more">${esc(f.t("log.team_more", { n: cs.length - 1 }))}</span></summary><div class="pop-panel"><b>${esc(e.team || f.t("col.evaluated"))}</b>`
+    + `<ul>${cs.map((c) => `<li>${shownLogin(f, c.login, false)}${rest(c) ? ` · ${esc(rest(c))}` : ""}</li>`).join("")}</ul></div></details>`
+    + (sub(lead) ? `<span class="sub">${esc(sub(lead))}</span>` : ""); // the leader's seat and lateness under the line
+}
+
+/** Cancelled evaluations, read from your correction points (42 deletes the evaluation; core's correction_points
+ * `cancels`, one kind each): four cards, the evaluations of your projects you cancelled (40%, with a possible project, an
+ * estimate), the ones your corrector cancelled, the ones you were to give and cancelled, and the times your corrector
+ * didn't come. Each card's tip lists them by date, newest first. When the student you were to evaluate cancels, nothing
+ * is written on your side: no card can count it. Reports saved before the dates were kept count what the reasons tell. */
+export function cancelledSection(pg: Page): Section | null {
+  const f = pg.f, D = pg.D, CP = D.correction_points || {}, why = CP.reasons || {};
+  const cs: any[] | undefined = CP.cancels, r = why["Evaluator cancelled a defense"], miss = why["Refund for evaluator missing"];
+  if (!cs && !r && !miss) return null;
+  const of = (kind: string) => (cs ? cs.filter((c) => (c.kind || (c.booked ? "corrector" : "you")) === kind) : null);
+  const count = (kind: string, old: number | null) => { const l = of(kind); return l ? l.length : old; };
+  // yours you cancelled: of your projects handed in and not closed when you booked it (never an exam), the one evaluated
+  // soonest after the booking; else the only one waiting; else none
+  const guess = (c: any): string => {
+    const waiting = new Set<string>((D.projects || []).filter((p: any) => !p.exam)
+      .filter((p: any) => (p.attempts || []).some((a: any) => a.locked && a.locked <= c.at && (!a.closed || a.closed >= c.at))).map((p: any) => p.name));
+    const next = (D.received || []).filter((e: any) => e.begin_ms >= c.at_ms && waiting.has(e.project)).sort((a: any, b: any) => a.begin_ms - b.begin_ms)[0];
+    return next ? next.project : waiting.size === 1 ? [...waiting][0] : "";
+  };
+  const absentProject = (c: any) => (D.received || []).find((e: any) => e.id === c.st)?.project || "";
+  const lines = (kind: string, head: string, more?: (c: any) => string) => {
+    const l = of(kind);
+    if (!l) return [head, f.t("cancel.refresh")];
+    if (!l.length) return [head, f.t("cancel.none")];
+    return [head, "---", ...[...l].sort((a, b) => b.at_ms - a.at_ms).map((c) => `${f.day(c.at)} ${String(c.at).slice(11)}${more ? ` · ${more(c) || "–"}` : ""}`)];
+  };
+  const card = (cls: string, title: string, n: number | null, sub: string, tip: string[]) => `<div class="cancel-card ${cls}" tabindex="0"${tipAttr(tip.join("\n"))}>`
+    + `<h3>${esc(title)}<span class="info" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"/><path d="M8 7.2v4.3M8 4.6v.1"/></svg></span></h3>`
+    + `<p class="v">${n === null ? "–" : esc(f.num(n))}</p><p class="s">${esc(sub)}</p></div>`;
+  const self = count("self", null), corrector = count("corrector", r ? (r.count + r.sum) / 2 : 0) ?? 0;
+  const theirs = count("you", r ? (r.count - r.sum) / 2 : 0) ?? 0, absent = count("absent", miss ? miss.count : 0) ?? 0;
+  const cards = `<div class="kpis cancel-cards">`
+    + card("wide", f.t("cancel.self"), self, f.t("cancel.self_sub"), lines("self", f.t("cancel.self_tip", { n: self ?? "–" }), guess))
+    + card("", f.t("cancel.corrector"), corrector, f.t("cancel.corrector_sub"), lines("corrector", f.t("cancel.corrector_tip", { n: corrector })))
+    + card("", f.t("cancel.theirs"), theirs, f.t("cancel.theirs_sub"), lines("you", f.t("cancel.theirs_tip", { n: theirs })))
+    + card("", f.t("cancel.absent"), absent, f.t("cancel.absent_sub"), lines("absent", f.t("cancel.absent_tip", { n: absent }), absentProject))
+    + "</div>";
+  return { id: "cancelled", nav: f.t("nav.cancelled"), html: section("cancelled", "", block("cancel-kpis", cards), { head: `<h2>${esc(f.t("cancel.title"))} ${info(f.t("cancel.how"))}</h2>` }) };
+}
+
+/** Who marked whom absent, as [label, tip]. The API's `truant` is the one who reported the absence, the side that was
+ * there (checked against the owner's own three cases, 2026-11-09): you, so you marked the other side; the other side,
+ * so they marked you; in an evaluation you received with a team, a teammate, so your corrector was marked absent. */
+export function absence(f: Fmt, role: string, e: any, me: string): [string, string] | null {
+  if (!e.truant) return null;
+  const who = (l: string) => (erased(l) ? f.t("who.erased_name") : l);
+  const others = role === "received" ? who(e.corrector?.login || "") : (e.correcteds || []).map((c: any) => who(c.login || "")).join(", ");
+  if (e.truant === me) return [f.t("no_mark.absent_you"), f.t("log.absent_you_tip", { who: others })];
+  if (role === "received" && e.truant !== e.corrector?.login) return [f.t("log.absent_mate"), f.t("log.absent_mate_tip", { who: who(e.truant) })];
+  return [f.t("no_mark.absent_them"), f.t("log.absent_them_tip", { who: who(e.truant) })];
+}
+
 /** The log's "Seat" filter: who had no session open (false: no such filter, a seat in a link is ignored). */
 const SEAT_FILTER = true;
 
-/** One evaluation against the seat filter ("" any): no session of yours open (me), the other side with none where
- * their seat was looked up (other: the corrector, or any person you evaluated), or your seat in one cluster (c1…). */
+/** The seat filter looks at the evaluated side only: you when you received it, the students you evaluated when you
+ * gave it; then your seat by cluster. */
+export const seatOptions = (role: string, clusters: string[]) => ["", role === "received" ? "me" : "other", "late", ...clusters];
+
+/** One evaluation against the seat filter ("" any): you received it with no session open (me), a student you evaluated
+ * not logged where their seat was looked up (other), the evaluated side logged in after the start (late), or your seat
+ * in one cluster (c1…). */
 export const seatMatch = (role: string, seat: string, e: any) =>
   /^c\d+$/.test(seat) ? (e.my_host || "").split("r")[0] === seat
   : seat === "me" ? !e.my_host
-  : seat === "other" ? !!e.other_host_checked && (role === "received" ? !e.other_host : (e.correcteds || []).some((c: any) => !c.host))
+  : seat === "other" ? !!e.other_host_checked && (e.correcteds || []).some((c: any) => !c.host)
+  : seat === "late" ? (role === "received" ? !!e.my_late_min : (e.correcteds || []).some((c: any) => c.late_min))
   : true;
 
-function logSection(pg: Page): Section {
+export function logSection(pg: Page): Section {
   const f = pg.f, D = pg.D;
   const role = pg.q("log", "received", ["received", "given"]);
-  const flag = pg.q("flag", "", ["", "out", "bad", "ok"]);
+  const flag = pg.q("flag", "", ["", "out", "bad", "ok", "noshow"]);
   const projectsAll = [...new Set([...D.received, ...D.given].map((e: any) => e.project as string))].sort();
   const proj = pg.q("project", "", ["", ...projectsAll]);
+  const milestones = MILESTONES.filter((m) => D[role].some((e: any) => milestoneOf(e) === m));
+  const milestone = pg.q("milestone", "", ["", ...MILESTONES]);
+  const me = D.profile?.login;
   const clusters = Object.keys(pg.v.layout || {}).sort();
-  const seat = SEAT_FILTER ? pg.q("seat", "", ["", "me", "other", ...clusters]) : "";
+  const seat = SEAT_FILTER ? pg.q("seat", "", seatOptions(role, clusters)) : "";
   const q = pg.q("q", "").slice(0, 80).toLowerCase();
   const attemptOf = new Map<unknown, number>(D.projects.flatMap((p: any) => p.attempts.map((a: any) => [a.team_id, a.n] as [unknown, number])));
   const match = (e: any) => {
-    if (flag && !(flag === "out" ? e.outstanding : flag === "bad" ? e.negative_flag : !e.outstanding && !e.negative_flag)) return false;
+    if (flag && !(flag === "noshow" ? !!e.truant : flag === "out" ? e.outstanding : flag === "bad" ? e.negative_flag : !e.outstanding && !e.negative_flag)) return false;
     if (proj && e.project !== proj) return false;
+    if (milestone && milestoneOf(e) !== milestone) return false;
     if (!seatMatch(role, seat, e)) return false;
     const hay = JSON.stringify([e.corrector?.login, (e.correcteds || []).map((c: any) => c.login), e.comment, e.feedback, e.feedbacks, e.my_host, e.other_host, e.project, e.begin]).toLowerCase();
     return !q || hay.includes(q);
   };
-  const rows = D[role].filter(match);
+  const rows = D[role].map(withoutWorkLate).filter(match);
   const fbText = (e: any) => {
     if (!e.comment && !e.feedbacks?.length) return "";
     const parts = e.comment ? [`<div class="txt"><b>${esc(f.t("log.corrector_comment"))}</b>\n${esc(e.comment)}</div>`] : [];
@@ -245,33 +355,38 @@ function logSection(pg: Page): Section {
     const what = e.comment && n ? f.t("log.comment_and_feedback", { count: n, n }) : e.comment ? f.t("log.comment_only") : f.t("log.feedback_only", { count: n, n });
     return `<details><summary>${esc(what)}</summary>${parts.join("")}</details>`;
   };
-  const person = (p: any, checked: boolean) => {
-    const seat = checked ? (p.host ? f.t("log.at_seat", { seat: p.host }) : f.t("log.not_logged")) : "";
-    return `${erased(p.login) ? "" : avatar(p)}${shownLogin(f, p.login, false)}` + (seat ? `<span class="sub">${esc(seat)}</span>` : "");
-  };
   const when = { k: "begin_ms", t: f.t("col.when"), cls: "when", f: (e: any) => `<span class="nw">${esc(f.day(e.begin))}</span> <span class="nw">${esc(e.begin.slice(11))}`
     + (e.filled ? ` ${ARROW} ${esc(e.filled.slice(11))}` : "") + "</span>" };
   const flagCol = { k: "flag", t: f.t("col.flag"), nw: true, cls: "ctr", sv: (e: any) => (e.outstanding ? 2 : e.negative_flag ? 0 : 1), f: (e: any) => flagBadge(f, e) };
+  // the mark, and who marked whom absent when someone did (its tip names them)
+  const markCol = { k: "mark", t: f.t("col.mark"), num: true, cls: "ctr", f: (e: any) => {
+    const a = absence(f, role, e, me);
+    return esc(e.mark ?? "") + (a ? `<span class="sub"${tipAttr(a[1])}>${badge(a[0], "bad")}</span>` : "");
+  } };
   const minCol = { k: "duration_min", t: f.t("col.duration"), s: f.t("abbr.duration"), num: true, nw: true,
     f: (e: any) => `${esc(f.t("unit.min", { n: f.num(e.duration_min) }))}<span class="sub">${esc([f.t("log.planned", { n: e.planned_min }),
-      e.lead_h !== null && e.lead_h !== undefined ? f.t("log.booked_ahead", { h: f.num(e.lead_h, 1) }) : ""].filter(Boolean).join(" · "))}</span>` };
-  const mySeat = { k: "my_host", t: f.t("col.your_seat"), nw: true, hide: true, cls: "ctr", f: (e: any) => esc(e.my_host || f.t("log.not_logged")) };
+      e.lead_h !== null && e.lead_h !== undefined && !workExperience(e) ? f.t("log.booked_ahead", { h: f.hmm(e.lead_h) }) : ""].filter(Boolean).join(" · "))}</span>` };
+  const mySeat = { k: "my_host", t: f.t("col.your_seat"), nw: true, hide: true, cls: "ctr",
+    f: (e: any) => { const sub = [e.my_campus || "", e.my_late_min ? lateText(f, e.my_late_min) : ""].filter(Boolean).join(" · ");
+      return esc(e.my_host || f.t("log.not_logged")) + (sub ? `<span class="sub">${esc(sub)}</span>` : ""); } };
   const columns = role === "received" ? [when,
     { k: "project", t: f.t("col.project"), nw: true, f: (e: any) => `${esc(e.project)}<span class="sub">${esc(f.t("projects.attempt", { n: attemptOf.get(e.team_id) ?? "?" }))}</span>` },
-    { k: "corrector", t: f.t("col.corrector"), s: f.t("abbr.corrector"), nw: true, cls: "ctr", sv: (e: any) => e.corrector.login, f: (e: any) => person(e.corrector, e.other_host_checked) },
-    mySeat, minCol, { k: "mark", t: f.t("col.mark"), num: true, cls: "ctr" }, flagCol, { k: "fb_rating", t: f.t("col.your_rating"), num: true, hide: true, cls: "ctr" }]
+    { k: "corrector", t: f.t("col.corrector"), s: f.t("abbr.corrector"), nw: true, cls: "ctr", sv: (e: any) => e.corrector.login, f: (e: any) => logPerson(f, e.corrector, e.other_host_checked) },
+    mySeat, minCol, markCol, flagCol, { k: "fb_rating", t: f.t("col.your_rating"), num: true, hide: true, cls: "ctr" }]
     : [when, { k: "project", t: f.t("col.project"), nw: true },
       { k: "correcteds", t: f.t("col.evaluated"), s: f.t("abbr.evaluated"), nw: true, cls: "ctr", sv: (e: any) => e.correcteds.map((c: any) => c.login || "").join(","),
-        f: (e: any) => e.correcteds.map((c: any) => person(c, e.other_host_checked)).join("<br>") },
-      mySeat, minCol, { k: "mark", t: f.t("col.mark"), num: true, cls: "ctr", f: (e: any) => esc(e.mark ?? "") }, flagCol, { k: "fb_rating", t: f.t("col.their_rating"), num: true, hide: true, cls: "ctr" }];
+        f: (e: any) => teamCell(f, e) },
+      mySeat, minCol, markCol, flagCol, { k: "fb_rating", t: f.t("col.their_rating"), num: true, hide: true, cls: "ctr" }];
   const form = filters("log",
     radios("log", f.t("log.role_label"), (["received", "given"] as const).map((v) => [v, f.t(`log.${v}`)]), role)
-    + select("flag", f.t("log.flag"), [["", f.t("log.flag_all")], ["out", f.t("log.flag_out")], ["bad", f.t("log.flag_bad")], ["ok", f.t("log.flag_ok")]], flag)
+    + select("flag", f.t("log.flag"), [["", f.t("log.flag_all")], ["out", f.t("log.flag_out")], ["bad", f.t("log.flag_bad")], ["ok", f.t("log.flag_ok")], ["noshow", f.t("log.flag_noshow")]], flag)
+    + select("milestone", f.t("log.milestone"), [["", f.t("log.milestone_all")], ...milestones.map((m) => [m, m === "other" ? f.t("log.milestone_other") : f.t(`groups.${m}`)] as [string, string])], milestone)
     + select("project", f.t("log.project"), [["", f.t("log.project_all")], ...projectsAll.map((p) => [p, p] as [string, string])], proj)
-    + (SEAT_FILTER ? select("seat", f.t("log.seat"), [["", f.t("log.seat_all")], ["me", f.t("col.nl_you")],
-      ["other", f.t(role === "received" ? "col.nl_corrector" : "col.nl_evaluated")], ...clusters.map((c) => [c, f.t("log.seat_in", { c })] as [string, string])], seat) : "")
-    + search("q", pg.q("q", "").slice(0, 80), f.t("common.search"), f.t("log.search_placeholder")));
-  return { id: "log", nav: f.t("nav.log"), html: section("log", f.t("log.title"), form + `<div id="log-results"><p class="controls-after"><span class="note">${esc(f.plural(rows.length, "count.evaluations"))}</span></p>`
+    + (SEAT_FILTER ? select("seat", f.t("log.seat"), seatOptions(role, clusters).map((v) => [v, v === "" ? f.t("log.seat_all") : v === "me" ? f.t("col.nl_you")
+      : v === "other" ? f.t("col.nl_evaluated") : v === "late" ? f.t(role === "received" ? "log.late_you" : "log.late_them") : f.t("log.seat_in", { c: v })] as [string, string]), seat) : "")
+    + search("q", pg.q("q", "").slice(0, 80), f.t("common.search"), f.t("log.search_placeholder"))
+    + (flag || proj || milestone || seat || q ? `<a class="btn secondary log-clear" href="${esc(pg.url(undefined, { flag: "", project: "", milestone: "", seat: "", q: "" }))}" data-keep>${esc(f.t("log.clear"))}</a>` : ""));
+  return { id: "log", nav: f.t("nav.log"), html: section("log", f.t("log.title"), form + `<div id="log-results">`
     + cols(block("table-log", `<div class="table-wrap tall">${table(f, columns as any, rows, { label: f.t("log.title"), sort: ["begin_ms", -1], empty: f.t("empty.search_log"), sticky: true, detail: fbText })}</div>`)) + "</div>",
-  ) };
+  { count: f.plural(rows.length, "count.evaluations") }) };
 }

@@ -23,7 +23,8 @@
       ]
     },
     "allowJs": true,
-    "checkJs": false
+    "checkJs": false,
+    "noEmit": true
   },
   "include": [
     "src/**/*.ts",

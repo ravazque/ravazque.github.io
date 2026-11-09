@@ -36,3 +36,38 @@ func mustJSON(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
 }
+
+func TestCancelledEvaluationsByKind(t *testing.T) {
+	d := emptyRaw()
+	row := func(id float64, reason string, sum float64, at string, st float64) any {
+		return Raw{"id": id, "reason": reason, "sum": sum, "total": 5.0, "created_at": at, "scale_team_id": st}
+	}
+	d["correction_points"] = []any{
+		row(1, "Defense plannification", -1, "2026-10-10T08:00:00.000Z", 7001),
+		row(2, "Evaluator cancelled a defense", 1, "2026-10-10T09:30:00.000Z", 7001), // your corrector cancelled, point back
+		row(3, "Evaluator cancelled a defense", -1, "2026-10-12T15:00:00.000Z", 7002), // you cancelled one you were to give
+		row(4, "Defense plannification", -1, "2026-10-14T10:00:00.000Z", 7004),        // booked, then gone with no refund: you cancelled it
+		row(5, "Defense plannification", -1, "2026-10-15T10:00:00.000Z", 7005),        // booked and evaluated
+		row(6, "Defense plannification", -1, "2026-10-16T10:00:00.000Z", 7006),        // booked, still to come (hidden by the API)
+		row(7, "Refund for evaluator missing", 1, "2026-10-17T10:00:00.000Z", 7007),   // your corrector didn't come
+		row(8, "Earning after defense", 1, "2026-10-13T15:00:00.000Z", 7003),
+	}
+	d["evals_received"] = []any{Raw{"id": 7005.0, "corrector": Raw{"id": 900002.0, "login": "peer02"}, "correcteds": []any{}, "begin_at": "2026-10-15T12:00:00.000Z"}}
+	d["hidden_received_ids"] = []any{7006.0}
+	kinds := map[string][]*OMap{}
+	for _, c := range Analyze(d, "all", goldenNow).Obj("correction_points").Os("cancels") {
+		kinds[c.S("kind")] = append(kinds[c.S("kind")], c)
+	}
+	if len(kinds["corrector"]) != 1 || kinds["corrector"][0].V("at") != fmtT(tsAny("2026-10-10T09:30:00.000Z")) {
+		t.Fatalf("your corrector cancelled: %s", mustJSON(kinds["corrector"]))
+	}
+	if len(kinds["you"]) != 1 || kinds["you"][0].F("at_ms") == 0 {
+		t.Fatalf("you cancelled theirs: %s", mustJSON(kinds["you"]))
+	}
+	if len(kinds["self"]) != 1 || kinds["self"][0].V("at") != fmtT(tsAny("2026-10-14T10:00:00.000Z")) {
+		t.Fatalf("you cancelled yours (when you booked it): %s", mustJSON(kinds["self"]))
+	}
+	if len(kinds["absent"]) != 1 || kinds["absent"][0].F("st") != 7007 {
+		t.Fatalf("your corrector didn't come: %s", mustJSON(kinds["absent"]))
+	}
+}

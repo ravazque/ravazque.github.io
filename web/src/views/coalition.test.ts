@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { Fmt } from "../fmt";
-import { allPoints, coalition, everySource, tigSplit } from "./coalition";
+import { allPoints, coalition, everySource, monthsBySource, tigSplit } from "./coalition";
 import { Page } from "./page";
 
 const award = (i: number) => ({ at: `2026-01-${String(1 + i).padStart(2, "0")}T10:00:00.000Z`, key: "evaluations", points: 250, id: i });
@@ -67,4 +67,26 @@ test("Points by source reads from its title, with every source, also for someone
   const html = coalition(pageWith({ total: 0, count: 0, sources: [], months: [], awards: [], bonuses: [] })).map((s) => s.html).join("");
   expect(html).not.toContain("centred");
   for (const k of ["evaluations", "projects", "exams", "logtime_50", "logtime_80", "wallet", "other", "tigs"]) expect(html).toContain(f.t(`coal.src.${k}`));
+});
+
+test("Points by source lists every source, the ones at nothing too, in three colours: the page's accent, a tone of it for the hours, red for TIGs", () => {
+  const P = { total: 600, count: 3, sources: [{ key: "evaluations", points: 500, count: 1 }, { key: "logtime_50", points: 400, count: 1 }, { key: "tigs", points: -300, count: 1 }],
+    months: [], awards: [], bonuses: [] };
+  const pg = new Page(new Fmt("en"), { report: { profile: { coalition: { name: "Ignisaria", color: "#ff6950" } }, coalition_points: P, given: [], projects: [] }, all_projects: [] } as any, "coalition", {});
+  const html = coalition(pg).map((s) => s.html).join("");
+  const list = html.slice(html.indexOf('class="src-list"'));
+  expect(list.match(/<li/g)?.length).toBe(8);
+  expect(html).not.toContain("none_from");
+  const colours = new Set([...list.matchAll(/class="sw" style="background:([^"]+)"/g)].map((m) => m[1]));
+  expect(colours.size).toBe(3);
+  expect(colours).toContain("var(--accent-data)"); // the 42 blue, or the coalition's colour when that accent is chosen
+  expect(list.match(/<li class="zero"[^>]*><i class="sw"><\/i>/g)?.length).toBe(5); // the ones at nothing: an empty square
+});
+
+test("points per month by source come from the awards, TIGs apart, the months with none as zero", () => {
+  const awards = [{ at: "2026-01-05T10:00:00Z", key: "evaluations", points: 250 }, { at: "2026-01-20T10:00:00Z", key: "exams", points: 2000 },
+    { at: "2026-03-02T10:00:00Z", key: "evaluations", points: 500 }, { at: "2026-03-09T10:00:00Z", key: "other", points: -2100 }];
+  const got = monthsBySource({ awards }, ["2026-01", "2026-02", "2026-03"]);
+  expect(got).toEqual({ evaluations: [250, 0, 500], exams: [2000, 0, 0], tigs: [0, 0, -2100] });
+  expect(monthsBySource({ recent: awards }, ["2026-01"])).toBeNull(); // a report saved before every award was kept
 });

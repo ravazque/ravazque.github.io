@@ -41,7 +41,8 @@ USER_AGENT = "ravazque-info-evaluation-report"  # the API answers 403 to Python'
 MONTHS = "ene feb mar abr may jun jul ago sep oct nov dic".split()
 STATUS = {"finished": "Terminado", "in_progress": "En curso", "waiting_for_correction": "Esperando corrección",
           "searching_a_group": "Buscando grupo", "creating_group": "Creando grupo"}
-NO_MARK = {"pending": "Pendiente", "absent_you": "No se presentó el alumno", "absent_them": "No se presentó el corrector",
+# truant is who reported the absence (the side that was there): absent_you = the student marked the corrector absent
+NO_MARK = {"pending": "Pendiente", "absent_you": "Marcó ausente al corrector", "absent_them": "El corrector lo marcó ausente",
            "unfinished": "Proyecto sin terminar", "closed": "Proyecto cerrado"}
 GROUPS = {"rank-00": "Milestone 0", "rank-01": "Milestone 1", "rank-02": "Milestone 2", "rank-03": "Milestone 3",
           "rank-04": "Milestone 4", "rank-05": "Milestone 5", "rank-06": "Milestone 6", "outer-core": "Outer Core",
@@ -117,7 +118,7 @@ def hide(v, logins, own):
             return x
         out = {label(k) if gone(k) else k: walk(e) for k, e in x.items()}
         if isinstance(x.get("login"), str) and gone(x["login"]):
-            out.update({k: None for k in ("name", "image", "displayname", "host", "hosts") if k in out})
+            out.update({k: None for k in ("name", "image", "displayname", "host", "hosts", "late_min") if k in out})
         people = [out.get("corrector"), *(out.get("correcteds") or [])]
         if "other_host_checked" in out and any(isinstance(p, dict) and is_hidden(p.get("login")) for p in people):
             out["other_host_checked"] = False
