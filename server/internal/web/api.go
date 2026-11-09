@@ -177,14 +177,15 @@ func mainLevel(rep *core.OMap) (float64, bool) {
 // madridLevels is Madrid's levels as read last; when they were not asked for this hour, a read starts in the background
 // (about 26 requests), so an hour in which nobody opens a page spends none.
 func (s *Server) madridLevels() []float64 {
-	levels, fresh := s.API.LastMadrid(s.now())
+	now := s.now() // read here: the read below runs on its own and must not touch the server's clock
+	levels, fresh := s.API.LastMadrid(now)
 	if !fresh && s.madridOn.CompareAndSwap(false, true) {
 		go func() {
 			defer s.madridOn.Store(false)
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()
 			before := s.API.Requests()
-			if _, err := s.API.Madrid(ctx, s.now()); err != nil {
+			if _, err := s.API.Madrid(ctx, now); err != nil {
 				slog.Warn("madrid levels", "error", err.Error())
 				return
 			}
