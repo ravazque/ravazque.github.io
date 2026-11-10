@@ -29,11 +29,26 @@ test("details name the first project and how many more", () => {
 
 test("details open a floating list on click: the first project and how many more, then every evaluation", () => {
   const html = whoDetails(new Fmt("en"), ["libft (x2)", "ft_printf"], "Project · day · their seat\nlibft · 1 Mar 2026 · –\nft_printf · 2 Mar 2026 · c1r1s1");
-  expect(html).toMatch(/^<details class="pop who-pop" data-float><summary>libft \(x2\) \+1 more<\/summary>/);
+  expect(html).toMatch(/^<details class="pop who-pop" data-float><summary>libft \(x2\) \+1 more<\/summary>/); // plain text under the dotted line
   expect(html.match(/<li>/g)).toHaveLength(2);
   expect(html).toContain("<b>Project · day · their seat</b>");
   expect(whoDetails(new Fmt("en"), [], "")).toBe("–");
   expect(whoDetails(new Fmt("en"), ["libft"], "")).toBe("libft");
+});
+
+test("a bubble opens that person in the evaluation log on the side it stands for: given when it counts the ones you corrected", () => {
+  const page = (mode: string) => new Page(new Fmt("en"), { period: "student", network: {}, all_projects: [],
+    connections: [{ login: "peer01", group: "outer-core", received: 2, given: 0 }, { login: "peer02", group: "rank-03", received: 1, given: 3 }],
+    report: { profile: { login: "me" }, extras: { cursus: [], quests: [] }, summary: { unique_correctors: 2, mutual: 0 }, given: [], received: [], insights: {}, people: [] } } as any,
+    "people", { mode });
+  const hrefs = (mode: string) => [...people(page(mode)).find((s) => s.id === "connections")!.html.matchAll(/href="([^"]*#log)"/g)].map((m) => m[1].replaceAll("&amp;", "&"));
+  expect(hrefs("given").every((h) => h.includes("log=given"))).toBe(true);
+  expect(hrefs("given").some((h) => h.includes("q=peer02"))).toBe(true);
+  expect(hrefs("received").every((h) => h.includes("log=received"))).toBe(true);
+  const mix = hrefs("mix"); // each person twice, one bubble per side
+  expect(mix.filter((h) => h.includes("q=peer02") && h.includes("log=given")).length).toBeGreaterThan(0);
+  expect(mix.filter((h) => h.includes("q=peer02") && h.includes("log=received")).length).toBeGreaterThan(0);
+  expect(mix.some((h) => h.includes("q=peer01") && h.includes("log=given"))).toBe(false);
 });
 
 test("the tip counts what a person gave you in Outer Core projects, nothing when there is none", () => {
@@ -64,4 +79,20 @@ test("Top 25: the tip tells Outer Core and what they gave you there, with no mar
 test("Top 25: nobody else's group in the tip unless you are in Outer Core yourself", () => {
   const html = people(whoPage({ cursus: [{ name: "42cursus", grade: "Learner" }], quests: [] }))[0].html;
   expect(html).not.toContain("OuterCore");
+});
+
+test("deleted accounts join Your circle as their own group, named Deleted, never by their old id; Connections leaves them out with a note", async () => {
+  const { readFileSync } = await import("node:fs");
+  const gone = (t: string) => t.replaceAll("peer03", "3b3-12345");
+  const doc = JSON.parse(gone(readFileSync("../server/core/testdata/golden/mid.report.json", "utf8"))), all = doc.periods.all;
+  const pg = new Page(new Fmt("en"), { period: "all", report: all, layout: doc.layout, connections: doc.connections.all, network: doc.network,
+    all_projects: all.projects, all_cursus: all.extras.cursus } as any, "people", {});
+  const [conn, html] = ["connections", "circle"].map((id) => people(pg).find((s) => s.id === id)!.html);
+  const f = new Fmt("en");
+  expect(html).toContain("net-node deleted"); // a ring node of its own
+  expect(html).not.toMatch(/>3b3-12345</); // no label shows the old id
+  expect(html).not.toMatch(/data-tip="3b3-12345/);
+  expect(html).toContain(f.t("groups.deleted"));
+  expect(conn).not.toContain("net-node deleted");
+  expect(conn).toContain(f.plural(1, "who.erased_note"));
 });

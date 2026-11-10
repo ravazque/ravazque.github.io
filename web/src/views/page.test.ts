@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
-import { daysTo, erased, monthsBetween, myTrack } from "./page";
+import { Fmt } from "../fmt";
+import { Page, daysTo, erased, monthsBetween, myTrack } from "./page";
 
 const ex = (quests: [string, boolean][]) => ({ cursus: [{ name: "42cursus" }], quests: quests.map(([name, v]) => ({ name, validated: v ? "2026-01-01" : null })) });
 
@@ -78,4 +79,18 @@ test("negative flags are named, most first, per month", async () => {
   const evs = [ev("2026-03-02 10:00", "Cheat"), ev("2026-03-09 10:00", "Crash"), ev("2026-03-20 10:00", "Cheat"), ev("2026-03-21 10:00", "Ok", false),
     ev("2026-04-01 10:00", "Norme")];
   expect(negativeFlags(evs)).toEqual(new Map([["2026-03", "Cheat ×2, Crash"], ["2026-04", "Norme"]]));
+});
+
+test("a work experience's part reads Work Exp. wherever a page names it, keys included; the whole one keeps its name; the view as it came stays untouched", () => {
+  const v: any = { period: "all", all_projects: [{ name: "Work Experience II - Company final evaluation" }],
+    report: { projects: [{ name: "Work Experience I" }, { name: "Work Experience I  - Contract Upload" }, { name: "Libft" }],
+      received: [{ project: "Work Experience - Peer Video", comment: "Work Experience is hard" }], stats: { by_project: { "Work Experience II - Duration": 2, "Work Experience II": 1 } } } };
+  const pg = new Page(new Fmt("en"), v, "projects", {});
+  expect(pg.D.projects.map((p: any) => p.name)).toEqual(["Work Experience I", "Work Exp. I - Contract Upload", "Libft"]); // the API's double space goes too
+  expect(pg.D.received[0].project).toBe("Work Exp. - Peer Video");
+  expect(pg.D.received[0].comment).toBe("Work Experience is hard"); // names only
+  expect(Object.keys(pg.D.stats.by_project)).toEqual(["Work Exp. II - Duration", "Work Experience II"]);
+  expect(pg.allProjects[0].name).toBe("Work Exp. II - Company final evaluation");
+  expect(v.report.projects[0].name).toBe("Work Experience I");
+  expect(new Page(new Fmt("en"), v, "evaluations", {}).D).toBe(pg.D); // shortened once per view
 });

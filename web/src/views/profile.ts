@@ -1,6 +1,6 @@
 // Profile (the home page): who you are, three figures of your history, the path so far, and the sections of other pages
 // kept as widgets (in this browser; Contribution, Rhythm and the bonus to begin with; Activity is one of them).
-import { badge, esc, initials, safeColor } from "../lib/h";
+import { badge, esc, initials } from "../lib/h";
 import { Page, type PageKey, type Section, block, cols, info, myRank, myTrack, section } from "./page";
 import { projects } from "./projects";
 import { evaluations } from "./evaluations";
@@ -23,10 +23,11 @@ function card(pg: Page): string {
   const has = (v: any) => v !== null && v !== undefined;
   const title = (D.extras.titles || []).find((t: any) => t.selected)?.name;
   const who = esc(title || P.login) + (P.campus_current ? ` · ${esc(P.campus_current)}` : "");
-  const tags = [coal ? `<i class="dot" style="background:${safeColor(coal.color)}"></i>${esc(coal.name)}${coal.rank ? ` · ${esc(f.t("home.nth", { n: coal.rank }))}` : ""}` : "",
-    esc(rank ? f.t(`groups.${rank}`) : f.t("home.no_cursus")),
-    [main?.grade ? badge(main.grade) : "", track ? badge(f.t(`profile.track_${track}`)) : "", ...(P.groups || []).map((g: string) => badge(g))].join("")]
-    .filter(Boolean).map((x) => `<span>${x}</span>`).join("");
+  // beside your name, where you are: Student, OuterCore or Alumni; under it everything else as tags: the coalition (its
+  // name alone), the milestone you are on, grade, track and your groups (Mentor…)
+  const status = rank === "alumni" ? "st_alumni" : rank === "outer-core" ? "st_outer" : rank ? "st_student" : "";
+  const tags = [coal ? badge(coal.name) : "", rank?.startsWith("rank-") ? badge(f.t(`groups.${rank}`)) : rank ? "" : badge(f.t("home.no_cursus")),
+    main?.grade ? badge(main.grade) : "", track ? badge(f.t(`profile.track_${track}`)) : "", ...(P.groups || []).map((g: string) => badge(g))].join("");
   // the four figures, drawn like the three modules under the card (larger: spacing.css, --card-module-*) and counting up
   // like them, each with a line (already escaped): your place by level in Madrid (live, the server reads it every hour;
   // until it has, the way to the next level), in your kickoff, the wallet (the API keeps no history of it: staff only),
@@ -50,7 +51,7 @@ function card(pg: Page): string {
       + (line ? `<p class="line">${line}</p>` : "") + "</article>").join("") + "</div>";
   return `<section id="profile" class="pf" aria-label="${esc(f.t("profile.title"))}">`
     + `<div class="pf-head"><div class="avatar-lg pf-photo"><span aria-hidden="true">${esc(initials(P.name || P.login))}</span>${P.image ? `<img src="${esc(P.image)}" alt="">` : ""}</div>`
-    + `<div class="pf-id"><p class="pf-name">${esc(P.name || P.login)}<span class="pf-login">${esc(P.login)}</span></p>`
+    + `<div class="pf-id"><p class="pf-name">${esc(P.name || P.login)}${status ? `<span class="pf-status">${esc(f.t(`profile.${status}`))}</span>` : ""}</p>`
     + `<p class="pf-sub"><span>${who}</span></p><p class="pf-sub pf-tags">${tags}</p></div></div>`
     + figures
     + "</section>";
@@ -100,7 +101,7 @@ function path(pg: Page): string {
     + phases.map(([c, a, b]) => `<span class="phase ${c}" style="left:${pc(a)}%;width:${(at(b) - at(a)).toFixed(1)}%"></span>`).join("")
     + shown.map((s) => `<i class="${s.cls}" style="left:${pc(s.t)}%"></i>`).join("") + "</div>"
     + shown.map((s, i) => `<span class="pf-mark ${i % 2 ? "down" : "up"}${at(s.t) > 75 ? " right" : at(s.t) < 25 ? " left" : ""}${s.cls ? ` ${s.cls}` : ""}" aria-hidden="true"`
-      + ` style="left:${pc(s.t)}%"${s.tip ? ` data-tip="${esc(s.tip)}" title="${esc(s.tip)}"` : ""}><b>${esc(s.k)}</b>${esc(s.d)}</span>`).join("") + "</div></div>";
+      + ` style="left:${pc(s.t)}%;--d:${(at(s.t) / 100).toFixed(2)}"${s.tip ? ` data-tip="${esc(s.tip)}" title="${esc(s.tip)}"` : ""}><b>${esc(s.k)}</b>${esc(s.d)}</span>`).join("") + "</div></div>";
 }
 
 /** Three figures of your history: projects, evaluations and logged time, with what they hold (no charts: the pages have them). */

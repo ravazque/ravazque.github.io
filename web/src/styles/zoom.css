@@ -27,7 +27,7 @@
   --zoom-chart-height: 360px;         /* the height of bar and line charts inside the panel */
   --zoom-chart-height-laptop: 560px;
   --zoom-row-height: 32px;            /* each row of horizontal bars (Points by source) */
-  --zoom-shade: 45%;                  /* how dark the page behind it gets: 0% not at all, 100% black */
+  --zoom-shade: 15%;                  /* how dark the page behind it gets (its transparency): 0% not at all, 100% black */
   --zoom-button: 26px;                /* the button by a chart's title */
 }
 
@@ -48,12 +48,19 @@
   height: var(--zoom-height, fit-content); max-height: calc(100dvh - 2 * var(--zoom-edge, 12px));
   margin: var(--zoom-top, auto) auto auto var(--zoom-left, auto); }
 :where(body:not(.site)) dialog.zoom::backdrop { background: color-mix(in oklab, var(--ink) var(--zoom-shade, 45%), transparent); }
+/* while it is open the page behind stays where it is (the wheel scrolls nothing there); a click outside or Escape closes it */
+html:has(dialog.zoom[open]) { overflow: hidden; }
+:root { scrollbar-gutter: stable; } /* the scrollbar's room stays while it hides, so the page behind doesn't shift */
 :where(body:not(.site)) .zoom-box { padding: var(--zoom-pad, 16px); }
 :where(body:not(.site)) .zoom-head { display: flex; justify-content: space-between; align-items: center; gap: 16px;
   padding-bottom: var(--zoom-title-pad, 10px); border-bottom: var(--zoom-title-line, 4px) solid var(--rule-strong); }
 :where(body:not(.site)) .zoom-head h2 { margin: 0; padding: 0; border: 0; font: 800 var(--zoom-title-size, 24px)/1.1 var(--type-font-display); letter-spacing: -.02em; }
 :where(body:not(.site)) .zoom-body { margin-top: var(--zoom-title-gap, 20px); --c-chart-height: var(--zoom-chart-height, 360px); --c-chart-row-height: var(--zoom-row-height, 32px); }
 :where(body:not(.site)) .zoom-body > .block-head:empty { display: none; }
+/* a chart can carry a finer view for the zoom (Correction points: weeks in it, months on the page) */
+:where(body:not(.site)) .zoom-only { display: none; }
+:where(body:not(.site)) dialog.zoom .zoom-only { display: revert; }
+:where(body:not(.site)) dialog.zoom .zoom-hide { display: none; }
 :where(body:not(.site)) .zoom-body .heat, :where(body:not(.site)) .zoom-body .heat-wide .heat { max-width: none; }
 @media (min-width: 960px) {
   :where(body:not(.site)) dialog.zoom { width: min(var(--zoom-width-laptop, 1200px), calc(100vw - 2 * var(--zoom-edge-laptop, 32px)));

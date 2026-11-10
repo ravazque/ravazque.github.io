@@ -4,6 +4,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { HttpError, api, fmt, hasPin, loadPins, loadSession, moveWidget, pins, relabelStars, setWidget, state, togglePin, untilQuarter, type Status } from "../state";
+import { VIEW_TTL, viewCache } from "../viewcache";
 import { closePops, dragScroll, hideTip, settle } from "../lib/behave";
 import { idbShelf, keepCopy, restore, stale } from "../lib/copy";
 import { esc, initials } from "../lib/h";
@@ -72,7 +73,7 @@ async function load() {
       const login = state.session.user.login;
       if (screen.value !== "page") screen.value = "restore";
       if (await restore(idbShelf, login, state.session.user.csrf, (p, i) => fetch(p, { credentials: "same-origin", ...i }))) {
-        await fetchView();
+        await fetchView(true);
         return freshen(login);
       }
       s = await status(true);
@@ -90,14 +91,25 @@ async function load() {
   }
 }
 
-async function fetchView() {
+/** The period's view: kept in this tab for the hour (another page draws at once, no skeleton), asked again when `fresh`
+ * (a refresh just ended, a report was handed back). */
+async function fetchView(fresh = false) {
   const period = pagePeriod(key.value, params.value.period || "");
+  const k = `${state.session?.user?.login || ""}|${period}`, kept = viewCache.get(k);
+  if (fresh) viewCache.clear();
+  else if (kept && Date.now() - kept.at < VIEW_TTL) {
+    view.value = kept.v;
+    screen.value = "page";
+    followCoalitions();
+    return;
+  }
   try {
     view.value = await api<View>(`/api/me/view${period ? `?period=${encodeURIComponent(period)}` : ""}`);
   } catch (e) {
-    if (e instanceof HttpError && e.status === 404) return load(); // forgotten while the page sat open: the copy goes back
+    if (e instanceof HttpError && e.status === 404) { viewCache.clear(); return load(); } // forgotten while the page sat open: the copy goes back
     throw e;
   }
+  viewCache.set(k, { v: view.value, at: Date.now() });
   screen.value = "page";
   followCoalitions();
   const u = state.session?.user, last = state.status?.last || "";
@@ -119,7 +131,7 @@ async function freshen(login: string) {
 async function watchSync() {
   const s = await status().catch(() => null);
   if (s && ["queued", "running"].includes(s.state)) { poll = window.setTimeout(watchSync, 2000); return; }
-  await fetchView();
+  await fetchView(true);
 }
 
 /** The server refreshes the coalitions' standing on every quarter of the hour: where it shows, the open page follows
@@ -131,7 +143,10 @@ function followCoalitions() {
     const v = view.value;
     if (v && main.value?.querySelector(".standings")) {
       const r = await api<{ coalitions: any[] }>("/api/me/coalitions").catch(() => null);
-      if (r && v === view.value && JSON.stringify(r.coalitions) !== JSON.stringify(v.coalitions)) view.value = { ...v, coalitions: r.coalitions };
+      if (r && v === view.value && JSON.stringify(r.coalitions) !== JSON.stringify(v.coalitions)) {
+        view.value = { ...v, coalitions: r.coalitions };
+        for (const [k, c] of viewCache) if (c.v === v) viewCache.set(k, { ...c, v: view.value }); // the kept copy follows
+      }
     }
     followCoalitions();
   }, untilQuarter(new Date()) + 30_000);
@@ -269,6 +284,7 @@ const zoomTitle = ref(""), zoomHtml = ref("");
 let tipHome: [Node, Node | null] | null = null;
 function openZoom(panel: HTMLElement) {
   const copy = panel.cloneNode(true) as HTMLElement, h3 = chartTitle(copy)!;
+  copy.querySelectorAll<HTMLElement>("[data-anim]").forEach((e) => { delete e.dataset.anim; e.classList.add("in"); }); // drawn, also what the page never showed
   h3.querySelectorAll(".pin").forEach((b) => b.remove());
   zoomTitle.value = h3.innerHTML; // the page's own markup, already escaped
   h3.remove();

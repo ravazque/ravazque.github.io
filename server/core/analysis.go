@@ -1211,7 +1211,49 @@ func (r *report) correctionPointsSection() *OMap {
 			add("absent", c, "st", st)
 		}
 	}
-	return M("series", series, "reasons", ro, "earned", earned, "spent", spent, "max", mx, "cancels", cancels)
+	// per month and per week (Monday to Sunday, Madrid time): what came in, what went out and each reason's net, from the
+	// rows' sums (their running totals don't add up: the Balance chart builds its balance from these)
+	type bucket struct {
+		earned, spent float64
+		reasons       *OMap
+	}
+	group := func(name string, keyOf func(t time.Time) string) []any {
+		by, order := map[string]*bucket{}, []string{}
+		for _, c := range rows {
+			at := tsAny(c["created_at"])
+			if at.IsZero() {
+				continue
+			}
+			k := keyOf(at.In(Madrid))
+			b := by[k]
+			if b == nil {
+				b = &bucket{reasons: NewOMap()}
+				by[k] = b
+				order = append(order, k)
+			}
+			if s := Num(c, "sum"); s > 0 {
+				b.earned += s
+			} else {
+				b.spent -= s
+			}
+			r := keyStr(c["reason"])
+			prev, _ := b.reasons.Get(r)
+			p, _ := prev.(float64)
+			b.reasons.Set(r, p+Num(c, "sum"))
+		}
+		sort.Strings(order)
+		out := []any{}
+		for _, k := range order {
+			out = append(out, M(name, k, "earned", by[k].earned, "spent", by[k].spent, "reasons", by[k].reasons))
+		}
+		return out
+	}
+	months := group("m", func(t time.Time) string { return t.Format("2006-01") })
+	weeks := group("w", func(t time.Time) string {
+		day := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, Madrid)
+		return day.AddDate(0, 0, -((int(day.Weekday()) + 6) % 7)).Format("2006-01-02") // its Monday
+	})
+	return M("series", series, "reasons", ro, "earned", earned, "spent", spent, "max", mx, "cancels", cancels, "by_month", months, "by_week", weeks)
 }
 
 // receivedIDs: the evaluations you booked that exist, as the API answered (the hidden upcoming ones too); a period

@@ -71,3 +71,30 @@ func TestCancelledEvaluationsByKind(t *testing.T) {
 		t.Fatalf("your corrector didn't come: %s", mustJSON(kinds["absent"]))
 	}
 }
+
+func TestCorrectionPointsByMonthAndWeek(t *testing.T) {
+	d := emptyRaw()
+	row := func(id float64, reason string, sum float64, at string) any {
+		return Raw{"id": id, "reason": reason, "sum": sum, "total": 99.0, "created_at": at, "scale_team_id": id}
+	}
+	d["correction_points"] = []any{
+		row(1, "Earning after defense", 2, "2026-03-31T22:30:00.000Z"), // Madrid (summer time): Wednesday April 1st, 00:30
+		row(2, "Defense plannification", -1, "2026-02-10T10:00:00.000Z"),  // Tuesday: the week of Monday February 9
+		row(3, "Earning after defense", 1, "2026-02-15T10:00:00.000Z"),   // Sunday: the same week
+		row(4, "Provided points to the pool.", -3, "2026-04-06T10:00:00.000Z"),
+	}
+	cp := Analyze(d, "all", goldenNow).Obj("correction_points")
+	ms, ws := cp.Os("by_month"), cp.Os("by_week")
+	if len(ms) != 2 || ms[0].S("m") != "2026-02" || ms[1].S("m") != "2026-04" || ms[1].F("earned") != 2 || ms[1].F("spent") != 3 {
+		t.Fatalf("months %s", mustJSON(ms))
+	}
+	if r := ms[1].Obj("reasons"); r.F("Earning after defense") != 2 || r.F("Provided points to the pool.") != -3 {
+		t.Fatalf("reasons %s", mustJSON(ms[1]))
+	}
+	if len(ws) != 3 || ws[0].S("w") != "2026-02-09" || ws[0].F("earned") != 1 || ws[0].F("spent") != 1 || ws[1].S("w") != "2026-03-30" || ws[2].S("w") != "2026-04-06" {
+		t.Fatalf("weeks %s", mustJSON(ws))
+	}
+	if cp.Has("quarters") {
+		t.Fatal("quarters are gone")
+	}
+}

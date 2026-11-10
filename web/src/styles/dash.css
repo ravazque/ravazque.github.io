@@ -14,6 +14,16 @@
 }
 :where(body:not(.site)) form[data-filter="log"] :is(.select-btn, input[type=search]) { min-width: 0; }
 :where(body:not(.site)) form[data-filter="log"] .log-clear { justify-self: start; white-space: nowrap; }
+:where(body:not(.site)) [data-panel="table-log"] td .sub { white-space: normal; text-overflow: clip; } /* the small lines wrap: the table fits rather than scrolls */
+/* these filters name themselves (the first option says "Any seat", the box "Search: …"): no label above them, kept for
+   screen readers */
+:where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"], [data-filter="who"], [data-filter="sessions"]) .field > span {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* phones: a title with its count and buttons wraps, the count on a line of its own under them */
+@media (max-width: 959.98px) {
+  :where(body:not(.site)) h2:has(> .count) { flex-wrap: wrap; }
+  :where(body:not(.site)) h2:has(> .count) > .count { order: 1; flex-basis: 100%; }
+}
 @media (min-width: 1360px) {
   :where(body:not(.site)) form[data-filter="log"] { grid-template-columns: max-content repeat(5, minmax(0, 1fr)); }
   :where(body:not(.site)) form[data-filter="log"]:has(.log-clear) { grid-template-columns: max-content repeat(5, minmax(0, 1fr)) max-content; }
@@ -158,6 +168,7 @@
 :where(body:not(.site)) .block[id] { scroll-margin-top: calc(var(--c-topbar-height) + 64px); }
 :where(body:not(.site)) .settings form.theme { margin: 0; }
 :where(body:not(.site)) .settings .publish .btn { width: 100%; }
+:where(body:not(.site)) .settings .publish { display: grid; gap: 8px; } /* several buttons (dev-live's) one under the other */
 
 /* charts */
 :where(body:not(.site)) .vchart, :where(body:not(.site)) .lchart, :where(body:not(.site)) .hchart, :where(body:not(.site)) .timeline { margin: 10px 0 0; font-size: var(--c-chart-font-size); color: var(--muted); }
@@ -191,6 +202,14 @@
 :where(body:not(.site)) .has-line .ch-cols:hover ~ .ch-line, :where(body:not(.site)) .has-line .ch-cols:hover ~ .ch-dot { opacity: .4; }
 :where(body:not(.site)) .ch-line polyline { stroke-width: 3; }  /* the total line, a touch bolder than the plain line charts */
 :where(body:not(.site)) .ch-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, 50%); z-index: 1; pointer-events: none; }
+/* the balance line of Correction points: a dot per month (per week enlarged) */
+:where(body:not(.site)) .qline .ch-zero { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--rule-strong); z-index: 1; pointer-events: none; }
+/* a chart's dots show first, one after the other from the left (--d: 0 to 1, over .5s, each in .2s), its line draws after
+   them; an animation, not a transition, so dimming them on hover never waits */
+:where(html.js body:not(.site)) .vchart[data-anim]:not(.in) .ch-dot { opacity: 0; transition: none; }
+:where(html.js body:not(.site)) .vchart[data-anim].in .ch-dot { animation: dot-in .2s ease-out calc(var(--d, 0) * .5s) backwards; }
+@keyframes dot-in { from { opacity: 0; } }
+:where(body:not(.site)) .vchart .ch-dot { transition: opacity .14s; }
 /* which axis is which: a full-height bar beside the left scale (xp), a full-height line beside the right one (total xp) */
 :where(body:not(.site)) .axis-key { position: absolute; top: 0; bottom: 0; z-index: 2; pointer-events: none; border-radius: 2px; }
 :where(body:not(.site)) .axis-key.bar { left: -6px; width: 4px; }
@@ -210,6 +229,7 @@
 :where(body:not(.site)) .ch-hover i:hover { background: color-mix(in oklab, var(--ink) 6%, transparent); }
 :where(body:not(.site)) .ch-months { position: relative; display: block; height: 1.6em; margin-left: var(--c-chart-axis-width); }
 :where(body:not(.site)) .ch-months span { position: absolute; top: 6px; transform: translateX(-50%); white-space: nowrap; }
+:where(body:not(.site)) .ch-months span.end { transform: translateX(-100%); }  /* the last month ends at its place, never past the edge */
 :where(body:not(.site)) .chart-empty { margin-top: 12px; }
 :where(body:not(.site)) .hchart { display: grid; gap: 4px; container-type: inline-size; }
 @container (max-width: 480px) { :where(body:not(.site)) .hb-extra { display: none; } }
@@ -284,6 +304,7 @@
 :where(body:not(.site)) .net-key { width: 12px; height: 12px; overflow: visible; }
 :where(body:not(.site)) .net-key circle { stroke-dasharray: none; }
 :where(body:not(.site)) .net-key .dead circle { stroke-dasharray: 2 2; }
+:where(body:not(.site)) .net-key .deleted circle { stroke-dasharray: 3 2; }
 :where(body:not(.site)) .legend b { color: var(--ink); font-weight: 600; }
 :where(body:not(.site)) .dir-key { width: 30px; height: 10px; }
 :where(body:not(.site)) .dir-key line { stroke-width: 3; }
@@ -315,19 +336,27 @@
 :where(body:not(.site)) .block { transition: border-color var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
 :where(body:not(.site)) .block:hover { border-color: color-mix(in oklab, var(--accent-data) 45%, var(--rule)); }
 
-/* charts draw themselves the first time they scroll into view (dash.js adds .in); without it they are simply there */
-:where(html.js body:not(.site)) .vchart:not(.in) .ch-col i, :where(html.js body:not(.site)) .hchart:not(.in) .hb-track i { transform: scale(0); }
+/* a chart marked to draw in (behave.ts, data-anim) waits hidden until it comes into view (.in), then grows; unmarked ones
+   are simply there. Hidden with no transition, so marking never shows them shrinking */
+:where(html.js body:not(.site)) .vchart[data-anim]:not(.in) .ch-col i, :where(html.js body:not(.site)) .hchart[data-anim]:not(.in) .hb-track i { transform: scale(0); transition: none; }
 :where(body:not(.site)) .vchart .ch-col i { transform-origin: bottom; transition: transform .6s var(--motion-ease), opacity .14s; }
 :where(body:not(.site)) .hchart .hb-track i { transform-origin: left; transition: transform .6s var(--motion-ease); }
-/* stacked marks grow one after the other: the bottom (or first) segment, then the one above it */
-:where(body:not(.site)) .vchart .ch-col.stack i:nth-child(2), :where(body:not(.site)) .hchart .hb-track i:nth-child(2) { transition-delay: .45s; }
-:where(body:not(.site)) .vchart .ch-col.stack i:nth-child(3), :where(body:not(.site)) .hchart .hb-track i:nth-child(3) { transition-delay: .9s; }
+/* stacked marks grow one after the other: the bottom (or first) part, then each one above it in its turn, up to the
+   last (--k is a part's place, set by charts.ts) */
+:where(body:not(.site)) .vchart .ch-col.stack i, :where(body:not(.site)) .hchart .hb-track i { transition-delay: calc(var(--k, 0) * .35s); }
 /* lines wipe in from the left: a dash trick on a non-scaling stroke measures the wrong length and leaves lines cut short */
-:where(html.js body:not(.site)) .lchart:not(.in) .ch-lines, :where(html.js body:not(.site)) .vchart:not(.in) .ch-line { clip-path: inset(0 100% 0 0); }
+:where(html.js body:not(.site)) .lchart[data-anim]:not(.in) .ch-lines, :where(html.js body:not(.site)) .vchart[data-anim]:not(.in) .ch-line { clip-path: inset(0 100% 0 0); transition: none; }
 :where(body:not(.site)) .lchart .ch-lines, :where(body:not(.site)) .vchart .ch-line { clip-path: inset(0 0 0 0); transition: clip-path 1.1s var(--motion-ease), opacity .14s; }
+:where(body:not(.site)) .vchart .ch-line { transition-delay: .7s, 0s; }  /* a line with dots (XP per month): once the dots are in */
+/* Correction points' balance line: drawn in as XP per month's, a little slower (1.5 s), after its dots; its clip reaches
+   past the box so a line along the top or the bottom stays whole */
+:where(html.js body:not(.site)) .qline[data-anim]:not(.in) .ch-line { clip-path: inset(-12px calc(100% + 12px) -12px -12px); }
+:where(body:not(.site)) .qline .ch-line { clip-path: inset(-12px); transition: clip-path 1.5s var(--motion-ease) .7s, opacity .14s; }
+:where(body:not(.site)) .qline .ch-dot { width: 8px; height: 8px; }
 @media (prefers-reduced-motion: reduce) {
-  :where(html.js body:not(.site)) .vchart:not(.in) .ch-col i, :where(html.js body:not(.site)) .hchart:not(.in) .hb-track i { transform: none; }
-  :where(html.js body:not(.site)) .lchart:not(.in) .ch-lines, :where(html.js body:not(.site)) .vchart:not(.in) .ch-line { clip-path: none; }
+  :where(html.js body:not(.site)) .vchart[data-anim]:not(.in) .ch-col i, :where(html.js body:not(.site)) .hchart[data-anim]:not(.in) .hb-track i { transform: none; }
+  :where(html.js body:not(.site)) .lchart[data-anim]:not(.in) .ch-lines, :where(html.js body:not(.site)) .vchart[data-anim]:not(.in) .ch-line { clip-path: none; }
+  :where(html.js body:not(.site)) .vchart[data-anim].in .ch-dot { animation: none; }
   :where(body:not(.site)) .btn:hover, :where(body:not(.site)) .periods > a:hover, :where(body:not(.site)) .toggle-check:hover span { transform: none; }
 }
 
@@ -353,8 +382,8 @@
 :where(body:not(.site)) .chip-live { align-self: flex-start; background: var(--accent); color: var(--on-accent); font: 700 16px/1.3 var(--type-font-display); padding: 7px 12px; margin-bottom: 10px; }
 /* the signature move: a meter wipes in from the left, after the figure starts counting */
 :where(body:not(.site)) .meter i { transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
-:where(html.js body:not(.site)) .module:not(.in) .meter i { clip-path: inset(0 100% 0 0); }
-@media (prefers-reduced-motion: reduce) { :where(html.js body:not(.site)) .module:not(.in) .meter i { clip-path: none; } }
+:where(html.js body:not(.site)) .module[data-anim]:not(.in) .meter i { clip-path: inset(0 100% 0 0); transition: none; }
+@media (prefers-reduced-motion: reduce) { :where(html.js body:not(.site)) .module[data-anim]:not(.in) .meter i { clip-path: none; } }
 @media (min-width: 760px) { :where(body:not(.site)) .modules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 :where(body:not(.site)) th .th-s { display: none; }
 @media (max-width: 599.98px) {
@@ -400,7 +429,7 @@
 :where(body:not(.site)) .hb-label, :where(body:not(.site)) .tl-label { text-align: left; max-width: min(240px, 34vw); }
 :where(body:not(.site)) .timeline, :where(body:not(.site)) .lchart { container-type: inline-size; }
 @container (max-width: 520px) {
-  :where(body:not(.site)) .tl-axis .ch-months span:nth-child(even), :where(body:not(.site)) .lchart .ch-months span:nth-child(even) { visibility: hidden; }
+  :where(body:not(.site)) .tl-axis .ch-months span:nth-last-child(even), :where(body:not(.site)) .lchart .ch-months span:nth-last-child(even) { visibility: hidden; }  /* counted from the last, which stays */
   :where(body:not(.site)) .tl-axis .ch-months span:last-child, :where(body:not(.site)) .lchart .ch-months span:last-child { transform: translateX(-100%); }  /* ends at the edge */
 }
 /* a panel's title with its key on the right */
@@ -417,7 +446,7 @@
 /* a scroll box (a table, a list, the calendar, the skills' bars) fades each of its four edges where more waits
    (behave.ts sets more-t, more, more-l, more-r and the scrollbars' thickness): two solid layers keep the scrollbars out
    of the fade, a table's sticky head stays clear of the top one and its sticky first column of the left one, which
-   starts past it */
+   starts past it; a third keeps the line under the column names whole while the names fade with the rest */
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars) { --fade-t: var(--mask); --fade-b: var(--mask); --fade-l: var(--mask); --fade-r: var(--mask); }
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-t { --fade-t: transparent; }
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more { --fade-b: transparent; }
@@ -425,17 +454,19 @@
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars).more-r { --fade-r: transparent; }
 :where(body:not(.site)) :is(.list, .table-wrap, .cal-scroll, .radar-bars):is(.more-t, .more, .more-l, .more-r) {
   --fade-area: calc(100% - var(--sb-w, 0px)) calc(100% - var(--sb-h, 0px));
-  -webkit-mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
+  --head-line: var(--table-head-line, 0px); /* the line under a table's column names: a solid strip keeps it out of the fade */
+  -webkit-mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
     linear-gradient(to right, var(--mask) var(--stick-w, 0px), var(--fade-l) var(--stick-w, 0px), var(--mask) calc(var(--stick-w, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-r)),
     linear-gradient(to bottom, var(--mask) var(--head-h, 0px), var(--fade-t) var(--head-h, 0px), var(--mask) calc(var(--head-h, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-b));
-  mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
+  mask-image: linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)), linear-gradient(var(--mask), var(--mask)),
     linear-gradient(to right, var(--mask) var(--stick-w, 0px), var(--fade-l) var(--stick-w, 0px), var(--mask) calc(var(--stick-w, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-r)),
     linear-gradient(to bottom, var(--mask) var(--head-h, 0px), var(--fade-t) var(--head-h, 0px), var(--mask) calc(var(--head-h, 0px) + 40px), var(--mask) calc(100% - 56px), var(--fade-b));
-  -webkit-mask-size: var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);
-  mask-size: var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);
-  -webkit-mask-position: right top, left bottom, left top, left top; mask-position: right top, left bottom, left top, left top;
+  -webkit-mask-size: 100% var(--head-line), var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);
+  mask-size: 100% var(--head-line), var(--sb-w, 0px) 100%, 100% var(--sb-h, 0px), var(--fade-area), var(--fade-area);
+  -webkit-mask-position: left calc(var(--head-h, 0px) - var(--head-line)), right top, left bottom, left top, left top;
+  mask-position: left calc(var(--head-h, 0px) - var(--head-line)), right top, left bottom, left top, left top;
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-composite: source-over, source-over, source-in; mask-composite: add, add, intersect; }
+  -webkit-mask-composite: source-over, source-over, source-over, source-in; mask-composite: add, add, add, intersect; }
 /* Everyone you met: a person's details open on click in a floating list (behave.ts places it) */
 :where(body:not(.site)) .who-pop > summary { text-decoration: underline dotted; text-underline-offset: 4px; }
 :where(body:not(.site)) .who-pop[open] > .pop-panel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

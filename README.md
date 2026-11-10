@@ -40,8 +40,8 @@ Six pages. Every choice (period, filters, views) lives in the address, so any vi
   logtime bonus in detail with every bonus so far, your points by source (every source, at nothing too) and per month by
   source (hover a month for its parts). Deductions read as TIGs.
 - **People**: who evaluated you most, everyone you met (or only your teammates), your connections grouped by where
-  they are today and your circle. Accounts that 42 erased are left out of the graphs (a note says how many) and
-  read "Deleted account" in tables; staff get a group of their own. A login in a table or list opens that student's page
+  they are today and your circle. Accounts that 42 erased are a group of their own in your circle, named "Deleted" and
+  never by their old id, are left out of the connections (a note says how many) and read "Deleted account" in tables; staff get a group of their own. A login in a table or list opens that student's page
   on acerezo.top, another independent site, in a new tab.
 - **Campus**: your rhythm (streak, active weeks, your day hour by hour), the seat plan with every computer you used
   (computers outside the clusters noted apart), days and hours (the first year in full, your first day marked), the

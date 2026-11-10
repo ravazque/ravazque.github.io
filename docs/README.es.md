@@ -44,8 +44,9 @@ guardar o compartir.
   de horas en detalle con todos los bonus hasta ahora, tus puntos por origen (todos, también los que están a cero) y por
   mes y origen (pasa el ratón por un mes para ver sus partes). Las deducciones salen como TIGs.
 - **Personas**: quién te evaluó más, todas las personas con las que coincidiste (o solo tus compañeros de equipo), tus
-  conexiones agrupadas por dónde están hoy y tu círculo. Las cuentas que 42 borró no aparecen en los gráficos (una nota dice
-  cuántas) y en las tablas salen como "Cuenta borrada"; el staff tiene su propio grupo. Un login de una tabla o lista
+  conexiones agrupadas por dónde están hoy y tu círculo. Las cuentas que 42 borró forman su propio grupo en tu círculo, con
+  el nombre "Borrada" y nunca con su antiguo id, no aparecen en las conexiones (una nota dice cuántas) y en las tablas salen
+  como "Cuenta borrada"; el staff tiene su propio grupo. Un login de una tabla o lista
   abre la página de ese estudiante en acerezo.top, otro sitio independiente, en una pestaña nueva.
 - **Campus**: tu ritmo (racha, semanas activas, tu día hora a hora), el plano con cada ordenador que usaste (los que
   están fuera de los clústeres, aparte), días y horas (el primer año completo, con tu primer día marcado), el registro

@@ -10,21 +10,23 @@ test("dragging near an edge scrolls that way, faster the closer it gets; the ban
   expect(dragScroll(-1, 72, 900)).toBe(0); // the pointer left the window
 });
 
-test("charts and figures draw in the first time a page is drawn in the session; after that, at once", () => {
-  const seen: Element[] = [];
-  (window as any).IntersectionObserver = class { observe(el: Element) { seen.push(el); } unobserve() {} disconnect() {} };
+test("a page draws in only on its first visit, each part when it comes into view; once left, it shows at once", () => {
+  const watched: Element[] = [];
+  const made: ((entries: any[]) => void)[] = []; // the draw-in's observer is the first made (the section index makes its own)
+  (window as any).IntersectionObserver = class { constructor(cb: any) { made.push(cb); } observe(el: Element) { watched.push(el); } unobserve() {} disconnect() {} };
+  const see = (entries: any[]) => made[0](entries);
   const main = document.createElement("main");
-  main.dataset.page = "web-coalition";
-  main.innerHTML = '<figure class="vchart"></figure>';
-  settle(main);
-  expect(seen.length).toBe(1);
-  expect(main.querySelector(".vchart")!.classList.contains("in")).toBe(false); // waits to be seen, then draws in
-  main.innerHTML = '<figure class="vchart"></figure>'; // a filter changed: the page drawn again
-  settle(main);
-  expect(seen.length).toBe(1);
-  expect(main.querySelector(".vchart")!.classList.contains("in")).toBe(true);
-  main.dataset.page = "web-campus"; // another page, for the first time
-  main.innerHTML = '<div class="module"></div>';
-  settle(main);
-  expect(seen.length).toBe(2);
+  const draw = (page: string, html: string) => { main.dataset.page = page; main.innerHTML = html; settle(main); return [...main.querySelectorAll(".vchart, .module")] as HTMLElement[]; };
+  const two = '<section id="a"><figure class="vchart"></figure></section><section id="b"><figure class="vchart"></figure></section>';
+  let [a, b] = draw("web-evaluations", two);
+  expect(watched.filter((el) => el.matches(".vchart"))).toEqual([a, b]); // first visit: both wait to be seen, hidden only because they are marked
+  expect(a.dataset.anim && !a.classList.contains("in")).toBeTruthy();
+  see([{ isIntersecting: true, target: a }]); // you scrolled to the first one
+  expect(a.classList.contains("in")).toBe(true);
+  [a, b] = draw("web-evaluations", two); // a filter changed on the same visit
+  expect(a.dataset.anim).toBeUndefined(); // seen: at once, no draw-in again
+  expect(b.dataset.anim).toBeTruthy(); // not seen yet: still to come
+  draw("web-campus", '<section id="c"><div class="module"></div></section>'); // another page: Evaluations counts as seen
+  [a, b] = draw("web-evaluations", two);
+  expect([a.dataset.anim, b.dataset.anim, a.classList.contains("in"), b.classList.contains("in")]).toEqual([undefined, undefined, true, true]);
 });

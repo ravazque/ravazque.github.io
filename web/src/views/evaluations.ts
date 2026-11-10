@@ -1,7 +1,7 @@
-// Evaluations: what you give back, received and given over time, when and how long, statistics, feedback, correction
-// points and the full log.
+// Evaluations: what you give back and by milestone, the full log, cancelled evaluations, correction points, feedback,
+// and received and given over time, when and how long.
 import type { Fmt } from "../fmt";
-import { GOOD, BAD, S1, S2, legend, lines, vbars } from "../lib/charts";
+import { GOOD, BAD, S1, S2, legend, lines, qline, vbars } from "../lib/charts";
 import { ACCENT, SLATE, heat } from "../lib/graphs";
 import { ARROW, avatar, badge, esc, tipAttr } from "../lib/h";
 import { facts, table } from "../lib/table";
@@ -85,6 +85,7 @@ export function evaluations(pg: Page): Section[] {
     { head: `<h2>${esc(f.t("stats.group_section"))} ${info(f.t("stats.group_note"))}</h2>` }) });
 
   const sw = pg.seg("role", [["received", f.t("role.received")], ["given", f.t("role.given")]], role, f.t("log.role_label"), "over-time");
+  const reportDay = pg.asOf ? Date.parse(`${pg.asOf}T12:00:00Z`) : undefined; // the cumulative lines carry on to it
   // the months up to the report's, the quiet ones as zero
   const months: string[] = W.months.length ? monthsBetween(W.months[0], [W.months[W.months.length - 1], pg.asOf.slice(0, 7)].sort()[1]) : [];
   const at = (vals: number[]) => months.map((x) => vals[W.months.indexOf(x)] || 0);
@@ -100,9 +101,9 @@ export function evaluations(pg: Page): Section[] {
     headBlock("marks", f.t("received.marks_title"), legend(roles), vbars(f, bins.map(([b]) => b), [[f.t("role.received"), count(D.received), S1], [f.t("role.given"), count(D.given), S2]],
       { label: f.t("received.marks_title"), fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
     headBlock("cum-evals", f.t("received.cum_title"), legend(roles), lines(f, [[f.t("role.received"), W.cum_received, S1], [f.t("role.given"), W.cum_given, S2]],
-      { label: f.t("received.cum_title"), emptyText: f.t("empty.period") })),
+      { label: f.t("received.cum_title"), emptyText: f.t("empty.period"), to: reportDay })),
     headBlock("cum-out", f.t("received.cum_out_title"), legend(roles), lines(f, [[f.t("received.out_received"), W.cum_out_received, S1], [f.t("received.out_given"), W.cum_out_given, S2]],
-      { label: f.t("received.cum_out_title"), emptyText: f.t("empty.period") }))),
+      { label: f.t("received.cum_out_title"), emptyText: f.t("empty.period"), to: reportDay }))),
   { head: `<div class="panel-head"><h2>${esc(f.t("over_time.title"))}</h2>${sw}</div>`, lede: esc(lede) }) });
 
   const dp = D.insights?.evaluations;
@@ -168,19 +169,15 @@ export function evaluations(pg: Page): Section[] {
       rated.length ? f.t("feedback.low_note", { low: low.length, ratings: f.plural(rated.length, "count.ratings") }) : "")),
   ) });
 
-  const CP = D.correction_points;
-  out.push({ id: "points", nav: f.t("nav.points"), html: section("points", f.t("points.title"), cols(
-    block("points", lines(f, [[f.t("points.balance"), CP.series, S1]], { label: f.t("points.balance_title"), emptyText: f.t("empty.points") }), f.t("points.balance_title")),
-    block("table-reasons", `<div class="table-wrap">${table(f, [{ k: "reason", t: f.t("col.reason") }, { k: "count", t: f.t("col.times"), num: true }, { k: "sum", t: f.t("col.net"), num: true }],
-      Object.entries(CP.reasons || {}).map(([reason, v]: [string, any]) => ({ reason, ...v })), { label: f.t("points.reasons_title"), sort: ["count", -1] })}</div>`, f.t("points.reasons_title"))),
-  { lede: esc(CP.series.length ? f.t("points.lede", { earned: CP.earned, spent: CP.spent, max: CP.max }) : f.t("empty.points")) }) });
+  out.push(pointsSection(pg));
 
   const cancelled = cancelledSection(pg);
   if (cancelled) out.push(cancelled);
   out.push(logSection(pg));
-  const fb = out.findIndex((s) => s.id === "feedback");
-  if (fb >= 0) out.push(...out.splice(fb, 1)); // Feedback closes the page, under the log
-  return out;
+  // the page's order (owner, 2026-11-09): what you give back and by milestone, then the log, what was cancelled and the
+  // correction points it is read from, the feedback, and over time and when at the bottom
+  const ORDER = ["community", "by-group", "log", "cancelled", "points", "feedback", "over-time", "when"];
+  return out.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
 }
 
 /** The projects you corrected in this period: how often, how many people, the marks you gave. */
@@ -223,7 +220,7 @@ export const lateText = (f: Fmt, min: number) => f.t("log.late", { time: min < 6
 
 /** Work experience evaluations (company mid and final evaluations, peer video) are set by the school, not booked
  * between students: no booking lead or lateness for them. */
-export const workExperience = (e: any) => /^(42cursus-)?work-experience-i/.test(e.slug || "") || /^work experience/i.test(e.project || "");
+export const workExperience = (e: any) => /^(42cursus-)?work-experience-i/.test(e.slug || "") || /^work (experience|exp\.)/i.test(e.project || "");
 
 /** No lateness in a work experience evaluation, also in reports saved before the server stopped working it out. */
 export const withoutWorkLate = (e: any) => (workExperience(e)
@@ -247,9 +244,63 @@ export function teamCell(f: Fmt, e: any): string {
   const sub = (c: any) => [seatText(f, c, e.other_host_checked), c.late_min ? lateText(f, c.late_min) : ""].filter(Boolean).join(" · ");
   const rest = (c: any) => [c === lead ? f.t("log.leader") : "", sub(c)].filter(Boolean).join(" · ");
   return `<details class="pop who-pop team-pop" data-float><summary>${erased(lead.login) ? "" : avatar(lead)}${shownLogin(f, lead.login, false, false)}`
-    + ` <span class="more">${esc(f.t("log.team_more", { n: cs.length - 1 }))}</span></summary><div class="pop-panel"><b>${esc(e.team || f.t("col.evaluated"))}</b>`
+    + ` <span class="more">${esc(f.t("common.plus_more", { n: cs.length - 1 }))}</span></summary><div class="pop-panel"><b>${esc(e.team || f.t("col.evaluated"))}</b>`
     + `<ul>${cs.map((c) => `<li>${shownLogin(f, c.login, false)}${rest(c) ? ` · ${esc(rest(c))}` : ""}</li>`).join("")}</ul></div></details>`
     + (sub(lead) ? `<span class="sub">${esc(sub(lead))}</span>` : ""); // the leader's seat and lateness under the line
+}
+
+/** The Mondays from one "YYYY-MM-DD" to another, both included. */
+const weeksBetween = (from: string, to: string) => {
+  const out: string[] = [];
+  for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`); t += 7 * 864e5) out.push(new Date(t).toISOString().slice(0, 10));
+  return out;
+};
+
+/** Correction points: the balance at the end of each month, week by week when the chart is enlarged (the weekly one only
+ * shows in the zoom), built from the sums (what the period started with is today's balance less its net; the Piscine
+ * starts at 0); each tip says what came in and went out by reason. Then every reason. Reports saved before the months
+ * were kept keep the old line. */
+export function pointsSection(pg: Page): Section {
+  const f = pg.f, D = pg.D, CP = D.correction_points;
+  // a report saved before the months were kept: the balance at the end of each month from its own line, no reasons yet
+  const monthEnds = () => {
+    const last = new Map<string, number>();
+    for (const p of CP.series || []) last.set(new Date(p.x).toISOString().slice(0, 7), p.y);
+    const keys = last.size ? monthsBetween([...last.keys()][0], [[...last.keys()].pop()!, pg.asOf.slice(0, 7)].sort()[1]) : [];
+    let carry = 0;
+    const values = keys.map((k) => (carry = last.get(k) ?? carry));
+    return qline(f, keys.map((k) => f.monthLabel(k)), values, { label: f.t("points.qline_title"), color: S1, emptyText: f.t("empty.points"),
+      tips: keys.map((k, i) => [f.monthLabel(k), "---", f.t("points.q_balance", { n: f.num(values[i]) })].join("\n")) });
+  };
+  let chart = `<div class="block" data-panel="points"><h3>${esc(f.t("points.qline_title"))} ${info(f.t("points.refresh_note"))}</h3>${monthEnds()}</div>`;
+  if (CP.by_month) {
+    const move = (name: string, v: number) => `${name} ${v > 0 ? "+" : "−"}${f.num(Math.abs(v))}`;
+    // one line of balances: every key from the first to the last (the empty ones at nothing), a tip each
+    const series = (rows: any[], label: (k: string) => string, head: (k: string) => string) => {
+      let bal = pg.period === "piscine" ? 0 : (D.profile?.correction_point ?? 0) - rows.reduce((s, r) => s + r.earned - r.spent, 0);
+      const balances = rows.map((r) => (bal += r.earned - r.spent));
+      const tips = rows.map((r, i) => {
+        const rs = Object.entries(r.reasons || {}) as [string, number][];
+        return [head(r.k), "---", f.t("points.q_earned", { n: f.num(r.earned) }), ...rs.filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([n, v]) => move(n, v)),
+          f.t("points.q_spent", { n: f.num(r.spent) }), ...rs.filter(([, v]) => v < 0).sort((a, b) => a[1] - b[1]).map(([n, v]) => move(n, v)),
+          "---", f.t("points.q_balance", { n: f.num(balances[i]) })].join("\n");
+      });
+      return qline(f, rows.map((r) => label(r.k)), balances, { label: f.t("points.qline_title"), color: S1, tips, emptyText: f.t("empty.points") });
+    };
+    const fill = (got: any[], keys: (a: string, b: string) => string[], name: string) => {
+      const by = new Map(got.map((r) => [r[name], r]));
+      return got.length ? keys(got[0][name], got[got.length - 1][name]).map((k) => ({ k, earned: 0, spent: 0, reasons: {}, ...by.get(k) })) : [];
+    };
+    const months = fill(CP.by_month, monthsBetween, "m"), weeks = fill(CP.by_week || [], weeksBetween, "w");
+    const shortDay = (k: string) => `${+k.slice(8, 10)} ${f.months[+k.slice(5, 7) - 1]}`;
+    chart = `<div class="block" data-panel="points"><h3><span class="zoom-hide">${esc(f.t("points.qline_title"))}</span><span class="zoom-only">${esc(f.t("points.wline_title"))}</span> ${info(f.t("points.qline_note"))}</h3>`
+      + `<div class="zoom-hide">${series(months, (k) => f.monthLabel(k), (k) => f.monthLabel(k))}</div>`
+      + `<div class="zoom-only">${series(weeks, shortDay, (k) => f.t("points.w_label", { d: f.day(k) }))}</div></div>`;
+  }
+  return { id: "points", nav: f.t("nav.points"), html: section("points", f.t("points.title"), cols(chart,
+    block("table-reasons", `<div class="table-wrap">${table(f, [{ k: "reason", t: f.t("col.reason") }, { k: "count", t: f.t("col.times"), num: true }, { k: "sum", t: f.t("col.net"), num: true }],
+      Object.entries(CP.reasons || {}).map(([reason, v]: [string, any]) => ({ reason, ...v })), { label: f.t("points.reasons_title"), sort: ["count", -1] })}</div>`, f.t("points.reasons_title"))),
+  { lede: esc(CP.series.length ? f.t("points.lede", { earned: CP.earned, spent: CP.spent, max: CP.max }) : f.t("empty.points")) }) };
 }
 
 /** Cancelled evaluations, read from your correction points (42 deletes the evaluation; core's correction_points
@@ -289,7 +340,8 @@ export function cancelledSection(pg: Page): Section | null {
     + card("", f.t("cancel.theirs"), theirs, f.t("cancel.theirs_sub"), lines("you", f.t("cancel.theirs_tip", { n: theirs })))
     + card("", f.t("cancel.absent"), absent, f.t("cancel.absent_sub"), lines("absent", f.t("cancel.absent_tip", { n: absent }), absentProject))
     + "</div>";
-  return { id: "cancelled", nav: f.t("nav.cancelled"), html: section("cancelled", "", block("cancel-kpis", cards), { head: `<h2>${esc(f.t("cancel.title"))} ${info(f.t("cancel.how"))}</h2>` }) };
+  // in cols, so that --charts-top sets the title's line → the cards
+  return { id: "cancelled", nav: f.t("nav.cancelled"), html: section("cancelled", "", cols(block("cancel-kpis", cards)), { head: `<h2>${esc(f.t("cancel.title"))} ${info(f.t("cancel.how"))}</h2>` }) };
 }
 
 /** Who marked whom absent, as [label, tip]. The API's `truant` is the one who reported the absence, the side that was

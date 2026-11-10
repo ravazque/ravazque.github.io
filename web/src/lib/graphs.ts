@@ -225,7 +225,7 @@ export function pack(nodes: Bubble[], cell: Cell, giveUp = false, sp: Spacing = 
 export type Conn = { login: string; name?: string | null; group: string; received: number; given: number; last?: string | null };
 
 /** Connections: one bubble per person (two in "mix", joined by a line), sized by evaluations, grouped by rank. */
-export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number; href: (l: string) => string }): string {
+export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number; href: (login: string, side: string) => string; label?: (login: string) => string | null }): string {
   const nodes: Bubble[] = [];
   for (const p of people) for (const d of mode === "mix" ? ["received", "given"] : [mode]) {
     const c = (p as any)[d] as number;
@@ -259,10 +259,11 @@ export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number
   [...cells.keys()].forEach((g, gi) => nodes.filter((n) => n.group === g).sort((a, b) => b.r - a.r).forEach((n, k) => order.set(n, [gi, k])));
   const marks = nodes.map((n) => {
     const p = n.p;
-    const tip = [p.login, p.name, f.t("connections.tip_counts", { received: p.received || 0, given: p.given || 0 }), f.t(`groups.${p.group}`),
+    const who = o.label ? o.label(p.login) : p.login; // null: a deleted account, named by its group alone
+    const tip = [who, who === null ? null : p.name, f.t("connections.tip_counts", { received: p.received || 0, given: p.given || 0 }), f.t(`groups.${p.group}`),
       p.last ? f.t("connections.tip_last", { when: f.day(p.last) }) : null].filter(Boolean).join("\n");
     const [g, i] = order.get(n)!;
-    return `<a href="${esc(o.href(p.login))}" class="bubble ${n.dir} net-node ${netClass(p.group)}" style="--g:${g};--i:${i}" data-cell aria-label="${esc(tip)}" data-tip="${esc(tip)}"`
+    return `<a href="${esc(o.href(p.login, n.dir))}" class="bubble ${n.dir} net-node ${netClass(p.group)}" style="--g:${g};--i:${i}" data-cell aria-label="${esc(tip)}" data-tip="${esc(tip)}"`
       + ` transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})"><title>${esc(tip)}</title><circle class="core" r="${n.r.toFixed(1)}"/></a>`;
   }).join("");
   return `<svg class="graph" viewBox="0 0 ${o.width} ${h}" style="aspect-ratio:${o.width}/${h}"${roving(f, f.t("connections.title"))}>`
@@ -270,7 +271,7 @@ export function bubbles(f: Fmt, people: Conn[], mode: string, o: { width: number
 }
 
 export const netClass = (g: string) =>
-  ({ me: "me", "outer-core": "outer", alumni: "alumni", blackholed: "dead", staff: "staff" } as Record<string, string>)[g] || ((g || "").startsWith("rank-") ? "rank" : "none");
+  ({ me: "me", "outer-core": "outer", alumni: "alumni", blackholed: "dead", staff: "staff", deleted: "deleted" } as Record<string, string>)[g] || ((g || "").startsWith("rank-") ? "rank" : "none");
 
 function trim(x1: number, y1: number, cx: number, cy: number, by: number) {
   const dx = cx - x1, dy = cy - y1, d = Math.hypot(dx, dy) || 1;
@@ -280,7 +281,8 @@ function trim(x1: number, y1: number, cx: number, cy: number, by: number) {
 export type Net = { nodes: { login: string; group: string }[]; links: { source: string; target: string; count: number }[] };
 
 /** Your circle: you in the centre, contacts on a ring ordered by group; arrows go from corrector to evaluated. */
-export function ring(f: Fmt, net: Net, o: { width: number; height: number; compact: boolean; uid?: string }): string {
+export function ring(f: Fmt, net: Net, o: { width: number; height: number; compact: boolean; uid?: string; label?: (login: string) => string }): string {
+  const show = o.label || ((l: string) => l);
   const pairs = new Map<string, { a: string; b: string; ab: number; ba: number }>();
   for (const l of net.links || []) {
     const [a, b] = [l.source, l.target].sort();
@@ -319,7 +321,7 @@ export function ring(f: Fmt, net: Net, o: { width: number; height: number; compa
     const [x1, y1] = trim(p.x, p.y, mx, my, p.r + 1), [x2, y2] = trim(q.x, q.y, mx, my, q.r + 1);
     const both = c.ab && c.ba;
     const ends = (c.ab ? ` marker-end="url(#${marker})"` : "") + (c.ba ? ` marker-start="url(#${marker})"` : "");
-    const tip = [c.ab ? `${c.a} → ${c.b} ×${c.ab}` : "", c.ba ? `${c.b} → ${c.a} ×${c.ba}` : ""].filter(Boolean).join(" · ");
+    const tip = [c.ab ? `${show(c.a)} → ${show(c.b)} ×${c.ab}` : "", c.ba ? `${show(c.b)} → ${show(c.a)} ×${c.ba}` : ""].filter(Boolean).join(" · ");
     const d = `M${x1.toFixed(1)},${y1.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`;
     const [out, back] = c.a === meLogin ? [c.ab, c.ba] : [c.ba, c.ab];
     const dir = meLogin && (c.a === meLogin || c.b === meLogin) ? ` data-dir="${out && back ? "both" : out ? "out" : "in"}"` : "";
@@ -330,14 +332,14 @@ export function ring(f: Fmt, net: Net, o: { width: number; height: number; compa
   const marks: string[] = [], centre: string[] = [];
   for (const n of at.values()) {
     const d = degree[n.login] || 0;
-    const tip = n.group === "me" ? n.login : [n.login, f.t(`groups.${n.group}`), f.t("network.tip", { count: d, n: d })].join(" · ");
+    const tip = n.group === "me" ? n.login : [show(n.login), f.t(`groups.${n.group}`), f.t("network.tip", { count: d, n: d })].join(" · ");
     let text = "";
     const meText = n.group === "me" ? `<text y="${(n.r + 18).toFixed(1)}" text-anchor="middle">${esc(n.login)}</text>` : "";
     if (n.group !== "me" && !o.compact) {
       const anchor = Math.cos(n.a) > 0.15 ? "start" : Math.cos(n.a) < -0.15 ? "end" : "middle";
       // clear of its node: under it the cap height, over it the descenders also need room
       const sin = Math.sin(n.a);
-      text = `<text x="${((n.r + 7) * Math.cos(n.a)).toFixed(1)}" y="${((n.r + 7) * sin + 4 + 6 * sin).toFixed(1)}" text-anchor="${anchor}">${esc(n.login)}</text>`;
+      text = `<text x="${((n.r + 7) * Math.cos(n.a)).toFixed(1)}" y="${((n.r + 7) * sin + 4 + 6 * sin).toFixed(1)}" text-anchor="${anchor}">${esc(show(n.login))}</text>`;
     }
     // the tip opens outwards from the centre, so it never covers the rest of the circle
     const side = n.group === "me" ? "" : ` data-angle="${((n.a * 180) / Math.PI).toFixed(1)}"`;

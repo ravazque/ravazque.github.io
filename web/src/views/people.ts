@@ -52,10 +52,8 @@ export function whoDetails(f: Page["f"], projs: string[], tip: string): string {
 }
 
 /** Said in a title's ⓘ where erased accounts were left out: for privacy the panel is drawn with the people still there. */
-const erasedNote = (f: Page["f"], n: number) => (n ? f.plural(n, "who.erased_note") : "");
 
 const staffLogins = (pg: Page) => new Set<string>(pg.D.people.filter((p: any) => p.staff).map((p: any) => p.login));
-const noErased = (e: any) => ({ ...e, correcteds: (e.correcteds || []).filter((c: any) => !erased(c.login)) });
 
 /** Everyone met with their group today; staff and deleted accounts (no cursus) get a group of their own. */
 function connections(pg: Page): any[] {
@@ -121,26 +119,25 @@ export function people(pg: Page): Section[] {
   { head: `<div class="panel-head"><h2>${esc(f.t("who.people_title"))} ${info(f.t("who.people_note"))}</h2>${metSwitch}</div>` }) });
 
   const mode = pg.q("mode", "received", ["received", "given", "mix"]);
+  // deleted accounts stay out of Connections (a note says how many); Your circle keeps them, as a group of their own
   const conn = connections(pg).filter((c: any) => !erased(c.login));
   const connGone = (pg.v.connections || []).length - conn.length;
-  const href = (login: string) => pg.url("evaluations", { q: login, log: "received" }) + "#log";
-  const wide = bubbles(f, conn, mode, { width: 1200, href });
+  const href = (login: string, side: string) => pg.url("evaluations", { q: login, log: side === "given" ? "given" : "received" }) + "#log"; // the log on the bubble's side
+  const label = (login: string) => (erased(login) ? null : login), ringLabel = (login: string) => (erased(login) ? f.t("who.erased_name") : login);
+  const wide = bubbles(f, conn, mode, { width: 1200, href, label });
   const sw = pg.seg("mode", [["received", f.t("connections.mode_received")], ["given", f.t("connections.mode_given")], ["mix", f.t("connections.mode_mix")]], mode, f.t("connections.mode_label"), "connections");
   out.push({ id: "connections", nav: f.t("nav.connections"), html: section("connections", "", cols(`<div class="block" data-panel="connections">`
-    + (wide ? `<div class="graph-panel"><div class="graph-wide">${wide}</div><div class="graph-mid">${bubbles(f, conn, mode, { width: 840, href })}</div>`
-      + `<div class="graph-narrow">${bubbles(f, conn, mode, { width: 420, href })}</div></div>`
+    + (wide ? `<div class="graph-panel"><div class="graph-wide">${wide}</div><div class="graph-mid">${bubbles(f, conn, mode, { width: 840, href, label })}</div>`
+      + `<div class="graph-narrow">${bubbles(f, conn, mode, { width: 420, href, label })}</div></div>`
       : `<p class="note">${esc(f.t("connections.empty"))}</p>`) + "</div>"),
-  { head: `<div class="panel-head"><h2>${esc(f.t("connections.title"))} ${info([f.t("stats.group_note"), erasedNote(f, connGone)].filter(Boolean).join("\n"))}</h2>${sw}</div>` }) });
+  { head: `<div class="panel-head"><h2>${esc(f.t("connections.title"))} ${info([f.t("stats.group_note"), connGone ? f.plural(connGone, "who.erased_note") : ""].filter(Boolean).join("\n"))}</h2>${sw}</div>` }) });
 
   let net = pg.v.network || {};
   if (!net.nodes) net = net[pg.period] || {};
-  let netGone = 0;
-  if (net.nodes?.length) {
-    netGone = net.nodes.filter((n: any) => erased(n.login)).length;
+  if (net.nodes?.length) { // deleted accounts stay, in their own group; staff get theirs
     const staff = staffLogins(pg);
-    net = { ...net, nodes: net.nodes.filter((n: any) => !erased(n.login)).map((n: any) => (staff.has(n.login) && n.group !== "me" ? { ...n, group: "staff" } : n)),
-      links: (net.links || []).filter((l: any) => !erased(l.source) && !erased(l.target)) };
-    net = circleLinks(net, D.profile.login, D.given.map(noErased), D.received.filter((e: any) => !erased(e.corrector?.login)));
+    net = { ...net, nodes: net.nodes.map((n: any) => (n.group === "me" ? n : erased(n.login) ? { ...n, group: "deleted" } : staff.has(n.login) ? { ...n, group: "staff" } : n)) };
+    net = circleLinks(net, D.profile.login, D.given, D.received);
   }
   const has = !!net.links?.length;
   const pairs = new Map<string, Set<string>>();
@@ -153,7 +150,7 @@ export function people(pg: Page): Section[] {
   const arrow: Record<string, string> = { one: '<line x1="1" y1="5" x2="25" y2="5"/><path d="M29 5 L22 1.5 L22 8.5 Z"/>',
     both: '<line x1="4" y1="5" x2="25" y2="5"/><path d="M1 5 L8 1.5 L8 8.5 Z"/><path d="M29 5 L22 1.5 L22 8.5 Z"/>' };
   const keyGroups: [string, string][] = [["me", f.t("network.key_me")], ["rank", f.t("network.key_rank")], ["outer", f.t("groups.outer-core")], ["alumni", f.t("groups.alumni")],
-    ["dead", f.t("groups.blackholed")], ["staff", f.t("groups.staff")], ["none", f.t("groups.no-cursus")]];
+    ["dead", f.t("groups.blackholed")], ["staff", f.t("groups.staff")], ["none", f.t("groups.no-cursus")], ["deleted", f.t("groups.deleted")]];
   const count: Record<string, number> = {};
   for (const n of net.nodes || []) if (n.group !== "me") count[netClass(n.group)] = (count[netClass(n.group)] || 0) + 1;
   const row = (key: string, label: string, n = "") => `<li>${key}<span>${esc(label)}</span><b>${n}</b></li>`;
@@ -166,7 +163,7 @@ export function people(pg: Page): Section[] {
       + (d === "both" ? '<line class="gap" x1="1" y1="5" x2="29" y2="5"/>' : "") + "</svg>", f.t(`network.dir_${d}`))).join("") + "</ul>";
   out.push({ id: "circle", nav: f.t("nav.network"), html: section("circle", "", cols(`<div class="block" data-panel="network">`
     + (has ? `<div class="net-wrap"><aside class="net-side" aria-label="${esc(f.t("network.key_who"))}">${side}</aside><div class="net-plot graph-panel">`
-      + `<div class="graph-wide">${ring(f, net, { width: 720, height: 640, compact: false, uid: "w" })}</div><div class="graph-narrow">${ring(f, net, { width: 400, height: 400, compact: true, uid: "n" })}</div></div></div>`
-      : `<p class="note">${esc(f.t("network.empty"))}</p>`) + "</div>"), { head: `<h2>${esc(f.t("network.title"))}${netGone ? ` ${info(erasedNote(f, netGone))}` : ""}</h2>`, lede: esc(f.t("network.lede")) }) });
+      + `<div class="graph-wide">${ring(f, net, { width: 720, height: 640, compact: false, uid: "w", label: ringLabel })}</div><div class="graph-narrow">${ring(f, net, { width: 400, height: 400, compact: true, uid: "n", label: ringLabel })}</div></div></div>`
+      : `<p class="note">${esc(f.t("network.empty"))}</p>`) + "</div>"), { head: `<h2>${esc(f.t("network.title"))}</h2>`, lede: esc(f.t("network.lede")) }) });
   return out;
 }

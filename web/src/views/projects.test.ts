@@ -94,3 +94,19 @@ test("a widget starts at full width, and keeps the half width the student chose"
   expect(widgets(pg, [{ page: "coalition", id: "bonus" }])[0].html).toContain('class="widget wide"');
   expect(widgets(pg, [{ page: "coalition", id: "bonus", wide: false }])[0].html).toContain('class="widget half"');
 });
+
+test("the card names who you are beside your name, and lists coalition, milestone, grade, track and groups as tags", () => {
+  const f = new Fmt("en");
+  const pg = (grade: string | null, more: any = {}) => new Page(f, { period: "student", report: {
+    profile: { login: "peer01", name: "Pat Peer", groups: ["Mentor"], coalition: { name: "Zefiria", color: "#e39f0b", rank: 3 }, ...more },
+    extras: { ...extras, titles: [], cursus: [{ name: "42cursus", level: 9.5, grade }], quests: [{ name: "Common Core Rank 02", validated: "2026-01-01" }] },
+    summary: { validated: 0, projects: 0, attempts: 0, retries: 0, received: 0, given: 0 }, logtime: { total_seconds: 0, days_present: 0 }, projects: [] }, all_projects: [] } as any, "home", {});
+  const student = profile(pg(null))[0].html;
+  expect(student).toContain(`<span class="pf-status">${f.t("profile.st_student")}</span>`);
+  expect(student).toContain('<span class="badge">Zefiria</span>'); // its name alone: no dot, no place
+  expect(student).not.toContain(f.t("home.nth", { n: 3 }));
+  expect(student).toContain(`<span class="badge">${f.t("groups.rank-03")}</span>`);
+  expect(student).toContain('<span class="badge">Mentor</span>');
+  expect(profile(pg("Transcender"))[0].html).toContain(`<span class="pf-status">${f.t("profile.st_outer")}</span>`);
+  expect(profile(pg("Alumni"))[0].html).toContain(`<span class="pf-status">${f.t("profile.st_alumni")}</span>`);
+});

@@ -23,12 +23,30 @@ export const PATHS: Record<PageKey, string> = {
 };
 export const KINDS = ["nice", "rigorous", "interested", "punctuality"];
 
+/** A work experience's part as the pages write it: "Work Experience II - Company Final Evaluation" → "Work Exp. II - …";
+ * the whole one keeps its name ("Work Experience II") (owner, 2026-11-10). */
+const WORK = /^Work Experience((?: [IVX]+)?)\s+-\s+/;
+function workNames(x: any): any {
+  if (typeof x === "string") return WORK.test(x) ? x.replace(WORK, "Work Exp.$1 - ") : x;
+  if (Array.isArray(x)) return x.map(workNames);
+  if (x && typeof x === "object") {
+    const out: any = {};
+    for (const k in x) out[workNames(k)] = workNames(x[k]);
+    return out;
+  }
+  return x;
+}
+const shortened = new WeakMap<View, View>();
+
 export class Page {
   readonly D: Rep;
   readonly period: string;
-  constructor(readonly f: Fmt, readonly v: View, readonly key: PageKey, readonly params: Record<string, string>) {
-    this.D = v.report;
-    this.period = v.period;
+  readonly v: View;
+  constructor(readonly f: Fmt, v: View, readonly key: PageKey, readonly params: Record<string, string>) {
+    if (!shortened.has(v)) shortened.set(v, workNames(v)); // once per view: a copy, the view as it came stays as it is
+    this.v = shortened.get(v)!;
+    this.D = this.v.report;
+    this.period = this.v.period;
   }
 
   get light() { return this.v.light === true; }

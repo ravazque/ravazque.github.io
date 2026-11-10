@@ -1,8 +1,9 @@
 /* ============================================================================================================
    SPACING AND LINES YOU CAN TUNE BY HAND
-   One part per page (Profile's Activity, Projects, Evaluations, Coalition, People, Campus). Each starts with the page's own lines (its
-   big title, the section index, the footer), then one block per section, top to bottom, with every distance and
-   every line of that section, each on its own line: change one and nothing else moves. Values are in px.
+   One part per page: Profile (your card, the timeline, the widgets, the picker), Projects, Evaluations, Coalition, People,
+   Campus. Each starts with the page's own lines (its big title, the section index, the footer), then one block per
+   section, in the page's order top to bottom, with every distance and every line of that section, each on its own line:
+   change one and nothing else moves. Values are in px. The very top (:root) holds what every page shares.
 
    See a change at once: keep make dev-live running and open http://localhost:5173 (https://localhost only changes
    after make dev-build or make dev-real).
@@ -16,11 +17,12 @@
    Distances, top to bottom inside a section:
      --page-top         the section index (the links under the page title) → the first section's title
      --sections         the section above → this section's title
-     --title-gap        the title's line → the text under it (its description, a note, a row of facts or the filters)
-     --charts-top       the title's line → the charts or tables, when nothing comes between them
-     --info-gap         the description (the grey text), or its line when it has one → what comes under it
-     --info-line        a line under the description (its thickness; no line unless the section lists it); --info-pad is
-                        the space between the description and that line
+     --title-gap        the title's line → the text under it (its description, a note, a row of facts or the filters).
+                        A description or a note between two lines sits halfway: the same --title-gap goes under it, to
+                        its own line or to the next chart's line, so it can't drift off centre
+     --charts-top       the title's line → the charts or tables (the lines over them), when nothing comes between them
+     --info-line        a line under the description (its thickness; no line unless the section lists it)
+     --info-gap         that line → what comes under it (only where the description has its own line)
      --facts-gap        a row of facts, a note or the filters → the charts or the table under them
      --charts-y         two charts or tables one under the other (on phones every chart is); --charts-y-laptop, when
                         listed, is the same on laptops
@@ -49,7 +51,7 @@
   --block-line: 2px;
   --block-pad: 12px;
   --kpi-line: 2px;
-  --kpi-pad: 10px;
+  --kpi-pad: var(--kpi-pad-all, 10px);
   --axis-line: 2px;
   --table-head-line: 2px;
   --table-row-line: 1px;
@@ -59,11 +61,26 @@
   --divider-line: 1px;
   --indent-line: 2px;
   --foot-line: 4px;
+  --sections-all-laptop: 65px; /* every page's section above → the next section's title, on laptops, one value for all.
+                                  Write initial to turn it off: each section then takes its own --sections-laptop (Where
+                                  you sat always does) */
+  /* the general distances: one value for every section that has that kind of distance. Write initial in any of them to
+     turn it off: each section then takes its own value again (the second one inside var(…) in its block) */
+  --table-gap-all: 10px;       /* a block's title → its table or list */
+  --chart-gap-key-all: 32px;   /* a block's title → its chart, when a key (or a figure) sits beside the title */
+  --chart-gap-all: 20px;       /* a block's title → its chart, with nothing beside the title */
+  --grid-gap-all: 30px;        /* a block's title → its grid or calendar (weekday × hour, every day) */
+  --filters-gap-all: 24px;     /* the filters or the search → the table under them (Projects, Evaluation log, Everyone you met) */
+  --kpi-pad-all: 10px;         /* the line over each figure → its name (Contribution, Cancelled evaluations, Rhythm, Logtime bonus) */
   --bar-max: 96px;             /* the widest a chart's bar gets: few bars grow up to this, many get thinner on their own (a section can set its own) */
   --title-tools-gap: 14px;     /* a title (or its ⓘ) → its first button: star, move, size, ×, enlarge; on every page and widget */
   --title-tools-between: 9px;  /* between those buttons */
   --title-count-color: color-mix(in oklab, var(--muted) 55%, transparent);  /* "· 90 evaluations" beside a title: a very soft grey */
   --title-count-size: .7em;    /* its size, against the title's (.5em: half) */
+  --status-box-line: 1px;      /* the box around "Reading the 42 API…" while a page loads (0: none) */
+  --status-box-color: var(--rule); /* its frame's colour */
+  --status-box-pad-y: 12px;    /* the room inside it, above and below */
+  --status-box-pad-x: 16px;    /* the room inside it, left and right */
   --title-tools-off-dark: 50%;  /* the frame of × (remove a widget): the charts' red darkened this much, 0% none, 100% black */
 }
 
@@ -84,7 +101,7 @@ main[data-page="web-home"] {
   --card-name: clamp(28px, 5vw, 72px);         /* your name */
   --card-sub: clamp(14px, 1.32vw, 19px);       /* the lines under it: your title or login and campus; coalition, group, track */
   --card-who-gap: 10px;                         /* your name → the line of your title (or login) and campus */
-  --card-tags-gap: 4px;                        /* that line → the line of coalition, group, grade and track */
+  --card-tags-gap: 10px;                        /* that line → the tags (coalition, milestone, grade, track, groups); negative brings them closer */
   --card-head-line: 2px;                       /* a line across the card under your name and photo, over the four figures (0: none; 2px to show it) */
   --card-head-pad: 36px;                        /* your name and photo → that line (give it room when the line shows: 20px…) */
   --card-figures-top: 16px;                    /* your name and photo (or that line) → the four figures (Level, Your promo, Wallet, Correction points) */
@@ -136,13 +153,13 @@ main[data-page="web-home"] #activity {
   --title-line: 4px;           /* under "Activity" */
   --title-pad: 12px;           /* "Activity" → its line */
   --achievements-line: 2px;    /* over "Achievements" */
-  --achievements-gap: 10px;    /* "Achievements" → the list */
+  --achievements-gap: var(--table-gap-all, 10px);    /* "Achievements" → the list */
   --events-line: 2px;          /* over "Events attended" */
-  --events-gap: 10px;          /* "Events attended": its note → the list */
+  --events-gap: var(--table-gap-all, 10px);          /* "Events attended": its note → the list */
   --misc-line: 2px;            /* over "Titles, expertises and quests" */
   --campuses-line: 2px;        /* over "Campuses" */
-  --campuses-gap: 10px;        /* "Campuses" → the list */
-  --misc-gap: 10px;            /* "Titles, expertises and quests" → the list */
+  --campuses-gap: var(--table-gap-all, 10px);        /* "Campuses" → the list */
+  --misc-gap: var(--table-gap-all, 10px);            /* "Titles, expertises and quests" → the list */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the rows of the lists */
   --indent-line: 2px;          /* left of an achievement's other levels */
@@ -156,7 +173,7 @@ main[data-page="web-projects"] {
   --page-top: 40px;            /* section index → "Pace" */
 }
 main[data-page="web-projects"] #pace {
-  --title-gap: 36px;           /* "Pace" → its row of facts */
+  --title-gap: 20px;           /* "Pace" → its row of facts */
   --facts-gap: 36px;           /* the facts → the charts */
   --charts-y: 40px;            /* charts one under the other */
   --charts-x: 12px;            /* charts side by side, phones and tablets */
@@ -165,9 +182,9 @@ main[data-page="web-projects"] #pace {
   --title-line: 4px;           /* under "Pace" */
   --title-pad: 12px;           /* "Pace" → its line */
   --xp-month-line: 2px;        /* over "XP per month" */
-  --xp-month-gap: 16px;        /* "XP per month" → the chart */
+  --xp-month-gap: var(--chart-gap-key-all, 32px);        /* "XP per month" → the chart */
   --promo-line: 2px;           /* over "Your promo" */
-  --promo-gap: 16px;           /* "Your promo": its note → the chart */
+  --promo-gap: var(--chart-gap-all, 20px);           /* "Your promo": its note → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the facts */
   --axis-line: 2px;            /* the baseline of XP per month */
@@ -175,29 +192,29 @@ main[data-page="web-projects"] #pace {
 }
 main[data-page="web-projects"] #skills {
   --sections: 56px;            /* Pace → "Skills", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: var(--sections-all-laptop, 88px); /* the same, laptops: the global value; 88px when it is off */
   --charts-top: 36px;          /* "Skills" → the radar */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Skills" */
   --title-pad: 12px;           /* "Skills" → its line */
   --divider-line: 1px;         /* between the radar and its bars */
 }
-main[data-page="web-projects"] #projects-table {
+main:is([data-page="web-projects"], [data-page="web-home"]) #projects-table {
   --sections: 56px;            /* Skills → "Projects", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Projects" → the filters */
-  --facts-gap: 36px;           /* the filters → the table */
+  --sections-laptop: var(--sections-all-laptop, 88px); /* the same, laptops: the global value; 88px when it is off */
+  --title-gap: 30px;           /* "Projects" → the filters */
+  --facts-gap: var(--filters-gap-all, 10px);           /* the filters → the table */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Projects" */
   --title-pad: 12px;           /* "Projects" → its line */
-  --projects-table-line: 2px;  /* over the table */
-  --block-pad: 12px;           /* each of those lines → what is under it */
+  --projects-table-line: 0px;  /* over the table */
+  --block-pad: 0px;           /* each of those lines → what is under it */
   --table-head-line: 2px;      /* under the table's column names */
   --table-row-line: 1px;       /* between the table's rows */
 }
 main[data-page="web-projects"] #exams {
   --sections: 56px;            /* Projects → "Exams", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: var(--sections-all-laptop, 88px); /* the same, laptops: the global value; 88px when it is off */
   --charts-top: 36px;          /* "Exams" → the table */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Exams" */
@@ -207,9 +224,9 @@ main[data-page="web-projects"] #exams {
 }
 main[data-page="web-projects"] #domains {
   --sections: 56px;            /* Exams → "Technical domains", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Technical domains" → its note */
-  --facts-gap: 36px;           /* the note → the chart */
+  --sections-laptop: var(--sections-all-laptop, 88px); /* the same, laptops: the global value; 88px when it is off */
+  --title-gap: 20px;           /* "Technical domains": its title's line → its note, and the note → the chart's line
+                                  (the same, so the note sits halfway between them) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Technical domains" */
   --title-pad: 12px;           /* "Technical domains" → its line */
@@ -218,7 +235,7 @@ main[data-page="web-projects"] #domains {
 }
 main[data-page="web-projects"] #timeline {
   --sections: 56px;            /* Technical domains → "Projects and retries", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: var(--sections-all-laptop, 88px); /* the same, laptops: the global value; 88px when it is off */
   --charts-top: 36px;          /* "Projects and retries" → the charts */
   --charts-y: 40px;            /* charts one under the other */
   --charts-x: 12px;            /* charts side by side, phones and tablets */
@@ -227,17 +244,19 @@ main[data-page="web-projects"] #timeline {
   --title-line: 4px;           /* under "Projects and retries" */
   --title-pad: 12px;           /* "Projects and retries" → its line */
   --attempts-line: 2px;        /* over "Attempt timeline" */
-  --attempts-gap: 16px;        /* "Attempt timeline" → the timeline */
+  --attempts-gap: var(--chart-gap-key-all, 32px);        /* "Attempt timeline" → the timeline */
   --cum-retries-line: 2px;     /* over "Cumulative retries" */
-  --cum-retries-gap: 16px;     /* "Cumulative retries": its note → the chart */
+  --cum-retries-gap: var(--chart-gap-all, 20px);     /* "Cumulative retries": its note → the chart */
   --cum-validated-line: 2px;   /* over "Validated projects, cumulative" */
-  --cum-validated-gap: 16px;   /* "Validated projects, cumulative": its note → the chart */
+  --cum-validated-gap: var(--chart-gap-all, 20px);   /* "Validated projects, cumulative": its note → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the charts' baselines */
   --key-box: 1px;              /* the frames of the keys */
 }
 
 /* ================================================ EVALUATIONS ============================================== */
+/* top to bottom: Contribution, Milestones and projects, Evaluation log, Cancelled evaluations (when there are any),
+   Correction points, Feedback, Over time, When */
 main[data-page="web-evaluations"] {
   --page-line: 6px;            /* under the big page title */
   --toc-line: 1px;             /* under the section index */
@@ -247,7 +266,7 @@ main[data-page="web-evaluations"] {
 main[data-page="web-evaluations"] #community {
   --charts-top: 36px;          /* "Contribution" → its figures */
   --charts-y: 40px;            /* the figures → the rates under them */
-  /* lines (0 hides one), and under each titled chart the space between its title and it */
+  /* lines (0 hides one) */
   --title-line: 4px;           /* under "Contribution" */
   --title-pad: 12px;           /* "Contribution" → its line */
   --hours-line: 2px;           /* over "Hours evaluating others" */
@@ -257,32 +276,94 @@ main[data-page="web-evaluations"] #community {
   --failed-given-line: 2px;    /* over the failed evaluations you gave */
   --failed-received-line: 2px; /* over the failed evaluations you received */
   --both-ways-line: 2px;       /* over "Outstanding, both ways" */
-  --kpi-pad: 10px;             /* each of those lines → what is under it */
+  --kpi-pad: var(--kpi-pad-all, 10px);             /* each of those lines → what is under it */
 }
 main[data-page="web-evaluations"] #by-group {
   --sections: 56px;            /* Contribution → "Milestones and projects", phones */
-  --sections-laptop: 75px;     /* the same, laptops */
-  --charts-top: 15px;          /* "Milestones and projects" → the tables */
-  --charts-y: 40px;            /* tables one under the other */
-  --charts-x: 12px;            /* tables side by side, phones and tablets */
+  --sections-laptop: var(--sections-all-laptop, 70px); /* the same, laptops: the global value; 70px when it is off */
+  --charts-top: 36px;          /* "Milestones and projects" → the tables */
+  --charts-y: 40px;            /* the tables one under the other */
+  --charts-x: 12px;            /* the tables side by side, phones and tablets */
   --charts-x-laptop: 48px;     /* the same, laptops */
-  /* lines (0 hides one), and under each titled chart the space between its title and it */
+  /* lines (0 hides one), and under each table's title the space between it and its table */
   --title-line: 4px;           /* under "Milestones and projects" */
   --title-pad: 12px;           /* "Milestones and projects" → its line */
-  --by-milestone-line: 0px;    /* over "By milestone" */
-  --by-milestone-gap: 10px;    /* "By milestone" → the table */
-  --corrected-line: 0px;       /* over "Projects you corrected" */
-  --corrected-gap: 10px;       /* "Projects you corrected" → the table, phones */
-  --corrected-gap-laptop: 14px; /* the same, laptops */
+  --by-milestone-line: 2px;    /* over "By milestone" */
+  --by-milestone-gap: var(--table-gap-all, 10px);    /* "By milestone" → the table */
+  --corrected-line: 2px;       /* over "Projects you corrected" */
+  --corrected-gap: var(--table-gap-all, 10px);       /* "Projects you corrected" → the table, phones */
+  --corrected-gap-laptop: var(--table-gap-all, 10px); /* the same, laptops */
   --block-pad: 12px;           /* each of those lines → what is under it */
+  --table-head-line: 2px;      /* under the tables' column names */
+  --table-row-line: 1px;       /* between the tables' rows */
+}
+main:is([data-page="web-evaluations"], [data-page="web-home"]) #log {
+  --sections: 56px;            /* Milestones and projects → "Evaluation log", phones */
+  --sections-laptop: var(--sections-all-laptop, 70px); /* the same, laptops: the global value; 70px when it is off */
+  --title-gap: 30px;           /* "Evaluation log" → the filters */
+  --facts-gap: var(--filters-gap-all, 10px);           /* the filters → the table (the count is in the title) */
+  /* lines (0 hides one) */
+  --title-line: 4px;           /* under "Evaluation log" */
+  --title-pad: 12px;           /* "Evaluation log" → its line */
+  --log-table-line: 0px;       /* over the table */
+  --block-pad: 0px;           /* that line → the table */
+  --table-head-line: 2px;      /* under the table's column names */
+  --table-row-line: 1px;       /* between the table's rows */
+}
+main[data-page="web-evaluations"] #cancelled {
+  --sections: 56px;            /* Evaluation log → "Cancelled evaluations", phones */
+  --sections-laptop: var(--sections-all-laptop, 60px); /* the same, laptops: the global value; 60px when it is off */
+  --charts-top: 36px;          /* "Cancelled evaluations": its title's line → the lines over its four cards */
+  /* lines (0 hides one) */
+  --title-line: 4px;           /* under "Cancelled evaluations" */
+  --title-pad: 12px;           /* "Cancelled evaluations" → its line */
+  --kpi-line: 2px;             /* over each of the four cards */
+  --kpi-pad: var(--kpi-pad-all, 10px);             /* each card's line → its name */
+}
+main[data-page="web-evaluations"] #points {
+  --sections: 56px;            /* Cancelled evaluations (or the log) → "Correction points", phones */
+  --sections-laptop: var(--sections-all-laptop, 88px); /* the same, laptops: the global value; 88px when it is off */
+  --title-gap: 20px;           /* "Correction points": its title's line → its description, and the description → the
+                                  charts' lines (the same, so the description sits halfway between them) */
+  --charts-y: 40px;            /* the chart and the table one under the other */
+  --charts-x: 12px;            /* the chart and the table side by side, phones and tablets */
+  --charts-x-laptop: 48px;     /* the same, laptops */
+  /* lines (0 hides one), and under each titled chart the space between its title and it */
+  --title-line: 4px;           /* under "Correction points" */
+  --title-pad: 12px;           /* "Correction points" → its line */
+  --balance-line: 2px;         /* over "Balance over time" */
+  --balance-gap: var(--chart-gap-all, 20px);         /* "Balance over time" → the chart */
+  --reasons-line: 2px;         /* over "Movements by reason" */
+  --reasons-gap: var(--table-gap-all, 10px);         /* "Movements by reason" → the table */
+  --block-pad: 12px;           /* each of those lines → what is under it */
+  --axis-line: 2px;            /* the chart's baseline */
+  --table-head-line: 2px;      /* under the table's column names */
+  --table-row-line: 1px;       /* between the table's rows */
+}
+main[data-page="web-evaluations"] #feedback {
+  --sections: 56px;            /* Correction points → "Feedback", phones */
+  --sections-laptop: var(--sections-all-laptop, 70px); /* the same, laptops: the global value; 70px when it is off */
+  --charts-top: 36px;          /* "Feedback" → its lists */
+  --charts-y: 40px;            /* lists and tables one under the other */
+  --charts-x: 12px;            /* lists and tables side by side, phones and tablets */
+  --charts-x-laptop: 48px;     /* the same, laptops */
+  /* lines (0 hides one), and under each titled list or table the space between its title and it */
+  --title-line: 4px;           /* under "Feedback" */
+  --title-pad: 12px;           /* "Feedback" → its line */
+  --low-feedback-line: 2px;    /* over "Feedback below the maximum, per evaluator" */
+  --low-feedback-gap: var(--table-gap-all, 10px);     /* "Feedback below the maximum, per evaluator": its note → the list */
+  --criteria-line: 2px;        /* over "Ratings per criterion" (when shown) */
+  --criteria-gap: var(--table-gap-all, 10px);        /* "Ratings per criterion": its note → the table */
+  --block-pad: 12px;           /* each of those lines → what is under it */
+  --list-line: 1px;            /* between the feedback rows */
   --table-head-line: 2px;      /* under the table's column names */
   --table-row-line: 1px;       /* between the table's rows */
 }
 main[data-page="web-evaluations"] #over-time {
-  --sections: 56px;            /* Milestones and projects → "Over time", phones */
-  --sections-laptop: 65px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Over time" → its description */
-  --info-gap: 20px;            /* the description → the charts */
+  --sections: 56px;            /* Feedback → "Over time", phones */
+  --sections-laptop: var(--sections-all-laptop, 65px); /* the same, laptops: the global value; 65px when it is off */
+  --title-gap: 20px;           /* "Over time": its title's line → its description, and the description → the charts'
+                                  lines (the same, so the description sits halfway between them) */
   --charts-y: 40px;            /* charts one under the other, phones and tablets */
   --charts-y-laptop: 40px;     /* the two charts on top → the two under them, laptops */
   --charts-x: 12px;            /* charts side by side, phones and tablets */
@@ -291,24 +372,24 @@ main[data-page="web-evaluations"] #over-time {
   --title-line: 4px;           /* under "Over time" */
   --title-pad: 12px;           /* "Over time" → its line */
   --received-month-line: 2px;  /* over "Received per month, by flag" */
-  --received-month-gap: 40px;  /* "Received per month, by flag" → the chart */
+  --received-month-gap: var(--chart-gap-key-all, 32px);  /* "Received per month, by flag" → the chart */
   --marks-line: 2px;           /* over "Marks" */
-  --marks-gap: 40px;           /* "Marks" → the chart */
+  --marks-gap: var(--chart-gap-key-all, 32px);           /* "Marks" → the chart */
   --cum-evals-line: 2px;       /* over "Cumulative evaluations" */
-  --cum-evals-gap: 40px;       /* "Cumulative evaluations" → the chart */
+  --cum-evals-gap: var(--chart-gap-key-all, 32px);       /* "Cumulative evaluations" → the chart */
   --cum-out-line: 2px;         /* over "Cumulative Outstanding flags" */
-  --cum-out-gap: 40px;         /* "Cumulative Outstanding flags" → the chart */
+  --cum-out-gap: var(--chart-gap-key-all, 32px);         /* "Cumulative Outstanding flags" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the charts' baselines */
   --key-box: 1px;              /* the frames of the keys */
 }
 main[data-page="web-evaluations"] #when {
   --sections: 56px;            /* Over time → "When", phones */
-  --sections-laptop: 70px;     /* the same, laptops */
-  --title-gap: 20px;           /* "When" → its description */
-  --info-pad: 12px;            /* the description → its line */
+  --sections-laptop: var(--sections-all-laptop, 70px); /* the same, laptops: the global value; 70px when it is off */
+  --title-gap: 20px;           /* "When": its title's line → its description, and the description → its own line (the
+                                  same, so the description sits halfway between the two lines) */
   --info-line: 2px;            /* the line under the description (0 hides it) */
-  --info-gap: 36px;            /* that line → its row of facts */
+  --info-gap: 36px;            /* that line → the row of facts */
   --facts-gap: 36px;           /* the facts → the charts */
   --charts-y: 40px;            /* charts one under the other, phones and tablets */
   --charts-y-laptop: 0px;      /* the two grids on top → Duration and Booking lead time, laptops */
@@ -320,77 +401,17 @@ main[data-page="web-evaluations"] #when {
   --title-line: 4px;           /* under "When" */
   --title-pad: 12px;           /* "When" → its line */
   --heat-received-line: 2px;   /* over "Received · weekday × hour" */
-  --heat-received-gap: 12px;   /* "Received · weekday × hour" → the grid */
+  --heat-received-gap: var(--grid-gap-all, 30px);   /* "Received · weekday × hour" → the grid */
   --heat-given-line: 2px;      /* over "Given · weekday × hour" */
-  --heat-given-gap: 12px;      /* "Given · weekday × hour" → the grid */
+  --heat-given-gap: var(--grid-gap-all, 30px);      /* "Given · weekday × hour" → the grid */
   --duration-line: 2px;        /* over "Duration" */
-  --duration-gap: 30px;        /* "Duration" → the chart */
+  --duration-gap: var(--chart-gap-key-all, 32px);        /* "Duration" → the chart */
   --lead-line: 2px;            /* over "Booking lead time" */
-  --lead-gap: 30px;            /* "Booking lead time" → the chart */
+  --lead-gap: var(--chart-gap-key-all, 32px);            /* "Booking lead time" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the facts */
   --axis-line: 2px;            /* the charts' baselines */
   --key-box: 1px;              /* the frames of the keys */
-}
-main[data-page="web-evaluations"] #feedback {
-  --sections: 56px;            /* When → "Feedback", phones */
-  --sections-laptop: 70px;     /* the same, laptops */
-  --charts-top: 36px;          /* "Feedback" → its lists */
-  --charts-y: 40px;            /* lists and tables one under the other */
-  --charts-x: 12px;            /* lists and tables side by side, phones and tablets */
-  --charts-x-laptop: 48px;     /* the same, laptops */
-  /* lines (0 hides one), and under each titled chart the space between its title and it */
-  --title-line: 4px;           /* under "Feedback" */
-  --title-pad: 12px;           /* "Feedback" → its line */
-  --low-feedback-line: 0px;    /* over "Feedback below the maximum, per evaluator" */
-  --low-feedback-gap: 5px;    /* "Feedback below the maximum, per evaluator": its note → the list */
-  --criteria-line: 2px;        /* over "Ratings per criterion" (when shown) */
-  --criteria-gap: 10px;        /* "Ratings per criterion": its note → the table */
-  --block-pad: 12px;           /* each of those lines → what is under it */
-  --list-line: 1px;            /* between the feedback rows */
-  --table-head-line: 2px;      /* under the table's column names */
-  --table-row-line: 1px;       /* between the table's rows */
-}
-main[data-page="web-evaluations"] #points {
-  --sections: 56px;            /* Feedback → "Correction points", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Correction points" → its description */
-  --info-gap: 20px;            /* the description → the charts */
-  --charts-y: 40px;            /* charts one under the other */
-  --charts-x: 12px;            /* charts side by side, phones and tablets */
-  --charts-x-laptop: 48px;     /* the same, laptops */
-  /* lines (0 hides one), and under each titled chart the space between its title and it */
-  --title-line: 4px;           /* under "Correction points" */
-  --title-pad: 12px;           /* "Correction points" → its line */
-  --balance-line: 2px;         /* over "Balance over time" */
-  --balance-gap: 30px;          /* "Balance over time" → the chart */
-  --reasons-line: 2px;         /* over "Movements by reason" */
-  --reasons-gap: 10px;         /* "Movements by reason" → the table */
-  --block-pad: 12px;           /* each of those lines → what is under it */
-  --axis-line: 2px;            /* the chart's baseline */
-  --table-head-line: 2px;      /* under the table's column names */
-  --table-row-line: 1px;       /* between the table's rows */
-}
-main[data-page="web-evaluations"] #cancelled {
-  --sections: 56px;            /* Correction points → "Cancelled evaluations", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --charts-top: 36px;          /* "Cancelled evaluations" → its four cards */
-  --title-line: 4px;           /* under "Cancelled evaluations" */
-  --title-pad: 12px;           /* "Cancelled evaluations" → its line */
-  --kpi-line: 2px;             /* over each of the four cards */
-}
-main[data-page="web-evaluations"] #log {
-  --sections: 56px;            /* Correction points → "Evaluation log", phones */
-  --sections-laptop: 70px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Evaluation log" → the filters */
-  --facts-gap: 36px;           /* the filters → the table (the count is in the title now) */
-  /* lines (0 hides one), and under each titled chart the space between its title and it */
-  --title-line: 4px;           /* under "Evaluation log" */
-  --title-pad: 12px;           /* "Evaluation log" → its line */
-  --log-table-line: 0px;       /* over the table */
-  --block-pad: -1px;           /* the table's line → the table */
-  --table-head-line: 2px;      /* under the table's column names */
-  --table-row-line: 1px;       /* between the table's rows */
 }
 
 /* ================================================ COALITION ================================================ */
@@ -409,16 +430,16 @@ main[data-page="web-coalition"] #standing {
   --title-line: 4px;           /* under "Coalitions" */
   --title-pad: 12px;           /* "Coalitions" → its line */
   --madrid-line: 2px;          /* over "Madrid coalitions" */
-  --madrid-gap: 8px;           /* "Madrid coalitions" → the list */
+  --madrid-gap: var(--table-gap-all, 10px);           /* "Madrid coalitions" → the list */
   --all-points-line: 2px;      /* over "All points" */
-  --all-points-gap: 10px;      /* "All points" → the list, phones */
-  --all-points-gap-laptop: 14px; /* the same, laptops */
+  --all-points-gap: var(--table-gap-all, 10px);      /* "All points" → the list, phones */
+  --all-points-gap-laptop: var(--table-gap-all, 10px); /* the same, laptops */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the rows of the lists */
 }
 main[data-page="web-coalition"] #bonus {
   --sections: 56px;            /* Coalitions → "Logtime bonus", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
+  --sections-laptop: var(--sections-all-laptop, 60px); /* the same, laptops: the global value; 60px when it is off */
   --charts-top: 36px;          /* "Logtime bonus" → its hours */
   --charts-y: 40px;            /* the hours and the bonus history one under the other */
   --charts-x: 12px;            /* the hours and the bonus history side by side, phones and tablets */
@@ -429,19 +450,19 @@ main[data-page="web-coalition"] #bonus {
   --last-week-line: 2px;       /* over the hours of the last 7 days */
   --tier-50-line: 2px;         /* over "50h · +500" */
   --tier-80-line: 2px;         /* over "80h · +1,000" */
-  --kpi-pad: 10px;             /* the line over each bonus → what is under it */
+  --kpi-pad: var(--kpi-pad-all, 10px);             /* the line over each bonus → what is under it */
   --drops-gap: 24px;           /* the bonuses → "Next hours leaving the window" */
   --history-line: 2px;         /* over "Every bonus so far" */
-  --history-gap: 10px;         /* "Every bonus so far": its note (when it has one) → the list */
+  --history-gap: var(--table-gap-all, 10px);         /* "Every bonus so far": its note (when it has one) → the list */
   --history-height: 340px;     /* "Every bonus so far" on phones and half widgets; on a laptop it reaches the base of the panel beside it */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the bonuses */
 }
 main[data-page="web-coalition"] #coal-points {
   --sections: 56px;            /* Logtime bonus → "Coalition points", phones */
-  --sections-laptop: 88px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Coalition points" → its description */
-  --info-gap: 20px;            /* the description → the charts */
+  --sections-laptop: var(--sections-all-laptop, 56px); /* the same, laptops: the global value; 56px when it is off */
+  --title-gap: 20px;           /* "Coalition points": its title's line → its description, and the description → the charts' lines
+                                  (the same, so the description sits halfway between them) */
   --charts-y: 40px;            /* charts one under the other */
   --charts-x: 12px;            /* charts side by side, phones and tablets */
   --charts-x-laptop: 48px;     /* the same, laptops */
@@ -450,11 +471,11 @@ main[data-page="web-coalition"] #coal-points {
   --title-pad: 12px;           /* "Coalition points" → its line */
   --sources-line: 2px;         /* over "Points by source" */
   --months-line: 2px;          /* over "Points per month" */
-  --months-gap: 24px;          /* "Points per month" → the chart */
+  --months-gap: var(--chart-gap-all, 20px);          /* "Points per month" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the baseline of Points per month */
   --key-box: 1px;              /* the frame of the key */
-  --sources-gap: 16px;         /* "Points by source" → the bars */
+  --sources-gap: var(--table-gap-all, 10px);         /* "Points by source" → its share bar (the rows under it fill the panel's height) */
 }
 
 /* ================================================ PEOPLE =================================================== */
@@ -465,21 +486,21 @@ main[data-page="web-people"] {
   --page-top: 40px;            /* section index → "Who evaluated you" */
 }
 main[data-page="web-people"] #who {
-  --title-gap: 20px;           /* "Who evaluated you" → its description */
-  --info-gap: 20px;            /* the description → the chart */
+  --title-gap: 20px;           /* "Who evaluated you": its title's line → its description, and the description → the chart's line
+                                  (the same, so the description sits halfway between them) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Who evaluated you" */
   --title-pad: 12px;           /* "Who evaluated you" → its line */
   --correctors-line: 2px;      /* over "Top 25 correctors" */
-  --correctors-gap: 16px;      /* "Top 25 correctors" → the chart */
+  --correctors-gap: var(--chart-gap-key-all, 32px);      /* "Top 25 correctors" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --key-box: 1px;              /* the frame of the chart's key */
 }
 main[data-page="web-people"] #crossed {
   --sections: 56px;            /* Who evaluated you → "Everyone you met", phones */
-  --sections-laptop: 60px;     /* the same, laptops */
-  --charts-top: 8px;          /* "Everyone you met" → the search and the table */
-  --search-gap: 25px;          /* the search → the table */
+  --sections-laptop: var(--sections-all-laptop, 60px); /* the same, laptops: the global value; 60px when it is off */
+  --charts-top: 10px;          /* "Everyone you met" → the search and the table */
+  --search-gap: var(--filters-gap-all, 10px);          /* the search → the table */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Everyone you met" */
   --title-pad: 12px;           /* "Everyone you met" → its line */
@@ -488,8 +509,8 @@ main[data-page="web-people"] #crossed {
 }
 main[data-page="web-people"] #connections {
   --sections: 56px;            /* Everyone you met → "Connections", phones */
-  --sections-laptop: 80px;     /* the same, laptops */
-  --charts-top: 56px;          /* "Connections" → the bubbles */
+  --sections-laptop: var(--sections-all-laptop, 60px); /* the same, laptops: the global value; 60px when it is off */
+  --charts-top: 42px;          /* "Connections": its line → the bubbles' group names (its own value: no general rule reaches it) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Connections" */
   --title-pad: 12px;           /* "Connections" → its line */
@@ -497,9 +518,9 @@ main[data-page="web-people"] #connections {
 }
 main[data-page="web-people"] #circle {
   --sections: 56px;            /* Connections → "Your circle", phones */
-  --sections-laptop: 70px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Your circle" → its description */
-  --info-gap: 20px;            /* the description → the ring */
+  --sections-laptop: var(--sections-all-laptop, 60px); /* the same, laptops: the global value; 60px when it is off */
+  --title-gap: 20px;           /* "Your circle": its title's line → its description, and the description → the ring's line
+                                  (the same, so the description sits halfway between them) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Your circle" */
   --title-pad: 12px;           /* "Your circle" → its line */
@@ -532,7 +553,7 @@ main[data-page="web-campus"] #rhythm {
   --streak-line: 2px;          /* over "Longest streak" */
   --weeks-line: 2px;           /* over "Active weeks" */
   --time-line: 2px;            /* over "When you work" */
-  --kpi-pad: 10px;             /* each of those lines → what is under it */
+  --kpi-pad: var(--kpi-pad-all, 10px);             /* each of those lines → what is under it */
   --axis-line: 2px;            /* the baseline of the day's 24 hours */
   --key-box: 1px;              /* the frame of the day's parts */
 }
@@ -543,7 +564,7 @@ main[data-page="web-campus"] #rhythm {
 }
 main[data-page="web-campus"] #seats {
   --sections: 30px;            /* Rhythm → "Where you sat", phones */
-  --sections-laptop: -10px;      /* the same, laptops */
+  --sections-laptop: -10px;      /* the same, laptops (always its own: the global value never reaches it) */
   --charts-top: 36px;          /* "Where you sat" → the plan */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Where you sat" */
@@ -553,50 +574,55 @@ main[data-page="web-campus"] #seats {
 }
 main[data-page="web-campus"] #days {
   --sections: 56px;            /* Where you sat → "Days and hours", phones */
-  --sections-laptop: 68px;     /* the same, laptops */
-  --charts-top: 6px;          /* "Days and hours" → Every day */
+  --sections-laptop: var(--sections-all-laptop, 68px); /* the same, laptops: the global value; 68px when it is off */
+  --charts-top: 36px;          /* "Days and hours" → Every day */
   --charts-y: 40px;            /* Every day → Hours per month and Weekday × hour */
   --charts-x: 12px;            /* Hours per month ↔ Weekday × hour, phones and tablets */
-  --charts-x-laptop: 38px;     /* the same, laptops */
+  --charts-x-laptop: 42px;     /* the same, laptops */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Days and hours" */
   --title-pad: 12px;           /* "Days and hours" → its line */
-  --every-day-line: 0px;       /* over "Every day" */
-  --every-day-gap: 28px;       /* "Every day" → the calendar */
+  --every-day-line: 2px;       /* over "Every day" */
+  --every-day-gap: var(--grid-gap-all, 30px);       /* "Every day" → the calendar */
+  --calendar-box-line: 1px;    /* the box around each of Every day's years (0: no box) */
+  --calendar-box-color: var(--rule); /* its frame's colour */
+  --calendar-box-pad-y: 20px;  /* the room inside each box, above and below */
+  --calendar-box-pad-x: 24px;  /* the room inside each box, left and right */
+  --calendar-box-gap: 12px;    /* one year's box → the next */
   --hours-month-line: 2px;     /* over "Hours per month" */
-  --hours-month-gap: 42px;     /* "Hours per month" → the chart */
+  --hours-month-gap: var(--chart-gap-key-all, 32px);     /* "Hours per month" → the chart */
   --weekday-hour-line: 2px;    /* over "Weekday × hour" */
-  --weekday-hour-gap: 12px;    /* "Weekday × hour" → the grid, phones */
-  --weekday-hour-gap-laptop: 32px; /* the same, laptops */
+  --weekday-hour-gap: var(--grid-gap-all, 30px);    /* "Weekday × hour" → the grid, phones */
+  --weekday-hour-gap-laptop: var(--grid-gap-all, 30px); /* the same, laptops */
   --block-pad: 12px;           /* each of those lines → what is under it */
-  --axis-line: 1px;            /* the baseline of Hours per month */
+  --axis-line: 2px;            /* the baseline of Hours per month */
 }
 main[data-page="web-campus"] #sessions {
   --sections: 56px;            /* Days and hours → "Sessions log", phones */
-  --sections-laptop: 68px;     /* the same, laptops */
+  --sections-laptop: var(--sections-all-laptop, 68px); /* the same, laptops: the global value; 68px when it is off */
   --title-gap: 20px;           /* "Sessions log" → the search */
-  --facts-gap: -30px;           /* the search → the table (the count is in the title now) */
+  --facts-gap: -20px;           /* the search → the table (the count is in the title now) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Sessions log" */
   --title-pad: 12px;           /* "Sessions log" → its line */
   --sessions-table-line: 0px;  /* over the table */
-  --block-pad: 16px;           /* the table's line → the table */
+  --block-pad: 0px;           /* the table's line → the table */
   --table-head-line: 2px;      /* under the table's column names */
   --table-row-line: 1px;       /* between the table's rows */
 }
 main[data-page="web-campus"] #where {
   --sections: 56px;            /* Sessions log → "Where · evaluations", phones */
-  --sections-laptop: 68px;     /* the same, laptops */
-  --title-gap: 20px;           /* "Where · evaluations" → its description */
-  --info-gap: 20px;            /* the description → the chart */
-  --charts-y: 40px;            /* the chart → "Without a login, by project" */
+  --sections-laptop: var(--sections-all-laptop, 68px); /* the same, laptops: the global value; 68px when it is off */
+  --title-gap: 20px;           /* "Where · evaluations": its title's line → its description, and the description → the chart's line
+                                  (the same, so the description sits halfway between them) */
+  --charts-y: 40px;            /* the chart → "Without a login, by project" (that table only shows when it is turned on) */
   /* lines (0 hides one), and under each titled chart the space between its title and it */
   --title-line: 4px;           /* under "Where · evaluations" */
   --title-pad: 12px;           /* "Where · evaluations" → its line */
   --where-chart-line: 2px;     /* over the chart (received or given, by cluster) */
-  --where-chart-gap: 32px;     /* "Evaluations you received / gave, by cluster" → the chart */
+  --where-chart-gap: var(--chart-gap-key-all, 32px);     /* "Evaluations you received / gave, by cluster" → the chart */
   --not-logged-line: 2px;      /* over "Without a login, by project" */
-  --not-logged-gap: 10px;      /* "Without a login, by project": its note → the table */
+  --not-logged-gap: var(--table-gap-all, 10px);      /* "Without a login, by project": its note → the table */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the chart's baseline */
   --key-box: 1px;              /* the frame of the chart's key */
@@ -623,9 +649,11 @@ main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="w
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head):has(+ .cols), main[data-page="web-home"] section#activity > :is(h2, .panel-head):has(+ .cols) { margin-bottom: 0; }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + .cols, main[data-page="web-home"] section#activity > :is(h2, .panel-head) + .cols { margin-top: var(--charts-top, 36px); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + :not(.cols), main[data-page="web-home"] section#activity > :is(h2, .panel-head) + :not(.cols) { margin-top: 0; }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede, main[data-page="web-home"] section#activity > .lede { margin-bottom: 0; padding-bottom: var(--info-pad, 0px); border-bottom: var(--info-line, 0px) solid var(--rule-strong); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede::after, main[data-page="web-home"] section#activity > .lede::after { content: ""; display: block; margin-top: min(0px, var(--info-pad, 0px)); }
-main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede + *, main[data-page="web-home"] section#activity > .lede + * { margin-top: var(--info-gap, 20px); }
+/* a description between two lines sits halfway: under it, as much as --title-gap puts over it (to its own line when it
+   has one: min() is 0 while that line is 0; else to the next line, --info-gap defaulting to --title-gap) */
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede, main[data-page="web-home"] section#activity > .lede { margin-bottom: 0; padding-bottom: max(0px, min(var(--title-gap, 20px), var(--info-line, 0px) * 1000)); border-bottom: var(--info-line, 0px) solid var(--rule-strong); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .lede + *, main[data-page="web-home"] section#activity > .lede + * { margin-top: var(--info-gap, var(--title-gap, 20px)); }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(h2, .panel-head) + .note + * { margin-top: var(--title-gap, 20px); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls), main[data-page="web-home"] section#activity > :is(.facts, .note, .controls) { margin-bottom: 0; }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > :is(.facts, .note, .controls) + *, main[data-page="web-home"] section#activity > :is(.facts, .note, .controls) + * { margin-top: var(--facts-gap, 36px); }
 main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-coalition"], [data-page="web-people"], [data-page="web-campus"]) section > .controls + * > .controls-after:first-child, main[data-page="web-home"] section#activity > .controls + * > .controls-after:first-child { margin-top: 0; }
@@ -642,11 +670,17 @@ main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="w
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls { margin-bottom: 0; }
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls + * { margin-top: var(--search-gap); }
 main[data-page="web-people"] #crossed [data-panel="table-people"] > .controls + * > :first-child { margin-top: 0; }
+/* the filters → the table: --facts-gap alone (the table's own margins out), on the pages and as Profile widgets */
+:is(main[data-page="web-projects"] #projects-table, main[data-page="web-evaluations"] #log) > .controls + * > .cols:first-child { margin-top: 0; }
+main[data-page="web-home"] :is(#log, #projects-table) > .controls { margin-top: var(--title-gap, 20px); margin-bottom: 0; }
+main[data-page="web-home"] :is(#log, #projects-table) > .controls + * { margin-top: var(--facts-gap, 36px); }
+main[data-page="web-home"] :is(#log, #projects-table) > .controls + * > .cols:first-child { margin-top: 0; }
+main:is([data-page="web-projects"], [data-page="web-evaluations"], [data-page="web-home"]) :is(#log, #projects-table) [data-panel] > .table-wrap { margin-top: 0; }
 @media (min-width: 960px) { main[data-page="web-home"] .widget[data-widget="campus:rhythm"] { margin-bottom: var(--rhythm-below-laptop, 0px); } }
 /* each line over a chart or table, and over each figure, reads its own value */
 main[data-page="web-projects"] #pace [data-panel="pace-xp"] { border-top-width: var(--xp-month-line, var(--block-line)); }
 main[data-page="web-projects"] #pace [data-panel="promo"] { border-top-width: var(--promo-line, var(--block-line)); }
-main[data-page="web-projects"] #projects-table [data-panel="projects-table"] { border-top-width: var(--projects-table-line, var(--block-line)); }
+main:is([data-page="web-projects"], [data-page="web-home"]) #projects-table [data-panel="projects-table"] { border-top-width: var(--projects-table-line, var(--block-line)); }
 main[data-page="web-projects"] #domains [data-panel="domains"] { border-top-width: var(--domains-line, var(--block-line)); }
 main[data-page="web-projects"] #timeline [data-panel="timeline"] { border-top-width: var(--attempts-line, var(--block-line)); }
 main[data-page="web-projects"] #timeline [data-panel="cum-retries"] { border-top-width: var(--cum-retries-line, var(--block-line)); }
@@ -676,7 +710,7 @@ main[data-page="web-evaluations"] #feedback [data-panel="low-feedback"] { border
 main[data-page="web-evaluations"] #feedback [data-panel="table-feedback"] { border-top-width: var(--criteria-line, var(--block-line)); }
 main[data-page="web-evaluations"] #points [data-panel="points"] { border-top-width: var(--balance-line, var(--block-line)); }
 main[data-page="web-evaluations"] #points [data-panel="table-reasons"] { border-top-width: var(--reasons-line, var(--block-line)); }
-main[data-page="web-evaluations"] #log [data-panel="table-log"] { border-top-width: var(--log-table-line, var(--block-line)); }
+main:is([data-page="web-evaluations"], [data-page="web-home"]) #log [data-panel="table-log"] { border-top-width: var(--log-table-line, var(--block-line)); }
 main[data-page="web-coalition"] #standing [data-panel="coalitions"] { border-top-width: var(--madrid-line, var(--block-line)); }
 main[data-page="web-coalition"] #standing [data-panel="coal-recent"] { border-top-width: var(--all-points-line, var(--block-line)); }
 main[data-page="web-coalition"] #bonus [data-panel="bonus-history"] { border-top-width: var(--history-line, var(--block-line)); }
@@ -693,6 +727,9 @@ main[data-page="web-campus"] #rhythm .kpis > div:nth-child(1) { border-top-width
 main[data-page="web-campus"] #rhythm .kpis > div:nth-child(2) { border-top-width: var(--weeks-line, var(--kpi-line)); }
 main[data-page="web-campus"] #rhythm .kpis > div:nth-child(3) { border-top-width: var(--time-line, var(--kpi-line)); }
 main[data-page="web-campus"] #days [data-panel="calendar"] { border-top-width: var(--every-day-line, var(--block-line)); }
+body [data-panel="calendar"] .cal-year { box-sizing: border-box; margin-bottom: var(--calendar-box-gap, 12px); padding: var(--calendar-box-pad-y, 20px) var(--calendar-box-pad-x, 24px);
+  border: var(--calendar-box-line, 1px) solid var(--calendar-box-color, var(--rule)); }
+body [data-panel="calendar"] .cal-year:last-child { margin-bottom: 0; }
 main[data-page="web-campus"] #days [data-panel="hours-month"] { border-top-width: var(--hours-month-line, var(--block-line)); }
 main[data-page="web-campus"] #days [data-panel="heat-presence"] { border-top-width: var(--weekday-hour-line, var(--block-line)); }
 main[data-page="web-campus"] #sessions [data-panel="table-sessions"] { border-top-width: var(--sessions-table-line, var(--block-line)); }

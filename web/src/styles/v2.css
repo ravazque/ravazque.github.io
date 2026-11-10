@@ -37,8 +37,8 @@
 /* the bonus: the rolling week against 50 h and 80 h */
 :where(body:not(.site)) .tmeter { position: relative; height: 14px; margin: 6px 0 4px; background: var(--seat-empty); }
 :where(body:not(.site)) .tmeter i { position: absolute; inset: 0 auto 0 0; background: var(--accent-data); transition: clip-path 1.1s var(--motion-ease) .15s; clip-path: inset(0 0 0 0); }
-:where(html.js body:not(.site)) .tp:not(.in) .tmeter i { clip-path: inset(0 100% 0 0); }
-@media (prefers-reduced-motion: reduce) { :where(html.js body:not(.site)) .tp:not(.in) .tmeter i { clip-path: none; } }
+:where(html.js body:not(.site)) .tp[data-anim]:not(.in) .tmeter i { clip-path: inset(0 100% 0 0); transition: none; }
+@media (prefers-reduced-motion: reduce) { :where(html.js body:not(.site)) .tp[data-anim]:not(.in) .tmeter i { clip-path: none; } }
 :where(body:not(.site)) .tmeter em { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
 :where(body:not(.site)) .tmeter em.end { right: 0; }
 :where(body:not(.site)) .tticks { position: relative; height: 18px; font-size: 13px; color: var(--text-2); }
@@ -110,7 +110,7 @@
 /* the tallest column's caption sits above the plot: room for it under the chart's title */
 :where(body:not(.site)) .vchart:has(.peak) { margin-top: 34px; }
 /* month ticks under timelines and line charts: every other one on narrow phones, so neighbours never touch */
-@media (max-width: 479.98px) { :where(body:not(.site)) .ch-months span:not(:nth-child(3n+1)) { display: none; } }
+@media (max-width: 479.98px) { :where(body:not(.site)) .ch-months span:not(:nth-last-child(3n+1)) { display: none; } }  /* the last one stays */
 @media (min-width: 1280px) and (max-width: 1599.98px) { :where(body:not(.site)) .topbar .pages a { padding: 0 12px; } :where(body:not(.site)) .topbar { gap: 20px; } }
 /* poster titles on a phone: as big as the screen allows, a long word never pushing the page sideways */
 @media (max-width: 419.98px) { :where(body:not(.site)) .page-head h1 { font-size: 13vw; overflow-wrap: anywhere; } }
@@ -139,12 +139,12 @@
   margin: var(--card-photo-frame, 4px); box-shadow: 0 0 0 var(--card-photo-frame, 4px) var(--rule); }
 :where(body:not(.site)) .pf-name { margin: 0; color: var(--ink); font: 900 var(--card-name, 40px)/1 var(--type-font-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
 /* "name · login": the login lighter, after a middle dot */
-:where(body:not(.site)) .pf-login { display: inline-block; margin-left: .3em; color: var(--text-2); font-weight: 500; font-size: .5em; letter-spacing: 0; vertical-align: .32em; line-height: 1; }
-:where(body:not(.site)) .pf-login::before { content: "·"; margin-right: .3em; }
+:where(body:not(.site)) .pf-status { display: inline-block; margin-left: .3em; color: var(--text-2); font-weight: 500; font-size: .5em; letter-spacing: 0; vertical-align: .32em; line-height: 1; }
+:where(body:not(.site)) .pf-status::before { content: "·"; margin-right: .3em; }
+:where(body:not(.site)) .pf-sub.pf-tags { gap: 6px; } /* the tags under it: coalition, milestone, grade, track, groups */
 :where(body:not(.site)) .pf-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: var(--card-who-gap, 8px) 0 0; color: var(--text-2); font-size: var(--card-sub, 15px); line-height: 1.5; }
 :where(body:not(.site)) .pf-sub + .pf-tags { margin-top: var(--card-tags-gap, 2px); }
 :where(body:not(.site)) .pf-sub > span { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0; }
-:where(body:not(.site)) .pf-sub .dot { box-sizing: border-box; display: inline-block; width: 11px; height: 11px; margin-right: 6px; border: 1px solid var(--rule); border-radius: 50%; }
 /* the timeline under the three modules: --card-time-top alone sets the distance (no section padding of its own) */
 :where(body:not(.site)) #path { padding-top: 0; margin-top: 0; padding-bottom: max(0px, var(--card-time-bottom, 0px)); margin-bottom: min(0px, var(--card-time-bottom, 0px)); }
 /* the four figures under your name, drawn like the three modules below them, larger; the figure never outgrows its
@@ -169,7 +169,12 @@
 :where(body:not(.site)) .pf-box { box-sizing: border-box; width: min(100%, var(--card-time-box-width, 100%)); margin: var(--card-time-rule-pad, 16px) auto 0;
   padding: var(--card-time-box-pad-y, 20px) var(--card-time-box-pad-x, 24px);
   border: var(--card-time-box-line, 1px) solid var(--card-time-box-color, var(--rule)); }
-:where(body:not(.site)) .pf-line { position: absolute; left: 0; right: 0; top: 50%; height: 0; }
+:where(body:not(.site)) .pf-line { position: absolute; left: 0; right: 0; top: 50%; height: 0; clip-path: inset(-60px -40px -60px -40px); transition: clip-path 1.6s var(--motion-ease); }
+:where(body:not(.site)) .pf-mark { transition: opacity .35s ease-out calc(var(--d, 0) * 1.6s); }
+/* the first time Profile is seen (behave.ts data-anim): the line advances from its start, each name shows as it is reached */
+:where(html.js body:not(.site)) .pf-time[data-anim]:not(.in) .pf-line { clip-path: inset(-60px 100% -60px -40px); transition: none; }
+:where(html.js body:not(.site)) .pf-time[data-anim]:not(.in) .pf-mark { opacity: 0; transition: none; }
+@media (prefers-reduced-motion: reduce) { :where(html.js body:not(.site)) .pf-time[data-anim]:not(.in) :is(.pf-line, .pf-mark) { clip-path: none; opacity: 1; } }
 :where(body:not(.site)) .pf-line > span { position: absolute; top: calc(var(--tl) / -2); height: var(--tl); }
 :where(body:not(.site)) .pf-line .done { left: 0; background: var(--rule-strong); }
 :where(body:not(.site)) .pf-line .ahead { right: 0; height: 0; border-top: var(--tl) dashed var(--rule-strong); }
@@ -256,6 +261,7 @@ html body:not(.site) .graph .bubble.net-node.outer circle { fill: color-mix(in o
 html body:not(.site) .graph .bubble.net-node.alumni circle { fill: var(--alumni); stroke: var(--alumni-edge); }
 html body:not(.site) .graph .bubble.net-node.none circle { fill: var(--surface); stroke: var(--neutral); }
 html body:not(.site) .graph .bubble.net-node.dead circle { fill: color-mix(in oklab, var(--critical) 22%, var(--surface)); stroke: var(--critical); stroke-dasharray: 2 2; }
+html body:not(.site) .graph .bubble.net-node.deleted circle { fill: transparent; stroke: var(--muted); stroke-dasharray: 3 2; }
 html body:not(.site) .graph .bubble.net-node.alumni text { fill: var(--on-accent); }
 
 /* A figure on the title's line of a panel (the busiest month) */
@@ -354,9 +360,13 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .cancel-card h3 .info { margin-left: 6px; vertical-align: -1px; } /* beside the last word, also when the title wraps */
 :where(body:not(.site)) .cancel-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
 
-/* a login opens that student's page on acerezo.top (new tab): the text as it was, a faint line under it */
-:where(body:not(.site)) .login-link { color: inherit; text-decoration: underline 1px color-mix(in oklab, currentColor 35%, transparent); text-underline-offset: 3px; }
-:where(body:not(.site)) .login-link:hover, :where(body:not(.site)) .login-link:focus-visible { text-decoration-color: currentColor; }
+/* two kinds of names: a login that leads away (acerezo.top, new tab) in a soft tone with a faint line, darker on hover;
+   one that opens more here (a team's members, someone's details) in the text's own colour, brighter than those links in
+   dark mode, with a dotted line under it and under its "+N more", plain text as in Everyone you met's details */
+:where(body:not(.site)) .login-link { color: var(--text-2); text-decoration: underline 1px color-mix(in oklab, currentColor 30%, transparent); text-underline-offset: 3px; }
+:where(body:not(.site)) .login-link:hover, :where(body:not(.site)) .login-link:focus-visible { color: var(--ink); text-decoration-color: currentColor; }
+:where(body:not(.site)) .who-pop > summary { color: var(--ink); text-decoration: underline dotted; text-underline-offset: 4px; }
+:where(body:not(.site)) .who-pop > summary .more { white-space: nowrap; }
 
 /* Profile's widgets, closer than the pages' sections (spacing.css, --widget-*): smaller titles, less room above each,
    tables at half width without their secondary columns */

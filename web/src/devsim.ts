@@ -6,12 +6,15 @@
 //   gone     same, while a page sits open: forgotten at the next page you open (pick another page in the band)
 //   failed   the extraction failed: "Try again" starts the boot scenario
 //   wait     deleted your data less than an hour ago: no copy, no extraction yet
+//   hold     the first extraction's screen that never ends (the skeleton and its boxed status), to look at it at ease; the
+//            owner's "Loading screen" button in the account menu turns it on for every page until turned off
 // restore and gone need this browser's copy: open /app once without ?sim first.
 
-const SCENARIOS = ["boot", "restore", "gone", "failed", "wait"];
+const SCENARIOS = ["boot", "restore", "gone", "failed", "wait", "hold"];
+export const HOLD = "devsim:hold"; // sessionStorage: the hold scenario on every page
 
 if (import.meta.env.DEV) {
-  const sim = new URLSearchParams(location.search).get("sim");
+  const sim = new URLSearchParams(location.search).get("sim") || (sessionStorage.getItem(HOLD) ? "hold" : null);
   if (sim && SCENARIOS.includes(sim)) simulate(sim);
   else if (sim) console.info(`[devsim] unknown scenario "${sim}": ${SCENARIOS.join(", ")}`);
 }
@@ -32,6 +35,7 @@ function simulate(start: string) {
 
   function reply(path: string, method: string): Response | null {
     if (path === "/api/me/status") {
+      if (phase === "hold") return json({ ...base, state: "running", progress: ((Date.now() - since) / 60000) % 1 }); // a minute round, over and over
       if (phase === "boot") return running(15);
       if (phase === "refreshing") return running(12, { has_report: true });
       if (phase === "failed") return json({ ...base, state: "failed", message: "status.failed", next_refresh_in: 290 });
@@ -39,6 +43,7 @@ function simulate(start: string) {
       if (phase === "restore" || phase === "forgotten") { go("restored"); return json({ ...base, state: "none" }); }
     }
     if (path === "/api/me/report" && method === "POST") {
+      if (phase === "hold") return json({ error: "signature" }, 400); // the copy never comes back: the skeleton stays
       if (phase === "wait") { copies().forEach((k) => localStorage.removeItem(k)); return json({ error: "signature" }, 400); } // the next plain visit keeps a new copy
       copies().forEach((k) => localStorage.setItem(k, "2000-01-01T00:00:00Z")); // old enough for the refresh in the band
     }

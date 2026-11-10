@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { Fmt } from "../fmt";
-import { absence, binLabels, cancelledSection, deletedApart, lateText, logSection, milestoneOf, seatMatch, seatOptions, teamCell, withoutWorkLate, workExperience } from "./evaluations";
+import { absence, binLabels, cancelledSection, pointsSection, deletedApart, evaluations, lateText, logSection, milestoneOf, seatMatch, seatOptions, teamCell, withoutWorkLate, workExperience } from "./evaluations";
 import { Page, shownLogin } from "./page";
 
 test("the log's seat filter: the evaluated side only, you received with no session open, or the students you evaluated not logged where it was looked up", () => {
@@ -71,7 +71,7 @@ test("a team you evaluated shows its leader, the rest in a list that opens", () 
   const summary = html.slice(html.indexOf("<summary>"), html.indexOf("</summary>"));
   expect(html.startsWith("<details")).toBe(true); // one line: the leader and +N open the team
   expect(summary).toContain("peer02");
-  expect(summary).toContain("+1");
+  expect(summary).toContain('<span class="more">+1 more</span>'); // text, as in Everyone you met's details (kept on one line)
   expect(summary).not.toContain("peer01");
   const panel = html.slice(html.indexOf("</summary>"));
   expect(panel).toContain("peer01");
@@ -174,4 +174,43 @@ test("a report saved before the dates were kept counts what the reasons tell and
   expect(cardFigures(html)).toEqual(["–", "6", "14", "1"]);
   expect(html).toContain(f.t("cancel.refresh"));
   expect(cancelledSection(cancelPage({ reasons: {} }))).toBeNull();
+});
+
+test("the page goes: what you give back, by milestone, the log, what was cancelled, correction points, feedback, over time and when", async () => {
+  const { readFileSync } = await import("node:fs");
+  const doc = JSON.parse(readFileSync("../server/core/testdata/golden/mid.report.json", "utf8")), all = doc.periods.all;
+  const derive = JSON.parse(readFileSync("../server/core/testdata/golden/mid.derive.json", "utf8")).all;
+  const pg = new Page(new Fmt("en"), { period: "all", report: all, derive, layout: doc.layout, all_projects: all.projects, all_cursus: all.extras.cursus } as any, "evaluations", {});
+  expect(evaluations(pg).map((s) => s.id).filter((id) => id !== "cancelled")).toEqual(["community", "by-group", "log", "points", "feedback", "over-time", "when"]);
+});
+
+test("Correction points: the balance at the end of each month, week by week when enlarged; each tip with what came in and went out by reason and the balance it ended with", () => {
+  const f = new Fmt("en");
+  const cp = { earned: 9, spent: 6, max: 5, series: [], reasons: {},
+    by_month: [{ m: "2026-01", earned: 4, spent: 6, reasons: { "Earning after defense": 4, "Defense plannification": -6 } }, { m: "2026-03", earned: 5, spent: 0, reasons: { "Earning after defense": 5 } }],
+    by_week: [{ w: "2026-01-05", earned: 4, spent: 6, reasons: { "Earning after defense": 4, "Defense plannification": -6 } }, { w: "2026-01-19", earned: 5, spent: 0, reasons: { "Earning after defense": 5 } }] };
+  const pg = new Page(f, { period: "piscine", report: { profile: { login: "me", correction_point: 3 }, correction_points: cp, received: [], given: [], projects: [] }, all_projects: [] } as any, "evaluations", {});
+  const html = pointsSection(pg).html;
+  const unesc = (t: string) => t.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+  const tipsIn = (part: string) => [...part.matchAll(/class="ch-col ql"[^>]*data-tip="([^"]*)"/g)].map((m) => unesc(m[1]));
+  const [monthly, weekly] = html.split('<div class="zoom-only">');
+  expect(tipsIn(monthly).length).toBe(3); // January, an empty February, March
+  expect(tipsIn(monthly)[0]).toContain("Defense plannification −6");
+  expect(tipsIn(monthly)[0]).toContain(f.t("points.q_balance", { n: f.num(-2) })); // the Piscine starts at 0
+  expect(tipsIn(monthly)[2]).toContain(f.t("points.q_balance", { n: "3" }));
+  expect(tipsIn(weekly).length).toBe(3); // the weeks of January 5, 12 and 19
+  expect(tipsIn(weekly)[0]).toContain(f.t("points.w_label", { d: f.day("2026-01-05") }));
+  expect(unesc(html)).toContain(f.t("points.qline_note")); // in the title's ⓘ
+});
+
+test("Correction points from a report saved before the months were kept: the balance at the end of each month from its own line, the last month labelled", () => {
+  const f = new Fmt("en");
+  const series = [{ x: Date.parse("2026-01-10T10:00:00Z"), y: 3 }, { x: Date.parse("2026-01-20T10:00:00Z"), y: 5 }, { x: Date.parse("2026-03-02T10:00:00Z"), y: 4 }];
+  const pg = new Page(f, { period: "student", report: { generated: "2026-04-15 10:00", profile: { login: "me" }, correction_points: { earned: 2, spent: 1, max: 5, series, reasons: {} },
+    received: [], given: [], projects: [] }, all_projects: [] } as any, "evaluations", {});
+  const html = pointsSection(pg).html;
+  expect(html.match(/class="ch-col ql"/g)?.length).toBe(4); // January to April, the report's month
+  const labels = [...html.matchAll(/<div class="ch-x[^"]*"[^>]*>(.*?)<\/div>/g)][0][1];
+  expect(labels).toContain(f.monthLabel("2026-04"));
+  expect(html).toContain(f.t("points.refresh_note").replace(/'/g, "&#39;"));
 });

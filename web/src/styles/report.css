@@ -70,6 +70,8 @@
 :where(body:not(.site)) .page-head .periods.only { color: var(--text-2); font-size: 15px; max-width: 40ch; }
 :where(body:not(.site)) .page-head .periods.only b { color: var(--ink); }
 :where(body:not(.site)) .page-head .periods.only .btn { margin-top: 12px; }
+/* while loading (the first extraction, a copy coming back, a wait), what it is doing sits in a box (spacing.css, --status-box-*) */
+:where(body:not(.site)) .skel .page-head .periods.only { border: var(--status-box-line, 1px) solid var(--status-box-color, var(--rule)); padding: var(--status-box-pad-y, 12px) var(--status-box-pad-x, 16px); }
 @media (min-width: 960px) {
   :where(body:not(.site)) .page-head { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: end; }
   :where(body:not(.site)) .page-head h1 { grid-row: 1 / 3; }
@@ -238,9 +240,16 @@
 /* evaluations with a comment or feedback get a second line, inside the same tbody */
 :where(body:not(.site)) tbody.pair tr:first-child td { border-bottom: 0; }
 :where(body:not(.site)) tbody.pair tr.detail td { padding-top: 0; }
+/* the log and the projects' table: a fine dashed line between a row and its second line ("Comment and 1 feedback", "1
+   attempt · team and correctors"), centred between it and the solid line under it; between rows a solid one */
+:where(body:not(.site)) :is([data-panel="table-log"], [data-panel="projects-table"]) tbody.pair tr.detail td { border-top: 1px dashed var(--c-table-border); padding-top: var(--c-table-cell-padding-y); }
 :where(body:not(.site)) tbody.pair:hover td, :where(body:not(.site)) tbody tr:hover td { background: var(--c-table-row-hover); }
 /* the comment preview must not widen the table: it takes whatever width the columns leave */
 :where(body:not(.site)) tr.detail details { contain: inline-size; }
+/* a comment, closed or open, stays put in what shows of the table, never cut nor carried sideways: as wide as the visible
+   part and held at its left edge while the table scrolls (behave.ts sets --wrap-w); the sides don't fade while one is open */
+:where(body:not(.site)) tr.detail details { position: sticky; left: var(--c-table-cell-padding-x); box-sizing: border-box; width: calc(var(--wrap-w, 100%) - 2 * var(--c-table-cell-padding-x)); }
+:where(body:not(.site)) .table-wrap:has(tr.detail details[open]) { --fade-l: var(--mask); --fade-r: var(--mask); }
 :where(body:not(.site)) a.code { color: inherit; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 4px; }
 :where(body:not(.site)) a.code:hover { text-decoration-color: currentColor; }
 /* wide tables keep their first column in view while scrolling sideways */
@@ -255,7 +264,7 @@
 :where(body:not(.site)) .hbar i { display: block; height: 100%; background: var(--accent-data); }
 /* initials always show; a photo, when one loads, covers them */
 :where(body:not(.site)) .avatar { position: relative; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; overflow: hidden;
-  vertical-align: middle; margin-right: 8px; background: var(--sunken); color: var(--text-2); font: 700 11px var(--type-font-display); }
+  vertical-align: middle; margin-right: 8px; border: 1px solid var(--rule); background: var(--sunken); color: var(--text-2); font: 700 11px var(--type-font-display); }
 :where(body:not(.site)) .avatar::before { content: attr(data-i); }
 :where(body:not(.site)) .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 :where(body:not(.site)) .badge { display: inline-flex; align-items: center; padding: var(--c-badge-padding-y) var(--c-badge-padding-x); border-radius: var(--c-badge-radius);
@@ -446,6 +455,7 @@
 :where(body:not(.site)) .net-node.alumni circle { fill: var(--alumni); stroke: var(--alumni-edge); }
 :where(body:not(.site)) .net-node.none circle { fill: var(--surface); stroke: var(--neutral); }
 :where(body:not(.site)) .net-node.dead circle { fill: color-mix(in oklab, var(--critical) 22%, var(--surface)); stroke: var(--critical); stroke-dasharray: 2 2; }
+:where(body:not(.site)) .net-node.deleted circle { fill: transparent; stroke: var(--muted); stroke-dasharray: 3 2; } /* a deleted account: hollow, dashed */
 :where(body:not(.site)) .net-node text { fill: var(--text-2); font: 500 13px var(--type-font-text); paint-order: stroke; stroke: var(--c-island-bg); stroke-width: 4px; stroke-linejoin: round; }
 :where(body:not(.site)) .net-node:focus-visible circle, :where(body:not(.site)) .net-node:hover circle { stroke: var(--focus); stroke-width: 3; }
 :where(body:not(.site)) .net-node:focus-visible { outline: none; }

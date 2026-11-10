@@ -123,6 +123,7 @@ export function install() {
   if (installed) return;
   installed = true;
   document.documentElement.classList.add("js");
+  addEventListener("pagehide", () => pageSeen(visit)); // leaving the tab or reloading counts as leaving the page
   document.addEventListener("mousemove", (ev) => {
     const el = tipOf(ev.target);
     if (el) placeTip(el, ev.clientX);
@@ -236,6 +237,7 @@ export function hintScroll(root: ParentNode = document) {
       box.style.setProperty("--sb-h", `${Math.max(0, box.offsetHeight - box.clientHeight - px(cs.borderTopWidth) - px(cs.borderBottomWidth))}px`);
       box.style.setProperty("--head-h", `${box.querySelector<HTMLElement>(":scope > table > thead")?.offsetHeight || 0}px`);
       box.style.setProperty("--stick-w", `${box.querySelector<HTMLElement>(":scope > table.sticky-first th:first-child")?.offsetWidth || 0}px`);
+      box.style.setProperty("--wrap-w", `${box.clientWidth}px`); // what shows of a wide table: an opened comment keeps to it
     };
     if (!box.dataset.hint) { box.dataset.hint = "1"; box.addEventListener("scroll", update, { passive: true }); }
     update();
@@ -258,18 +260,48 @@ function countUp(el: HTMLElement) {
   requestAnimationFrame(step);
 }
 
+/** A big figure with no data-count counts up from its own text: its first number, in the format it has ("1,131:21",
+ * "4.64", "#104", "59:06 h"); the last frame puts the original text back. */
+function countText(el: HTMLElement) {
+  if (still()) return;
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let node: Text | null = null, m: RegExpExecArray | null = null;
+  while (walk.nextNode() && !m) { node = walk.currentNode as Text; m = /\d[\d.,]*(?::\d\d)?/.exec(node.data); }
+  if (!node || !m) return;
+  const lang = document.documentElement.lang === "es" ? "es-ES" : "en-GB", dec = lang === "es-ES" ? "," : ".", group = dec === "," ? "." : ",";
+  const tok = m[0], [whole, mins] = tok.split(":"), digits = whole.includes(dec) ? whole.split(dec)[1].length : 0;
+  const n = parseFloat(whole.split(group).join("").replace(dec, ".")), to = mins ? n * 60 + +mins : n;
+  if (!Number.isFinite(to) || !to) return;
+  const nf = new Intl.NumberFormat(lang, { minimumFractionDigits: digits, maximumFractionDigits: digits }), whole0 = new Intl.NumberFormat(lang, { maximumFractionDigits: 0 });
+  const before = node.data.slice(0, m.index), after = node.data.slice(m.index + tok.length), text = node, t0 = performance.now();
+  const show = (v: number) => (mins ? `${whole0.format(Math.floor(v / 60))}:${String(Math.floor(v % 60)).padStart(2, "0")}` : nf.format(v));
+  const step = (t: number) => {
+    const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(2, -10 * k);
+    text.data = before + (k < 1 ? show(to * e) : tok) + after;
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 let reveal: IntersectionObserver | null = null;
 let tocIO: IntersectionObserver | null = null;
 
-/** The pages already drawn in this tab's session: from then on their charts and figures show at once (no draw-in when a
- * filter changes, the report is refreshed or the page is opened again). */
-function firstDraw(page: string): boolean {
-  try {
-    const done: string[] = JSON.parse(sessionStorage.getItem("drawn") || "[]");
-    if (done.includes(page)) return false;
-    sessionStorage.setItem("drawn", JSON.stringify([...done, page]));
-  } catch { /* private mode: every drawing is a first one */ }
-  return true;
+/* Draw-in (owner, 2026-11-09): the first time you open a page in this tab's session, each chart and figure draws in when
+   it comes into view; once you leave the page (or the tab), the page counts as seen and shows at once from then on,
+   seen or not. On the visit itself, a part already drawn in shows at once when the page is drawn again (a filter, a
+   refresh). Only a part marked data-anim is hidden by the CSS, so a page drawn again never flashes or replays. */
+const seenPages = (): string[] => { try { return JSON.parse(sessionStorage.getItem("drawn") || "[]"); } catch { return []; } };
+function pageSeen(page: string) {
+  try { if (page && !seenPages().includes(page)) sessionStorage.setItem("drawn", JSON.stringify([...seenPages(), page])); } catch { /* private mode */ }
+}
+let visit = "", drawnIn = new Set<string>(); // the page on screen, and the parts of it drawn in on this visit
+
+/** Every page draws in again, as on the session's first visit (the owner's dev-live button): forget them and reload,
+ * without the reload marking the page on screen as seen. */
+export function replayDrawIn() {
+  visit = "";
+  try { sessionStorage.removeItem("drawn"); } catch { /* private mode */ }
+  location.reload();
 }
 
 /** After a render: tooltips (styled ones replace the native fallbacks), grids, scroll hints, selects, the draw-in. */
@@ -289,14 +321,25 @@ export function settle(root: ParentNode) {
   $$(".cal-scroll", root).forEach((c) => { c.scrollLeft = c.scrollWidth; }); // narrow screens open on the latest months
   reveal ??= window.IntersectionObserver ? new IntersectionObserver((entries) => entries.forEach((e) => {
     if (!e.isIntersecting) return;
-    e.target.classList.add("in");
-    reveal!.unobserve(e.target);
-    $$("[data-count]", e.target).forEach(countUp);
+    const el = e.target as HTMLElement;
+    el.classList.add("in");
+    drawnIn.add(el.dataset.anim || "");
+    reveal!.unobserve(el);
+    $$("[data-count]", el).forEach(countUp);
+    $$<HTMLElement>(".v, .figure", el).filter((x) => !x.querySelector("[data-count]")).forEach(countText); // big figures of every page
   }), { rootMargin: "0px 0px -10% 0px" }) : null;
-  const parts = $$(".vchart, .hchart, .lchart, .module, .tp", root).filter((c) => !c.closest(".skel")); // a skeleton is no first drawing
   const page = (root as HTMLElement).closest?.("[data-page]")?.getAttribute("data-page") || "";
-  if (parts.length && reveal && (!page || firstDraw(page))) parts.forEach((c) => reveal!.observe(c));
-  else parts.forEach((c) => c.classList.add("in"));
+  if (page !== visit) { pageSeen(visit); visit = page; drawnIn = new Set(); } // leaving a page: it counts as seen
+  const first = !!page && !seenPages().includes(page);
+  const index = new Map<Element | null, number>();
+  $$<HTMLElement>(".vchart, .hchart, .lchart, .module, .tp, .kpis > div, .rates > div, .pf-time", root).forEach((c) => {
+    if (c.closest(".skel")) return; // a skeleton is no drawing
+    const sec = c.closest("section[id]"), n = index.get(sec) ?? 0, key = `${sec?.id || ""}:${n}`;
+    index.set(sec, n + 1);
+    if (first && reveal && !drawnIn.has(key)) { c.dataset.anim = key; reveal.observe(c); return; }
+    delete c.dataset.anim;
+    c.classList.add("in");
+  });
   // the section in view lights up in the section index
   tocIO?.disconnect();
   const links = Object.fromEntries($$<HTMLAnchorElement>(".toc a").map((a) => [a.hash.slice(1), a]));

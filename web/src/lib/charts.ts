@@ -57,8 +57,9 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
   const cols = labels.map((lab, i) => {
     const tip = o.tips ? o.tips[i]
       : [lab, ...series.map(([n, v]) => `${n} ${fmt(v[i] || 0)}`), ...(line ? [`${line[0]} ${fmt(line[1][i])}`] : [])].join(" · ");
+    let k = 0; // a stack grows from the bottom up, each part in its turn (--k: its place among the parts it has)
     const bars = series.map(([, v, c]) =>
-      `<i style="height:${pct(v[i] || 0, top)};background:${c}"${v[i] && !colTip ? tipAttr(tip) : ""}></i>`).join("");
+      `<i style="height:${pct(v[i] || 0, top)};background:${c}${o.stacked && v[i] ? `;--k:${k++}` : ""}"${v[i] && !colTip ? tipAttr(tip) : ""}></i>`).join("");
     const cap = o.peak && i === best
       ? `<b class="peak">${esc(o.peak.replace("{v}", fmt(totals[i])).replace("{label}", lab))}</b>` : "";
     return `<div class="ch-col${o.stacked ? " stack" : ""}"${colTip ? tipAttr(tip) : ""}>${cap}${bars}</div>`;
@@ -73,7 +74,7 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
     const pts = line[1].map((v, i) => `${(((i + 0.5) * 1000) / n).toFixed(1)},${(300 - (300 * v) / ltop).toFixed(1)}`).join(" ");
     overlay = `<svg class="ch-line" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">`
       + `<polyline points="${pts}" pathLength="1" style="stroke:${line[2]}"/></svg>`
-      + line[1].map((v, i) => `<i class="ch-dot" style="left:${(((i + 0.5) * 100) / n).toFixed(2)}%;bottom:${pct(v, ltop)};background:${line[2]}"></i>`).join("")
+      + line[1].map((v, i) => `<i class="ch-dot" style="--d:${dotAt(i, n)};left:${(((i + 0.5) * 100) / n).toFixed(2)}%;bottom:${pct(v, ltop)};background:${line[2]}"></i>`).join("")
       + `<div class="ch-y right" aria-hidden="true">${[0, 1, 2, 3, 4].map((k) =>
         `<span style="bottom:${pct((ltop * k) / 4, ltop)}">${esc(k === 4 ? f.num(ltop) : tick(f, (ltop * k) / 4, 2))}</span>`).join("")}</div>`
       + `<b class="line-end" style="bottom:${pct(line[1][line[1].length - 1] || 0, ltop)}">${esc(line[0])} ${esc(fmt(line[1][line[1].length - 1] || 0))}</b>`;
@@ -86,6 +87,33 @@ export function vbars(f: Fmt, labels: string[], series: Series[], o: VOpts): str
     + `<div class="ch-plot">${keys}${yaxis(f, top, steps)}<div class="ch-cols" style="--n:${labels.length}">${cols.join("")}</div>${overlay}</div>`
     + `<div class="ch-x${labels.length > 8 ? " edge" : ""}" style="--n:${labels.length}" aria-hidden="true">${xs}</div>`
     + (o.xtitle ? `<figcaption class="ch-title">${esc(o.xtitle)}</figcaption>` : "") + "</figure>";
+}
+
+/** A running total at the end of each label, as dots joined by a line (the plain line charts' look), each column's
+ * whole strip opening its tip. */
+/** A dot's place from the left, 0 to 1: the dots draw in in that order (dash.css). */
+const dotAt = (i: number, n: number) => (n > 1 ? i / (n - 1) : 0).toFixed(3);
+
+export function qline(f: Fmt, labels: string[], values: number[], o: { label: string; color: string; tips: string[]; emptyText?: string }): string {
+  if (!labels.length) return empty(o.emptyText || "");
+  // one even step from the lowest to the highest (0 always in): four of them over the span, rounded up
+  const lo = Math.min(0, ...values), hi = Math.max(1, ...values), step = niceMax(hi - lo) / 4;
+  const bot = -Math.floor(lo / step) * step, top = Math.ceil(hi / step) * step, span = top + bot;
+  const at = (v: number) => (100 * (v + bot)) / span; // % from the bottom
+  const steps = Array.from({ length: Math.round(span / step) + 1 }, (_, k) => -bot + k * step);
+  const ticks = steps.map((v) => `<span style="bottom:${at(v).toFixed(2)}%">${esc(tick(f, v, v % 1 ? 1 : 0))}</span>`).join("");
+  const n = labels.length;
+  const cols = labels.map((_, i) => `<div class="ch-col ql"${tipAttr(o.tips[i])}></div>`).join("");
+  const pts = values.map((v, i) => `${(((i + 0.5) * 1000) / n).toFixed(1)},${(300 - 3 * at(v)).toFixed(1)}`).join(" ");
+  const line = `<svg class="ch-line" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" pathLength="1" style="stroke:${o.color}"/></svg>`
+    + values.map((v, i) => `<i class="ch-dot" style="--d:${dotAt(i, n)};left:${(((i + 0.5) * 100) / n).toFixed(2)}%;bottom:${at(v).toFixed(2)}%;background:${o.color}"></i>`).join("");
+  const every = Math.max(1, Math.ceil(n / 8));
+  // counted back from the last label, so the last month (or week) always shows
+  const xs = labels.map((lab, i) => ((n - 1 - i) % every === 0 ? `<span>${esc(lab)}</span>` : "<span></span>")).join("");
+  return `<figure class="vchart qline col-tips" role="img" aria-label="${esc(o.label)}">`
+    + `<div class="ch-plot"><div class="ch-y" aria-hidden="true">${ticks}</div>${bot ? `<i class="ch-zero" style="top:${((100 * top) / span).toFixed(2)}%"></i>` : ""}`
+    + `<div class="ch-cols" style="--n:${n}">${cols}</div>${line}</div>`
+    + `<div class="ch-x${n > 8 ? " edge" : ""}" style="--n:${n}" aria-hidden="true">${xs}</div></figure>`;
 }
 
 type HOpts = {
@@ -102,7 +130,7 @@ export function hbars(f: Fmt, labels: string[], series: Series[], o: HOpts): str
   const rows = labels.map((lab, i) => {
     const tip = o.tips ? o.tips[i] : [lab, ...series.flatMap(([n, v]) => (v[i] ? [`${n} ${f.num(v[i], 2)}`] : []))].join(" · ");
     // a negative value (points taken away) draws as long as it is, in red
-    const segs = series.filter(([, v]) => v[i]).map(([, v, c]) => `<i style="width:${pct(Math.abs(v[i] || 0), top)};background:${(v[i] || 0) < 0 ? BAD : c}"${tipAttr(tip)}></i>`).join("");
+    const segs = series.filter(([, v]) => v[i]).map(([, v, c], k) => `<i style="width:${pct(Math.abs(v[i] || 0), top)};background:${(v[i] || 0) < 0 ? BAD : c};--k:${k}"${tipAttr(tip)}></i>`).join("");
     const x = o.extra?.(i);
     return `<div class="hb-row"><span class="hb-label">${esc(lab)}</span><span class="hb-track">${segs}<b>${esc(end(i, totals[i]))}`
       + `${x ? `<span class=hb-extra> · ${esc(x)}</span>` : ""}</b></span></div>`;
@@ -111,21 +139,26 @@ export function hbars(f: Fmt, labels: string[], series: Series[], o: HOpts): str
   return `<figure class="hchart${o.big ? " big" : ""}" role="img" aria-label="${esc(summary)}">${rows.join("")}</figure>`;
 }
 
-function monthTicks(f: Fmt, lo: number, hi: number) {
-  const span = hi - lo, out: string[] = [];
-  const step = Math.max(1, Math.round(span / 864e5 / 30 / 8)) * 30 * 864e5;
-  // a tick too close to the right edge would be cut: it is left out
-  for (let t = lo + step / 2; t < hi && (t - lo) / span < 0.95; t += step) out.push(`<span style="left:${((100 * (t - lo)) / span).toFixed(2)}%">${esc(f.monthOf(t))}</span>`);
-  return out.join("");
+/** Month labels under a time axis: one per real month, under its middle (the 15th), every k-th counted back from the
+ * month the data ends in, which always shows, right-aligned so it ends at its place (at the edge when its 15th is past). */
+function monthTicks(f: Fmt, lo: number, hi: number, end: number) {
+  const span = hi - lo, mid = (t: number, k: number) => { const d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + k, 15, 12); };
+  const months: number[] = [];
+  for (let k = 0, t = mid(lo, 0); t <= hi; t = mid(lo, ++k)) if (t >= lo) months.push(t);
+  const last = mid(end, 0);
+  if (months.at(-1) !== last) months.push(last); // the data ends before its 15th: still named, at the edge
+  const every = Math.max(1, Math.round(months.length / 8));
+  return months.filter((_, i) => (months.length - 1 - i) % every === 0).map((t, i, xs) =>
+    `<span${i === xs.length - 1 ? ' class="end"' : ""} style="left:${((100 * (Math.min(t, hi) - lo)) / span).toFixed(2)}%">${esc(f.monthOf(t))}</span>`).join("");
 }
 
 /** Time series as SVG lines over an HTML axis. */
-export function lines(f: Fmt, series: [string, Point[], string][], o: { label: string; step?: boolean; emptyText?: string }): string {
+export function lines(f: Fmt, series: [string, Point[], string][], o: { label: string; step?: boolean; emptyText?: string; to?: number }): string {
   const step = o.step ?? true;
   const pts = series.flatMap(([, ps]) => ps);
   if (!pts.length) return empty(o.emptyText || "");
-  let lo = Math.min(...pts.map((p) => p.x)), hi = Math.max(...pts.map((p) => p.x));
-  const pad = Math.max((hi - lo) * 0.02, 864e5);
+  let lo = Math.min(...pts.map((p) => p.x)), hi = Math.max(...pts.map((p) => p.x), o.to ?? 0); // to: the lines carry on flat up to that day
+  const end = hi, pad = Math.max((hi - lo) * 0.02, 864e5);
   lo -= pad; hi += pad;
   const top = niceMax(Math.max(...pts.map((p) => p.y)));
   const X = (x: number) => (1000 * (x - lo)) / (hi - lo), Y = (y: number) => 300 - (300 * y) / top;
@@ -153,7 +186,7 @@ export function lines(f: Fmt, series: [string, Point[], string][], o: { label: s
   return `<figure class="lchart" role="img" aria-label="${esc(`${o.label}: ${last}`)}">`
     + `<div class="ch-plot">${yaxis(f, top)}<svg class="ch-lines" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">`
     + `${paths.join("")}</svg><div class="ch-hover" style="--n:${n}">${slices.join("")}</div></div>`
-    + `<div class="ch-months" aria-hidden="true">${monthTicks(f, lo, hi)}</div></figure>`;
+    + `<div class="ch-months" aria-hidden="true">${monthTicks(f, lo, hi, end)}</div></figure>`;
 }
 
 /** Gantt rows on one shared time axis: [row label, [start ms, end ms, colour, tip][]]. */
@@ -169,6 +202,6 @@ export function timeline(f: Fmt, rows: [string, [number, number, string, string]
     return `<div class="tl-row"><span class="tl-label" title="${esc(name)}">${esc(name)}</span><span class="tl-track">${bars}</span></div>`;
   });
   return `<figure class="timeline" role="img" aria-label="${esc(o.label)}">${body.join("")}`
-    + `<div class="tl-axis" aria-hidden="true"><span></span><span class="ch-months">${monthTicks(f, lo, hi)}</span></div></figure>`;
+    + `<div class="tl-axis" aria-hidden="true"><span></span><span class="ch-months">${monthTicks(f, lo, hi, hi - pad)}</span></div></figure>`;
 }
 
