@@ -182,9 +182,10 @@ GITHUB_REPO, GITHUB_BRANCH   #   and GITHUB_TOKEN are set)
 
 ## Modes
 
-- **Dev** (`make dev-build`, https://localhost) signs in with the second 42 app. The landing also offers seven
+- **Dev** (`make dev-build`, https://localhost) signs in with the second 42 app. The landing also offers nine
   **Test** profiles (a new student, one halfway through the Common Core, an Outer Core transcender, an alumni, a
-  Python-track student, a Python-track transcender and a student who moved from C to Python): synthetic data moved to
+  Python-track student, a Python-track transcender, a student who moved from C to Python, and two to check the side
+  tables and lists: one with very little, which fills them with templates, and one with a lot, which makes them scroll): synthetic data moved to
   today's date, never real people, never able to publish or refresh. `make dev-real` adds **Real · login** for the
   logins in `DEV_REAL_LOGINS`, saved in `web/preview/` (local only). A code change needs `make dev-build` again; `make dev-live` shows the
   browser app's changes at once (`ui.json` and the server still need the rebuild).

@@ -320,6 +320,10 @@ main[data-page="web-evaluations"] #cancelled {
   --kpi-line: 2px;             /* over each of the four cards */
   --kpi-pad: var(--kpi-pad-all, 10px);             /* each card's line → its name */
 }
+#points, dialog.zoom {
+  --balance-dot: 6px;          /* each month's circle on "Balance at the end of each month" (each week's when enlarged), here
+                                  and as a Profile widget */
+}
 main[data-page="web-evaluations"] #points {
   --sections: 56px;            /* Cancelled evaluations (or the log) → "Correction points", phones */
   --sections-laptop: var(--sections-all-laptop, 88px); /* the same, laptops: the global value; 88px when it is off */
@@ -471,7 +475,7 @@ main[data-page="web-coalition"] #coal-points {
   --title-pad: 12px;           /* "Coalition points" → its line */
   --sources-line: 2px;         /* over "Points by source" */
   --months-line: 2px;          /* over "Points per month" */
-  --months-gap: var(--chart-gap-all, 20px);          /* "Points per month" → the chart */
+  --months-gap: calc(var(--chart-gap-all, 20px) + 6px);          /* "Points per month" → the chart */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --axis-line: 2px;            /* the baseline of Points per month */
   --key-box: 1px;              /* the frame of the key */

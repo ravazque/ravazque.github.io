@@ -192,8 +192,10 @@ GITHUB_REPO, GITHUB_BRANCH   #   y GITHUB_TOKEN estén definidos)
 ## Modos
 
 - **Dev** (`make dev-build`, https://localhost) entra con la segunda app de 42. La página de entrada ofrece además
-  siete perfiles **Test** (un estudiante nuevo, uno a mitad del Common Core, un transcender del Outer Core, un alumni,
-  un estudiante de la rama Python, un transcender de la rama Python y un estudiante que pasó de C a Python): datos
+  nueve perfiles **Test** (un estudiante nuevo, uno a mitad del Common Core, un transcender del Outer Core, un alumni,
+  un estudiante de la rama Python, un transcender de la rama Python, un estudiante que pasó de C a Python, y dos para
+  revisar las tablas y listas laterales: uno con muy pocos datos, que las rellena de plantillas, y otro con muchos, que
+  las hace desplazarse): datos
   sintéticos movidos a la fecha de hoy, nunca personas reales, que no pueden publicar ni actualizar. `make dev-real`
   añade **Real · login** para los logins de `DEV_REAL_LOGINS`, guardados en `web/preview/` (solo en local). Un cambio
   en el código necesita `make dev-build` de nuevo; `make dev-live` muestra al momento los cambios de la app del navegador

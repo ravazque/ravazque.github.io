@@ -352,7 +352,7 @@
    past the box so a line along the top or the bottom stays whole */
 :where(html.js body:not(.site)) .qline[data-anim]:not(.in) .ch-line { clip-path: inset(-12px calc(100% + 12px) -12px -12px); }
 :where(body:not(.site)) .qline .ch-line { clip-path: inset(-12px); transition: clip-path 1.5s var(--motion-ease) .7s, opacity .14s; }
-:where(body:not(.site)) .qline .ch-dot { width: 8px; height: 8px; }
+:where(body:not(.site)) .qline .ch-dot { width: var(--balance-dot, 6px); height: var(--balance-dot, 6px); }  /* spacing.css #points */
 @media (prefers-reduced-motion: reduce) {
   :where(html.js body:not(.site)) .vchart[data-anim]:not(.in) .ch-col i, :where(html.js body:not(.site)) .hchart[data-anim]:not(.in) .hb-track i { transform: none; }
   :where(html.js body:not(.site)) .lchart[data-anim]:not(.in) .ch-lines, :where(html.js body:not(.site)) .vchart[data-anim]:not(.in) .ch-line { clip-path: none; }
@@ -485,10 +485,12 @@
 /* the points: on the right, centred on their line, a little larger */
 :where(body:not(.site)) [data-panel="coal-recent"] .list li { align-items: center; }
 :where(body:not(.site)) [data-panel="coal-recent"] .list li .when { font: 700 17px var(--type-font-display); color: var(--ink); }
-/* Projects you corrected as tall as the table by milestone beside it, the rest scrolls */
+/* Projects you corrected as tall as the table by milestone beside it (side by side from 960px): more rows scroll, fewer
+   leave templates down to its base (v2.css .table-wrap.fit) */
 @media (min-width: 960px) {
   :where(body:not(.site)) [data-panel="depth-projects"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }
   :where(body:not(.site)) [data-panel="depth-projects"] .table-wrap { flex: 1; min-height: 0; max-height: none; }
+  :where(body:not(.site)) [data-panel="depth-projects"] .table-wrap.fit > .fill-rows { display: block; flex: 1 0 0; min-height: 0; overflow: hidden; }
 }
 @media (min-width: 1280px) {
   :where(body:not(.site)) [data-panel="coal-recent"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }

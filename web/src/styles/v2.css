@@ -77,15 +77,27 @@
 :where(body:not(.site)) .fill b { display: block; height: 11px; width: 42%; background: var(--seat-empty); }
 :where(body:not(.site)) .fill b:nth-child(2) { width: 100%; }
 :where(body:not(.site)) .fill b:nth-child(3) { width: 26%; }
-:where(body:not(.site)) .blank-rows td { height: 82px; padding: 0 var(--c-table-cell-padding-x); }
-:where(body:not(.site)) .blank-rows td::before { content: ""; display: block; width: 34%; height: 11px; background: var(--seat-empty); }
 @media (min-width: 1280px) {
   :where(body:not(.site)) [data-panel="bonus-history"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }
   :where(body:not(.site)) [data-panel="bonus-history"] .list { flex: 1; min-height: 0; max-height: none; }
   :where(body:not(.site)) :is([data-panel="bonus-history"], [data-panel="coal-recent"]) .list:has(> .fill) { height: auto; }
   :where(body:not(.site)) .widget.half [data-panel="bonus-history"] { height: auto; min-height: 0; }
   :where(body:not(.site)) .widget.half :is([data-panel="bonus-history"], [data-panel="coal-recent"]) .list { flex: none; height: var(--history-height, 340px); }
+  /* a table beside a chart (.table-wrap.fit, page.ts fillTable): as tall as the chart, more rows a scroll away under their
+     column names, fewer leave templates of rows down to its base; one under the other (phones, tablets, half widgets) it
+     keeps its own height and no templates */
+  :where(body:not(.site)) [data-panel]:has(> .table-wrap.fit) { height: 0; min-height: 100%; display: flex; flex-direction: column; }
+  :where(body:not(.site)) .table-wrap.fit { flex: 1; min-height: 0; max-height: none; }
+  :where(body:not(.site)) .table-wrap.fit > .fill-rows { display: block; flex: 1 0 0; min-height: 0; overflow: hidden; }
+  :where(body:not(.site)) .widget.half [data-panel]:has(> .table-wrap.fit) { height: auto; min-height: 0; }
+  :where(body:not(.site)) .widget.half .table-wrap.fit > .fill-rows { display: none; }
 }
+:where(body:not(.site)) .table-wrap.fit { display: flex; flex-direction: column; }
+:where(body:not(.site)) .table-wrap.fit > table { flex: none; }
+:where(body:not(.site)) .fill-rows { display: none; }
+:where(body:not(.site)) .fill-rows i { display: flex; align-items: center; height: var(--fill-row, 47px); padding: 0 var(--c-table-cell-padding-x);
+  border-bottom: var(--table-row-line) solid var(--c-table-border); }
+:where(body:not(.site)) .fill-rows i::before { content: ""; width: 34%; height: 11px; background: var(--seat-empty); }
 
 
 
@@ -347,6 +359,8 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .src-list b.neg { color: var(--critical); }
 :where(body:not(.site)) .src-list .zero :is(.src-name, b) { color: var(--text-2); font-weight: 500; }
 :where(body:not(.site)) .src-list .zero .sw { box-sizing: border-box; border: 2px solid var(--rule); }
+:where(body:not(.site)) [data-panel="by-group"] tr.zero td { color: var(--text-2); }  /* a group with nothing, kept in its place */
+:where(body:not(.site)) [data-panel="by-group"] .table-wrap { max-height: none; }  /* every group shows: Projects you corrected takes its height */
 
 /* Cancelled evaluations: four cards, 40/20/20/20 from 760px; each one's tip lists them by date (evaluations.ts) */
 :where(body:not(.site)) #cancelled .kpis.cancel-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }

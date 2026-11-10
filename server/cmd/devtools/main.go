@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -49,6 +50,89 @@ var profiles = []struct {
 	{"python", "mid", 990005, "tpython", "Pia Python", "", "2000-01-01"},
 	{"pyouter", "alumni", 990006, "tpyouter", "Pau Pyouter", "Transcender", "2000-01-01"},
 	{"migrated", "mid", 990007, "tmigrant", "Mia Migrant", "", "2026-02-11"},
+	{"few", "new", 990008, "tfew", "Fran Few", "", ""},
+	{"many", "mid", 990009, "tmany", "Max Many", "", ""},
+}
+
+// fill makes two of them show what a side table or list does with little and with a lot (owner, 2026-11-10): few keeps
+// three coalition awards and two logtime bonuses, so the lists, the reasons and the corrected projects leave templates
+// down to their base; many adds every kind of correction point move, a bonus every week for a year and every source of
+// coalition points, so they scroll. Dataset times, before shift.
+var fill = map[string]func(data map[string]any){
+	"few": func(data map[string]any) {
+		given := asList(data["evals_given"]) // one project corrected, three times
+		if len(given) > 3 {
+			given = given[:3]
+		}
+		for _, e := range given {
+			e.(map[string]any)["team"].(map[string]any)["project_id"] = asList(data["evals_given"])[0].(map[string]any)["team"].(map[string]any)["project_id"]
+		}
+		data["evals_given"] = given
+		scores := asList(data["coalition_scores"])
+		if len(scores) > 3 {
+			scores = scores[:3]
+		}
+		data["coalition_scores"] = append(scores, score(scores[0], 997001, "Location", 7, 500, "2026-10-12T19:00:00.000Z"),
+			score(scores[0], 997002, "Location", 7, 500, "2026-10-26T19:00:00.000Z"))
+	},
+	"many": func(data map[string]any) {
+		cps := asList(data["correction_points"])
+		moves := []struct {
+			reason string
+			sum    float64
+			times  int
+		}{{"Provided points to the pool.", -2, 12}, {"Evaluator cancelled a defense", -1, 6}, {"Refund during sales", 1, 9},
+			{"Refund for evaluator missing", 1, 3}, {"Discovery", 1, 4}, {"Piscine Pedago", -6, 1}, {"Reajuste", 6, 1}}
+		id, at := 996001.0, time.Date(2025, 9, 20, 15, 0, 0, 0, time.UTC)
+		for _, m := range moves {
+			for k := 0; k < m.times; k++ {
+				cps = append(cps, map[string]any{"id": id, "scale_team_id": nil, "reason": m.reason, "sum": m.sum, "total": 0.0,
+					"created_at": at.Format("2006-01-02T15:04:05.000Z"), "updated_at": at.Format("2006-01-02T15:04:05.000Z")})
+				id++
+				at = at.Add(9*24*time.Hour + 5*time.Hour)
+			}
+		}
+		// the balance after each move, from the first one's
+		sort.SliceStable(cps, func(i, j int) bool {
+			return cps[i].(map[string]any)["created_at"].(string) < cps[j].(map[string]any)["created_at"].(string)
+		})
+		first := cps[0].(map[string]any)
+		total := asFloat(first["total"]) - asFloat(first["sum"])
+		for _, c := range cps {
+			c := c.(map[string]any)
+			total += asFloat(c["sum"])
+			c["total"] = total
+		}
+		data["correction_points"] = cps
+		data["user"].(map[string]any)["correction_point"] = total
+		scores := asList(data["coalition_scores"])
+		base := scores[0]
+		sid, week := 997101.0, time.Date(2025, 10, 6, 19, 0, 0, 0, time.UTC)
+		for k := 0; !week.After(datasetNow); k, week = k+1, week.Add(7*24*time.Hour) {
+			calc, value := 7.0, 500.0
+			if k%3 == 2 {
+				calc, value = 20, 1000
+			}
+			scores = append(scores, score(base, sid, "Location", calc, value, week.Format("2006-01-02T15:04:05.000Z")))
+			sid++
+		}
+		for k, x := range []struct {
+			kind  string
+			calc  float64
+			value float64
+		}{{"Transaction", 0, 30}, {"Transaction", 0, 50}, {"CommunityService", 11, -42}, {"CommunityService", 11, -42}, {"Event", 0, 25}, {"Location", 0, 12}} {
+			scores = append(scores, score(base, sid, x.kind, x.calc, x.value, time.Date(2026, time.Month(1+k), 15, 12, 0, 0, 0, time.UTC).Format("2006-01-02T15:04:05.000Z")))
+			sid++
+		}
+		data["coalition_scores"] = scores
+	},
+}
+
+// score is one coalition award like base (same coalition and member), of another kind.
+func score(base any, id float64, kind string, calc, value float64, at string) map[string]any {
+	b := base.(map[string]any)
+	return map[string]any{"id": id, "coalition_id": b["coalition_id"], "scoreable_id": id, "scoreable_type": kind, "coalitions_user_id": b["coalitions_user_id"],
+		"calculation_id": calc, "value": value, "reason": "", "created_at": at, "updated_at": at}
 }
 
 // pythonTrack: the C project each Python one stands in for, rank by rank (server/core/data/tracks.json); the names of
@@ -220,7 +304,11 @@ func makeProfiles(dir string) error {
 		if err := json.Unmarshal(raw, &data); err != nil {
 			return err
 		}
-		data = shift(become(data, p.login, p.name, p.grade, p.python), d).(map[string]any)
+		data = become(data, p.login, p.name, p.grade, p.python)
+		if f := fill[p.key]; f != nil {
+			f(data)
+		}
+		data = shift(data, d).(map[string]any)
 		srv := httptest.NewServer(fake42.Handler(data, func(string) {}))
 		lim := app.NewLimiter(1, time.Now, nil)
 		lim.PerSecond(1000)

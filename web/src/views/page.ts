@@ -82,13 +82,15 @@ export const section = (id: string, title: string, body: string, o: { lede?: str
   + (o.head ?? `<h2>${esc(title)}${o.count ? `<span class="count"><span class="sep"> · </span>${esc(o.count)}</span>` : ""}</h2>`)
   + (o.lede ? `<p class="lede">${o.lede}</p>` : "") + body + "</section>";
 
-/** The rows a side table keeps room for while it has fewer (see `minRows`). */
-export const LIST_ROWS = 5;
 /** Under a side list with few rows: templates of the rows to come, the first saying what they are. As many as any panel
  * has room for: the list clips them at its base, so they follow its height. Once the rows alone fill it, none. */
 const FILL_ROWS = 24;
 export const fillRows = (filled: number, label: string) => (filled >= FILL_ROWS ? ""
   : `<li class="fill" aria-hidden="true"><p>${esc(label)}</p>${"<i><b></b><b></b><b></b></i>".repeat(FILL_ROWS)}</li>`);
+
+/** Templates of table rows after a table beside a chart (`<div class="table-wrap fit">`): on a laptop the table takes the
+ * chart's height, more rows scroll and the room left shows these, clipped at its base (v2.css). */
+export const fillTable = () => `<div class="fill-rows" aria-hidden="true">${"<i></i>".repeat(FILL_ROWS)}</div>`;
 
 export const block = (panel: string, body: string, title = "", note = "") =>
   `<div class="block" data-panel="${panel}">${title ? `<h3>${esc(title)}</h3>` : ""}${note ? `<p class="note">${esc(note)}</p>` : ""}${body}</div>`;

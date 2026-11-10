@@ -2,10 +2,10 @@
 // and received and given over time, when and how long.
 import type { Fmt } from "../fmt";
 import { GOOD, BAD, S1, S2, legend, lines, qline, vbars } from "../lib/charts";
-import { ACCENT, SLATE, heat } from "../lib/graphs";
+import { ACCENT, GROUPS, SLATE, heat } from "../lib/graphs";
 import { ARROW, avatar, badge, esc, tipAttr } from "../lib/h";
 import { facts, table } from "../lib/table";
-import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased, LIST_ROWS } from "./page";
+import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased, fillTable } from "./page";
 import tracks from "@data/tracks.json";
 
 /** Common Core project slug → its milestone (rank-00…rank-06), C and Python tracks alike. */
@@ -55,21 +55,22 @@ export function evaluations(pg: Page): Section[] {
       + `<span class="frac">${esc(f.t("stats.of", { n: r.n, total: r.total }))}</span></p>${bar(r.n, r.total, " bad")}<p class="k">${esc(f.t(key))}</p></div>`;
     const recip = (n: number, total: number, text: string) => `<div class="recip-row">${bar(n, total, " good")}<p class="s">${esc(text)}</p></div>`;
     const R = st.outstanding_reciprocity;
-    const order = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "alumni", "blackholed", "no-cursus", "deleted"];
-    const groups = Object.entries(deletedApart(st.by_group || {}, D.received, D.given, D.profile?.login)).map(([g, v]: [string, any]) => ({ g, ...v, i: order.includes(g) ? order.indexOf(g) : 99,
+    // every group, always, in order (as Points by source has every source): the ones with nothing greyed
+    const by = deletedApart(st.by_group || {}, D.received, D.given, D.profile?.login), none = { received: 0, received_out: 0, given: 0, given_out: 0 };
+    const groups = [...new Set([...GROUPS, ...Object.keys(by)])].map((g) => ({ g, ...none, ...by[g] })).map((v: any) => ({ ...v, i: GROUPS.includes(v.g) ? GROUPS.indexOf(v.g) : 99,
       in_pct: v.received ? (100 * v.received_out) / v.received : null, out_pct: v.given ? (100 * v.given_out) / v.given : null }));
     const pctCell = (v: number | null) => (v === null ? "–" : `${f.num(v)}%`);
     statBlocks = [
       block("fail-rates", `<div class="rates">${rate(st.failed_given, "stats.failed_given")}${rate(st.failed_received, "stats.failed_received")}`
         + `<div class="rate recip"><h3>${esc(f.t("stats.reciprocity_title"))}</h3>${recip(R.i_gave_back, R.gave_me, f.t("stats.recip_in", { back: R.i_gave_back, gave_me: R.gave_me }))}`
         + `${recip(R.they_gave_back, R.i_gave, f.t("stats.recip_out", { back: R.they_gave_back, i_gave: R.i_gave }))}</div></div>`)];
-    byGroup = groups.length ? `<div class="block" data-panel="by-group"><h3>${esc(f.t("nav.by_group"))}</h3><div class="table-wrap">${table(f, [
+    byGroup = `<div class="block" data-panel="by-group"><h3>${esc(f.t("nav.by_group"))}</h3><div class="table-wrap">${table(f, [
         { k: "i", t: f.t("col.group"), nw: true, f: (r) => esc(f.t(`groups.${r.g}`)) },
         { k: "received", t: f.t("col.received"), s: f.t("abbr.received"), num: true, nw: true },
         { k: "in_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, nw: true, f: (r) => pctCell(r.in_pct) },
         { k: "given", t: f.t("col.given"), s: f.t("abbr.given"), num: true, nw: true },
         { k: "out_pct", t: f.t("col.out_pct"), s: f.t("abbr.out_pct"), num: true, nw: true, f: (r) => pctCell(r.out_pct) },
-      ], groups, { label: f.t("stats.group_title"), sort: ["i", 1] })}</div></div>` : "";
+      ], groups, { label: f.t("stats.group_title"), sort: ["i", 1], rowCls: (r) => (r.received || r.given ? "" : "zero") })}</div></div>`;
   }
 
   out.push({ id: "community", nav: f.t("community.title"), html: section("community", f.t("community.title"), cols(block("kpis", kpis([
@@ -80,7 +81,7 @@ export function evaluations(pg: Page): Section[] {
   ])), ...statBlocks)) });
   // by the other person's milestone, and beside it, small, the projects you corrected
   const corrected = `<div class="block" data-panel="depth-projects" id="in-depth"><h3>${esc(f.t("depth.given_title"))}</h3>`
-    + `<div class="table-wrap tall">${correctedTable(pg)}</div></div>`;
+    + `<div class="table-wrap fit">${correctedTable(pg)}${fillTable()}</div></div>`; // as tall as the table by milestone
   out.push({ id: "by-group", nav: f.t("stats.group_section"), html: section("by-group", "", cols(byGroup, corrected),
     { head: `<h2>${esc(f.t("stats.group_section"))} ${info(f.t("stats.group_note"))}</h2>` }) });
 
@@ -211,8 +212,7 @@ function correctedTable(pg: Page): string {
   return table(f, [
     { k: "project", t: f.t("col.project") }, { k: "times", t: f.t("col.times"), num: true },
     { k: "avg", t: f.t("col.avg_mark"), s: f.t("abbr.avg_mark"), num: true, f: (r) => (r.avg !== null ? f.num(r.avg, 1) : noMark(f, r.last_e)) },
-  ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t("empty.period"),
-    minRows: Math.max(LIST_ROWS, Object.keys(pg.D.stats?.by_group || {}).length) }); // as tall as the table beside it, by milestone
+  ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t("empty.period") });
 }
 
 /** How long after an evaluation's start the evaluated student logged in ("12m late", "1h 15m late"). */
@@ -298,8 +298,8 @@ export function pointsSection(pg: Page): Section {
       + `<div class="zoom-only">${series(weeks, shortDay, (k) => f.t("points.w_label", { d: f.day(k) }))}</div></div>`;
   }
   return { id: "points", nav: f.t("nav.points"), html: section("points", f.t("points.title"), cols(chart,
-    block("table-reasons", `<div class="table-wrap">${table(f, [{ k: "reason", t: f.t("col.reason") }, { k: "count", t: f.t("col.times"), num: true }, { k: "sum", t: f.t("col.net"), num: true }],
-      Object.entries(CP.reasons || {}).map(([reason, v]: [string, any]) => ({ reason, ...v })), { label: f.t("points.reasons_title"), sort: ["count", -1] })}</div>`, f.t("points.reasons_title"))),
+    block("table-reasons", `<div class="table-wrap fit">${table(f, [{ k: "reason", t: f.t("col.reason") }, { k: "count", t: f.t("col.times"), num: true }, { k: "sum", t: f.t("col.net"), num: true }],
+      Object.entries(CP.reasons || {}).map(([reason, v]: [string, any]) => ({ reason, ...v })), { label: f.t("points.reasons_title"), sort: ["count", -1] })}${fillTable()}</div>`, f.t("points.reasons_title"))),
   { lede: esc(CP.series.length ? f.t("points.lede", { earned: CP.earned, spent: CP.spent, max: CP.max }) : f.t("empty.points")) }) };
 }
 

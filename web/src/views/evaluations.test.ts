@@ -184,6 +184,30 @@ test("the page goes: what you give back, by milestone, the log, what was cancell
   expect(evaluations(pg).map((s) => s.id).filter((id) => id !== "cancelled")).toEqual(["community", "by-group", "log", "points", "feedback", "over-time", "when"]);
 });
 
+test("By milestone always lists every group, in order, the ones with nothing greyed, as Points by source does", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { GROUPS } = await import("../lib/graphs");
+  const doc = JSON.parse(readFileSync("../server/core/testdata/golden/mid.report.json", "utf8")), all = doc.periods.all;
+  const f = new Fmt("en");
+  const pg = new Page(f, { period: "all", report: all, layout: doc.layout, all_projects: all.projects, all_cursus: all.extras.cursus } as any, "evaluations", {});
+  const html = evaluations(pg).find((s) => s.id === "by-group")!.html;
+  const table = html.slice(html.indexOf('data-panel="by-group"'), html.indexOf('data-panel="depth-projects"'));
+  const names = [...table.matchAll(/<tr( class="zero")?><td class="nowrap" data-v="\d+">([^<]+)<\/td>/g)];
+  expect(names.map((m) => m[2])).toEqual(GROUPS.map((g) => f.t(`groups.${g}`)));
+  expect(names.filter((m) => m[1]).length).toBeGreaterThan(0); // groups with nothing, greyed
+  expect(names.filter((m) => !m[1]).length).toBe(Object.keys(all.stats.by_group).length);
+});
+
+test("Projects you corrected takes the height of the table by milestone beside it: more rows scroll, fewer leave templates", async () => {
+  const { readFileSync } = await import("node:fs");
+  const doc = JSON.parse(readFileSync("../server/core/testdata/golden/mid.report.json", "utf8")), all = doc.periods.all;
+  const pg = new Page(new Fmt("en"), { period: "all", report: all, layout: doc.layout, all_projects: all.projects, all_cursus: all.extras.cursus } as any, "evaluations", {});
+  const html = evaluations(pg).find((s) => s.id === "by-group")!.html;
+  const corrected = html.slice(html.indexOf('data-panel="depth-projects"'));
+  expect(corrected).toMatch(/<div class="table-wrap fit"><table[^]*<\/table><div class="fill-rows" aria-hidden="true">/);
+  expect(corrected).not.toContain("blank-rows");
+});
+
 test("Correction points: the balance at the end of each month, week by week when enlarged; each tip with what came in and went out by reason and the balance it ended with", () => {
   const f = new Fmt("en");
   const cp = { earned: 9, spent: 6, max: 5, series: [], reasons: {},
@@ -201,6 +225,8 @@ test("Correction points: the balance at the end of each month, week by week when
   expect(tipsIn(weekly).length).toBe(3); // the weeks of January 5, 12 and 19
   expect(tipsIn(weekly)[0]).toContain(f.t("points.w_label", { d: f.day("2026-01-05") }));
   expect(unesc(html)).toContain(f.t("points.qline_note")); // in the title's ⓘ
+  // the reasons beside the chart take its height: more rows scroll, fewer leave templates down to its base
+  expect(html).toMatch(/<div class="table-wrap fit"><table[^]*<\/table><div class="fill-rows" aria-hidden="true">(<i><\/i>)+<\/div><\/div>/);
 });
 
 test("Correction points from a report saved before the months were kept: the balance at the end of each month from its own line, the last month labelled", () => {

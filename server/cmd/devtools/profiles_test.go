@@ -49,4 +49,25 @@ func TestProfilesCoverEveryKindAndTrack(t *testing.T) {
 	if _, s, _ := read("pyouter"); s["webserv"] || !s["tree_nity"] || !s["scop"] {
 		t.Fatalf("python outer: %v", s)
 	}
+	// few and many: a side table or list with little (templates) and with a lot (a scroll)
+	student := func(key string) *core.OMap {
+		b, _ := os.ReadFile(filepath.Join(dir, "test-"+key+".json"))
+		r, _ := core.ParseOrdered(b)
+		return r.Obj("periods").Obj("student")
+	}
+	few, many := student("few"), student("many")
+	if n := len(few.Os("given")); n != 3 {
+		t.Fatalf("few: %d given", n)
+	}
+	if cp := few.Obj("coalition_points"); len(cp.Os("awards")) != 5 || len(cp.Os("bonuses")) != 2 || len(few.Obj("correction_points").Obj("reasons").Keys()) > 3 {
+		t.Fatalf("few: %d awards, %d bonuses", len(cp.Os("awards")), len(cp.Os("bonuses")))
+	}
+	cp := many.Obj("coalition_points")
+	srcs := map[string]bool{}
+	for _, s := range cp.Os("sources") {
+		srcs[s.S("key")] = true
+	}
+	if n := len(many.Obj("correction_points").Obj("reasons").Keys()); n < 9 || len(cp.Os("bonuses")) < 40 || !srcs["wallet"] || !srcs["other"] || !srcs["logtime_80"] {
+		t.Fatalf("many: %d reasons, %d bonuses, sources %v", n, len(cp.Os("bonuses")), srcs)
+	}
 }
