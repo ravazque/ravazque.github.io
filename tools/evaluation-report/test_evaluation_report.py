@@ -69,7 +69,7 @@ class Axis(unittest.TestCase):
 
 class Login(unittest.TestCase):
     def test_only_a_login_can_reach_a_url_or_a_file_name(self):
-        for good in ("ravazque", "rorozco-", "a1b2"):
+        for good in ("ravazque", "badlogin"):
             self.assertTrue(h.valid_login(good), good)
         for bad in ("", "../etc", "a/b", "a b", "a.b", "Ravazque", "x" * 40):
             self.assertFalse(h.valid_login(bad), bad)

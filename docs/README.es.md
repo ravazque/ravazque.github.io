@@ -86,7 +86,7 @@ cuando cancela el estudiante al que ibas a evaluar no se escribe nada en tu lado
 </p>
 
 <p align="center">
-  <a href="images/campus-es.png"><img src="images/campus-es.png" width="49%" alt="Campus: dónde te sentaste"></a>
+  <a href="images/campus-es.png"><img src="images/campus-es.png" width="49%" alt="Campus: días y horas"></a>
   <a href="images/evaluations-es.png"><img src="images/evaluations-es.png" width="49%" alt="Evaluaciones en el tiempo"></a>
 </p>
 
@@ -109,7 +109,9 @@ blackhole o congeladas ven una página con el motivo. El acceso se comprueba de 
   de la política y la fecha, que se conserva dos años.
 - *Borrar mis datos* elimina la copia del servidor, cancela una actualización pendiente y le pide a tu navegador que
   borre lo que guarda.
-- Quien pide no aparecer sale como "Hidden", sin nombre ni asiento, en los informes de los demás (`OPTOUT_LOGINS`).
+- Quien pide no aparecer sale como "Hidden N", sin nombre, foto ni asiento, en los informes de los demás (`OPTOUT_LOGINS`):
+  el número solo distingue a unas personas de otras dentro de ese informe, y su login desaparece también de los nombres
+  de equipo y los comentarios.
 - Para tu posición en Madrid, el servidor lee el nivel de todos los estudiantes del 42cursus de Madrid una vez por hora
   (solo en las horas en que alguien abre una página) y guarda solo los números, en memoria: ningún login, nombre ni id.
 - Un enlace de login a acerezo.top solo le manda ese login a ese sitio cuando haces clic, sin decirle desde qué página llegas.

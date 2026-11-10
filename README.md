@@ -80,7 +80,7 @@ student you were to evaluate cancels, nothing is written on your side and it can
 </p>
 
 <p align="center">
-  <a href="docs/images/campus-en.png"><img src="docs/images/campus-en.png" width="49%" alt="Campus: where you sat"></a>
+  <a href="docs/images/campus-en.png"><img src="docs/images/campus-en.png" width="49%" alt="Campus: days and hours"></a>
   <a href="docs/images/evaluations-en.png"><img src="docs/images/evaluations-en.png" width="49%" alt="Evaluations over time"></a>
 </p>
 
@@ -102,7 +102,8 @@ a page with the reason. Access is checked again on every refresh.
 - The only file the server writes is the consent record: a keyed hash of your 42 id, the policy version and the date,
   kept for two years.
 - *Delete my data* clears the server's copy, cancels a pending refresh and tells your browser to clear its storage.
-- Students who ask to be left out appear as "Hidden", with no name or seat, in everyone's reports (`OPTOUT_LOGINS`).
+- Students who ask to be left out appear as "Hidden N", with no name, photo or seat, in everyone's reports (`OPTOUT_LOGINS`):
+  the number only tells people apart within that report, and their login goes from team names and comments too.
 - For your place in Madrid, the server reads every Madrid 42cursus student's level once an hour (only in hours someone
   opens a page) and keeps only the numbers, in memory: no login, name or id.
 - A login link to acerezo.top sends that login to that site only when you click it, without saying which page you came from.

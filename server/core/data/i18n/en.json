@@ -641,7 +641,7 @@
  "policy.exclusion.title": "Exclusion",
  "policy.exclusion.body": ["If you appear in someone else's report and want to be excluded, write to {email} with your login: you will be shown as \"Hidden\" in every report, with a number that only tells people apart within that report and no name, photo or seat, and your login goes from team names and comments too. The evaluations you took part in still count in the other person's figures: only who you are goes. A comment where someone wrote your real name can't be caught automatically: tell us if you find one."],
  "policy.cookies.title": "Cookies and local storage",
- "policy.cookies.list": ["__Host-session: keeps you signed in.", "__Host-oauth_state: protects the sign-in with 42, 10 minutes.", "IndexedDB: your report, with the server's signature.", "localStorage: language, theme and accent colour; the sections you star, and your Profile widgets, under your login; that you have seen the star's tip; and the date of your saved report."],
+ "policy.cookies.list": ["__Host-session: keeps you signed in.", "__Host-oauth_state: protects the sign-in with 42, 10 minutes.", "IndexedDB: your report, with the server's signature.", "localStorage: language, theme and accent colour; the sections you star, and your Profile widgets, under your login; that you have seen the star's tip; and the date of your saved report.", "sessionStorage: which pages you have already opened in this tab, so their charts draw in only the first time; it goes when you close the tab."],
  "policy.changes.title": "Changes to this policy",
  "policy.changes.body": ["If this policy changes materially, you will be asked to accept the new version before you go on using the site."],
  "policy.version": "Version {version} · Last updated: {updated}",
