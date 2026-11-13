@@ -314,7 +314,8 @@ func TestStatusExtractsOnlyWhenKicked(t *testing.T) {
 	if r := readAll(e.do(t, "GET", "/api/me/status", nil, nil)); !strings.Contains(r, `"state":"done"`) || !strings.Contains(r, `"has_report":false`) {
 		t.Fatal(r)
 	}
-	if r := readAll(e.do(t, "GET", "/api/me/status?kick=1", nil, nil)); !strings.Contains(r, `"state":"queued"`) {
+	// The worker may take the job before the answer is written: queued and running both mean it started.
+	if r := readAll(e.do(t, "GET", "/api/me/status?kick=1", nil, nil)); !strings.Contains(r, `"state":"queued"`) && !strings.Contains(r, `"state":"running"`) {
 		t.Fatal("kick with a done status and no report:", r)
 	}
 }

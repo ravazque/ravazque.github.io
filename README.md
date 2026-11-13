@@ -25,13 +25,14 @@ Six pages. Every choice (period, filters, views) lives in the address, so any vi
   cancelled evaluations, feedback and where evaluations happen to begin with. Add more from the picker at the bottom
   (Activity among them: achievements, events, titles and quests beside your campuses), remove, resize and drag them into
   place; it is kept in your browser.
-- **Projects**: your pace (level, XP per month, your promo by level, the estimated alumni date), skills, every project
-  and attempt with filters, grouped by milestone (0 = Libft … 6) for the C and the Python Common Core (a project done
-  in both tracks says which), CSV export, exams, technical domains (the intra's RNCP tags) and a timeline of every attempt.
+- **Projects**: your pace (time in the 42cursus, XP per month, your promo by level), skills, every project and attempt
+  with filters (status among them), grouped by milestone (0 = Libft … 6) for the C and the Python Common Core (a project
+  done in both tracks says which), each group shut with its count, projects of other cursus (Discovery, Reload…) apart,
+  CSV export, exams, technical domains (the intra's RNCP tags) and a timeline of every attempt, a row per milestone.
 - **Evaluations**: what you give back (hours, people, rating, how many ended below 50, Outstanding both ways, by the
   other person's milestone), received and given over time, when they happen (weekday × hour, duration, how far
   ahead they were booked), your feedback (as a student, only the 42cursus counts; Discovery
-  piscines are set apart), correction points, cancelled evaluations (the ones of your projects you cancelled, with the
+  piscines are set apart; 42's automatic feedback is named as such and left out of the averages), correction points, cancelled evaluations (the ones of your projects you cancelled, with the
   project they probably were; the ones your corrector cancelled; the ones you were to give and cancelled; the times your
   corrector didn't come), the projects you corrected and the full evaluation log: search and filters by flag (absences
   too), the project's milestone, project and seat (not logged, logged in late, by cluster), who marked whom absent, how
@@ -51,16 +52,18 @@ Six pages. Every choice (period, filters, views) lives in the address, so any vi
 Things worth trying:
 
 - The **period switch**: everything, the 42cursus only, or the C Piscine only.
-- The **star** by every section's title: starred sections gather in the star menu of the band, one click away.
+- The **star** by every section's title: starred sections gather in the star menu of the band, one click away (a new
+  profile starts with five).
 - **Refresh** your data once an hour; the extraction runs in the background with the progress in the band, and when
   you come back after an hour your browser's copy draws the page at once while a fresh one is fetched.
-- The **enlarge** button by a chart that shares its row (on a phone, every chart) opens it large.
+- The **enlarge** button by a chart that shares its row opens it large.
 - **Settings** (the gear): accent (the default 42 blue or your coalition's colour, adjusted for contrast in both
   themes), theme (system, light or dark), period and language.
-- **Delete my data**: removes everything the server holds about you, at once.
+- **Delete my data**: removes everything the server holds about you, at once, and what this browser keeps.
 
 Some figures are inferences, and the app says so where they appear: the logtime bonus rule (inferred from the
-awards: the intra does not publish it, checked against 11 students over 12 days), the alumni date, XP per domain, the
+awards: the intra does not publish it, checked against 11 students over 12 days; sessions on two computers at once
+count twice there, while logged time merges them as the intra does), the alumni date, XP per domain, the
 seats and lateness worked out from login sessions, and which cancelled evaluations you cancelled yourself (with the
 project they probably were). 42 deletes a cancelled evaluation, so those are read from your correction points; when the
 student you were to evaluate cancels, nothing is written on your side and it can't be counted.

@@ -27,14 +27,16 @@ guardar o compartir.
   Contribución, Ritmo, el bonus de horas, el registro de evaluaciones, las evaluaciones canceladas, el feedback y dónde
   ocurren las evaluaciones. Añade más desde el selector del final (Actividad entre ellas: logros, eventos, títulos y
   quests junto a tus campus), quítalos, cambia su tamaño y arrástralos a su sitio; se guarda en tu navegador.
-- **Proyectos**: tu avance (nivel, XP por mes, tu promo por nivel, la fecha estimada de alumni), skills, cada proyecto
-  e intento con filtros, agrupados por milestone (0 = Libft … 6) para el Common Core de C y el de Python (un proyecto
-  hecho en los dos cursos dice cuál es cuál), exportación a CSV, exámenes, dominios técnicos (las etiquetas RNCP de la
-  intra), una línea de tiempo con todos los intentos.
+- **Proyectos**: tu avance (tiempo en el 42cursus, XP por mes, tu promo por nivel), skills, cada proyecto e intento
+  con filtros (también por estado), agrupados por milestone (0 = Libft … 6) para el Common Core de C y el de Python (un
+  proyecto hecho en los dos cursos dice cuál es cuál), cada grupo cerrado con su número, los proyectos de otros cursus
+  (Discovery, Reload…) aparte, exportación a CSV, exámenes, dominios técnicos (las etiquetas RNCP de la intra) y una
+  línea de tiempo con todos los intentos, una fila por milestone.
 - **Evaluaciones**: lo que devuelves (horas, personas, valoración, cuántas acabaron por debajo de 50, Outstanding en
   los dos sentidos, según el milestone de la otra persona), recibidas y hechas a lo largo del tiempo, cuándo ocurren
   (día × hora, duración, con cuánta antelación se reservaron), tu feedback (como estudiante solo
-  cuenta el 42cursus; las piscinas Discovery van aparte), los puntos de corrección, las evaluaciones canceladas (las de
+  cuenta el 42cursus; las piscinas Discovery van aparte; el feedback automático de 42 se nombra como tal y queda fuera
+  de las medias), los puntos de corrección, las evaluaciones canceladas (las de
   tus proyectos que cancelaste tú, con el proyecto que probablemente eran; las que canceló tu corrector; las que ibas a
   hacer y cancelaste; las veces que tu corrector no vino), los proyectos que has corregido y el registro completo de
   evaluaciones: búsqueda y filtros por flag (también ausencias), milestone del proyecto, proyecto y asiento (sin login,
@@ -57,16 +59,18 @@ guardar o compartir.
 Cosas que merece la pena probar:
 
 - El **selector de periodo**: todo, solo el 42cursus o solo la piscina.
-- La **estrella** junto al título de cada sección: las secciones marcadas se reúnen en el menú de la estrella de la barra, a un clic.
+- La **estrella** junto al título de cada sección: las secciones marcadas se reúnen en el menú de la estrella de la barra, a un clic
+  (un perfil nuevo empieza con cinco).
 - **Actualizar** tus datos una vez por hora; la extracción va en segundo plano con el progreso en la barra, y cuando
   vuelves pasada una hora la copia de tu navegador dibuja la página al momento mientras se trae una nueva.
-- El botón de **ampliar** junto a una gráfica que comparte fila (en el móvil, todas) la abre en grande.
+- El botón de **ampliar** junto a una gráfica que comparte fila la abre en grande.
 - **Ajustes** (el engranaje): acento (el azul de 42 por defecto o el color de tu coalición, ajustado para que se lea
   bien en los dos temas), tema (sistema, claro u oscuro), periodo e idioma.
-- **Borrar mis datos**: elimina al momento todo lo que el servidor guarda de ti.
+- **Borrar mis datos**: elimina al momento todo lo que el servidor guarda de ti, y lo que guarda este navegador.
 
 Algunas cifras son deducciones, y la aplicación lo indica donde aparecen: la regla del bonus de horas (deducida de los
-premios porque la intra no la publica, comprobada con 11 estudiantes durante 12 días), la fecha de alumni, la XP por
+premios porque la intra no la publica, comprobada con 11 estudiantes durante 12 días; ahí las sesiones en dos
+ordenadores a la vez cuentan dos veces, mientras que el tiempo conectado las une como hace la intra), la fecha de alumni, la XP por
 dominio, los asientos y retrasos calculados con las sesiones de login, y qué evaluaciones canceladas cancelaste tú (con
 el proyecto que probablemente eran). 42 borra una evaluación cancelada, así que se leen de tus puntos de corrección;
 cuando cancela el estudiante al que ibas a evaluar no se escribe nada en tu lado y no se puede contar.
