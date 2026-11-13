@@ -1014,7 +1014,7 @@
  "feedback.auto_note": "Cuando el estudiante al que evaluaste no rellena su feedback a tiempo, 42 escribe uno por su cuenta: siempre 4/5 y el mismo texto. No es la opinión de nadie sobre ti, así que queda fuera de tu valoración, de los criterios y de la lista de arriba.",
  "widgets.up": "Sube “{name}”",
  "widgets.down": "Baja “{name}”",
- "projects_table.flat": "Lista única, sin milestones",
+ "standing.per_level": "Estudiantes por nivel",
  "projects.lane_work": "Experiencia laboral",
  "projects.outside": "Otros cursus (Discovery, Reload…)"
 }

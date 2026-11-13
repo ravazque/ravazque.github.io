@@ -9,8 +9,7 @@ export type Col<R> = {
 
 type Opts<R> = {
   label: string; sort?: [string, 1 | -1]; empty?: string; sticky?: boolean; detail?: (r: R) => string; rowCls?: (r: R) => string;
-  // head: the group's line as markup (given its key and how many rows it has); shut: a group whose rows are left out
-  group?: { key: (r: R) => string; order: string[]; label: (g: string) => string; head?: (g: string, n: number) => string; shut?: (g: string) => boolean }; id?: string;
+  group?: { key: (r: R) => string; order: string[]; label: (g: string) => string }; id?: string;
 };
 
 const cmp = (a: unknown, b: unknown) => (typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b)));
@@ -51,11 +50,9 @@ export function table<R extends Record<string, any>>(f: Fmt, cols: Col<R>[], inp
       if (o.group) {
         const g = o.group.key(r);
         if (g !== prev) {
-          const n = rows.filter((x) => o.group!.key(x) === g).length;
-          parts.push(`<tbody class="group${o.group.shut?.(g) ? " shut" : ""}"><tr><th scope="rowgroup" colspan="${cols.length}">${o.group.head ? o.group.head(g, n) : esc(o.group.label(g))}</th></tr></tbody>`);
+          parts.push(`<tbody class="group"><tr><th scope="rowgroup" colspan="${cols.length}">${esc(o.group.label(g))}</th></tr></tbody>`);
           prev = g;
         }
-        if (o.group.shut?.(g)) continue;
       }
       const d = o.detail ? o.detail(r) : "";
       parts.push(d ? `<tbody class="pair">${line(r)}<tr class="detail"><td colspan="${cols.length}">${d}</td></tr></tbody>` : `<tbody>${line(r)}</tbody>`);

@@ -167,6 +167,7 @@ watch(sections, async () => {
   markZoom(main.value);
   placeMarks(main.value);
   fitAxes(main.value);
+  fitTitles(main.value);
   evenRows(main.value);
   hideTip();
   if (typingIn) {
@@ -271,6 +272,19 @@ function fitAxes(root: HTMLElement) {
     if (w) fig.style.setProperty("--c-chart-axis-width", `${w + 8}px`); else fig.style.removeProperty("--c-chart-axis-width");
   });
 }
+/** On a phone a section's title stays on one line, its count and buttons beside it: the type shrinks until it fits
+ * (never under 18px: a title that long wraps as before). */
+function fitTitles(root: HTMLElement) {
+  root.querySelectorAll<HTMLElement>("section[id] > h2, section[id] > .panel-head > h2").forEach((h2) => {
+    h2.style.fontSize = "";
+    h2.classList.toggle("fit", innerWidth < 600);
+    if (innerWidth >= 600) return;
+    const over = () => h2.scrollWidth > h2.clientWidth || h2.offsetWidth > h2.parentElement!.clientWidth;
+    let size = parseFloat(getComputedStyle(h2).fontSize);
+    while (over() && size > 18) h2.style.fontSize = `${--size}px`;
+    if (over()) { h2.style.fontSize = ""; h2.classList.remove("fit"); }
+  });
+}
 /** Two half widgets side by side end on the same line when one of them can give or take: the one whose rows scroll (a
  * table, a list) shows fewer rows (never under 400px of them) or more (up to all it has) to meet the other. A widget
  * with nothing that scrolls keeps its own height: beside a longer one it ends higher (nothing honest to fill it with). */
@@ -324,7 +338,7 @@ function placeMarks(root: HTMLElement) {
   });
 }
 let zoomResize = 0;
-const onResize = () => { cancelAnimationFrame(zoomResize); zoomResize = requestAnimationFrame(() => { if (main.value) { markZoom(main.value); placeMarks(main.value); fitAxes(main.value); evenRows(main.value); } }); };
+const onResize = () => { cancelAnimationFrame(zoomResize); zoomResize = requestAnimationFrame(() => { if (main.value) { markZoom(main.value); placeMarks(main.value); fitAxes(main.value); fitTitles(main.value); evenRows(main.value); } }); };
 window.addEventListener("resize", onResize);
 onBeforeUnmount(() => window.removeEventListener("resize", onResize));
 

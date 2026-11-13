@@ -1014,7 +1014,7 @@
  "feedback.auto_note": "When the student you evaluated does not fill their feedback in on time, 42 writes one itself: always 4/5 and the same text. It is nobody's opinion of you, so it stays out of your rating, the criteria and the list above.",
  "widgets.up": "Move “{name}” up",
  "widgets.down": "Move “{name}” down",
- "projects_table.flat": "One list, no milestones",
+ "standing.per_level": "Students per level",
  "projects.lane_work": "Work experience",
  "projects.outside": "Other cursus (Discovery, Reload…)"
 }

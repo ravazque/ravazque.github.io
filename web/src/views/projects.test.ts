@@ -134,7 +134,7 @@ test("the attempts line has a row per milestone, not per project: exams out, wor
     ["RANK-00", ["Libft"]], ["RANK-01", ["get_next_line", "Born2beroot"]], ["", ["ft_printf"]], ["OUTER-CORE", ["ft_ls"]], ["WORK", ["Work Exp. I - Duration"]]]);
 });
 
-test("the projects table comes by milestone, each group one line with its count until opened; filters open them all; one list on request", () => {
+test("the projects table is one open list like the evaluation log: no groups, its count in the title, a milestone filter, Clear filters while one is set", () => {
   const all = [at("Libft", "rank-00", [[1, 2]]), at("get_next_line", "rank-01", [[3, 4]]), at("ft_printf", "rank-01", [[5, 6]], { status: "in_progress" })];
   const html = (q: Record<string, string>) => {
     const f = new Fmt("en");
@@ -143,19 +143,20 @@ test("the projects table comes by milestone, each group one line with its count 
   };
   const rowsOf = (h: string) => [...h.matchAll(/<td class="proj" data-v="([^"]+)"/g)].map((m) => m[1]);
   const first = html({});
-  expect(first.match(/<tbody class="group/g)?.length).toBe(2);
-  expect(rowsOf(first)).toEqual([]); // all shut to begin with
-  expect(rowsOf(html({ open: "rank-01" }))).toEqual(["ft_printf", "get_next_line"]);
-  expect(first).toMatch(/Milestone 0<span class="count"> · 1 project<\/span>/);
-  expect(first).not.toContain('class="table-wrap tall"'); // no box that scrolls
-  expect(rowsOf(html({ open: "rank-00" }))).toEqual(["Libft"]);
-  expect(rowsOf(html({ q: "t" })).sort()).toEqual(["Libft", "ft_printf", "get_next_line"]);
-  const flat = html({ flat: "1" });
-  expect(flat).not.toContain('<tbody class="group');
-  expect(rowsOf(flat).length).toBe(3);
+  expect(first).not.toContain('<tbody class="group');
+  expect(rowsOf(first)).toEqual(["ft_printf", "get_next_line", "Libft"]); // newest first
+  expect(first).toContain('class="table-wrap tall"'); // the log's box
+  expect(first).toMatch(/<h2>Projects<span class="count"><span class="sep"> · <\/span>3 projects<\/span><\/h2>/);
+  expect(first).toMatch(/<option value="rank-01"[^>]*>Milestone 1</);
+  expect(first).not.toMatch(/<option value="rank-02"/); // only the milestones your projects have
+  expect(first).not.toContain("log-clear");
+  const one = html({ milestone: "rank-01" });
+  expect(rowsOf(one)).toEqual(["ft_printf", "get_next_line"]);
+  expect(one).toContain("log-clear");
+  expect(rowsOf(html({ milestone: "nonsense" })).length).toBe(3);
 });
 
-test("projects of another cursus (a Discovery piscine, a Piscine Reload) are a group of their own, in the table and on the attempts line", () => {
+test("projects of another cursus (a Discovery piscine, a Piscine Reload) are a milestone of their own, in the table's filter and on the attempts line", () => {
   const all = [at("ft_ls", "outer-core", [[1, 2]], { slug: "ft_ls", track: "outer-core" }), at("Cellule0.0 - Shell", "outer-core", [[3, 4]], { slug: "cellule0-0-shell", track: "outer-core" }),
     at("Piscine Django", "outer-core", [[5, 6]], { slug: "piscine-django", track: "outer-core" })];
   const D = { projects: all, extras: { cursus: [], skills: [] }, insights: {}, summary: {}, given: [],
@@ -163,7 +164,10 @@ test("projects of another cursus (a Discovery piscine, a Piscine Reload) are a g
   const f = new Fmt("en");
   const secs = projects(new Page(f, { period: "student", report: D, all_projects: all, derive: {} } as any, "projects", {}));
   const table = secs.find((s) => s.id === "projects-table")!.html;
-  expect(table).toContain(`${f.t("projects.outside")}<span class="count"> · 1 project<`);
-  expect(table).toMatch(/OuterCore<span class="count"> · 2 projects</); // not evaluated in another cursus: it stays
+  expect(table).toContain(`<option value="outside">${f.t("projects.outside")}</option>`);
+  const only = (m: string) => [...projects(new Page(f, { period: "student", report: D, all_projects: all, derive: {} } as any, "projects", { milestone: m }))
+    .find((s) => s.id === "projects-table")!.html.matchAll(/<td class="proj" data-v="([^"]+)"/g)].map((x) => x[1]).sort();
+  expect(only("outside")).toEqual(["Cellule0.0 - Shell"]);
+  expect(only("outer-core")).toEqual(["Piscine Django", "ft_ls"]); // not evaluated in another cursus: it stays
   expect(secs.find((s) => s.id === "timeline")!.html).toContain(`title="${f.t("projects.outside")}"`);
 });

@@ -4,7 +4,7 @@ import { radar } from "../lib/graphs";
 import { ARROW, badge, esc } from "../lib/h";
 import { pyRound } from "../fmt";
 import { csv, facts, table } from "../lib/table";
-import { Page, Section, block, cols, filters, headBlock, radios, search, section, select } from "./page";
+import { Page, Section, block, cols, filters, headBlock, info, radios, search, section, select } from "./page";
 
 const PROJECT_GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "outside", "piscine"];
 
@@ -23,11 +23,14 @@ export function outsideCursus(D: any): Set<string> {
 
 export function projectFilters(pg: Page) {
   const statuses = [...new Set(pg.allProjects.map((p) => p.status).filter(Boolean))] as string[]; // the ones your projects have
+  const outside = outsideCursus(pg.D);
+  const groupOf = (p: any): string => (p.track !== "piscine" && outside.has(p.slug) ? "outside" : p.group || p.track);
+  const milestones = PROJECT_GROUPS.filter((g) => pg.allProjects.some((p) => !p.exam && groupOf(p) === g)); // the ones your projects have
   const years = [...new Set(pg.allProjects.map((p) => (p.marked || p.registered || "").slice(0, 4)).filter(Boolean))].sort().reverse() as string[];
   return {
     track: pg.q("track", pg.period, ["student", "piscine", "all"]), search: pg.q("q", "").slice(0, 80),
     marks: pg.q("marks", "all", ["all", "ok", "bonus", "max", "failed"]), year: pg.q("year", "all", ["all", ...years]),
-    grouped: pg.q("flat") !== "1", open: pg.q("open", ""), years, statuses, status: pg.q("status", "all", ["all", ...statuses]),
+    years, statuses, status: pg.q("status", "all", ["all", ...statuses]), milestone: pg.q("milestone", "", ["", ...milestones]), milestones, groupOf,
   };
 }
 
@@ -40,7 +43,7 @@ export function projectView(projects: any[], fl: ReturnType<typeof projectFilter
   return projects.filter((p) => !p.exam // exams have their own section
     && (fl.track === "all" || (p.track === "piscine") === (fl.track === "piscine"))
     && (!q || p.name.toLowerCase().includes(q)) && (markOk[fl.marks] || (() => true))(p)
-    && (fl.status === "all" || p.status === fl.status) && (fl.year === "all" || (p.marked || p.registered || "").startsWith(fl.year)));
+    && (!fl.milestone || fl.groupOf(p) === fl.milestone) && (fl.status === "all" || p.status === fl.status) && (fl.year === "all" || (p.marked || p.registered || "").startsWith(fl.year)));
 }
 
 function markChip(pg: Page, a: any) {
@@ -91,7 +94,9 @@ export function projects(pg: Page): Section[] {
   out.push({ id: "pace", nav: f.t("nav.pace"), html: section("pace", f.t("pace.title"), `<dl class="facts">${facts(lvl)}</dl>` + cols(headBlock("pace-xp", f.t("pace.xp_title"),
     legend([[f.t("pace.xp"), S1], [f.t("pace.cumulative"), S2]]), vbars(f, months.map((m: any) => f.monthLabel(m.month)), [[f.t("pace.xp"), months.map((m: any) => m.xp), S1]],
       { label: f.t("pace.xp_title"), line: [f.t("pace.cumulative"), months.map((m: any) => m.cumulative), S2], fmt: (v) => f.num(v), emptyText: f.t("empty.period") })),
-    promo ? block("promo", promoChart(pg, promo), f.t("standing.promo"), f.t("standing.promo_lede", { rank: f.num(promo.rank), size: f.num(promo.size), pct: f.num(promo.percentile, 1) })) : "")) });
+    // the same shape as XP per month beside it: title and key on one line, then the plot (its sentence is the title's ⓘ)
+    promo ? `<div class="block" data-panel="promo"><div class="block-head"><h3>${esc(f.t("standing.promo"))} ${info(f.t("standing.promo_lede", { rank: f.num(promo.rank), size: f.num(promo.size), pct: f.num(promo.percentile, 1) }))}</h3>`
+      + legend([[f.t("standing.per_level"), S2], [f.t("standing.your_level"), S1]]) + "</div>" + promoChart(pg, promo) + "</div>" : "")) });
 
   const cursus = pg.q("cursus", pg.period === "piscine" ? "C Piscine" : "42cursus", ["42cursus", "C Piscine"]);
   const items = X.skills_by_cursus?.[cursus] || (cursus === "42cursus" ? X.skills || [] : []);
@@ -125,22 +130,12 @@ export function projects(pg: Page): Section[] {
   const statusName = (s: string) => (f.has(`status.${s}`) ? f.t(`status.${s}`) : s.replace(/_/g, " "));
   const status = (p: any) => esc(statusName(p.status || ""));
   const capital = (s: string) => s.slice(0, 1).toUpperCase() + s.slice(1);
-  // by milestone, each group one line with its count until opened (a link: the address keeps which are open); all shut
-  // to begin with (one group can hold 70 projects); any filter opens them all
-  const outside = outsideCursus(D);
-  const groupOf = (p: any) => (p.track !== "piscine" && outside.has(p.slug) ? "outside" : p.group || p.track);
-  const filtering = !!fl.search.trim() || fl.marks !== "all" || fl.status !== "all" || fl.year !== "all";
-  const open = new Set(fl.open ? fl.open.split(",") : []);
-  const groupHead = (g: string, n: number) => {
-    const text = `${esc(groupLabel(pg, g))}<span class="count"> · ${esc(f.plural(n, "projects_table.count"))}</span>`;
-    if (filtering) return text;
-    const next = new Set(open);
-    if (!next.delete(g)) next.add(g);
-    return `<a class="group-toggle" href="${esc(pg.url(undefined, { open: [...next].join(",") }))}#projects-table" data-keep aria-expanded="${open.has(g)}">${text}</a>`;
-  };
+  // one open list, like the evaluation log (owner, 2026-11-13): the milestone is a column and a filter, not a group
+  const groupOf = fl.groupOf;
+  const filtering = !!fl.search.trim() || fl.marks !== "all" || fl.status !== "all" || fl.year !== "all" || !!fl.milestone;
   const tbl = table(f, [
     { k: "name", t: f.t("col.project"), cls: "proj" },
-    { k: "track", t: f.t("col.track"), nw: true, hide: true, f: (p) => badge(f.t(`track.${p.track}`)) },
+    { k: "group", t: f.t("log.milestone"), nw: true, hide: true, sv: (p) => PROJECT_GROUPS.indexOf(groupOf(p)), f: (p) => esc(groupLabel(pg, groupOf(p))) },
     { k: "status", t: f.t("col.status"), nw: true, hide: true, f: status },
     { k: "mark", t: f.t("col.final"), num: true, f: (p) => (p.mark !== null && p.mark !== undefined ? esc(p.mark) : "–") },
     { k: "attempts", t: f.t("col.attempts"), s: f.t("abbr.attempts"), cls: "marks-col", sv: (p) => p.attempts.length,
@@ -148,20 +143,20 @@ export function projects(pg: Page): Section[] {
     { k: "outstanding", t: f.t("col.outstanding"), s: f.t("abbr.outstanding"), num: true },
     { k: "xp_earned", t: f.t("col.xp"), num: true, nw: true, f: (p) => `${f.num(p.xp_earned)}<span class="sub">${esc(f.t("projects_table.xp_base", { xp: f.num(p.xp_base) }))}</span>` },
     { k: "first_ms", t: f.t("col.started"), nw: true, hide: true, f: (p) => esc(f.day(p.registered)) },
-  ], rows, { label: f.t("projects_table.title"), sort: ["first_ms", -1], sticky: true, detail, empty: f.t("projects_table.none"),
-    group: fl.grouped ? { key: groupOf, order: PROJECT_GROUPS, label: (g) => groupLabel(pg, g), head: groupHead, shut: (g) => !filtering && !open.has(g) } : undefined });
+  ], rows, { label: f.t("projects_table.title"), sort: ["first_ms", -1], sticky: true, detail, empty: f.t("projects_table.none") });
   const form = filters("projects-table",
     radios("track", f.t("projects_table.filter"), (["student", "piscine", "all"] as const).map((v) => [v, f.t(`track.${v}`)]), fl.track)
     + search("q", fl.search, f.t("common.search"), f.t("projects_table.search"))
+    + select("milestone", f.t("log.milestone"), [["", f.t("log.milestone_all")], ...fl.milestones.map((m) => [m, groupLabel(pg, m)] as [string, string])], fl.milestone)
     + select("status", f.t("projects_table.status"), [["all", f.t("projects_table.status_all")], ...fl.statuses.map((s) => [s, capital(statusName(s))] as [string, string])], fl.status)
     + select("marks", f.t("projects_table.marks"), ["all", "ok", "bonus", "max", "failed"].map((v) => [v, f.t(`projects_table.marks_${v}`)]), fl.marks)
     + select("year", f.t("projects_table.year"), [["all", f.t("projects_table.year_all")], ...fl.years.map((y) => [y, y] as [string, string])], fl.year)
-    + `<label class="toggle-check"><input type="checkbox" name="flat" value="1"${fl.grouped ? "" : " checked"}><span>${esc(f.t("projects_table.flat"))}</span></label>`);
+    + (filtering ? `<a class="btn secondary log-clear" href="${esc(pg.url(undefined, { q: "", milestone: "", status: "", marks: "", year: "" }))}" data-keep>${esc(f.t("log.clear"))}</a>` : ""));
   out.push({ id: "projects-table", nav: f.t("nav.projects_table"), html: section("projects-table", f.t("projects_table.title"),
-    form + `<div id="projects-table-results">` + cols(`<div class="block" data-panel="projects-table"><div class="table-wrap${fl.grouped ? " whole" : " tall"}">${tbl}</div>`
-      + `<div class="table-foot"><p class="note"><b>${esc(f.plural(rows.length, "projects_table.count"))}</b> · ${esc(f.t("projects_table.xp_note"))}</p>`
+    form + `<div id="projects-table-results">` + cols(`<div class="block" data-panel="projects-table"><div class="table-wrap tall">${tbl}</div>`
+      + `<div class="table-foot"><p class="note">${esc(f.t("projects_table.xp_note"))}</p>`
       + csvButtons(pg, "projects", f.t("projects_table.title"), f.t("projects_table.csv")) + "</div></div>") + "</div>",
-    ) });
+    { count: f.plural(rows.length, "projects_table.count") }) });
 
   const exams = D.insights?.exams || [];
   out.push({ id: "exams", nav: f.t("nav.exams"), html: section("exams", f.t("exams.title"), cols(block("exams", `<div class="table-wrap">${table(f, [
@@ -239,5 +234,5 @@ function promoChart(pg: Page, promo: any) {
   const tips = levels.map((lv) => [f.t("standing.level_tip", { level: lv }), f.plural(hist.get(lv) || 0, "standing.n_students"), ...(lv === mine ? [f.t("standing.you_here")] : [])].join(" · "));
   return vbars(f, levels.map(String), [[f.t("standing.students"), levels.map((lv) => (lv !== mine ? hist.get(lv) || 0 : 0)), S2],
     [f.t("standing.your_level"), levels.map((lv) => (lv === mine ? hist.get(lv) || 0 : 0)), S1]],
-  { label: f.t("standing.promo"), stacked: true, xtitle: f.t("standing.level_axis"), fmt: (v) => f.num(v), tips });
+  { label: f.t("standing.promo"), stacked: true, fmt: (v) => f.num(v), tips });
 }

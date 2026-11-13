@@ -25,3 +25,20 @@ test("sessions and evaluations on another campus are named, and said to be off t
   expect(html).toContain("c4r9s9 <span class=\"note\">· Urduliz</span>");
   expect(html).toContain("2 evaluations held on other campuses are left out.");
 });
+
+test("Where · evaluations draws received and given apart, side by side (no switch), each column opening its tip", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { Fmt } = await import("../fmt");
+  const { Page } = await import("./page");
+  const { campus } = await import("./campus");
+  const doc = JSON.parse(readFileSync("../server/core/testdata/golden/mid.report.json", "utf8"));
+  const all = doc.periods.all, f = new Fmt("en");
+  const view = { period: "all", report: all, derive: {}, layout: doc.layout, all_projects: all.projects, all_cursus: all.extras.cursus, seat_days: 60 } as any;
+  const html = campus(new Page(f, view, "campus", {})).find((s) => s.id === "where")!.html;
+  expect(html.match(/data-panel="where-clusters"/g)?.length).toBe(2);
+  expect(html.indexOf(f.t("where.title_received"))).toBeGreaterThan(0);
+  expect(html.indexOf(f.t("where.title_given"))).toBeGreaterThan(html.indexOf(f.t("where.title_received")));
+  expect(html).not.toContain('class="seg"');
+  expect(html.match(/class="vchart col-tips"/g)?.length).toBe(2);
+  expect(html).toContain(f.t("where.cov_me", { me: all.place.me_located_given, n: all.summary.given }));
+});

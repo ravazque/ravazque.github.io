@@ -185,7 +185,7 @@ main[data-page="web-projects"] #pace {
   --xp-month-line: 2px;        /* over "XP per month" */
   --xp-month-gap: var(--chart-gap-key-all, 32px);        /* "XP per month" → the chart */
   --promo-line: 2px;           /* over "Your promo" */
-  --promo-gap: var(--chart-gap-all, 20px);           /* "Your promo": its note → the chart */
+  --promo-gap: var(--chart-gap-key-all, 32px);       /* "Your promo" → the chart (a key beside its title, like XP per month) */
   --block-pad: 12px;           /* each of those lines → what is under it */
   --list-line: 1px;            /* between the facts */
   --axis-line: 2px;            /* the baseline of XP per month */

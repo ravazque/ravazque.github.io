@@ -6,15 +6,15 @@
 :where(body:not(.site)) .boot-panel .row-btns { display: flex; flex-wrap: wrap; gap: 12px; }
 /* the log's filters on a grid, every field as wide as the others and never under its control: one row on a wide screen
    (Received/Given, five fields, Clear filters when shown), else as many columns as fit (phones: two, Received/Given across) */
-:where(body:not(.site)) form[data-filter="log"] { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 12px 16px; align-items: end; }
-:where(body:not(.site)) form[data-filter="log"] > .seg { justify-self: start; }
+:where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 12px 16px; align-items: end; }
+:where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) > .seg { justify-self: start; }
 @media (max-width: 519.98px) {
-  :where(body:not(.site)) form[data-filter="log"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
-  :where(body:not(.site)) form[data-filter="log"] > .seg { grid-column: 1 / -1; }
-  :where(body:not(.site)) form[data-filter="log"] > :has(> input[type=search]), :where(body:not(.site)) form[data-filter="log"] > input[type=search] { grid-column: 1 / -1; } /* its placeholder was cut at half width */
+  :where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+  :where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) > .seg { grid-column: 1 / -1; }
+  :where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) > :has(> input[type=search]), :where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) > input[type=search] { grid-column: 1 / -1; } /* its placeholder was cut at half width */
 }
-:where(body:not(.site)) form[data-filter="log"] :is(.select-btn, input[type=search]) { min-width: 0; }
-:where(body:not(.site)) form[data-filter="log"] .log-clear { justify-self: start; white-space: nowrap; }
+:where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) :is(.select-btn, input[type=search]) { min-width: 0; }
+:where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) .log-clear { justify-self: start; white-space: nowrap; }
 @media (min-width: 1280px) { :where(body:not(.site)) [data-panel="table-log"] td .sub { white-space: normal; text-overflow: clip; } } /* laptops: the small lines wrap, the table fits rather than scrolls; narrower screens scroll it, a wrapped line there made rows 160px tall */
 :where(body:not(.site)) td .sub.dur > .nw { display: block; }  /* planned, booked ahead: a line each, never broken inside (one line needs 1410px: no screen gives the table that) */
 /* these filters name themselves (the first option says "Any seat", the box "Search: …"): no label above them, kept for
@@ -26,9 +26,13 @@
   :where(body:not(.site)) h2:has(> .count) { flex-wrap: wrap; }
   :where(body:not(.site)) h2:has(> .count) > .count { order: 1; flex-basis: 100%; }
 }
+/* a phone title that fits on one line once its type shrinks (Dashboard fitTitles): the count back beside it */
+:where(body:not(.site)) h2.fit { flex-wrap: nowrap !important; white-space: nowrap; }
+:where(body:not(.site)) h2.fit > .count { display: inline !important; order: 0 !important; flex-basis: auto !important; margin-top: 0 !important; }
+:where(body:not(.site)) h2.fit .sep { display: inline; }
 @media (min-width: 1360px) {
-  :where(body:not(.site)) form[data-filter="log"] { grid-template-columns: max-content repeat(5, minmax(0, 1fr)); }
-  :where(body:not(.site)) form[data-filter="log"]:has(.log-clear) { grid-template-columns: max-content repeat(5, minmax(0, 1fr)) max-content; }
+  :where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]) { grid-template-columns: max-content repeat(5, minmax(0, 1fr)); }
+  :where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"]):has(.log-clear) { grid-template-columns: max-content repeat(5, minmax(0, 1fr)) max-content; }
 }
 :where(body:not(.site)) .controls-after { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; }
 :where(body:not(.site)) section { scroll-margin-top: 80px; }
@@ -91,8 +95,8 @@
 @media (max-width: 599.98px) { :where(body:not(.site)) h2 .pin { width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 4px; } }  /* titles keep one line on phones */
 /* a half widget is as narrow as a tablet whatever the screen: the log's filters as many per row as fit (they overlapped
    on the one row of a wide screen), its count under the title */
-:where(body:not(.site)) .widget.half form[data-filter="log"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
-:where(body:not(.site)) .widget.half form[data-filter="log"] > .seg { grid-column: 1 / -1; }
+:where(body:not(.site)) .widget.half form:is([data-filter="log"], [data-filter="projects-table"]) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+:where(body:not(.site)) .widget.half form:is([data-filter="log"], [data-filter="projects-table"]) > .seg { grid-column: 1 / -1; }
 :where(body:not(.site)) .widget.half h2:has(> .count) { flex-wrap: wrap; }
 :where(body:not(.site)) .widget.half h2:has(> .count) > .count { order: 1; flex-basis: 100%; margin: 8px 0 0; }
 /* a widget's title on one column: no size to change, up and down buttons instead of the handle; on a phone a smaller
@@ -163,17 +167,15 @@
   :where(body:not(.site)) .menu-wrap { display: block; }
   :where(body:not(.site)) .menu, :where(body:not(.site)) .best-menu { min-width: 0; width: min(320px, calc(100vw - 24px)); }
 }
-@media (max-width: 519.98px) {  /* one row on a phone: the brand is its mark alone (it leads back to Profile), then the pages' menu */
+@media (max-width: 519.98px) {  /* one row on a phone: the brand is its mark alone (it leads back to Profile) */
   :where(body:not(.site)) .topbar .brand > span { display: none; }
   :where(body:not(.site)) .sync:has(.progress) .btn { display: none; }  /* while it reads, the bar alone: with the button the band broke in two rows */
   :where(body:not(.site)) .topbar-end { gap: 8px; }
   /* every menu hangs from the band's right edge: from its own button it would run off the left of a phone */
   :where(body:not(.site)) .topbar-end { position: relative; }
   :where(body:not(.site)) .topbar-end .best-anchor, :where(body:not(.site)) .topbar-end details.pop { position: static; }
-  /* the pages' menu sits beside the mark and opens from the band's left edge */
-  :where(body:not(.site)) .topbar-end { flex: 1; }
-  :where(body:not(.site)) .topbar-end .menu-wrap { order: -1; margin-right: auto; }
-  :where(body:not(.site)) .menu { left: 0; right: auto; width: min(320px, calc(100vw - 76px)); }  /* from its button, past the mark, to the screen's edge at most */
+  /* the mark is as big as the band's buttons; the pages' menu is the last button on the right (owner, 2026-11-13) */
+  :where(body:not(.site)) .topbar .brand-mark { width: 48px; height: 48px; }
   :where(body:not(.site)) .tour::before { display: none; }
 }
 

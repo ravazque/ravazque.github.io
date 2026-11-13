@@ -7,8 +7,6 @@ import { table } from "../lib/table";
 import { Page, Section, block, cols, daysTo, filters, headBlock, info, kpis, monthsBetween, search, section } from "./page";
 import { withoutWorkLate } from "./evaluations";
 
-/** Two facts on one line of a description, split by a light rule. */
-const pair = (a: string, b: string) => `${esc(a)}<span class="sep" aria-hidden="true"> | </span>${esc(b)}`;
 
 export function campus(pg: Page): Section[] {
   const f = pg.f, D = pg.D, L = D.logtime, layout = pg.v.layout || {}, dv = pg.v.derive || {};
@@ -137,9 +135,9 @@ export function lateByCluster(role: string, evals: any[]): Record<string, number
 
 function where(pg: Page): Section {
   const f = pg.f, D = pg.D, PL = D.place, S = D.summary, layout = pg.v.layout || {};
-  // one set of evaluations at a time: the ones you received or the ones you gave; in each, where you were and, for the
-  // last SeatDays days only, where the other side was
-  const role = pg.q("where", "received", ["received", "given"]);
+  // the ones you received and the ones you gave, each its own chart (owner, 2026-11-13: no switch); in each, where you
+  // were and, for the last SeatDays days only, where the other side was
+  const one = (role: "received" | "given"): string[] => {
   const recv = role === "received";
   const checked = (recv ? D.received : D.given).filter((e: any) => e.other_host_checked);
   const theirs: (string | null)[] = recv ? checked.map((e: any) => e.other_host) : checked.flatMap((e: any) => e.correcteds.map((c: any) => c.host));
@@ -171,16 +169,17 @@ function where(pg: Page): Section {
   for (const h of theirs) if (h) shown[h] = (shown[h] || 0) + 1;
   const [wplan, wscale] = WHERE_PLAN ? seatPlan(f, layout, shown, { unit: f.t("unit.evals"), detail: (h, v) => `${h}\n${f.plural(v, "count.evaluations")}` }) : ["", ""];
   const total = recv ? S.received : S.given;
-  const lede = pair(f.t("where.cov_me", { me: recv ? PL.me_located_received : PL.me_located_given, n: total }),
+  const cover = [f.t("where.cov_me", { me: recv ? PL.me_located_received : PL.me_located_given, n: total }),
     !pg.seats ? f.t("where.cov_light") : checked.length || (recv ? PL.corrector_checked : PL.evaluated_checked)
       ? f.t("where.cov_other", { x: recv ? PL.corrector_located : PL.evaluated_located, y: recv ? PL.corrector_checked : PL.evaluated_checked })
-      : f.t("where.cov_none")) + (pg.seats ? ` <b>${esc(f.t("where.cov_window", { days: pg.seats }))}</b>` : "")
-    + ((recv ? PL.received_away : PL.given_away) ? ` ${esc(f.plural(recv ? PL.received_away : PL.given_away, "where.away"))}` : "");
-  const sw = pg.seg("where", [["received", f.t("where.role_received")], ["given", f.t("where.role_given")]], role, f.t("where.role_label"), "where");
-  return { id: "where", nav: f.t("nav.where"), html: section("where", "", cols(
-    ...(WHERE_PLAN ? [`<div class="block" data-panel="where-plan" id="where-plan"><div class="block-head">${wscale}</div>${wplan}</div>`] : []),
+      : f.t("where.cov_none"), pg.seats ? f.t("where.cov_window", { days: pg.seats }) : "",
+    (recv ? PL.received_away : PL.given_away) ? f.plural(recv ? PL.received_away : PL.given_away, "where.away") : ""].filter(Boolean).join(" ");
+  return [
+    ...(WHERE_PLAN ? [`<div class="block" data-panel="where-plan"><div class="block-head">${wscale}</div>${wplan}</div>`] : []),
     headBlock("where-clusters", f.t(`where.title_${role}`), series.length > 1 ? legend(series.map(([n, , c]) => [n, c])) : "",
-      vbars(f, ckeys.map(lab), series.map(([n, v, c]) => [n, ckeys.map((k) => v[k] || 0), c]), { label: f.t(`where.title_${role}`), fmt: (v) => f.num(v), tips, barTips: true, emptyText: f.t("empty.period") })),
-    awayTable),
-  { head: `<div class="panel-head"><h2>${esc(f.t("where.title"))} ${info(f.t("where.inferred_note"))}</h2>${sw}</div>`, lede }) };
+      vbars(f, ckeys.map(lab), series.map(([n, v, c]) => [n, ckeys.map((k) => v[k] || 0), c]), { label: f.t(`where.title_${role}`), fmt: (v) => f.num(v), tips, colTips: true, emptyText: f.t("empty.period") }), cover),
+    awayTable];
+  };
+  return { id: "where", nav: f.t("nav.where"), html: section("where", "", cols(...one("received"), ...one("given")),
+    { head: `<h2>${esc(f.t("where.title"))} ${info(f.t("where.inferred_note"))}</h2>` }) };
 }

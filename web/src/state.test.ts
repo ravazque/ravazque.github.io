@@ -131,8 +131,17 @@ test("Activity starts taken away; a profile that showed it (open or folded) keep
 
 test("a new profile starts with five starred sections; taking them away, or having starred before, stays as it is", () => {
   loadPins("peer20");
-  expect(pins.stars.map((p) => `${p.page}:${p.id}`)).toEqual(["projects:projects-table", "people:circle", "campus:seats", "coalition:coal-points", "evaluations:points"]);
-  expect(pins.stars.every((p) => p.label.length > 0)).toBe(true);
+  const first = ["coalition:coal-points", "people:crossed", "campus:seats", "evaluations:by-group", "projects:projects-table"];
+  expect(pins.stars.map((p) => `${p.page}:${p.id}`)).toEqual(first);
+  expect(pins.stars.map((p) => p.label)).toEqual(["Coalition points", "People", "Where you sat", "Milestones and projects", "Projects"]);
+  // a profile still holding the five it was first given (2026-11-12) moves to these
+  localStorage.setItem("stars:peer22", JSON.stringify(["projects:projects-table", "people:circle", "campus:seats", "coalition:coal-points", "evaluations:points"]
+    .map((s) => ({ page: s.split(":")[0], id: s.split(":")[1], label: "x" }))));
+  pins.login = "";
+  loadPins("peer22");
+  expect(pins.stars.map((p) => `${p.page}:${p.id}`)).toEqual(first);
+  pins.login = "";
+  loadPins("peer20");
   for (const p of [...pins.stars]) togglePin("stars", p);
   pins.login = "";
   loadPins("peer20");
