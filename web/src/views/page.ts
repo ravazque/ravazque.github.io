@@ -92,6 +92,22 @@ export const fillRows = (filled: number, label: string) => (filled >= FILL_ROWS 
  * chart's height, more rows scroll and the room left shows these, clipped at its base (v2.css). */
 export const fillTable = () => `<div class="fill-rows" aria-hidden="true">${"<i></i>".repeat(FILL_ROWS)}</div>`;
 
+/** A project's name within 28 characters, whole words only: the words that fit, then "..." (not counted); a single word
+ * longer than that is cut. */
+export function shortProject(name: string, max = 28): string {
+  if (name.length <= max) return name;
+  let out = "";
+  for (const w of name.split(" ")) {
+    if ((out ? out.length + 1 : 0) + w.length > max) break;
+    out += (out ? " " : "") + w;
+  }
+  return `${out || name.slice(0, max)}...`;
+}
+
+/** A project's name in a table: a long one shortened, the whole name one click away (the float of Everyone you met). */
+export const projectName = (name: string) => (shortProject(name) === name ? esc(name)
+  : `<details class="pop who-pop name-pop" data-float><summary>${esc(shortProject(name))}</summary><div class="pop-panel"><b>${esc(name)}</b></div></details>`);
+
 export const block = (panel: string, body: string, title = "", note = "") =>
   `<div class="block" data-panel="${panel}">${title ? `<h3>${esc(title)}</h3>` : ""}${note ? `<p class="note">${esc(note)}</p>` : ""}${body}</div>`;
 

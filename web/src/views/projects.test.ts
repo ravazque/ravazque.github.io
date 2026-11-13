@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { achievementSeries, activity, profile, widgetPicker, widgets } from "./profile";
 import { Page } from "./page";
 import { Fmt } from "../fmt";
-import { tryChip } from "./projects";
+import { projectFilters, projectView, projects, timelineLanes, tryChip } from "./projects";
 
 const a = (name: string, description: string, at: string) => ({ name, description, at, tier: "none" });
 
@@ -63,7 +63,7 @@ const cardPage = (more: any = {}) => new Page(new Fmt("en"), { period: "student"
   correction_points: { earned: 12, spent: 8 }, summary: { validated: 0, projects: 0, attempts: 0, retries: 0, received: 0, given: 0 },
   logtime: { total_seconds: 0, days_present: 0 }, projects: [{ status: "finished", validated: false }] }, all_projects: [],
   promo: { rank: 3, size: 424, percentile: 99.5, median: 9.2 }, ...more } as any, "home", {});
-const cardLines = (pg: Page) => [...profile(pg)[0].html.matchAll(/<p class="line">(.*?)<\/p>/g)].map((m) => m[1].replace(/<[^>]*>/g, "").trim());
+const cardLines = (pg: Page) => [...profile(pg)[0].html.matchAll(/<p class="line">(.*?)<\/p>/g)].map((m) => (Object.assign(document.createElement("p"), { innerHTML: m[1] }).textContent || "").trim());
 
 test("the four figures of the card each carry a line: your place in Madrid, in your kickoff, the wallet, the points", () => {
   const f = new Fmt("en");
@@ -109,4 +109,61 @@ test("the card names who you are beside your name, and lists coalition, mileston
   expect(student).toContain('<span class="badge">Mentor</span>');
   expect(profile(pg("Transcender"))[0].html).toContain(`<span class="pf-status">${f.t("profile.st_outer")}</span>`);
   expect(profile(pg("Alumni"))[0].html).toContain(`<span class="pf-status">${f.t("profile.st_alumni")}</span>`);
+});
+
+test("the projects table filters by status (the ones your projects have) and by a validated mark", () => {
+  const p = (name: string, status: string, mark: number | null, validated: boolean | null) => ({ name, status, mark, validated, track: "student", attempts: [], registered: "2026-01-01" });
+  const all = [p("Libft", "finished", 100, true), p("minishell", "waiting_for_correction", null, null), p("cub3d", "searching_a_group", null, null), p("pipex", "finished", 40, false)];
+  const page = (q: Record<string, string>) => new Page(new Fmt("en"), { period: "student", report: { projects: all }, all_projects: all } as any, "projects", q);
+  const names = (q: Record<string, string>) => projectView(all, projectFilters(page(q))).map((x) => x.name);
+  expect(projectFilters(page({})).statuses).toEqual(["finished", "waiting_for_correction", "searching_a_group"]);
+  expect(names({ status: "waiting_for_correction" })).toEqual(["minishell"]);
+  expect(names({ status: "searching_a_group" })).toEqual(["cub3d"]);
+  expect(names({ status: "nonsense" })).toEqual(["Libft", "minishell", "cub3d", "pipex"]);
+  expect(names({ marks: "ok" })).toEqual(["Libft"]);
+});
+
+const at = (name: string, group: string, spans: [number, number][], o: any = {}) => ({ name, group, track: group === "piscine" ? "piscine" : "common-core", status: "finished", mark: 100, validated: true,
+  registered: "2026-01-01", first_ms: spans[0][0], xp_earned: 0, xp_base: 0, outstanding: 0, ...o,
+  attempts: spans.map(([a, b], i) => ({ n: i + 1, start_ms: a, end_ms: b, start: "2026-01-01 10:00", validated: true, mark: 100, days: 1, evals: [] })) });
+
+test("the attempts line has a row per milestone, not per project: exams out, work experience on its own, attempts at the same time on a row under", () => {
+  const rows = timelineLanes([at("Libft", "rank-00", [[0, 10]]), at("get_next_line", "rank-01", [[10, 20]]), at("ft_printf", "rank-01", [[15, 30]]), at("Born2beroot", "rank-01", [[30, 40]]),
+    at("Exam Rank 02", "rank-02", [[40, 41]], { exam: true }), at("Work Exp. I - Duration", "outer-core", [[50, 60]]), at("ft_ls", "outer-core", [[50, 70]])], (g) => g.toUpperCase());
+  expect(rows.map(([label, spans]) => [label, spans.map((s) => s.name)])).toEqual([
+    ["RANK-00", ["Libft"]], ["RANK-01", ["get_next_line", "Born2beroot"]], ["", ["ft_printf"]], ["OUTER-CORE", ["ft_ls"]], ["WORK", ["Work Exp. I - Duration"]]]);
+});
+
+test("the projects table comes by milestone, each group one line with its count until opened; filters open them all; one list on request", () => {
+  const all = [at("Libft", "rank-00", [[1, 2]]), at("get_next_line", "rank-01", [[3, 4]]), at("ft_printf", "rank-01", [[5, 6]], { status: "in_progress" })];
+  const html = (q: Record<string, string>) => {
+    const f = new Fmt("en");
+    const D = { projects: all, extras: { cursus: [], skills: [] }, insights: {}, summary: {} };
+    return projects(new Page(f, { period: "student", report: D, all_projects: all, derive: {} } as any, "projects", q)).find((s) => s.id === "projects-table")!.html;
+  };
+  const rowsOf = (h: string) => [...h.matchAll(/<td class="proj" data-v="([^"]+)"/g)].map((m) => m[1]);
+  const first = html({});
+  expect(first.match(/<tbody class="group/g)?.length).toBe(2);
+  expect(rowsOf(first)).toEqual([]); // all shut to begin with
+  expect(rowsOf(html({ open: "rank-01" }))).toEqual(["ft_printf", "get_next_line"]);
+  expect(first).toMatch(/Milestone 0<span class="count"> · 1 project<\/span>/);
+  expect(first).not.toContain('class="table-wrap tall"'); // no box that scrolls
+  expect(rowsOf(html({ open: "rank-00" }))).toEqual(["Libft"]);
+  expect(rowsOf(html({ q: "t" })).sort()).toEqual(["Libft", "ft_printf", "get_next_line"]);
+  const flat = html({ flat: "1" });
+  expect(flat).not.toContain('<tbody class="group');
+  expect(rowsOf(flat).length).toBe(3);
+});
+
+test("projects of another cursus (a Discovery piscine, a Piscine Reload) are a group of their own, in the table and on the attempts line", () => {
+  const all = [at("ft_ls", "outer-core", [[1, 2]], { slug: "ft_ls", track: "outer-core" }), at("Cellule0.0 - Shell", "outer-core", [[3, 4]], { slug: "cellule0-0-shell", track: "outer-core" }),
+    at("Piscine Django", "outer-core", [[5, 6]], { slug: "piscine-django", track: "outer-core" })];
+  const D = { projects: all, extras: { cursus: [], skills: [] }, insights: {}, summary: {}, given: [],
+    received: [{ slug: "cellule0-0-shell", cursus: ["Discovery Piscine - Web"] }, { slug: "ft_ls", cursus: ["42cursus", "42Senior"] }] };
+  const f = new Fmt("en");
+  const secs = projects(new Page(f, { period: "student", report: D, all_projects: all, derive: {} } as any, "projects", {}));
+  const table = secs.find((s) => s.id === "projects-table")!.html;
+  expect(table).toContain(`${f.t("projects.outside")}<span class="count"> · 1 project<`);
+  expect(table).toMatch(/OuterCore<span class="count"> · 2 projects</); // not evaluated in another cursus: it stays
+  expect(secs.find((s) => s.id === "timeline")!.html).toContain(`title="${f.t("projects.outside")}"`);
 });

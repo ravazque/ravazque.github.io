@@ -14,7 +14,7 @@ import (
 // (CONSENT_LOG, one JSON line per acceptance, pruned at start-up).
 const (
 	ConsentVersion = 4
-	ConsentUpdated = "2026-11-10"
+	ConsentUpdated = "2026-11-12"
 	consentKeep    = 2 * 365 * 24 * time.Hour
 )
 

@@ -95,16 +95,13 @@ export function tierRows(f: Fmt, tiers: Tier[], open: boolean, week: number, dro
   }).join("")}</div>`;
 }
 
-/** The days the coming hours leave on, one line each, opening to the times and the sessions; and when that takes you
- * under a line. */
-export function leaving(f: Fmt, drops: Drop[], week: number, log: LogRow[] = []) {
+/** The days the coming hours leave on, one line each, opening to the times and the sessions. */
+export function leaving(f: Fmt, drops: Drop[], log: LogRow[] = []) {
   const days = dropDays(f, drops, log);
-  if (!days.length) return `<p class="line">${esc(f.t("bonus.no_drops"))}</p>`;
+  if (!days.length) return "";
   const list = days.map((d) => `<details class="drop-day"><summary><span>${esc(d.day)}</span><b>−${esc(f.nb(d.hours, "h"))}</b>`
     + `<span class="left">${esc(f.t("bonus.left", { n: f.hmm(d.left) }))}</span></summary><ul>`
     + d.rows.map((r) => `<li><span class="nw">${esc(r.from)}–${esc(r.to)}</span><span>${esc(f.t("bonus.session", { day: r.session }))}</span><b>−${esc(f.nb(r.hours, "h"))}</b></li>`).join("")
     + "</ul></details>").join("");
-  const under = [80, 50].flatMap((h) => { const u = underAt(week, drops, h); return u ? [f.t("bonus.under", { hours: h, time: moment(f, new Date(u).toISOString()) })] : []; });
-  return `<h3 class="sub-h drops-title">${esc(f.t("bonus.drops"))} ${info(f.t("bonus.drops_note"))}</h3><div class="drop-days">${list}</div>`
-    + (under.length ? `<p class="line note">${esc(under.join(" · "))}</p>` : "");
+  return `<h3 class="sub-h drops-title">${esc(f.t("bonus.drops"))} ${info(f.t("bonus.drops_note"))}</h3><div class="drop-days">${list}</div>`;
 }

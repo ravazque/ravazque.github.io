@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { Fmt } from "../fmt";
-import { absence, binLabels, cancelledSection, pointsSection, deletedApart, evaluations, lateText, logSection, milestoneOf, seatMatch, seatOptions, teamCell, withoutWorkLate, workExperience } from "./evaluations";
+import { absence, autoFeedback, binLabels, staffApart, cancelledSection, pointsSection, deletedApart, evaluations, lateText, logSection, milestoneOf, seatMatch, seatOptions, teamCell, withoutWorkLate, workExperience } from "./evaluations";
 import { Page, shownLogin } from "./page";
 
 test("the log's seat filter: the evaluated side only, you received with no session open, or the students you evaluated not logged where it was looked up", () => {
@@ -193,7 +193,9 @@ test("By milestone always lists every group, in order, the ones with nothing gre
   const html = evaluations(pg).find((s) => s.id === "by-group")!.html;
   const table = html.slice(html.indexOf('data-panel="by-group"'), html.indexOf('data-panel="depth-projects"'));
   const names = [...table.matchAll(/<tr( class="zero")?><td class="nowrap" data-v="\d+">([^<]+)<\/td>/g)];
-  expect(names.map((m) => m[2])).toEqual(GROUPS.map((g) => f.t(`groups.${g}`)));
+  // staff and deleted accounts only when there is something to show (owner, 2026-11-12)
+  const shown = GROUPS.filter((g) => !["staff", "deleted", "no-cursus"].includes(g) || all.stats.by_group[g]);
+  expect(names.map((m) => m[2])).toEqual(shown.map((g) => f.t(`groups.${g}`)));
   expect(names.filter((m) => m[1]).length).toBeGreaterThan(0); // groups with nothing, greyed
   expect(names.filter((m) => !m[1]).length).toBe(Object.keys(all.stats.by_group).length);
 });
@@ -208,23 +210,31 @@ test("Projects you corrected takes the height of the table by milestone beside i
   expect(corrected).not.toContain("blank-rows");
 });
 
-test("Correction points: the balance at the end of each month, week by week when enlarged; each tip with what came in and went out by reason and the balance it ended with", () => {
+test("Correction points: the balance at the end of each week, day by day when enlarged; each tip with what came in and went out by reason and the balance it ended with", () => {
   const f = new Fmt("en");
   const cp = { earned: 9, spent: 6, max: 5, series: [], reasons: {},
     by_month: [{ m: "2026-01", earned: 4, spent: 6, reasons: { "Earning after defense": 4, "Defense plannification": -6 } }, { m: "2026-03", earned: 5, spent: 0, reasons: { "Earning after defense": 5 } }],
-    by_week: [{ w: "2026-01-05", earned: 4, spent: 6, reasons: { "Earning after defense": 4, "Defense plannification": -6 } }, { w: "2026-01-19", earned: 5, spent: 0, reasons: { "Earning after defense": 5 } }] };
+    by_week: [{ w: "2026-01-05", earned: 4, spent: 6, reasons: { "Earning after defense": 4, "Defense plannification": -6 } }, { w: "2026-01-19", earned: 5, spent: 0, reasons: { "Earning after defense": 5 } }],
+    by_day: [{ d: "2026-01-06", earned: 4, spent: 6, reasons: { "Earning after defense": 4, "Defense plannification": -6 } }, { d: "2026-01-20", earned: 5, spent: 0, reasons: { "Earning after defense": 5 } }] };
   const pg = new Page(f, { period: "piscine", report: { profile: { login: "me", correction_point: 3 }, correction_points: cp, received: [], given: [], projects: [] }, all_projects: [] } as any, "evaluations", {});
   const html = pointsSection(pg).html;
   const unesc = (t: string) => t.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
   const tipsIn = (part: string) => [...part.matchAll(/class="ch-col ql"[^>]*data-tip="([^"]*)"/g)].map((m) => unesc(m[1]));
-  const [monthly, weekly] = html.split('<div class="zoom-only">');
-  expect(tipsIn(monthly).length).toBe(3); // January, an empty February, March
-  expect(tipsIn(monthly)[0]).toContain("Defense plannification −6");
-  expect(tipsIn(monthly)[0]).toContain(f.t("points.q_balance", { n: f.num(-2) })); // the Piscine starts at 0
-  expect(tipsIn(monthly)[2]).toContain(f.t("points.q_balance", { n: "3" }));
+  const [weekly, daily] = html.split('<div class="zoom-only">');
   expect(tipsIn(weekly).length).toBe(3); // the weeks of January 5, 12 and 19
   expect(tipsIn(weekly)[0]).toContain(f.t("points.w_label", { d: f.day("2026-01-05") }));
-  expect(unesc(html)).toContain(f.t("points.qline_note")); // in the title's ⓘ
+  expect(tipsIn(weekly)[0]).toContain("Defense plannification −6");
+  expect(tipsIn(weekly)[0]).toContain(f.t("points.q_balance", { n: f.num(-2) })); // the Piscine starts at 0
+  expect(tipsIn(weekly)[2]).toContain(f.t("points.q_balance", { n: "3" }));
+  expect(tipsIn(daily).length).toBe(15); // every day from January 6 to 20
+  expect(tipsIn(daily)[0]).toContain(f.day("2026-01-06"));
+  expect(tipsIn(daily)[14]).toContain(f.t("points.q_balance", { n: "3" }));
+  expect(html).not.toContain(f.t("points.qline_title")); // months only for reports saved before
+  // a report with weeks and no days (saved 9 to 12 Nov 2026) keeps its weeks when enlarged
+  const old = pointsSection(new Page(f, { period: "piscine", report: { profile: { login: "me", correction_point: 3 }, correction_points: { ...cp, by_day: undefined }, received: [], given: [], projects: [] }, all_projects: [] } as any, "evaluations", {})).html;
+  expect(old).not.toContain("zoom-only");
+  expect(tipsIn(old).length).toBe(3);
+  expect(unesc(html)).toContain(f.t("points.wline_note")); // in the title's ⓘ
   // the reasons beside the chart take its height: more rows scroll, fewer leave templates down to its base
   expect(html).toMatch(/<div class="table-wrap fit"><table[^]*<\/table><div class="fill-rows" aria-hidden="true">(<i><\/i>)+<\/div><\/div>/);
 });
@@ -239,4 +249,56 @@ test("Correction points from a report saved before the months were kept: the bal
   const labels = [...html.matchAll(/<div class="ch-x[^"]*"[^>]*>(.*?)<\/div>/g)][0][1];
   expect(labels).toContain(f.monthLabel("2026-04"));
   expect(html).toContain(f.t("points.refresh_note").replace(/'/g, "&#39;"));
+});
+
+test("the log keeps a long project name to 28 characters; opened, the whole name", () => {
+  const long = "Bgp At Doors of Autonomous Systems is Simple";
+  const pg = new Page(new Fmt("en"), { period: "student", layout: {}, report: { profile: { login: "peer01" }, received: [], projects: [],
+    given: [ev({ id: 1, project: long, slug: "x", mark: 100 })] }, all_projects: [] } as any, "evaluations", { log: "given" });
+  const html = logSection(pg).html;
+  expect(html).toContain("<summary>Bgp At Doors of Autonomous...</summary>");
+  expect(html).toContain(`<div class="pop-panel"><b>${long}</b>`);
+  expect(html).toContain(`<option value="${long}">`); // the filter keeps whole names
+});
+
+test("the feedback 42 fills in when the student did not is named as that, never as someone unknown; real ones link their author", () => {
+  const auto = { by: null, rating: 4, comment: "You failed to complete this feedback within the allocated time (this is very wrong), so we did it for you (do it next time)." };
+  expect(autoFeedback(auto)).toBe(true);
+  expect(autoFeedback({ by: "peer02", rating: 4, comment: auto.comment })).toBe(false);
+  expect(autoFeedback({ by: null, rating: 3, comment: "fine" })).toBe(false);
+  const f = new Fmt("en");
+  const pg = new Page(f, { period: "student", layout: {}, report: { profile: { login: "peer01" }, received: [], projects: [],
+    given: [{ ...ev({ id: 1, project: "Libft", slug: "42cursus-libft", mark: 100 }), feedbacks: [auto, { by: "peer02", rating: 5, comment: "ok" }] }] }, all_projects: [] } as any, "evaluations", { log: "given" });
+  const html = logSection(pg).html;
+  expect(html).toContain(f.t("log.feedback_auto", { rating: 4 }));
+  expect(html).not.toContain("Feedback by ?");
+  expect(html).toContain('Feedback by <a class="login-link" href="https://acerezo.top/user/peer02"');
+});
+
+test("42's automatic feedback is left out of Feedback's averages and its list, and named apart in a list that opens", async () => {
+  const { readFileSync } = await import("node:fs");
+  const doc = JSON.parse(readFileSync("../server/core/testdata/golden/mid.report.json", "utf8")), all = doc.periods.all;
+  const f = new Fmt("en");
+  const feedbackOf = (report: any) => evaluations(new Page(f, { period: "all", report, layout: doc.layout, all_projects: report.projects, all_cursus: report.extras.cursus } as any, "evaluations", {})).find((s) => s.id === "feedback")!.html;
+  const before = feedbackOf(all);
+  expect(before).not.toContain("auto-apart");
+  const auto = { by: null, rating: 4, comment: "You failed to complete this feedback within the allocated time (this is very wrong), so we did it for you (do it next time).", auto: true };
+  const given = all.given.map((e: any, i: number) => (i === 0 ? { ...e, feedbacks: [...e.feedbacks, auto] } : e));
+  const after = feedbackOf({ ...all, given });
+  const head = (html: string) => html.slice(0, html.indexOf("<details"));
+  expect(after.slice(0, after.indexOf('<details class="apart auto-apart"'))).toBe(before.slice(0, after.indexOf('<details class="apart auto-apart"'))); // not one figure moved
+  expect(after).toContain(f.plural(1, "feedback.auto_apart"));
+  expect(after).toContain(given[0].project);
+  expect(head(after)).not.toContain("by ?");
+});
+
+test("staff get their own row by milestone, taken from the group the report counted each one in; nothing is lost", () => {
+  const stats = { "outer-core": { received: 4, received_out: 1, given: 2, given_out: 0 }, "no-cursus": { received: 3, received_out: 0, given: 1, given_out: 0 } };
+  const received = [{ corrector: { login: "boss", staff: true }, outstanding: true }, { corrector: { login: "boss", staff: true } }, { corrector: { login: "tutor", staff: true } }, { corrector: { login: "peer01" } }];
+  const given = [{ correcteds: [{ login: "tutor", staff: true }, { login: "me" }] }];
+  const got = staffApart(stats, received, given, "me", new Map([["boss", "outer-core"]]));
+  expect(got.staff).toEqual({ received: 3, received_out: 1, given: 1, given_out: 0 });
+  expect(got["outer-core"]).toEqual({ received: 2, received_out: 0, given: 2, given_out: 0 });
+  expect(got["no-cursus"]).toEqual({ received: 2, received_out: 0, given: 0, given_out: 0 });
+  expect(staffApart(stats, [{ corrector: { login: "peer01" } }], [], "me", new Map())).toEqual(stats);
 });

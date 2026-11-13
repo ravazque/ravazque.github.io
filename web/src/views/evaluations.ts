@@ -5,7 +5,7 @@ import { GOOD, BAD, S1, S2, legend, lines, qline, vbars } from "../lib/charts";
 import { ACCENT, GROUPS, SLATE, heat } from "../lib/graphs";
 import { ARROW, avatar, badge, esc, tipAttr } from "../lib/h";
 import { facts, table } from "../lib/table";
-import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased, fillTable } from "./page";
+import { KINDS, Page, Section, block, cols, failed, filters, flagBadge, headBlock, info, kpis, monthsBetween, negativeFlags, noMark, radios, search, section, select, shownLogin, erased, fillTable, projectName } from "./page";
 import tracks from "@data/tracks.json";
 
 /** Common Core project slug → its milestone (rank-00…rank-06), C and Python tracks alike. */
@@ -29,6 +29,23 @@ export function deletedApart(byGroup: Record<string, any>, received: any[], give
   const { "no-cursus": rest = {}, ...others } = byGroup;
   const left = { received: (rest.received || 0) - row.received, received_out: (rest.received_out || 0) - row.received_out, given: (rest.given || 0) - row.given, given_out: (rest.given_out || 0) - row.given_out };
   return { ...others, ...(left.received > 0 || left.given > 0 ? { "no-cursus": left } : {}), deleted: row };
+}
+
+/** By milestone with the staff on a row of their own: the report counts each of them in the group their account has (no
+ * cursus, or the one they once studied in), told by `groupOf` (the view's connections). Nothing is lost on the way. */
+export function staffApart(byGroup: Record<string, any>, received: any[], given: any[], me: string | undefined, groupOf: Map<string, string>): Record<string, any> {
+  const out: Record<string, any> = Object.fromEntries(Object.entries(byGroup).map(([g, r]) => [g, { ...r }]));
+  const row = { received: 0, received_out: 0, given: 0, given_out: 0 };
+  const move = (p: any, k: "received" | "given", outstanding: boolean) => {
+    if (!p?.staff || erased(p.login) || p.login === me) return;
+    const from = out[groupOf.get(p.login) || "no-cursus"];
+    for (const key of outstanding ? [k, `${k}_out`] : [k]) { (row as any)[key]++; if (from) from[key] = Math.max(0, (from[key] || 0) - 1); }
+  };
+  for (const e of received) move(e.corrector, "received", !!e.outstanding);
+  for (const e of given) for (const c of e.correcteds || []) move(c, "given", !!e.outstanding);
+  if (!row.received && !row.given) return byGroup;
+  for (const g of Object.keys(out)) if (!out[g].received && !out[g].given) delete out[g];
+  return { ...out, staff: row };
 }
 
 export function evaluations(pg: Page): Section[] {
@@ -56,8 +73,10 @@ export function evaluations(pg: Page): Section[] {
     const recip = (n: number, total: number, text: string) => `<div class="recip-row">${bar(n, total, " good")}<p class="s">${esc(text)}</p></div>`;
     const R = st.outstanding_reciprocity;
     // every group, always, in order (as Points by source has every source): the ones with nothing greyed
-    const by = deletedApart(st.by_group || {}, D.received, D.given, D.profile?.login), none = { received: 0, received_out: 0, given: 0, given_out: 0 };
-    const groups = [...new Set([...GROUPS, ...Object.keys(by)])].map((g) => ({ g, ...none, ...by[g] })).map((v: any) => ({ ...v, i: GROUPS.includes(v.g) ? GROUPS.indexOf(v.g) : 99,
+    const groupOf = new Map<string, string>((pg.v.connections || []).map((c: any) => [c.login, c.group]));
+    const by = staffApart(deletedApart(st.by_group || {}, D.received, D.given, D.profile?.login), D.received, D.given, D.profile?.login, groupOf), none = { received: 0, received_out: 0, given: 0, given_out: 0 };
+    // staff, deleted accounts and pisciners only when you met any (owner, 2026-11-12 and 13)
+    const groups = [...new Set([...GROUPS, ...Object.keys(by)])].filter((g) => !["staff", "deleted", "no-cursus"].includes(g) || by[g]).map((g) => ({ g, ...none, ...by[g] })).map((v: any) => ({ ...v, i: GROUPS.includes(v.g) ? GROUPS.indexOf(v.g) : 99,
       in_pct: v.received ? (100 * v.received_out) / v.received : null, out_pct: v.given ? (100 * v.given_out) / v.given : null }));
     const pctCell = (v: number | null) => (v === null ? "–" : `${f.num(v)}%`);
     statBlocks = [
@@ -127,7 +146,11 @@ export function evaluations(pg: Page): Section[] {
   const counts = (e: any) => pg.period !== "student" || !Array.isArray(e.cursus) || e.cursus.some((c: string) => c === "42cursus" || /reload/i.test(c));
   const outside = [...D.received, ...D.given].filter((e: any) => !counts(e));
   const mine = D.received.filter(counts).flatMap((e: any) => e.feedbacks.filter((x: any) => x.by === me));
-  const theirs = D.given.filter(counts).flatMap((e: any) => e.feedbacks);
+  // 42's automatic feedback (the student did not fill theirs in) is nobody's opinion: out of the averages and the list,
+  // named apart below
+  const real = (e: any) => e.feedbacks.filter((x: any) => !autoFeedback(x));
+  const theirs = D.given.filter(counts).flatMap(real);
+  const autos = D.given.filter((e: any) => e.feedbacks.some(autoFeedback));
   const avg = (fbs: any[], k: string) => { const v = fbs.map((x) => x[k]).filter((x) => x !== null && x !== undefined); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const below = (fbs: any[], k: string, top: number) => fbs.filter((x) => x[k] !== null && x[k] !== undefined && x[k] < top).length;
   let crit = "";
@@ -140,7 +163,7 @@ export function evaluations(pg: Page): Section[] {
       { k: "theirAvg", t: f.t("col.evaluated_to_you", { n: theirs.length }), num: true, f: (r) => `${f.num(r.theirAvg, 2)}<span class="sub">${esc(f.t("feedback.below_max", { n: r.theirLow }))}</span>` }],
     rows, { label: f.t("feedback.criteria_title") });
   }
-  const rated = D.given.filter(counts).flatMap((e: any) => e.feedbacks.filter((x: any) => x.rating !== null && x.rating !== undefined).map((x: any) => ({ ...x, project: e.project, begin: e.begin })));
+  const rated = D.given.filter(counts).flatMap((e: any) => real(e).filter((x: any) => x.rating !== null && x.rating !== undefined).map((x: any) => ({ ...x, project: e.project, begin: e.begin })));
   const score = (x: any) => KINDS.reduce((s, k) => s + (x[k] ?? 4), 0);
   const low = rated.filter((x: any) => x.rating < 5 || KINDS.some((k) => x[k] !== null && x[k] !== undefined && x[k] < 4))
     .sort((a: any, b: any) => a.rating - b.rating || score(a) - score(b));
@@ -150,7 +173,7 @@ export function evaluations(pg: Page): Section[] {
     return `<div class="${n !== null && n !== undefined && n < top ? "low" : ""}"><dt title="${esc(tip || label)}">${esc(label)}</dt>`
       + `<dd><span class="pips" role="img" aria-label="${esc(f.t("feedback.pips", { label, n: shown, max: top }))}">${pips}</span><b>${shown}<small>/${top}</small></b></dd></div>`;
   };
-  const lowItem = (x: any) => `<li class="fb-item"><p class="fb-head"><span>${esc(f.t("feedback.by", { login: x.by || "?", project: x.project }))}</span>`
+  const lowItem = (x: any) => `<li class="fb-item"><p class="fb-head"><span>${byLine(f, "feedback.by", x.by, { project: x.project })}</span>`
     + `<span class="when">${esc(f.day(x.begin))}</span></p><dl class="fb-crit">${meter(f.t("feedback.overall"), x.rating, 5)}`
     + ["punctuality", "interested", "rigorous", "nice"].map((k) => meter(f.t(`feedback.c.${k}`), x[k], 4, f.t(`feedback.q.${k}`))).join("") + "</dl>"
     + ((x.comment || "").trim() ? `<p class="note fb-quote">“${esc(x.comment.trim())}”</p>` : "") + "</li>";
@@ -158,15 +181,18 @@ export function evaluations(pg: Page): Section[] {
   // what was left out, and the averages if it counted
   let apart = "";
   if (outside.length) {
-    const allMine = D.received.flatMap((e: any) => e.feedbacks.filter((x: any) => x.by === me)), allTheirs = D.given.flatMap((e: any) => e.feedbacks);
+    const allMine = D.received.flatMap((e: any) => e.feedbacks.filter((x: any) => x.by === me)), allTheirs = D.given.flatMap(real);
     const items = outside.map((e: any) => `<li><span>${esc(e.project)}<br><span class="note">${esc(f.t(e.role === "received" ? "role.received" : "role.given"))}`
       + `${e.cursus?.length ? ` · ${esc(e.cursus.join(", "))}` : ""}</span></span><span class="when">${esc(f.day(e.begin))}</span></li>`).join("");
     apart = `<details class="apart"><summary>${esc(f.plural(outside.length, "feedback.apart"))}</summary>`
       + `<p class="note">${esc(f.t("feedback.apart_avg", { mine: f.num(avg(allMine, "rating"), 2), theirs: f.num(avg(allTheirs, "rating"), 2) }))}</p><ul class="list">${items}</ul></details>`;
   }
+  const autoApart = autos.length ? `<details class="apart auto-apart"><summary>${esc(f.plural(autos.length, "feedback.auto_apart"))}</summary>`
+    + `<p class="note">${esc(f.t("feedback.auto_note"))}</p><ul class="list">${autos.map((e: any) => `<li><span>${esc(e.project)}<br><span class="note">`
+      + `${esc((e.correcteds || []).length > 1 && e.team ? e.team : f.t("role.given"))}</span></span><span class="when">${esc(f.day(e.begin))}</span></li>`).join("")}</ul></details>` : "";
   out.push({ id: "feedback", nav: f.t("nav.feedback"), html: section("feedback", f.t("feedback.title"), cols(
     crit ? block("table-feedback", `<div class="table-wrap">${crit}</div>`, f.t("feedback.criteria_title"), f.t("feedback.criteria_note")) : "",
-    block("low-feedback", `<ul class="list">${lowItems}</ul>${apart}`, f.t("feedback.low_title"),
+    block("low-feedback", `<ul class="list">${lowItems}</ul>${apart}${autoApart}`, f.t("feedback.low_title"),
       rated.length ? f.t("feedback.low_note", { low: low.length, ratings: f.plural(rated.length, "count.ratings") }) : "")),
   ) });
 
@@ -210,10 +236,18 @@ function correctedTable(pg: Page): string {
     return `<details><summary>${esc(f.plural(r.people, "depth.whom"))}</summary><ul class="evals">${lis}</ul></details>`;
   };
   return table(f, [
-    { k: "project", t: f.t("col.project") }, { k: "times", t: f.t("col.times"), num: true },
+    { k: "project", t: f.t("col.project"), f: (r) => projectName(r.project) }, { k: "times", t: f.t("col.times"), num: true },
     { k: "avg", t: f.t("col.avg_mark"), s: f.t("abbr.avg_mark"), num: true, f: (r) => (r.avg !== null ? f.num(r.avg, 1) : noMark(f, r.last_e)) },
   ], rows, { label: f.t("depth.given_title"), sort: ["times", -1], detail, empty: f.t("empty.period") });
 }
+
+/** The feedback 42 writes itself when the evaluated student did not fill theirs in in time: no author, always 4/5 and
+ * the same text (seen in every saved report, 2026-11-12). It is 42's, not somebody's opinion of you. */
+export const autoFeedback = (x: any) => x.auto === true || (!x.by && /^You failed to complete this feedback/.test(x.comment || ""));
+
+/** A text that names who wrote a feedback, the login as a link (a deleted or hidden one plain; "?" when 42 gave none). */
+const byLine = (f: Fmt, key: string, login: string | null | undefined, vars: Record<string, unknown>) =>
+  esc(f.t(key, { ...vars, login: "\u0001" })).replace("\u0001", login ? shownLogin(f, login, false) : "?");
 
 /** How long after an evaluation's start the evaluated student logged in ("12m late", "1h 15m late"). */
 export const lateText = (f: Fmt, min: number) => f.t("log.late", { time: min < 60 ? f.t("unit.min", { n: min }) : f.hm(min * 60) });
@@ -250,9 +284,9 @@ export function teamCell(f: Fmt, e: any): string {
 }
 
 /** The Mondays from one "YYYY-MM-DD" to another, both included. */
-const weeksBetween = (from: string, to: string) => {
+const weeksBetween = (from: string, to: string, step = 7) => { // every step-th day from one to the other
   const out: string[] = [];
-  for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`); t += 7 * 864e5) out.push(new Date(t).toISOString().slice(0, 10));
+  for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`); t += step * 864e5) out.push(new Date(t).toISOString().slice(0, 10));
   return out;
 };
 
@@ -273,10 +307,10 @@ export function pointsSection(pg: Page): Section {
       tips: keys.map((k, i) => [f.monthLabel(k), "---", f.t("points.q_balance", { n: f.num(values[i]) })].join("\n")) });
   };
   let chart = `<div class="block" data-panel="points"><h3>${esc(f.t("points.qline_title"))} ${info(f.t("points.refresh_note"))}</h3>${monthEnds()}</div>`;
-  if (CP.by_month) {
+  if (CP.by_week) {
     const move = (name: string, v: number) => `${name} ${v > 0 ? "+" : "−"}${f.num(Math.abs(v))}`;
     // one line of balances: every key from the first to the last (the empty ones at nothing), a tip each
-    const series = (rows: any[], label: (k: string) => string, head: (k: string) => string) => {
+    const series = (rows: any[], label: (k: string) => string, head: (k: string) => string, title = "points.wline_title") => {
       let bal = pg.period === "piscine" ? 0 : (D.profile?.correction_point ?? 0) - rows.reduce((s, r) => s + r.earned - r.spent, 0);
       const balances = rows.map((r) => (bal += r.earned - r.spent));
       const tips = rows.map((r, i) => {
@@ -285,17 +319,18 @@ export function pointsSection(pg: Page): Section {
           f.t("points.q_spent", { n: f.num(r.spent) }), ...rs.filter(([, v]) => v < 0).sort((a, b) => a[1] - b[1]).map(([n, v]) => move(n, v)),
           "---", f.t("points.q_balance", { n: f.num(balances[i]) })].join("\n");
       });
-      return qline(f, rows.map((r) => label(r.k)), balances, { label: f.t("points.qline_title"), color: S1, tips, emptyText: f.t("empty.points") });
+      return qline(f, rows.map((r) => label(r.k)), balances, { label: f.t(title), color: S1, tips, emptyText: f.t("empty.points") });
     };
     const fill = (got: any[], keys: (a: string, b: string) => string[], name: string) => {
       const by = new Map(got.map((r) => [r[name], r]));
       return got.length ? keys(got[0][name], got[got.length - 1][name]).map((k) => ({ k, earned: 0, spent: 0, reasons: {}, ...by.get(k) })) : [];
     };
-    const months = fill(CP.by_month, monthsBetween, "m"), weeks = fill(CP.by_week || [], weeksBetween, "w");
+    // week by week; enlarged, day by day (reports saved before the days were kept stay on their weeks)
+    const weeks = fill(CP.by_week, weeksBetween, "w"), days = CP.by_day ? fill(CP.by_day, (a, b) => weeksBetween(a, b, 1), "d") : null;
     const shortDay = (k: string) => `${+k.slice(8, 10)} ${f.months[+k.slice(5, 7) - 1]}`;
-    chart = `<div class="block" data-panel="points"><h3><span class="zoom-hide">${esc(f.t("points.qline_title"))}</span><span class="zoom-only">${esc(f.t("points.wline_title"))}</span> ${info(f.t("points.qline_note"))}</h3>`
-      + `<div class="zoom-hide">${series(months, (k) => f.monthLabel(k), (k) => f.monthLabel(k))}</div>`
-      + `<div class="zoom-only">${series(weeks, shortDay, (k) => f.t("points.w_label", { d: f.day(k) }))}</div></div>`;
+    const weekly = series(weeks, shortDay, (k) => f.t("points.w_label", { d: f.day(k) }));
+    chart = `<div class="block" data-panel="points"><h3>${days ? `<span class="zoom-hide">${esc(f.t("points.wline_title"))}</span><span class="zoom-only">${esc(f.t("points.dline_title"))}</span>` : esc(f.t("points.wline_title"))} ${info(f.t(days ? "points.wline_note" : "points.refresh_note"))}</h3>`
+      + (days ? `<div class="zoom-hide">${weekly}</div><div class="zoom-only">${series(days, shortDay, (k) => f.day(k), "points.dline_title")}</div>` : weekly) + "</div>";
   }
   return { id: "points", nav: f.t("nav.points"), html: section("points", f.t("points.title"), cols(chart,
     block("table-reasons", `<div class="table-wrap fit">${table(f, [{ k: "reason", t: f.t("col.reason") }, { k: "count", t: f.t("col.times"), num: true }, { k: "sum", t: f.t("col.net"), num: true }],
@@ -400,7 +435,7 @@ export function logSection(pg: Page): Section {
     const parts = e.comment ? [`<div class="txt"><b>${esc(f.t("log.corrector_comment"))}</b>\n${esc(e.comment)}</div>`] : [];
     for (const x of e.feedbacks) {
       const kinds = KINDS.filter((k) => x[k] !== null && x[k] !== undefined).map((k) => `${f.t(`criterion.${k}`)} ${x[k]}/4`).join(" · ");
-      parts.push(`<div class="txt"><b>${esc(f.t("log.feedback_by", { login: x.by || "?", rating: x.rating ?? "–" }))}</b>`
+      parts.push(`<div class="txt"><b>${autoFeedback(x) ? esc(f.t("log.feedback_auto", { rating: x.rating ?? "–" })) : byLine(f, "log.feedback_by", x.by, { rating: x.rating ?? "–" })}</b>`
         + (kinds ? ` <span class="note">${esc(kinds)} · ${esc(x.at || "")}</span>` : "") + `\n${esc(x.comment || "")}</div>`);
     }
     const n = e.feedbacks.length;
@@ -416,16 +451,17 @@ export function logSection(pg: Page): Section {
     return esc(e.mark ?? "") + (a ? `<span class="sub"${tipAttr(a[1])}>${badge(a[0], "bad")}</span>` : "");
   } };
   const minCol = { k: "duration_min", t: f.t("col.duration"), s: f.t("abbr.duration"), num: true, nw: true,
-    f: (e: any) => `${esc(f.t("unit.min", { n: f.num(e.duration_min) }))}<span class="sub">${esc([f.t("log.planned", { n: e.planned_min }),
-      e.lead_h !== null && e.lead_h !== undefined && !workExperience(e) ? f.t("log.booked_ahead", { h: f.hmm(e.lead_h) }) : ""].filter(Boolean).join(" · "))}</span>` };
+    // planned and booked: a line each, never broken inside (dash.css .sub.dur)
+    f: (e: any) => esc(f.t("unit.min", { n: f.num(e.duration_min) })) + `<span class="sub dur">${[f.t("log.planned", { n: e.planned_min }),
+      e.lead_h !== null && e.lead_h !== undefined && !workExperience(e) ? f.t("log.booked_ahead", { h: f.hmm(e.lead_h) }) : ""].filter(Boolean).map((t) => `<span class="nw">${esc(t)}</span>`).join("")}</span>` };
   const mySeat = { k: "my_host", t: f.t("col.your_seat"), nw: true, hide: true, cls: "ctr",
     f: (e: any) => { const sub = [e.my_campus || "", e.my_late_min ? lateText(f, e.my_late_min) : ""].filter(Boolean).join(" · ");
       return esc(e.my_host || f.t("log.not_logged")) + (sub ? `<span class="sub">${esc(sub)}</span>` : ""); } };
   const columns = role === "received" ? [when,
-    { k: "project", t: f.t("col.project"), nw: true, f: (e: any) => `${esc(e.project)}<span class="sub">${esc(f.t("projects.attempt", { n: attemptOf.get(e.team_id) ?? "?" }))}</span>` },
+    { k: "project", t: f.t("col.project"), nw: true, f: (e: any) => `${projectName(e.project)}<span class="sub">${esc(f.t("projects.attempt", { n: attemptOf.get(e.team_id) ?? "?" }))}</span>` },
     { k: "corrector", t: f.t("col.corrector"), s: f.t("abbr.corrector"), nw: true, cls: "ctr", sv: (e: any) => e.corrector.login, f: (e: any) => logPerson(f, e.corrector, e.other_host_checked) },
     mySeat, minCol, markCol, flagCol, { k: "fb_rating", t: f.t("col.your_rating"), num: true, hide: true, cls: "ctr" }]
-    : [when, { k: "project", t: f.t("col.project"), nw: true },
+    : [when, { k: "project", t: f.t("col.project"), nw: true, f: (e: any) => projectName(e.project) },
       { k: "correcteds", t: f.t("col.evaluated"), s: f.t("abbr.evaluated"), nw: true, cls: "ctr", sv: (e: any) => e.correcteds.map((c: any) => c.login || "").join(","),
         f: (e: any) => teamCell(f, e) },
       mySeat, minCol, markCol, flagCol, { k: "fb_rating", t: f.t("col.their_rating"), num: true, hide: true, cls: "ctr" }];

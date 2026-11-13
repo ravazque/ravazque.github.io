@@ -228,7 +228,6 @@
 :where(body:not(.site)) th:not([aria-sort]) button:hover::after { opacity: .8; }
 :where(body:not(.site)) td.num, :where(body:not(.site)) th.num { text-align: right; }
 :where(body:not(.site)) td.nowrap { white-space: nowrap; }
-:where(body:not(.site)) td.mid { min-width: 160px; }
 /* table cells ignore max-width, so the clipping lives on their content */
 :where(body:not(.site)) td.proj { min-width: 140px; }
 :where(body:not(.site)) td.proj .badge { margin-left: 10px; }

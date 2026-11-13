@@ -90,9 +90,9 @@ export function coalition(pg: Page): Section[] {
   const W = D.logtime_bonus, tiers = dv.logtime_bonus as any[] | null, P = D.coalition_points;
   if (W && tiers && pg.period !== "piscine") {
     const sessions = W.sessions || [], week = tiers[0].window_h, drops = dv.logtime_drops || [];
-    const status = [W.open && sessions.length ? f.t("coal.s_open", { since: when(pg, sessions[sessions.length - 1][0]) }) : esc(f.t("coal.s_closed")), f.t("coal.s_as_of", { time: when(pg, W.at) })].join(" · ");
+    const status = [W.open && sessions.length ? f.t("coal.s_open", { since: when(pg, sessions.reduce((a: any, b: any) => (b[1] > a[1] ? b : a))[0]) }) : esc(f.t("coal.s_closed")), f.t("coal.s_as_of", { time: when(pg, W.at) })].join(" · ");
     const detail = `<div class="tp bonus-detail">${weekFigure(f, week)}<p class="line note">${status}</p>${rule(f, week)}${tierRows(f, tiers, !!W.open, week, drops)}`
-      + `${leaving(f, drops, week, D.logtime?.log || [])}</div>`;
+      + `${leaving(f, drops, D.logtime?.log || [])}</div>`;
     const bonuses = P?.bonuses || [];
     const list = bonuses.map((b: any) => `<li><span><b>${esc(f.t("bonus.got", { hours: b.hours }))}</b><br><span class="note">${esc(f.stamp(msOf(b.at)))}</span></span>`
       + `<span class="when">+${esc(f.num(b.points))}</span></li>`).join("") || `<li class="note">${esc(f.t("bonus.none"))}</li>`;

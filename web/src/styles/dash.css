@@ -11,10 +11,12 @@
 @media (max-width: 519.98px) {
   :where(body:not(.site)) form[data-filter="log"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
   :where(body:not(.site)) form[data-filter="log"] > .seg { grid-column: 1 / -1; }
+  :where(body:not(.site)) form[data-filter="log"] > :has(> input[type=search]), :where(body:not(.site)) form[data-filter="log"] > input[type=search] { grid-column: 1 / -1; } /* its placeholder was cut at half width */
 }
 :where(body:not(.site)) form[data-filter="log"] :is(.select-btn, input[type=search]) { min-width: 0; }
 :where(body:not(.site)) form[data-filter="log"] .log-clear { justify-self: start; white-space: nowrap; }
-:where(body:not(.site)) [data-panel="table-log"] td .sub { white-space: normal; text-overflow: clip; } /* the small lines wrap: the table fits rather than scrolls */
+@media (min-width: 1280px) { :where(body:not(.site)) [data-panel="table-log"] td .sub { white-space: normal; text-overflow: clip; } } /* laptops: the small lines wrap, the table fits rather than scrolls; narrower screens scroll it, a wrapped line there made rows 160px tall */
+:where(body:not(.site)) td .sub.dur > .nw { display: block; }  /* planned, booked ahead: a line each, never broken inside (one line needs 1410px: no screen gives the table that) */
 /* these filters name themselves (the first option says "Any seat", the box "Search: …"): no label above them, kept for
    screen readers */
 :where(body:not(.site)) form:is([data-filter="log"], [data-filter="projects-table"], [data-filter="who"], [data-filter="sessions"]) .field > span {
@@ -87,6 +89,26 @@
 :where(body:not(.site)) h2 .star-pin[aria-pressed="true"] { color: var(--star-edge); }
 :where(body:not(.site)) h2 .star-pin[aria-pressed="true"] svg { fill: var(--star); stroke-width: 1.3; }
 @media (max-width: 599.98px) { :where(body:not(.site)) h2 .pin { width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 4px; } }  /* titles keep one line on phones */
+/* a half widget is as narrow as a tablet whatever the screen: the log's filters as many per row as fit (they overlapped
+   on the one row of a wide screen), its count under the title */
+:where(body:not(.site)) .widget.half form[data-filter="log"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+:where(body:not(.site)) .widget.half form[data-filter="log"] > .seg { grid-column: 1 / -1; }
+:where(body:not(.site)) .widget.half h2:has(> .count) { flex-wrap: wrap; }
+:where(body:not(.site)) .widget.half h2:has(> .count) > .count { order: 1; flex-basis: 100%; margin: 8px 0 0; }
+/* a widget's title on one column: no size to change, up and down buttons instead of the handle; on a phone a smaller
+   title (spacing.css --widget-title-phone) with the buttons at the right edge of its first line */
+:where(body:not(.site)) .widgets h2 > .widget-move { display: none; }
+:where(body:not(.site)) .widgets h2 > .widget-move:disabled { opacity: .35; cursor: default; }
+@media (max-width: 959.98px) {  /* one column: up and down buttons instead of the handle (touch can't drag), no size */
+  :where(body:not(.site)) .widgets h2 > :is(.widget-size, .widget-grip) { display: none; }
+  :where(body:not(.site)) .widgets h2 > .widget-move { display: inline-flex; }
+}
+@media (max-width: 599.98px) {
+  :where(body:not(.site)) .widgets .widget h2 > .widget-move:not(.widget-move + .widget-move) { margin-left: auto; }
+  :where(body:not(.site)) .widgets .widget h2 > .widget-move ~ .widget-off { margin-left: var(--title-tools-between, 9px); }
+  :where(body:not(.site)) main .widgets .widget > section > h2, :where(body:not(.site)) main .widgets .widget > section > .panel-head h2 { font-size: var(--widget-title-phone, 24px); align-items: flex-start; column-gap: 10px; }
+  :where(body:not(.site)) .widgets .widget h2 > .widget-off { margin-left: auto; }
+}
 /* Profile's widgets: two columns from 960 px, a half widget in one of them (its own or the next free), a wide one across */
 :where(body:not(.site)) .widgets { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 48px; align-items: start; }
 :where(body:not(.site)) .widget { position: relative; min-width: 0; }
@@ -141,16 +163,17 @@
   :where(body:not(.site)) .menu-wrap { display: block; }
   :where(body:not(.site)) .menu, :where(body:not(.site)) .best-menu { min-width: 0; width: min(320px, calc(100vw - 24px)); }
 }
-@media (max-width: 519.98px) {  /* one row on a phone: no brand, the pages' menu leads back to Profile */
-  :where(body:not(.site)) .topbar .brand { display: none; }
+@media (max-width: 519.98px) {  /* one row on a phone: the brand is its mark alone (it leads back to Profile), then the pages' menu */
+  :where(body:not(.site)) .topbar .brand > span { display: none; }
+  :where(body:not(.site)) .sync:has(.progress) .btn { display: none; }  /* while it reads, the bar alone: with the button the band broke in two rows */
   :where(body:not(.site)) .topbar-end { gap: 8px; }
   /* every menu hangs from the band's right edge: from its own button it would run off the left of a phone */
   :where(body:not(.site)) .topbar-end { position: relative; }
   :where(body:not(.site)) .topbar-end .best-anchor, :where(body:not(.site)) .topbar-end details.pop { position: static; }
-  /* with no brand, the pages' menu takes the band's left edge and opens from there */
+  /* the pages' menu sits beside the mark and opens from the band's left edge */
   :where(body:not(.site)) .topbar-end { flex: 1; }
   :where(body:not(.site)) .topbar-end .menu-wrap { order: -1; margin-right: auto; }
-  :where(body:not(.site)) .menu { left: 0; right: auto; }
+  :where(body:not(.site)) .menu { left: 0; right: auto; width: min(320px, calc(100vw - 76px)); }  /* from its button, past the mark, to the screen's edge at most */
   :where(body:not(.site)) .tour::before { display: none; }
 }
 
@@ -391,6 +414,9 @@
   :where(body:not(.site)) th .th-l { display: none; }
   :where(body:not(.site)) th .th-s { display: inline; }
   :where(body:not(.site)) .phone-hide { display: none; }
+  /* By milestone and Exams ran a few px past a phone: tighter cells, and only the sorted column shows its arrow */
+  :where(body:not(.site)) :is(td, th button) { padding-inline: 6px; }
+  :where(body:not(.site)) th:not([aria-sort]) button::after { display: none; }
   :where(body:not(.site)) table td.when { white-space: normal; }  /* beats the one-line rule further down */
   :where(body:not(.site)) table { font-size: var(--c-table-phone-font-size); }
   :where(body:not(.site)) td { padding-inline: var(--c-table-phone-cell-padding-x); }
@@ -632,6 +658,13 @@ html body:not(.site) .seg > a[aria-pressed="true"]:hover, html body:not(.site) .
 :where(body:not(.site)) .step .arr { margin: 0 2px; }
 /* everyone you crossed paths with: one line of headings */
 :where(body:not(.site)) [data-panel="table-people"] th button { white-space: nowrap; }
+/* twelve columns: under 1500px the short column names (the whole name stays in the tip), so laptops barely scroll it */
+@media (max-width: 1499.98px) {
+  :where(body:not(.site)) :is([data-panel="table-people"], [data-panel="by-group"]) th .th-l:not(:only-child) { display: none; }
+  :where(body:not(.site)) :is([data-panel="table-people"], [data-panel="by-group"]) th .th-s { display: inline; }
+  :where(body:not(.site)) [data-panel="table-people"] :is(td, th button) { padding-inline: 8px; }
+  :where(body:not(.site)) [data-panel="table-people"] td.details { min-width: 0; }
+}
 /* account actions in the settings, as buttons; deleting in red */
 :where(body:not(.site)) .settings .row-links { display: flex; gap: 8px; flex-wrap: wrap; }
 :where(body:not(.site)) .settings .row-links .btn { flex: 1 1 auto; min-height: 40px; white-space: nowrap; }

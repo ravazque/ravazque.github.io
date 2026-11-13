@@ -166,6 +166,8 @@ watch(sections, async () => {
   markSections(main.value);
   markZoom(main.value);
   placeMarks(main.value);
+  fitAxes(main.value);
+  evenRows(main.value);
   hideTip();
   if (typingIn) {
     const el = main.value.querySelector<HTMLInputElement>(`form[data-filter="${typingIn.form}"] [name="${typingIn.name}"]`);
@@ -201,6 +203,8 @@ const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M1
 const GRIP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M10 5l2-2 2 2M10 19l2 2 2-2M5 10l-2 2 2 2M19 10l2 2-2 2"/></svg>'; // move: two crossed two-way arrows
 const WIDEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
 const NARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h7M15 12h7M6 8l4 4-4 4M18 8l-4 4 4 4"/></svg>';
+const UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V4M5 11l7-7 7 7"/></svg>';
+const DOWN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M5 13l7 7 7-7"/></svg>';
 const ZOOM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>';
 let refocus = "";
 const tool = (cls: string, icon: string, label: string, data: Record<string, string>) => {
@@ -232,24 +236,69 @@ function markSections(root: HTMLElement) {
       grip.setAttribute("role", "button");
       grip.setAttribute("aria-label", grip.title);
       grip.dataset.widgetGrip = widget;
-      h2.append(grip, tool("widget-size", wide ? NARROW : WIDEN, f.value.t(wide ? "widgets.half" : "widgets.wide", { name: wname }), { widgetSize: widget }),
+      // on one column (phones, tablets: touch can't drag) two buttons move it up and down instead of the handle
+      const i = +sec.parentElement!.dataset.i!, last = i === pins.widgets.length - 1;
+      const up = tool("widget-move", UP, f.value.t("widgets.up", { name: wname }), { widgetMove: "up" });
+      const down = tool("widget-move", DOWN, f.value.t("widgets.down", { name: wname }), { widgetMove: "down" });
+      up.disabled = i === 0; down.disabled = last;
+      h2.append(up, down, grip, tool("widget-size", wide ? NARROW : WIDEN, f.value.t(wide ? "widgets.half" : "widgets.wide", { name: wname }), { widgetSize: widget }),
         tool("widget-off", CROSS, f.value.t("widgets.remove", { name: wname }), { widgetOff: widget }));
     }
   });
   if (key.value !== "home") relabelStars(key.value, labels);
 }
 
-/** A chart that shares its row (on a phone every chart: they all take the whole width) gets a button by its title that
- * opens it large over the page (styles/zoom.css sizes it). */
+/** A chart that shares its row gets a button by its title that opens it large over the page (styles/zoom.css sizes it);
+ * one that has the whole width (every chart on a phone or a small screen) gets none, and loses it when it gets there. */
 const chartTitle = (p: HTMLElement) => p.querySelector<HTMLElement>(":scope > h3, :scope > .block-head > h3");
 function markZoom(root: HTMLElement) {
-  const phone = innerWidth < 600, page = root.clientWidth;
+  const page = root.clientWidth;
   root.querySelectorAll<HTMLElement>("[data-panel]").forEach((p) => {
     const h3 = chartTitle(p);
-    if (!h3 || h3.querySelector(".zoom-pin") || !p.querySelector(".ch-plot, .heat, .hb-row")) return;
-    if (!phone && p.getBoundingClientRect().width > page * 0.75) return;
+    if (!h3 || !p.querySelector(".ch-plot, .heat, .hb-row")) return;
+    const has = h3.querySelector(".zoom-pin");
+    if (p.getBoundingClientRect().width > page * 0.75) return has?.remove();
+    if (has) return;
     h3.append(tool("zoom-pin", ZOOM, f.value.t("zoom.open", { name: (h3.firstChild?.textContent || h3.textContent || "").trim() }), { zoom: "" }));
   });
+}
+/** On a phone a chart's axis column is as wide as its widest number, not the fixed column made for the longest one: the
+ * plot keeps that room (it looked like a margin on the left with none on the right). */
+function fitAxes(root: HTMLElement) {
+  const phone = innerWidth < 600;
+  root.querySelectorAll<HTMLElement>(".vchart, .lchart").forEach((fig) => {
+    const w = phone ? Math.max(0, ...[...fig.querySelectorAll<HTMLElement>(".ch-y:not(.right) span")].map((s) => s.offsetWidth)) : 0;
+    if (w) fig.style.setProperty("--c-chart-axis-width", `${w + 8}px`); else fig.style.removeProperty("--c-chart-axis-width");
+  });
+}
+/** Two half widgets side by side end on the same line when one of them can give or take: the one whose rows scroll (a
+ * table, a list) shows fewer rows (never under 400px of them) or more (up to all it has) to meet the other. A widget
+ * with nothing that scrolls keeps its own height: beside a longer one it ends higher (nothing honest to fill it with). */
+function evenRows(root: HTMLElement) {
+  const halves = [...root.querySelectorAll<HTMLElement>(".widgets > .widget.half")];
+  const scroller = (w: HTMLElement) => [...w.querySelectorAll<HTMLElement>(".table-wrap, .list")].filter((s) => !s.closest("details:not([open])"))
+    .sort((a, b) => b.clientHeight - a.clientHeight)[0] as HTMLElement | undefined;
+  halves.forEach((w) => { const s = scroller(w); if (s) s.style.maxHeight = ""; });
+  if (innerWidth < 960) return;
+  const rows = new Map<number, HTMLElement[]>();
+  halves.forEach((w) => rows.set(w.offsetTop, [...(rows.get(w.offsetTop) || []), w]));
+  for (const pair of rows.values()) {
+    if (pair.length !== 2) continue;
+    // each one's height as it is, the least it can take (400px of rows, or its rows when fewer) and the most (every row)
+    const m = pair.map((w) => { const s = scroller(w), h = w.offsetHeight, sh = s?.clientHeight || 0;
+      return { w, s, h, sh, lo: s ? h - sh + Math.min(400, sh) : h, hi: s ? h - sh + s.scrollHeight : h }; });
+    if (m[0].h === m[1].h || !m.some((x) => x.s)) continue;
+    // only one gives or takes: it goes to the other's height, as far as its rows allow; both: the shorter one's
+    const lo = Math.max(m[0].lo, m[1].lo), hi = Math.min(m[0].hi, m[1].hi), fixed = m.find((x) => !x.s);
+    const target = Math.max(lo, Math.min(fixed ? fixed.h : Math.min(m[0].h, m[1].h), hi));
+    for (const x of m) {
+      if (!x.s || x.h === target) continue;
+      const fit = (room: number) => Math.min(Math.max(room, Math.min(400, x.sh)), x.s!.scrollHeight);
+      x.s.style.maxHeight = `${fit(x.sh + target - x.h)}px`;
+      const off = x.w.offsetHeight - target; // what the change itself moved (a scrollbar, a wrapped foot): once more
+      if (off) x.s.style.maxHeight = `${fit(x.s.clientHeight - off)}px`;
+    }
+  }
 }
 /** The timeline's names, once drawn: each goes above or below the line (taking turns) where it touches no other name,
  * or one row further out when neither side has room (phones list the stops instead). */
@@ -275,7 +324,7 @@ function placeMarks(root: HTMLElement) {
   });
 }
 let zoomResize = 0;
-const onResize = () => { cancelAnimationFrame(zoomResize); zoomResize = requestAnimationFrame(() => { if (main.value) { markZoom(main.value); placeMarks(main.value); } }); };
+const onResize = () => { cancelAnimationFrame(zoomResize); zoomResize = requestAnimationFrame(() => { if (main.value) { markZoom(main.value); placeMarks(main.value); fitAxes(main.value); evenRows(main.value); } }); };
 window.addEventListener("resize", onResize);
 onBeforeUnmount(() => window.removeEventListener("resize", onResize));
 
@@ -321,6 +370,13 @@ function onClick(ev: MouseEvent) {
     const [page, id] = size.dataset.widgetSize!.split(":");
     refocus = "";
     return setWidget(page, id, { wide: !size.closest(".widget")!.classList.contains("wide") });
+  }
+  const move = el.closest?.("[data-widget-move]") as HTMLElement | null;
+  if (move) {
+    const w = move.closest<HTMLElement>(".widget")!, i = +w.dataset.i!;
+    refocus = "";
+    moveWidget(i, move.dataset.widgetMove === "up" ? i - 1 : i + 2);
+    return nextTick(() => main.value?.querySelector(`[data-widget="${w.dataset.widget}"]`)?.scrollIntoView({ block: "start" }));
   }
   const off = el.closest?.("[data-widget-off]") as HTMLElement | null;
   if (off) {

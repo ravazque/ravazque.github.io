@@ -44,7 +44,7 @@ func TestCancelledEvaluationsByKind(t *testing.T) {
 	}
 	d["correction_points"] = []any{
 		row(1, "Defense plannification", -1, "2026-10-10T08:00:00.000Z", 7001),
-		row(2, "Evaluator cancelled a defense", 1, "2026-10-10T09:30:00.000Z", 7001), // your corrector cancelled, point back
+		row(2, "Evaluator cancelled a defense", 1, "2026-10-10T09:30:00.000Z", 7001),  // your corrector cancelled, point back
 		row(3, "Evaluator cancelled a defense", -1, "2026-10-12T15:00:00.000Z", 7002), // you cancelled one you were to give
 		row(4, "Defense plannification", -1, "2026-10-14T10:00:00.000Z", 7004),        // booked, then gone with no refund: you cancelled it
 		row(5, "Defense plannification", -1, "2026-10-15T10:00:00.000Z", 7005),        // booked and evaluated
@@ -78,8 +78,8 @@ func TestCorrectionPointsByMonthAndWeek(t *testing.T) {
 		return Raw{"id": id, "reason": reason, "sum": sum, "total": 99.0, "created_at": at, "scale_team_id": id}
 	}
 	d["correction_points"] = []any{
-		row(1, "Earning after defense", 2, "2026-03-31T22:30:00.000Z"), // Madrid (summer time): Wednesday April 1st, 00:30
-		row(2, "Defense plannification", -1, "2026-02-10T10:00:00.000Z"),  // Tuesday: the week of Monday February 9
+		row(1, "Earning after defense", 2, "2026-03-31T22:30:00.000Z"),   // Madrid (summer time): Wednesday April 1st, 00:30
+		row(2, "Defense plannification", -1, "2026-02-10T10:00:00.000Z"), // Tuesday: the week of Monday February 9
 		row(3, "Earning after defense", 1, "2026-02-15T10:00:00.000Z"),   // Sunday: the same week
 		row(4, "Provided points to the pool.", -3, "2026-04-06T10:00:00.000Z"),
 	}
@@ -93,6 +93,10 @@ func TestCorrectionPointsByMonthAndWeek(t *testing.T) {
 	}
 	if len(ws) != 3 || ws[0].S("w") != "2026-02-09" || ws[0].F("earned") != 1 || ws[0].F("spent") != 1 || ws[1].S("w") != "2026-03-30" || ws[2].S("w") != "2026-04-06" {
 		t.Fatalf("weeks %s", mustJSON(ws))
+	}
+	ds := cp.Os("by_day") // Madrid days: the zoomed balance goes day by day
+	if len(ds) != 4 || ds[0].S("d") != "2026-02-10" || ds[1].S("d") != "2026-02-15" || ds[2].S("d") != "2026-04-01" || ds[2].F("earned") != 2 || ds[3].F("spent") != 3 {
+		t.Fatalf("days %s", mustJSON(ds))
 	}
 	if cp.Has("quarters") {
 		t.Fatal("quarters are gone")

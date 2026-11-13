@@ -59,9 +59,9 @@ func TestMadridLevelsKeepStudentsOuterCoreFrozenAndAlumniOnly(t *testing.T) {
 		row(12.25, on, Raw{"grade": "Transcender"}),
 		row(7, Raw{"staff?": false, "alumni?": false, "active?": false}, nil), // frozen
 		row(16, Raw{"staff?": false, "alumni?": true, "active?": true}, nil),
-		row(3, on, Raw{"end_at": "2025-01-01T00:00:00.000Z"}),                  // blackholed
-		row(0, Raw{"staff?": true, "alumni?": false, "active?": true}, nil),   // staff
-		row(0, on, Raw{"begin_at": "2027-01-01T00:00:00.000Z"}),                // not started
+		row(3, on, Raw{"end_at": "2025-01-01T00:00:00.000Z"}),               // blackholed
+		row(0, Raw{"staff?": true, "alumni?": false, "active?": true}, nil), // staff
+		row(0, on, Raw{"begin_at": "2027-01-01T00:00:00.000Z"}),             // not started
 	}
 	got := MadridLevels(rows, now)
 	slices.Sort(got)

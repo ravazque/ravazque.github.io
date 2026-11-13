@@ -1,6 +1,7 @@
 package core
 
 import (
+	"cmp"
 	"encoding/json"
 	"math"
 	"slices"
@@ -489,8 +490,8 @@ func CoalitionPoints(scores []Raw) *OMap {
 	return M("total", total, "count", len(scores), "sources", srcRows, "months", span, "bonuses", list(bonuses), "recent", list(recent), "awards", list(awards))
 }
 
-// BonusWindow is what LogtimeBonus needs, kept in the report: the last 7 days of sessions (merged; an open one ends
-// now) and when each bonus was last given.
+// BonusWindow is what LogtimeBonus needs, kept in the report: the last 7 days of sessions (each one as it is, the
+// intra adds up the time on two computers at once; an open one ends now) and when each bonus was last given.
 func BonusWindow(locations, scores []Raw, now time.Time) *OMap {
 	start := now.Add(-week)
 	var in []span
@@ -508,7 +509,8 @@ func BonusWindow(locations, scores []Raw, now time.Time) *OMap {
 		}
 	}
 	sessions := []any{}
-	for _, s := range MergeIntervals(in) {
+	slices.SortFunc(in, func(a, b span) int { return cmp.Or(a.b.Compare(b.b), a.e.Compare(b.e)) })
+	for _, s := range in {
 		if s.e.After(s.b) {
 			sessions = append(sessions, []any{pyISO(s.b), pyISO(s.e)})
 		}

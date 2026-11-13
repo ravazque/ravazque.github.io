@@ -83,6 +83,11 @@ const FIRST_WIDGETS: [Pin, Pin | null][] = [[pin("evaluations", "community"), nu
   [pin("coalition", "bonus"), pin("campus", "rhythm")], [pin("evaluations", "log"), pin("coalition", "bonus")], [pin("campus", "where"), pin("evaluations", "log")],
   [pin("evaluations", "feedback"), pin("evaluations", "log")], [pin("evaluations", "cancelled"), pin("evaluations", "log")]];
 
+/** The sections a new profile finds starred (owner, 2026-11-12), each with its title's text: only where nothing was ever
+ * starred in this browser, so taking them away stays that way. */
+const FIRST_STARS: [string, string, string][] = [["projects", "projects-table", "nav.projects_table"], ["people", "circle", "nav.network"],
+  ["campus", "seats", "nav.seats"], ["coalition", "coal-points", "nav.coal"], ["evaluations", "points", "nav.points"]];
+
 function readPins(key: string): Pin[] {
   try {
     const v = JSON.parse(store.get(key) || "[]");
@@ -117,6 +122,7 @@ export function loadPins(login: string) {
     store.set(`${key}:seeded`, now);
     store.set(key, JSON.stringify(widgets));
   }
+  if (store.get(`stars:${login}`) === null) store.set(`stars:${login}`, JSON.stringify(FIRST_STARS.map(([page, id, k]) => ({ page, id, label: fmt.value.t(k) }))));
   Object.assign(pins, { login, stars: readPins(`stars:${login}`), widgets });
 }
 

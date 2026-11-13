@@ -49,7 +49,7 @@ function pickTheme(t: Theme) { theme.value = t; setTheme(t); accent.value = appl
 function pickAccent(a: "intra" | "coalition") { settings.set("accent", a); accent.value = applyAccentChoice(a, user.value?.coalition_color); }
 
 async function signOut() {
-  if (user.value) await forget(idbShelf, user.value.login);
+  if (user.value) { await forget(idbShelf, user.value.login); localStorage.removeItem(`copy:${user.value.login}`); } // the report and its date
   await api("/auth/logout", { method: "POST" }).catch(() => {});
   // a full load, not a route change: nothing of this account stays in memory for Back to show
   location.replace("/");

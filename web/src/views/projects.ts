@@ -6,29 +6,41 @@ import { pyRound } from "../fmt";
 import { csv, facts, table } from "../lib/table";
 import { Page, Section, block, cols, filters, headBlock, radios, search, section, select } from "./page";
 
-const PROJECT_GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "piscine"];
+const PROJECT_GROUPS = ["rank-00", "rank-01", "rank-02", "rank-03", "rank-04", "rank-05", "rank-06", "outer-core", "outside", "piscine"];
 
-const groupLabel = (pg: Page, g: string) => (g === "piscine" ? pg.f.t("track.piscine") : pg.f.t(`groups.${g}`));
+const groupLabel = (pg: Page, g: string) => (g === "piscine" ? pg.f.t("track.piscine") : g === "outside" ? pg.f.t("projects.outside") : pg.f.t(`groups.${g}`));
+
+/** The projects of another cursus (a Discovery piscine, a Piscine Reload…), by slug: the ones whose evaluations name
+ * some cursus and never the 42cursus. The report files them under OuterCore; one never evaluated can't be told. */
+export function outsideCursus(D: any): Set<string> {
+  const seen = new Map<string, Set<string>>();
+  for (const e of [...(D.received || []), ...(D.given || [])]) {
+    if (!seen.has(e.slug)) seen.set(e.slug, new Set());
+    for (const c of e.cursus || []) seen.get(e.slug)!.add(c);
+  }
+  return new Set([...seen].filter(([, cs]) => cs.size && !cs.has("42cursus") && !cs.has("C Piscine")).map(([slug]) => slug));
+}
 
 export function projectFilters(pg: Page) {
+  const statuses = [...new Set(pg.allProjects.map((p) => p.status).filter(Boolean))] as string[]; // the ones your projects have
   const years = [...new Set(pg.allProjects.map((p) => (p.marked || p.registered || "").slice(0, 4)).filter(Boolean))].sort().reverse() as string[];
   return {
     track: pg.q("track", pg.period, ["student", "piscine", "all"]), search: pg.q("q", "").slice(0, 80),
-    marks: pg.q("marks", "all", ["all", "bonus", "max", "failed"]), year: pg.q("year", "all", ["all", ...years]),
-    grouped: pg.q("group") === "1", years,
+    marks: pg.q("marks", "all", ["all", "ok", "bonus", "max", "failed"]), year: pg.q("year", "all", ["all", ...years]),
+    grouped: pg.q("flat") !== "1", open: pg.q("open", ""), years, statuses, status: pg.q("status", "all", ["all", ...statuses]),
   };
 }
 
 export function projectView(projects: any[], fl: ReturnType<typeof projectFilters>) {
   const q = fl.search.trim().toLowerCase();
   const markOk: Record<string, (p: any) => boolean> = {
-    bonus: (p) => (p.mark || 0) > 100, max: (p) => p.mark === 125,
+    ok: (p) => p.validated === true, bonus: (p) => (p.mark || 0) > 100, max: (p) => p.mark === 125,
     failed: (p) => !p.validated && p.mark !== null && p.status === "finished",
   };
   return projects.filter((p) => !p.exam // exams have their own section
     && (fl.track === "all" || (p.track === "piscine") === (fl.track === "piscine"))
     && (!q || p.name.toLowerCase().includes(q)) && (markOk[fl.marks] || (() => true))(p)
-    && (fl.year === "all" || (p.marked || p.registered || "").startsWith(fl.year)));
+    && (fl.status === "all" || p.status === fl.status) && (fl.year === "all" || (p.marked || p.registered || "").startsWith(fl.year)));
 }
 
 function markChip(pg: Page, a: any) {
@@ -68,18 +80,13 @@ export function projects(pg: Page): Section[] {
   const out: Section[] = [];
 
   // level, pace and the alumni estimate (Home held them in v1)
-  const main = (X.cursus || []).find((c: any) => c.name === "42cursus");
+  // your pace; the level, the validated projects and the alumni date are Profile's (owner, 2026-11-13: nothing twice)
   const pc = D.insights?.pace;
-  const due = dv.alumni_due;
   const lvl: [string, string][] = [];
-  if (main) lvl.push([f.t("home.k_level"), f.level(main.level)]);
   if (pc) {
     if (pc.months_since_kickoff !== null && pc.months_since_kickoff !== undefined) lvl.push([f.t("pace.since"), esc(f.plural(pc.months_since_kickoff, "pace.months"))]);
     lvl.push([f.t("pace.xp_month"), f.num(pc.xp_per_month)]);
-    lvl.push([f.t("pace.validated"), f.num(pc.months.reduce((s: number, m: any) => s + m.validated, 0))]);
-    if (pc.blackhole_days !== null && pc.blackhole_days !== undefined) lvl.push([f.t("pace.blackhole"), esc(f.plural(pc.blackhole_days, "count.days"))]);
   }
-  if (due) lvl.push([f.t("profile.alumni"), due === "paused" ? esc(f.t("profile.paused")) : esc(f.day(due))]);
   const months = pc?.months || [], promo = pg.v.promo;
   out.push({ id: "pace", nav: f.t("nav.pace"), html: section("pace", f.t("pace.title"), `<dl class="facts">${facts(lvl)}</dl>` + cols(headBlock("pace-xp", f.t("pace.xp_title"),
     legend([[f.t("pace.xp"), S1], [f.t("pace.cumulative"), S2]]), vbars(f, months.map((m: any) => f.monthLabel(m.month)), [[f.t("pace.xp"), months.map((m: any) => m.xp), S1]],
@@ -115,7 +122,22 @@ export function projects(pg: Page): Section[] {
     const n = p.attempts.length;
     return `<details><summary>${esc(f.t("projects_table.detail", { count: n, n }))}</summary><ol class="attempts">${lis}</ol></details>`;
   };
-  const status = (p: any) => { const s = p.status || ""; return esc(f.has(`status.${s}`) ? f.t(`status.${s}`) : s.replace(/_/g, " ")); };
+  const statusName = (s: string) => (f.has(`status.${s}`) ? f.t(`status.${s}`) : s.replace(/_/g, " "));
+  const status = (p: any) => esc(statusName(p.status || ""));
+  const capital = (s: string) => s.slice(0, 1).toUpperCase() + s.slice(1);
+  // by milestone, each group one line with its count until opened (a link: the address keeps which are open); all shut
+  // to begin with (one group can hold 70 projects); any filter opens them all
+  const outside = outsideCursus(D);
+  const groupOf = (p: any) => (p.track !== "piscine" && outside.has(p.slug) ? "outside" : p.group || p.track);
+  const filtering = !!fl.search.trim() || fl.marks !== "all" || fl.status !== "all" || fl.year !== "all";
+  const open = new Set(fl.open ? fl.open.split(",") : []);
+  const groupHead = (g: string, n: number) => {
+    const text = `${esc(groupLabel(pg, g))}<span class="count"> · ${esc(f.plural(n, "projects_table.count"))}</span>`;
+    if (filtering) return text;
+    const next = new Set(open);
+    if (!next.delete(g)) next.add(g);
+    return `<a class="group-toggle" href="${esc(pg.url(undefined, { open: [...next].join(",") }))}#projects-table" data-keep aria-expanded="${open.has(g)}">${text}</a>`;
+  };
   const tbl = table(f, [
     { k: "name", t: f.t("col.project"), cls: "proj" },
     { k: "track", t: f.t("col.track"), nw: true, hide: true, f: (p) => badge(f.t(`track.${p.track}`)) },
@@ -127,15 +149,16 @@ export function projects(pg: Page): Section[] {
     { k: "xp_earned", t: f.t("col.xp"), num: true, nw: true, f: (p) => `${f.num(p.xp_earned)}<span class="sub">${esc(f.t("projects_table.xp_base", { xp: f.num(p.xp_base) }))}</span>` },
     { k: "first_ms", t: f.t("col.started"), nw: true, hide: true, f: (p) => esc(f.day(p.registered)) },
   ], rows, { label: f.t("projects_table.title"), sort: ["first_ms", -1], sticky: true, detail, empty: f.t("projects_table.none"),
-    group: fl.grouped ? { key: (p) => p.group || p.track, order: PROJECT_GROUPS, label: (g) => groupLabel(pg, g) } : undefined });
+    group: fl.grouped ? { key: groupOf, order: PROJECT_GROUPS, label: (g) => groupLabel(pg, g), head: groupHead, shut: (g) => !filtering && !open.has(g) } : undefined });
   const form = filters("projects-table",
     radios("track", f.t("projects_table.filter"), (["student", "piscine", "all"] as const).map((v) => [v, f.t(`track.${v}`)]), fl.track)
     + search("q", fl.search, f.t("common.search"), f.t("projects_table.search"))
-    + select("marks", f.t("projects_table.marks"), ["all", "bonus", "max", "failed"].map((v) => [v, f.t(`projects_table.marks_${v}`)]), fl.marks)
+    + select("status", f.t("projects_table.status"), [["all", f.t("projects_table.status_all")], ...fl.statuses.map((s) => [s, capital(statusName(s))] as [string, string])], fl.status)
+    + select("marks", f.t("projects_table.marks"), ["all", "ok", "bonus", "max", "failed"].map((v) => [v, f.t(`projects_table.marks_${v}`)]), fl.marks)
     + select("year", f.t("projects_table.year"), [["all", f.t("projects_table.year_all")], ...fl.years.map((y) => [y, y] as [string, string])], fl.year)
-    + `<label class="toggle-check"><input type="checkbox" name="group" value="1"${fl.grouped ? " checked" : ""}><span>${esc(f.t("projects_table.group"))}</span></label>`);
+    + `<label class="toggle-check"><input type="checkbox" name="flat" value="1"${fl.grouped ? "" : " checked"}><span>${esc(f.t("projects_table.flat"))}</span></label>`);
   out.push({ id: "projects-table", nav: f.t("nav.projects_table"), html: section("projects-table", f.t("projects_table.title"),
-    form + `<div id="projects-table-results">` + cols(`<div class="block" data-panel="projects-table"><div class="table-wrap tall">${tbl}</div>`
+    form + `<div id="projects-table-results">` + cols(`<div class="block" data-panel="projects-table"><div class="table-wrap${fl.grouped ? " whole" : " tall"}">${tbl}</div>`
       + `<div class="table-foot"><p class="note"><b>${esc(f.plural(rows.length, "projects_table.count"))}</b> · ${esc(f.t("projects_table.xp_note"))}</p>`
       + csvButtons(pg, "projects", f.t("projects_table.title"), f.t("projects_table.csv")) + "</div></div>") + "</div>",
     ) });
@@ -157,7 +180,8 @@ export function projects(pg: Page): Section[] {
       end: (_i, v) => `≈ ${f.num(v)}`, extra: (i) => f.plural(areas[i].projects.length, "domains.projects"), emptyText: f.t("domains.none"), big: true }))),
   { head: `<div class="panel-head"><h2>${esc(f.t("domains.title"))}</h2>${csvButtons(pg, "portfolio", f.t("domains.portfolio_title"), f.t("domains.portfolio"))}</div>` }) });
 
-  const tl = D.projects.map((p: any) => [p.name, p.attempts.map((a: any) => {
+  const laneName = (g: string) => (g === "work" ? f.t("projects.lane_work") : g === "other" ? f.t("log.milestone_other") : groupLabel(pg, g));
+  const tl = timelineLanes(D.projects.map((p: any) => (groupOf(p) === "outside" ? { ...p, group: "outside" } : p)), laneName).map(([lane, spans]) => [lane, spans.map(({ p, a }) => {
     const c = a.validated === true ? GOOD : a.validated === false ? BAD : NEUTRAL;
     const outcome = a.validated ? f.t("outcome.validated") : a.validated === false ? f.t("outcome.failed") : a.status ? (f.has(`status.${a.status}`) ? f.t(`status.${a.status}`) : a.status.replace(/_/g, " ")) : "";
     const tip = [f.t("projects.tip_title", { name: p.name, n: a.n, of: p.attempts.length }), `${outcome} · ${f.t("projects.tip_mark", { mark: a.mark ?? "–" })}`,
@@ -176,6 +200,32 @@ export function projects(pg: Page): Section[] {
     block("cum-validated", lines(f, [[f.t("outcome.validated"), validated, GOOD]], { label: f.t("projects.validated_title"), emptyText: f.t("empty.period") }), f.t("projects.validated_title"), f.t("projects.validated_note"))),
   ) });
 
+  return out;
+}
+
+/** The attempts line's rows: one per milestone (then OuterCore, work experience, the Piscine, anything else), not per
+ * project, with every attempt of its projects; attempts that overlap in time go on a row under it (no label). Exams
+ * are left out: they have their own table. */
+export function timelineLanes(projects: any[], label: (lane: string) => string): [string, { name: string; p: any; a: any }[]][] {
+  const lanes = new Map<string, { name: string; p: any; a: any }[]>();
+  for (const p of projects) {
+    if (p.exam) continue;
+    const lane = p.track === "piscine" ? "piscine" : /^Work Exp/i.test(p.name) ? "work" : p.group || "other";
+    if (!lanes.has(lane)) lanes.set(lane, []);
+    for (const a of p.attempts) lanes.get(lane)!.push({ name: p.name, p, a });
+  }
+  const order = [...PROJECT_GROUPS.filter((g) => g !== "piscine" && g !== "outside"), "work", "outside", "piscine", "other"];
+  const out: [string, { name: string; p: any; a: any }[]][] = [];
+  for (const lane of [...lanes.keys()].sort((a, b) => order.indexOf(a) - order.indexOf(b))) {
+    const rows: { end: number; spans: { name: string; p: any; a: any }[] }[] = [];
+    for (const s of lanes.get(lane)!.sort((x, y) => x.a.start_ms - y.a.start_ms)) {
+      const end = Math.max(s.a.end_ms || s.a.start_ms, s.a.start_ms);
+      const row = rows.find((r) => r.end <= s.a.start_ms) || rows[rows.push({ end: 0, spans: [] }) - 1];
+      row.spans.push(s);
+      row.end = end;
+    }
+    rows.forEach((r, i) => out.push([i ? "" : label(lane), r.spans]));
+  }
   return out;
 }
 

@@ -23,14 +23,14 @@ test("hours leaving the window, by day: how many, what stays, and what leaves wh
 });
 
 test("each day opens to the times and the session leaving, and what is left is said once", () => {
-  const html = leaving(f, [{ at: iso(1), hours: 4 }, { at: iso(24), hours: 48 }], 52, []);
+  const html = leaving(f, [{ at: iso(1), hours: 4 }, { at: iso(24), hours: 48 }], []);
   expect(html.match(/<details class="drop-day">/g)?.length).toBe(4);
   expect(html).toContain("Sat 7 Nov");
   expect(html).toContain("48:00h left");
   expect(html).toContain("12:00–16:00");
   expect(html).toContain("session of Sat 31 Oct");
-  expect(html).toContain("Under 50h from Sat 7 Nov, 14:00");
-  expect(leaving(f, [], 52, [])).toContain(f.t("bonus.no_drops"));
+  expect(html).not.toContain("Under 50h"); // the tiers already say when (owner, 2026-11-12)
+  expect(leaving(f, [], [])).toBe(""); // nothing leaving: nothing said (owner, 2026-11-13)
 });
 
 test("the moment you drop under a line, if you ever do", () => {

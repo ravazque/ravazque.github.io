@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api, fmt, loadSession, state } from "../state";
 import { forget, idbShelf } from "../lib/copy";
+import { forgetVisit } from "../lib/behave";
 import AppHeader from "./AppHeader.vue";
 
 const props = defineProps<{ kind: "delete" | "publish" }>();
@@ -23,8 +24,10 @@ async function yes() {
   if (props.kind === "delete") {
     const login = state.session!.user!.login;
     await forget(idbShelf, login);
-    localStorage.removeItem(`copy:${login}`);
     await api("/api/me/delete", { method: "POST" }).catch(() => {});
+    // what the policy says: nothing of this site stays in the browser (language, theme, stars, widgets, pages seen)
+    forgetVisit();
+    try { localStorage.clear(); sessionStorage.clear(); } catch { /* private mode */ }
     location.replace("/"); // a full load: nothing of this account stays in memory
     return;
   }

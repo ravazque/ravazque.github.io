@@ -27,9 +27,13 @@ func windowSessions(w *OMap, now time.Time) []span {
 			ss = append(ss, span{tsAny(pair[0]), tsAny(pair[1])})
 		}
 	}
-	// an open session is assumed to go on: the report cannot know
-	if w.B("open") && len(ss) > 0 {
-		ss[len(ss)-1].e = maxT(ss[len(ss)-1].e, now)
+	// an open session (it ends at the report's time) is assumed to go on: the report cannot know
+	if at := TS(w.S("at")); w.B("open") {
+		for i := range ss {
+			if !ss[i].e.Before(at) {
+				ss[i].e = maxT(ss[i].e, now)
+			}
+		}
 	}
 	var out []span
 	for _, s := range ss {

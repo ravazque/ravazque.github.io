@@ -67,11 +67,13 @@
 :where(body:not(.site)) .drop-day li b { font-size: 14px; }
 @container (max-width: 480px) { :where(body:not(.site)) .drop-day ul { padding-right: 0; } }
 :where(body:not(.site)) .bonus-detail > .line.note { margin: 0 0 12px; }
-/* a side list with room left: templates of the rows to come, down to its base. Its height is the panel's beside the
-   other one (below), so they follow it; its scrollbar is there from the start (1 px past the end). */
-:where(body:not(.site)) .list:has(> .fill) { position: relative; display: flex; flex-direction: column; height: var(--history-height, 340px); max-height: none; }
-:where(body:not(.site)) .list:has(> .fill)::after { content: ""; position: absolute; top: 100%; width: 1px; height: 1px; }
-:where(body:not(.site)) .list li.fill { display: block; flex: 1 0 70px; padding: 0; border: 0; overflow: hidden; }
+:where(body:not(.site)) .tp.bonus-detail { padding-bottom: 0; }  /* its last line is its base: the list beside it ends there too, never lower */
+/* a side list with room left: templates of the rows to come, down to its base. Only beside another panel (laptops,
+   below): its height is that panel's, so they follow it, and its scrollbar is there from the start (1 px past the end).
+   One under the other (phones, tablets, half widgets) there is no height to make up: no templates, its own rows up to
+   --history-height, then it scrolls. */
+:where(body:not(.site)) .list:has(> .fill) { max-height: var(--history-height, 340px); }
+:where(body:not(.site)) .list li.fill { display: none; flex: 1 0 70px; padding: 0; border: 0; overflow: hidden; }
 :where(body:not(.site)) .fill p { display: flex; align-items: center; height: 70px; font-size: 15px; color: var(--text-2); border-bottom: var(--list-line) solid var(--rule); }
 :where(body:not(.site)) .fill i { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 10px 16px; align-content: center; height: 70px; border-bottom: var(--list-line) solid var(--rule); }
 :where(body:not(.site)) .fill b { display: block; height: 11px; width: 42%; background: var(--seat-empty); }
@@ -80,9 +82,11 @@
 @media (min-width: 1280px) {
   :where(body:not(.site)) [data-panel="bonus-history"] { height: 0; min-height: 100%; display: flex; flex-direction: column; }
   :where(body:not(.site)) [data-panel="bonus-history"] .list { flex: 1; min-height: 0; max-height: none; }
-  :where(body:not(.site)) :is([data-panel="bonus-history"], [data-panel="coal-recent"]) .list:has(> .fill) { height: auto; }
+  :where(body:not(.site)) :not(.widget.half *) > .list:has(> .fill) { position: relative; display: flex; flex-direction: column; max-height: none; }
+  :where(body:not(.site)) :not(.widget.half *) > .list:has(> .fill)::after { content: ""; position: absolute; top: 100%; width: 1px; height: 1px; }
+  :where(body:not(.site)) :not(.widget.half *) > .list > li.fill { display: block; }
   :where(body:not(.site)) .widget.half [data-panel="bonus-history"] { height: auto; min-height: 0; }
-  :where(body:not(.site)) .widget.half :is([data-panel="bonus-history"], [data-panel="coal-recent"]) .list { flex: none; height: var(--history-height, 340px); }
+  :where(body:not(.site)) .widget.half :is([data-panel="bonus-history"], [data-panel="coal-recent"]) .list { flex: none; }
   /* a table beside a chart (.table-wrap.fit, page.ts fillTable): as tall as the chart, more rows a scroll away under their
      column names, fewer leave templates of rows down to its base; one under the other (phones, tablets, half widgets) it
      keeps its own height and no templates */
@@ -364,10 +368,10 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 
 /* Cancelled evaluations: four cards, 40/20/20/20 from 760px; each one's tip lists them by date (evaluations.ts) */
 :where(body:not(.site)) #cancelled .kpis.cancel-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-:where(body:not(.site)) #cancelled .cancel-card.wide, :where(body:not(.site)) #cancelled .cancel-card:last-child { grid-column: 1 / -1; } /* phones: 1, then 2 and 3, then 4 */
+:where(body:not(.site)) #cancelled .cancel-card.wide { grid-column: auto; }  /* its width is the grid's first column (2fr), never two cells */
 @media (min-width: 760px) {
   :where(body:not(.site)) #cancelled .kpis.cancel-cards { grid-template-columns: 2fr 1fr 1fr 1fr; } /* 40% / 20% / 20% / 20% */
-  :where(body:not(.site)) #cancelled .cancel-card.wide, :where(body:not(.site)) #cancelled .cancel-card:last-child { grid-column: auto; }
+  :where(body:not(.site)) .widget.half #cancelled .kpis.cancel-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } /* a half widget: two and two, as on a phone */
 }
 :where(body:not(.site)) .cancel-card { cursor: help; }
 :where(body:not(.site)) #cancelled .cancel-card h3 { display: block; }
@@ -380,7 +384,7 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .login-link { color: var(--text-2); text-decoration: underline 1px color-mix(in oklab, currentColor 30%, transparent); text-underline-offset: 3px; }
 :where(body:not(.site)) .login-link:hover, :where(body:not(.site)) .login-link:focus-visible { color: var(--ink); text-decoration-color: currentColor; }
 :where(body:not(.site)) .who-pop > summary { color: var(--ink); text-decoration: underline dotted; text-underline-offset: 4px; }
-:where(body:not(.site)) .who-pop > summary .more { white-space: nowrap; }
+:where(body:not(.site)) .who-pop > summary { white-space: nowrap; } /* one line: the rest is one click away */
 
 /* Profile's widgets, closer than the pages' sections (spacing.css, --widget-*): smaller titles, less room above each,
    tables at half width without their secondary columns */
@@ -388,4 +392,12 @@ html body:not(.site) .graph .bubble.net-node.staff circle { fill: var(--sunken);
 :where(body:not(.site)) .widgets .widget > section > :is(h2, .panel-head) h2, :where(body:not(.site)) .widgets .widget > section > h2 { font-size: var(--widget-title, 32px); }
 :where(body:not(.site)) .widgets .widget.half { container-type: inline-size; }
 @container (max-width: 720px) { :where(body:not(.site)) .widgets .narrow-hide { display: none; } }
-
+/* the projects table by milestone: no box that scrolls (its groups open and shut instead), each group's line a link
+   with a mark that turns when open and its count in the title count's grey */
+:where(body:not(.site)) .table-wrap.whole { max-height: none; }
+:where(body:not(.site)) tbody.group .count { font-weight: 500; color: var(--text-2); }
+:where(body:not(.site)) tbody.group .group-toggle { display: flex; align-items: center; gap: 10px; margin: -10px -12px; padding: 10px 12px; color: inherit; text-decoration: none; }
+:where(body:not(.site)) tbody.group .group-toggle::before { content: ""; flex: none; width: 7px; height: 10px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); transition: transform var(--motion-fast) ease-out; }
+:where(body:not(.site)) tbody.group .group-toggle[aria-expanded="true"]::before { transform: rotate(90deg); }
+:where(body:not(.site)) tbody.group .group-toggle:hover { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+:where(body:not(.site)) tbody.group .group-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }

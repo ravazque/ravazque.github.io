@@ -91,6 +91,7 @@ main[data-page="web-home"] {
   --rhythm-below-laptop: -50px;
   --widget-top: 80px;              /* each widget's title → the widget above it (Activity too) */
   --widget-title: 36px;            /* the size of each widget's title */
+  --widget-title-phone: 24px;      /* the same on phones: the title and its × on one line */
 }
 /* your card on top: each size grows with the screen between a least and a most, clamp(least, middle, most); the middle
    follows the window's width (1vw is 1% of it). A plain value (40px) fixes a size on every screen. */

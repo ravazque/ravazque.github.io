@@ -58,3 +58,25 @@ test("a line chart's month labels are real months, counted back from the last, w
   const plain = labels(lines(f, [["a", [{ x: at("2026-01-10"), y: 1 }, { x: at("2026-04-20"), y: 3 }], "red"]], { label: "x" }));
   expect(plain).toEqual(["Jan 26", "Feb 26", "Mar 26", "Apr 26|end"]);
 });
+
+test("a balance's axis counts in whole points: no 12.5 between two balances", () => {
+  for (const values of [[3, -7, -22, -24, -2], [0, 1, 2], [4, -1], [0, 37, 180]]) {
+    const html = qline(new Fmt("en"), values.map((_, i) => `w${i}`), values, { label: "x", color: "red", tips: values.map(() => "") });
+    const ticks = [...html.matchAll(/<span style="bottom:[^"]*">([^<]*)<\/span>/g)].map((m) => m[1]);
+    expect(ticks.length).toBeGreaterThan(1);
+    expect(ticks.length).toBeLessThan(8);
+    expect(ticks.filter((t) => /[.,]\d/.test(t))).toEqual([]);
+    expect(ticks).toContain("0");
+  }
+});
+
+test("a long line chart names months evenly, counted back from the month the data ends in: no label of the margin after it", () => {
+  const day = (iso: string) => Date.parse(`${iso}T12:00:00Z`);
+  const html = lines(new Fmt("en"), [["a", [{ x: day("2022-03-10"), y: 1 }, { x: day("2026-04-20"), y: 9 }], "#000"]], { label: "x", to: day("2026-11-12") });
+  const months = html.slice(html.indexOf('class="ch-months"'));
+  const at = [...months.matchAll(/left:([\d.]+)%">([^<]+)</g)].map((m) => [+m[1], m[2]] as [number, string]);
+  expect(at.at(-1)![1]).toBe("Nov 26");
+  const gaps = at.slice(1).map(([x], i) => x - at[i][0]);
+  expect(Math.min(...gaps)).toBeGreaterThan(0.8 * Math.max(...gaps)); // the last two were 7 months apart among gaps of 9
+  expect(new Set(at.map(([, n]) => n)).size).toBe(at.length);
+});

@@ -286,21 +286,26 @@ function countText(el: HTMLElement) {
 let reveal: IntersectionObserver | null = null;
 let tocIO: IntersectionObserver | null = null;
 
-/* Draw-in (owner, 2026-11-09): the first time you open a page in this tab's session, each chart and figure draws in when
-   it comes into view; once you leave the page (or the tab), the page counts as seen and shows at once from then on,
-   seen or not. On the visit itself, a part already drawn in shows at once when the page is drawn again (a filter, a
+/* Draw-in (owner, 2026-11-09; in this browser and on a reload since 2026-11-12): the first time you open a page in this
+   browser, each chart and figure draws in when it comes into view; once you leave the page (or the tab), the page counts
+   as seen and shows at once from then on, seen or not, in every tab. Reloading a page draws it in again. On the visit itself, a part already drawn in shows at once when the page is drawn again (a filter, a
    refresh). Only a part marked data-anim is hidden by the CSS, so a page drawn again never flashes or replays. */
-const seenPages = (): string[] => { try { return JSON.parse(sessionStorage.getItem("drawn") || "[]"); } catch { return []; } };
+const seenPages = (): string[] => { try { return JSON.parse(localStorage.getItem("drawn") || "[]"); } catch { return []; } };
+const savePages = (pages: string[]) => { try { localStorage.setItem("drawn", JSON.stringify(pages)); } catch { /* private mode */ } };
 function pageSeen(page: string) {
-  try { if (page && !seenPages().includes(page)) sessionStorage.setItem("drawn", JSON.stringify([...seenPages(), page])); } catch { /* private mode */ }
+  if (page && !seenPages().includes(page)) savePages([...seenPages(), page]);
 }
+let reloaded = (performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined)?.type === "reload";
 let visit = "", drawnIn = new Set<string>(); // the page on screen, and the parts of it drawn in on this visit
+
+/** "Delete my data" clears the browser's storage: leaving must not write the page on screen back as seen. */
+export function forgetVisit() { visit = ""; }
 
 /** Every page draws in again, as on the session's first visit (the owner's dev-live button): forget them and reload,
  * without the reload marking the page on screen as seen. */
 export function replayDrawIn() {
   visit = "";
-  try { sessionStorage.removeItem("drawn"); } catch { /* private mode */ }
+  try { localStorage.removeItem("drawn"); } catch { /* private mode */ }
   location.reload();
 }
 
@@ -330,6 +335,7 @@ export function settle(root: ParentNode) {
   }), { rootMargin: "0px 0px -10% 0px" }) : null;
   const page = (root as HTMLElement).closest?.("[data-page]")?.getAttribute("data-page") || "";
   if (page !== visit) { pageSeen(visit); visit = page; drawnIn = new Set(); } // leaving a page: it counts as seen
+  if (page && reloaded) { reloaded = false; savePages(seenPages().filter((p) => p !== page)); } // a reload draws its page in again
   const first = !!page && !seenPages().includes(page);
   const index = new Map<Element | null, number>();
   $$<HTMLElement>(".vchart, .hchart, .lchart, .module, .tp, .kpis > div, .rates > div, .pf-time", root).forEach((c) => {

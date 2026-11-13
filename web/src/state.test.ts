@@ -4,7 +4,7 @@ import { hasPin, loadPins, moveWidget, pins, relabelStars, setWidget, togglePin 
 beforeEach(() => { localStorage.clear(); pins.login = ""; });
 
 /** A profile that has been through the first load: the tests below look at what they add themselves. */
-const fresh = (login: string) => { localStorage.setItem(`widgets:${login}:seeded`, "5"); loadPins(login); };
+const fresh = (login: string) => { localStorage.setItem(`widgets:${login}:seeded`, "5"); localStorage.setItem(`stars:${login}`, "[]"); loadPins(login); };
 
 test("stars and widgets are kept per login, in the order they were added, and a second toggle takes one away", () => {
   fresh("peer01");
@@ -127,4 +127,18 @@ test("Activity starts taken away; a profile that showed it (open or folded) keep
   localStorage.setItem("activity:peer10", "off");
   loadPins("peer10");
   expect(hasPin("widgets", "home", "activity")).toBe(false);
+});
+
+test("a new profile starts with five starred sections; taking them away, or having starred before, stays as it is", () => {
+  loadPins("peer20");
+  expect(pins.stars.map((p) => `${p.page}:${p.id}`)).toEqual(["projects:projects-table", "people:circle", "campus:seats", "coalition:coal-points", "evaluations:points"]);
+  expect(pins.stars.every((p) => p.label.length > 0)).toBe(true);
+  for (const p of [...pins.stars]) togglePin("stars", p);
+  pins.login = "";
+  loadPins("peer20");
+  expect(pins.stars).toEqual([]);
+  localStorage.setItem("stars:peer21", JSON.stringify([{ page: "people", id: "who", label: "Who evaluated you" }]));
+  pins.login = "";
+  loadPins("peer21");
+  expect(pins.stars.map((p) => p.id)).toEqual(["who"]);
 });

@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { Fmt } from "../fmt";
-import { Page, daysTo, erased, monthsBetween, myTrack } from "./page";
+import { Page, daysTo, erased, monthsBetween, myTrack, projectName, shortProject } from "./page";
 
 const ex = (quests: [string, boolean][]) => ({ cursus: [{ name: "42cursus" }], quests: quests.map(([name, v]) => ({ name, validated: v ? "2026-01-01" : null })) });
 
@@ -93,4 +93,16 @@ test("a work experience's part reads Work Exp. wherever a page names it, keys in
   expect(pg.allProjects[0].name).toBe("Work Exp. II - Company final evaluation");
   expect(v.report.projects[0].name).toBe("Work Experience I");
   expect(new Page(new Fmt("en"), v, "evaluations", {}).D).toBe(pg.D); // shortened once per view
+});
+
+test("a project's name keeps to 28 characters in whole words, the dots apart; the whole name is one click away", () => {
+  expect(shortProject("Work Exp. II - Company Final Evaluation")).toBe("Work Exp. II - Company Final...");
+  expect(shortProject("Bgp At Doors of Autonomous Systems is Simple")).toBe("Bgp At Doors of Autonomous...");
+  expect(shortProject("Inception of Things")).toBe("Inception of Things");
+  expect(shortProject("a".repeat(28))).toBe("a".repeat(28));
+  expect(shortProject("a".repeat(40))).toBe("a".repeat(28) + "..."); // one word too long: cut, there is no other way
+  expect(projectName("minishell")).toBe("minishell");
+  const html = projectName("Bgp At Doors of Autonomous Systems is <Simple>");
+  expect(html).toMatch(/^<details class="pop who-pop name-pop" data-float><summary>Bgp At Doors of Autonomous\.\.\.<\/summary>/);
+  expect(html).toContain("Bgp At Doors of Autonomous Systems is &lt;Simple&gt;");
 });

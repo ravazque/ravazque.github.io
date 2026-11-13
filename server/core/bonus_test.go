@@ -24,7 +24,7 @@ func strp(p *string) string {
 	return *p
 }
 
-func TestBonusWindowKeepsTheWeekMerged(t *testing.T) {
+func TestBonusWindowKeepsEverySessionOfTheWeek(t *testing.T) {
 	loc := func(b string, e any) Raw { return Raw{"begin_at": b, "end_at": e} }
 	sc := func(at, kind string, v, calc float64) Raw {
 		return Raw{"created_at": at, "scoreable_type": kind, "value": v, "calculation_id": calc}
@@ -35,7 +35,8 @@ func TestBonusWindowKeepsTheWeekMerged(t *testing.T) {
 			sc("2026-10-07T08:24:00Z", "Location", 1000, 20), sc("2026-10-17T08:00:00Z", "ScaleTeam", 250, 1)}, bonusNow)
 	got, _ := json.Marshal(w)
 	want := `{"at":"2026-10-18T12:00:00+00:00","open":true,"sessions":[["2026-10-11T12:00:00+00:00","2026-10-11T14:00:00+00:00"],` +
-		`["2026-10-15T08:00:00+00:00","2026-10-15T13:00:00+00:00"],["2026-10-18T10:00:00+00:00","2026-10-18T12:00:00+00:00"]],` +
+		`["2026-10-15T08:00:00+00:00","2026-10-15T12:00:00+00:00"],["2026-10-15T11:00:00+00:00","2026-10-15T13:00:00+00:00"],` +
+		`["2026-10-18T10:00:00+00:00","2026-10-18T12:00:00+00:00"]],` +
 		`"last":{"50":"2026-10-12T15:33:00Z","80":"2026-10-07T08:24:00Z"}}`
 	if string(got) != want {
 		t.Fatalf("got %s", got)
@@ -146,5 +147,21 @@ func TestActiveWeeksNeverExceedTheSpan(t *testing.T) {
 	}
 	if got := ActiveWeeks([]string{"2026-10-05", "2026-10-11", "2026-10-26"}, []float64{1, 0, 2}); got != [2]int{2, 4} {
 		t.Fatalf("got %v", got)
+	}
+}
+
+// The intra adds every session as it is: an hour on two computers at once is two hours (seen 2026-11-12: a +1000 at
+// 76.7 h merged / 81.1 h added up, a +500 at 49.3 / 51.25).
+func TestBonusCountsSessionsOnTwoComputersTwice(t *testing.T) {
+	d := bonusNow.Add(-48 * time.Hour)
+	w := window(true, nil, nil, [2]time.Time{d, d.Add(40 * time.Hour)}, [2]time.Time{d.Add(10 * time.Hour), d.Add(19 * time.Hour)},
+		[2]time.Time{bonusNow.Add(-time.Hour), bonusNow})
+	if got := LogtimeBonus(w, bonusNow)[0]; got.WindowH != 50 || got.State != "ready" {
+		t.Fatalf("40 + 9 at the same time + 1 = %+v", got)
+	}
+	// the open session is the one that ended at the report's time, wherever it sits in the list
+	w = window(true, nil, nil, [2]time.Time{bonusNow.Add(-3 * time.Hour), bonusNow}, [2]time.Time{bonusNow.Add(-2 * time.Hour), bonusNow.Add(-time.Hour)})
+	if got := LogtimeBonus(w, bonusNow.Add(time.Hour))[0]; got.WindowH != 5 {
+		t.Fatalf("an hour later, still connected: %+v", got)
 	}
 }

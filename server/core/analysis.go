@@ -181,6 +181,11 @@ func feedbackEntry(f Raw) *OMap {
 	for _, d := range Objs(f, "feedback_details") {
 		out.Set(Str(d, "kind"), d["rate"])
 	}
+	// 42 writes it itself when the evaluated student did not fill theirs in in time (no author, always 4/5, the same
+	// text; seen in every saved report, 2026-11-12): nobody's opinion, so marked and left out of every average
+	if out.V("by") == nil && strings.HasPrefix(pyStr(f["comment"]), "You failed to complete this feedback") {
+		out.Set("auto", true)
+	}
 	return out
 }
 
@@ -195,7 +200,9 @@ func feedbackScores(entries []*OMap) *OMap {
 	pick := func(k string) []any {
 		var vs []any
 		for _, e := range entries {
-			vs = append(vs, e.V(k))
+			if e.V("auto") != true {
+				vs = append(vs, e.V(k))
+			}
 		}
 		return vs
 	}
@@ -1211,7 +1218,7 @@ func (r *report) correctionPointsSection() *OMap {
 			add("absent", c, "st", st)
 		}
 	}
-	// per month and per week (Monday to Sunday, Madrid time): what came in, what went out and each reason's net, from the
+	// per month, per week (Monday to Sunday) and per day, Madrid time: what came in, what went out and each reason's net, from the
 	// rows' sums (their running totals don't add up: the Balance chart builds its balance from these)
 	type bucket struct {
 		earned, spent float64
@@ -1253,7 +1260,8 @@ func (r *report) correctionPointsSection() *OMap {
 		day := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, Madrid)
 		return day.AddDate(0, 0, -((int(day.Weekday()) + 6) % 7)).Format("2006-01-02") // its Monday
 	})
-	return M("series", series, "reasons", ro, "earned", earned, "spent", spent, "max", mx, "cancels", cancels, "by_month", months, "by_week", weeks)
+	days := group("d", func(t time.Time) string { return t.Format("2006-01-02") })
+	return M("series", series, "reasons", ro, "earned", earned, "spent", spent, "max", mx, "cancels", cancels, "by_month", months, "by_week", weeks, "by_day", days)
 }
 
 // receivedIDs: the evaluations you booked that exist, as the API answered (the hidden upcoming ones too); a period

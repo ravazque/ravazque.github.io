@@ -97,7 +97,13 @@ const dotAt = (i: number, n: number) => (n > 1 ? i / (n - 1) : 0).toFixed(3);
 export function qline(f: Fmt, labels: string[], values: number[], o: { label: string; color: string; tips: string[]; emptyText?: string }): string {
   if (!labels.length) return empty(o.emptyText || "");
   // one even step from the lowest to the highest (0 always in): four of them over the span, rounded up
-  const lo = Math.min(0, ...values), hi = Math.max(1, ...values), step = niceMax(hi - lo) / 4;
+  // whole points: the smallest round step that covers the span in at most five (12.5 was no balance anyone has)
+  const lo = Math.min(0, ...values), hi = Math.max(1, ...values);
+  let step = 1;
+  for (let mag = 1; ; mag *= 10) {
+    const m = [1, 2, 5].find((k) => Math.ceil(hi / (k * mag)) - Math.floor(lo / (k * mag)) <= 5);
+    if (m) { step = m * mag; break; }
+  }
   const bot = -Math.floor(lo / step) * step, top = Math.ceil(hi / step) * step, span = top + bot;
   const at = (v: number) => (100 * (v + bot)) / span; // % from the bottom
   const steps = Array.from({ length: Math.round(span / step) + 1 }, (_, k) => -bot + k * step);
@@ -106,10 +112,10 @@ export function qline(f: Fmt, labels: string[], values: number[], o: { label: st
   const cols = labels.map((_, i) => `<div class="ch-col ql"${tipAttr(o.tips[i])}></div>`).join("");
   const pts = values.map((v, i) => `${(((i + 0.5) * 1000) / n).toFixed(1)},${(300 - 3 * at(v)).toFixed(1)}`).join(" ");
   const line = `<svg class="ch-line" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" pathLength="1" style="stroke:${o.color}"/></svg>`
-    + values.map((v, i) => `<i class="ch-dot" style="--d:${dotAt(i, n)};left:${(((i + 0.5) * 100) / n).toFixed(2)}%;bottom:${at(v).toFixed(2)}%;background:${o.color}"></i>`).join("");
+    + (n > 100 ? "" : values.map((v, i) => `<i class="ch-dot" style="--d:${dotAt(i, n)};left:${(((i + 0.5) * 100) / n).toFixed(2)}%;bottom:${at(v).toFixed(2)}%;background:${o.color}"></i>`).join("")); // day by day over a year: the line alone
   const every = Math.max(1, Math.ceil(n / 8));
   // counted back from the last label, so the last month (or week) always shows
-  const xs = labels.map((lab, i) => ((n - 1 - i) % every === 0 ? `<span>${esc(lab)}</span>` : "<span></span>")).join("");
+  const xs = labels.map((lab, i) => ((n - 1 - i) % every === 0 ? `<span${((n - 1 - i) / every) % 2 ? ' class="alt"' : ""}>${esc(lab)}</span>` : "<span></span>")).join(""); // alt: narrow charts show every other one
   return `<figure class="vchart qline col-tips" role="img" aria-label="${esc(o.label)}">`
     + `<div class="ch-plot"><div class="ch-y" aria-hidden="true">${ticks}</div>${bot ? `<i class="ch-zero" style="top:${((100 * top) / span).toFixed(2)}%"></i>` : ""}`
     + `<div class="ch-cols" style="--n:${n}">${cols}</div>${line}</div>`
@@ -143,10 +149,10 @@ export function hbars(f: Fmt, labels: string[], series: Series[], o: HOpts): str
  * month the data ends in, which always shows, right-aligned so it ends at its place (at the edge when its 15th is past). */
 function monthTicks(f: Fmt, lo: number, hi: number, end: number) {
   const span = hi - lo, mid = (t: number, k: number) => { const d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + k, 15, 12); };
-  const months: number[] = [];
-  for (let k = 0, t = mid(lo, 0); t <= hi; t = mid(lo, ++k)) if (t >= lo) months.push(t);
-  const last = mid(end, 0);
-  if (months.at(-1) !== last) months.push(last); // the data ends before its 15th: still named, at the edge
+  const months: number[] = [], last = mid(end, 0);
+  // up to the month the data ends in (named at the edge when it ends before its 15th), never the margin after it
+  for (let k = 0, t = mid(lo, 0); t <= last; t = mid(lo, ++k)) if (t >= lo) months.push(t);
+  if (months.at(-1) !== last) months.push(last);
   const every = Math.max(1, Math.round(months.length / 8));
   return months.filter((_, i) => (months.length - 1 - i) % every === 0).map((t, i, xs) =>
     `<span${i === xs.length - 1 ? ' class="end"' : ""} style="left:${((100 * (Math.min(t, hi) - lo)) / span).toFixed(2)}%">${esc(f.monthOf(t))}</span>`).join("");
