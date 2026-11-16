@@ -1,10 +1,10 @@
 "use strict";
-// CV page: cv.json (hand-written) plus data/42.json (published from the web app).
+// Two pages: the CV (index.html, cv.json, hand-written) and the 42 page (ravazque/, data/42.json published from the web app).
 // Shares radar.js, projects.js, controls.js and the ui.json tokens with the web app.
 
 const STRINGS = {
   en: {
-    about: "About", now: "Right now", in_progress: "In progress at 42", experience: "Experience", highlights: "Selected projects",
+    about: "About", now: "Right now", in_progress: "In progress", cv: "CV", progress42: "42 progress", live: "Live demo", code: "Code", experience: "Experience", highlights: "Selected projects",
     cursus: "42 Madrid Fundación Telefónica", level: "Level", to_next: "{pct}% of the way to level {next}", stage: "Stage",
     "stage.rank": "Common Core · Rank {n}", "stage.outer-core": "Outer Core", "stage.alumni": "Alumni",
     common_core: "Common Core validated {when}", coalition: "Coalition", kickoff: "42cursus since",
@@ -21,7 +21,7 @@ const STRINGS = {
     language: "Language", theme: "Theme", auto: "Auto", light: "Light", dark: "Dark", skills_label: "Skills of the {cursus}",
   },
   es: {
-    about: "Sobre mí", now: "Ahora mismo", in_progress: "En curso en 42", experience: "Experiencia", highlights: "Proyectos destacados",
+    about: "Sobre mí", now: "Ahora mismo", in_progress: "En curso", cv: "CV", progress42: "Progreso en 42", live: "Demo en vivo", code: "Código", experience: "Experiencia", highlights: "Proyectos destacados",
     cursus: "42 Madrid Fundación Telefónica", level: "Nivel", to_next: "{pct}% hacia el nivel {next}", stage: "Etapa",
     "stage.rank": "Common Core · Rango {n}", "stage.outer-core": "Outer Core", "stage.alumni": "Alumni",
     common_core: "Common Core validado el {when}", coalition: "Coalición", kickoff: "En el 42cursus desde",
@@ -96,8 +96,9 @@ const ICONS = {
   intra: '<rect x="1" y="1" width="22" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="6" y="6" width="5" height="5" rx="1"/><rect x="13" y="6" width="5" height="5" rx="1" opacity=".45"/><rect x="6" y="13" width="5" height="5" rx="1" opacity=".45"/><rect x="13" y="13" width="5" height="5" rx="1"/>',
 };
 
-if (typeof window !== "undefined" && document.getElementById("cursus")) {
+if (typeof window !== "undefined" && document.body && document.body.dataset.page) {
   (async () => {
+    const page = document.body.dataset.page;  // "cv" or "42"
     const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
     const store = {
       get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -107,7 +108,7 @@ if (typeof window !== "undefined" && document.getElementById("cursus")) {
       try { const r = await fetch(url, {cache: "no-cache"}); return r.ok ? await r.json() : null; } catch { return null; }
     };
     let lang = store.get("lang") || pickLang(navigator.languages || [navigator.language]);
-    const [snap, cv] = await Promise.all([getJSON("data/42.json"), getJSON("cv.json")]);
+    const [snap, cv] = await Promise.all([page === "42" ? getJSON("data/42.json") : null, getJSON("cv.json")]);
     if (window.applyAccent) applyAccent("#00babc");  // 42 blue, the web app's default accent
     const projects = snapshotProjects(snap);
     const view = {track: "student", search: "", marks: "all", year: "all", grouped: false, sort: "date", dir: -1};
@@ -119,23 +120,22 @@ if (typeof window !== "undefined" && document.getElementById("cursus")) {
     const tags = (items) => `<ul class="tags">${(items || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
 
     function renderCV(t) {
-      $("#headline").textContent = pick(cv?.headline, lang);
-      $("#links").innerHTML = (cv?.links || []).map((l) => `<a href="${esc(l.url)}" rel="me noopener" target="_blank">` +
+      $("#links").innerHTML = (cv?.links || []).map((l) => `<a href="${esc(l.url)}" rel="me noopener"${/^https?:/.test(l.url) ? ' target="_blank"' : ""}>` +
         `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[l.icon] || ""}</svg><span>${esc(l.label)}</span></a>`).join("");
+      if (page !== "cv") return;
+      $("#headline").textContent = pick(cv?.headline, lang);
       $("#lead").textContent = pick(cv?.about, lang);
       $("#about").hidden = !cv;
-      const inProgress = snap?.projects?.in_progress || [];
       $("#nowText").textContent = pick(cv?.now, lang);
-      $("#nowList").innerHTML = inProgress.length ? `<h3>${esc(t("in_progress"))}</h3><ul class="tags">${inProgress.map((p) =>
-        `<li title="${esc(t("since", {when: fmtDate(p.since, lang)}))}">${esc(p.name)}</li>`).join("")}</ul>` : "";
-      $("#now").hidden = !cv?.now && !inProgress.length;
+      $("#now").hidden = !cv?.now;
       $("#experienceList").innerHTML = (cv?.experience || []).map((x) => `<article class="island entry">
         <header><h3>${esc(pick(x.role, lang))}</h3><p class="meta">${esc(pick(x.kind, lang))} · ${esc(x.year)}</p></header>
         <p>${esc(pick(x.text, lang))}</p>${tags(x.stack)}</article>`).join("");
       $("#experience").hidden = !(cv?.experience || []).length;
+      const out = (url, label) => url ? `<a href="${esc(url)}" rel="noopener" target="_blank">${esc(t(label))}</a>` : "";
       $("#highlightList").innerHTML = (cv?.projects || []).map((x) => `<article class="island entry">
-        <header><h3>${esc(x.name)}</h3><p class="meta">42 Madrid Fundación Telefónica · ${esc(x.year)}</p></header>
-        <p>${esc(pick(x.text, lang))}</p>${tags(x.keywords)}</article>`).join("");
+        <header><h3>${esc(x.name)}</h3><p class="meta">${esc(pick(x.where, lang) || "42 Madrid Fundación Telefónica")} · ${esc(x.year)}</p></header>
+        <p>${esc(pick(x.text, lang))}</p>${tags(x.keywords)}${x.url || x.repo ? `<p class="entry-links">${out(x.url, "live")}${out(x.repo, "code")}</p>` : ""}</article>`).join("");
       $("#highlights").hidden = !(cv?.projects || []).length;
       $("#educationList").innerHTML = (cv?.education || []).map((x) => `<article class="island entry">
         <header><h3>${esc(pick(x.title, lang))}</h3><p class="meta">${esc(x.where)} · ${esc(x.years)}</p></header>
@@ -160,6 +160,10 @@ if (typeof window !== "undefined" && document.getElementById("cursus")) {
         c.kickoff && [t("kickoff"), esc(fmtDate(c.kickoff, lang))],
       ].filter(Boolean);
       $("#facts").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("");
+      const inProgress = snap.projects?.in_progress || [];
+      $("#nowList").innerHTML = inProgress.length ? `<h3>${esc(t("in_progress"))}</h3><ul class="tags">${inProgress.map((p) =>
+        `<li title="${esc(t("since", {when: fmtDate(p.since, lang)}))}">${esc(p.name)}</li>`).join("")}</ul>` : "";
+      $("#nowList").hidden = !inProgress.length;
       const e = snap.evaluations || {};
       $("#evalBody").innerHTML = [["given", e.given, e.given_outstanding, null], ["received", e.received, e.received_outstanding, e.received_avg_mark]]
         .map(([k, n, out, avg]) => `<tr><th scope="row">${esc(t(k))}</th><td class="num">${n ?? "–"}</td><td class="num">${out ?? "–"}</td>` +
@@ -216,8 +220,9 @@ if (typeof window !== "undefined" && document.getElementById("cursus")) {
       $$("[data-t-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.tPlaceholder); });
       if (snap?.name) $("#name").textContent = snap.name;
       $("#title").textContent = snap?.title ? ` · ${snap.title}` : "";
-      renderCV(t); renderCursus(t);
-      if (snap) { renderSkills(t); renderProjects(t); }
+      renderCV(t);
+      if (page === "42") renderCursus(t);
+      if (page === "42" && snap) { renderSkills(t); renderProjects(t); }
       $$("select").forEach((s) => s._refresh && s._refresh());
       syncToggles();
     }
@@ -233,25 +238,28 @@ if (typeof window !== "undefined" && document.getElementById("cursus")) {
       if (v === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
       store.set("theme", v === "auto" ? "" : v); syncToggles();
     });
-    onSeg("#skillSet", (v) => { skillSet = v; renderSkills(makeT(lang)); });
-    onSeg("#skillView", (v) => { skillView = v; renderSkills(makeT(lang)); });
-    onSeg("#projTrack", (v) => {
-      view.track = v; $$("#projTrack button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === v))); renderProjects(makeT(lang));
-    });
-    $("#projSearch").oninput = (ev) => { view.search = ev.target.value; renderProjects(makeT(lang)); };
-    $("#projMarks").onchange = (ev) => { view.marks = ev.target.value; renderProjects(makeT(lang)); };
-    $("#projYear").onchange = (ev) => { view.year = ev.target.value; renderProjects(makeT(lang)); };
-    $("#projGroup").onclick = (ev) => {
-      view.grouped = !view.grouped; ev.currentTarget.setAttribute("aria-pressed", String(view.grouped)); renderProjects(makeT(lang));
-    };
-    $("#projHead").onclick = (ev) => {
-      const th = ev.target.closest("th[data-k]"); if (!th) return;
-      view.dir = view.sort === th.dataset.k ? -view.dir : th.dataset.k === "name" ? 1 : -1;
-      view.sort = th.dataset.k; renderProjects(makeT(lang));
-    };
+    if (page === "42") {
+      onSeg("#skillSet", (v) => { skillSet = v; renderSkills(makeT(lang)); });
+      onSeg("#skillView", (v) => { skillView = v; renderSkills(makeT(lang)); });
+      onSeg("#projTrack", (v) => {
+        view.track = v; $$("#projTrack button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === v))); renderProjects(makeT(lang));
+      });
+      $("#projSearch").oninput = (ev) => { view.search = ev.target.value; renderProjects(makeT(lang)); };
+      $("#projMarks").onchange = (ev) => { view.marks = ev.target.value; renderProjects(makeT(lang)); };
+      $("#projYear").onchange = (ev) => { view.year = ev.target.value; renderProjects(makeT(lang)); };
+      $("#projGroup").onclick = (ev) => {
+        view.grouped = !view.grouped; ev.currentTarget.setAttribute("aria-pressed", String(view.grouped)); renderProjects(makeT(lang));
+      };
+      $("#projHead").onclick = (ev) => {
+        const th = ev.target.closest("th[data-k]"); if (!th) return;
+        view.dir = view.sort === th.dataset.k ? -view.dir : th.dataset.k === "name" ? 1 : -1;
+        view.sort = th.dataset.k; renderProjects(makeT(lang));
+      };
+    }
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncToggles);
     let width = 0;
     addEventListener("resize", () => {
+      if (page !== "42") return;
       const w = $("#skillRadar").parentElement.clientWidth;
       if (Math.abs(w - width) > 40) { width = w; if (snap) renderSkills(makeT(lang)); }
     }, {passive: true});

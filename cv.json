@@ -1,5 +1,5 @@
 {
- "_note": "The CV on ravazque.github.io, edited by hand (EN and ES). The 42 part comes from data/42.json, published from ravazque.info. This file is public: never add a phone number, a private email or an address.",
+ "_note": "The CV on ravazque.github.io, edited by hand (EN and ES). The 42 progress page (ravazque/) reads data/42.json, published from ravazque.info. Projects take optional where, url (live demo) and repo. This file is public: never add a phone number, a private email or an address.",
  "headline": {
   "en": "Data Engineer & Software Developer",
   "es": "Data Engineer y desarrollador de software"
@@ -35,6 +35,30 @@
   }
  ],
  "projects": [
+  {
+   "name": "ARIADNE",
+   "year": "2026",
+   "where": "NASA Space Apps Challenge",
+   "url": "https://ravazque.github.io/NASA-Space-APPs-Challenge_2026/?sim=storm_eva",
+   "repo": "https://github.com/ravazque/NASA-Space-APPs-Challenge_2026",
+   "text": {
+    "en": "Offline field network for a spacewalk on Mars: lowest-energy walking routes with a safe-return limit that shrinks as the clock runs, one shared plan synced between devices over local Wi-Fi with no internet, and a simulated dust storm that reroutes the crew. Web and Android.",
+    "es": "Red de campo sin internet para un paseo espacial en Marte: rutas a pie de mínima energía con un límite de vuelta segura que se reduce con el reloj, un plan compartido sincronizado entre dispositivos por wifi local y una tormenta de polvo simulada que redirige a la tripulación. Web y Android."
+   },
+   "keywords": ["JavaScript", "Leaflet", "Node.js", "WebSocket", "Capacitor", "Python", "Geospatial data", "Offline-first"]
+  },
+  {
+   "name": "EcoStation CGR",
+   "year": "2025",
+   "where": "NASA Space Apps Challenge",
+   "url": "https://ravazque.github.io/NASA-Space-APPs-Challenge_2025/",
+   "repo": "https://github.com/ravazque/NASA-Space-APPs-Challenge_2025",
+   "text": {
+    "en": "LEO satellite network simulator: contact graph routing with K alternative paths, close-approach collision prediction and a 3D globe to watch links, routes and alerts.",
+    "es": "Simulador de redes de satélites LEO: enrutamiento por grafo de contactos con K rutas alternativas, predicción de colisiones por acercamiento y un globo 3D para ver enlaces, rutas y alertas."
+   },
+   "keywords": ["CesiumJS", "JavaScript", "C", "Python", "Contact Graph Routing", "Orbital mechanics"]
+  },
   {
    "name": "Inception of Things",
    "year": "2026",
