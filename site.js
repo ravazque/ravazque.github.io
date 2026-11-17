@@ -120,9 +120,9 @@ if (typeof window !== "undefined" && document.body && document.body.dataset.page
     const tags = (items) => `<ul class="tags">${(items || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
 
     function renderCV(t) {
-      // the CV: text buttons before its own link to the 42 page (kept), no intra; the 42 page: every link with its icon
+      // text buttons before the page's own link to the other page (kept); the CV leaves out the intra
       const nav = $("#links"), keep = nav.querySelector(".keep");
-      const links = (cv?.links || []).filter((l) => !keep || l.icon !== "intra").map((l) => `<a href="${esc(l.url)}" rel="me noopener"${/^https?:/.test(l.url) ? ' target="_blank"' : ""}>` +
+      const links = (cv?.links || []).filter((l) => page !== "cv" || l.icon !== "intra").map((l) => `<a href="${esc(l.url)}" rel="me noopener"${/^https?:/.test(l.url) ? ' target="_blank"' : ""}>` +
         (keep ? "" : `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[l.icon] || ""}</svg>`) + `<span>${esc(l.label)}</span></a>`).join("");
       if (keep) { nav.querySelectorAll("a:not(.keep)").forEach((a) => a.remove()); keep.insertAdjacentHTML("beforebegin", links); }
       else nav.innerHTML = links;

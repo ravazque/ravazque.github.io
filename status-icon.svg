@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="5" fill="#00babc"/>
-  <text x="16" y="24" text-anchor="middle" fill="#111417" font-family="Schibsted Grotesk, Inter, Helvetica Neue, Arial, sans-serif" font-size="23" font-weight="900" letter-spacing="-1">R</text>
-  <rect x="5" y="27" width="22" height="2" fill="#111417"/>
+  <rect x="2.5" y="2.5" width="27" height="27" rx="3" fill="none" stroke="#111417" stroke-width="1"/>
+  <text x="16" y="23.5" text-anchor="middle" fill="#111417" font-family="Schibsted Grotesk, Inter, Helvetica Neue, Arial, sans-serif" font-size="21" font-weight="900">R</text>
 </svg>
