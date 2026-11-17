@@ -1,0 +1,3 @@
+# Built by build.sh (local preview and the Pages workflow)
+_site/
+node_modules/
