@@ -4,7 +4,7 @@
 
 const STRINGS = {
   en: {
-    about: "About", now: "Right now", in_progress: "In progress", cv: "CV", progress42: "42 progress", live: "Live demo", code: "Code", experience: "Experience", highlights: "Selected projects",
+    about: "About", now: "Right now", in_progress: "In progress", cv: "CV", progress42: "42 Status", live: "Live demo", code: "Code", experience: "Experience", highlights: "Selected projects",
     cursus: "42 Madrid Fundación Telefónica", level: "Level", to_next: "{pct}% of the way to level {next}", stage: "Stage",
     "stage.rank": "Common Core · Rank {n}", "stage.outer-core": "Outer Core", "stage.alumni": "Alumni",
     common_core: "Common Core validated {when}", coalition: "Coalition", kickoff: "42cursus since",
@@ -21,7 +21,7 @@ const STRINGS = {
     language: "Language", theme: "Theme", auto: "Auto", light: "Light", dark: "Dark", skills_label: "Skills of the {cursus}",
   },
   es: {
-    about: "Sobre mí", now: "Ahora mismo", in_progress: "En curso", cv: "CV", progress42: "Progreso en 42", live: "Demo en vivo", code: "Código", experience: "Experiencia", highlights: "Proyectos destacados",
+    about: "Sobre mí", now: "Ahora mismo", in_progress: "En curso", cv: "CV", progress42: "Estado en 42", live: "Demo en vivo", code: "Código", experience: "Experiencia", highlights: "Proyectos destacados",
     cursus: "42 Madrid Fundación Telefónica", level: "Nivel", to_next: "{pct}% hacia el nivel {next}", stage: "Etapa",
     "stage.rank": "Common Core · Rango {n}", "stage.outer-core": "Outer Core", "stage.alumni": "Alumni",
     common_core: "Common Core validado el {when}", coalition: "Coalición", kickoff: "En el 42cursus desde",
@@ -120,8 +120,12 @@ if (typeof window !== "undefined" && document.body && document.body.dataset.page
     const tags = (items) => `<ul class="tags">${(items || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
 
     function renderCV(t) {
-      $("#links").innerHTML = (cv?.links || []).map((l) => `<a href="${esc(l.url)}" rel="me noopener"${/^https?:/.test(l.url) ? ' target="_blank"' : ""}>` +
-        `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[l.icon] || ""}</svg><span>${esc(l.label)}</span></a>`).join("");
+      // the CV: text buttons before its own link to the 42 page (kept), no intra; the 42 page: every link with its icon
+      const nav = $("#links"), keep = nav.querySelector(".keep");
+      const links = (cv?.links || []).filter((l) => !keep || l.icon !== "intra").map((l) => `<a href="${esc(l.url)}" rel="me noopener"${/^https?:/.test(l.url) ? ' target="_blank"' : ""}>` +
+        (keep ? "" : `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[l.icon] || ""}</svg>`) + `<span>${esc(l.label)}</span></a>`).join("");
+      if (keep) { nav.querySelectorAll("a:not(.keep)").forEach((a) => a.remove()); keep.insertAdjacentHTML("beforebegin", links); }
+      else nav.innerHTML = links;
       if (page !== "cv") return;
       $("#headline").textContent = pick(cv?.headline, lang);
       $("#lead").textContent = pick(cv?.about, lang);
@@ -219,7 +223,7 @@ if (typeof window !== "undefined" && document.body && document.body.dataset.page
       $$("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
       $$("[data-t-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.tPlaceholder); });
       if (snap?.name) $("#name").textContent = snap.name;
-      $("#title").textContent = snap?.title ? ` · ${snap.title}` : "";
+      if ($("#title")) $("#title").textContent = snap?.title ? ` · ${snap.title}` : "";
       renderCV(t);
       if (page === "42") renderCursus(t);
       if (page === "42" && snap) { renderSkills(t); renderProjects(t); }
@@ -232,7 +236,7 @@ if (typeof window !== "undefined" && document.body && document.body.dataset.page
       $$("#langToggle button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === lang)));
       $$("#themeToggle button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === effectiveTheme())));
     }
-    const onSeg = (id, fn) => { $(id).onclick = (ev) => { const b = ev.target.closest("button"); if (b) fn(b.dataset.v); }; };
+    const onSeg = (id, fn) => { const el = $(id); if (el) el.onclick = (ev) => { const b = ev.target.closest("button"); if (b) fn(b.dataset.v); }; };
     onSeg("#langToggle", (v) => { lang = v; store.set("lang", v); render(); });
     onSeg("#themeToggle", (v) => {
       if (v === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;

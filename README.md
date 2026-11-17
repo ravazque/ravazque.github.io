@@ -4,7 +4,7 @@ The public CV of Raúl Vázquez Pérez (ravazque), a software developer trained 
 and a page with his 42 progress. Two static pages, in English and Spanish, light and dark, served by GitHub Pages.
 
 - **https://ravazque.github.io**: the CV. Experience, selected projects, education, languages and stack, with a paper
-  look of its own (serif titles, quiet rules, a warm dark mode).
+  look of its own: always light, serif titles, quiet rules and its own icon.
 - **https://ravazque.github.io/ravazque/**: 42 progress. Level, stage, coalition, projects in progress, skills,
   projects and evaluations, in the look of [ravazque.info](https://github.com/ravazque/ravazque.info), the web app
   that publishes its data.
@@ -23,12 +23,12 @@ ravazque.info: level, cursus stage, validated projects, evaluation counts, coali
 contact data, seats, logged hours, ids, tokens, photos or anything about other students.
 
 `site.js` draws both pages in the browser: `cv.json` on the first, `data/42.json` on the second (`body[data-page]`).
-It follows the browser's language and theme, and remembers the visitor's choice.
+It follows the browser's language (and, on the 42 page, its theme), and remembers the visitor's choice.
 
 | File | What it is |
 |------|------------|
-| `index.html` | The CV (`<html data-look="paper">` turns on its own look) |
-| `ravazque/index.html` | The 42 page (`<base href="../">`, so it shares every file with the CV) |
+| `index.html`, `cv-icon.svg` | The CV (`<html data-look="paper" data-theme="light">` turns on its own look) and its icon |
+| `ravazque/index.html`, `favicon.svg` | The 42 page (`<base href="../">`, so it shares every file with the CV) and its icon, ravazque.info's |
 | `site.css`, `site.js` | Styles and rendering of both pages |
 | `cv.json` | The CV text, edited by hand, EN and ES. Public: no phone number, private email or address |
 | `data/42.json` | The 42 snapshot, written by ravazque.info. Don't edit it by hand |

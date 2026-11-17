@@ -45,6 +45,7 @@ h3 { margin: 0; font: 700 var(--c-section-h3-size)/1.2 var(--type-font-display);
 .now h3 { font-size: 17px; color: var(--text-2); }
 .now p { margin: 6px 0 0; font-weight: 600; }
 .now #nowList h3 { margin-top: 14px; }
+#nowList h3 { margin-bottom: 10px; }
 .entries { display: grid; gap: 14px; }
 .entries.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .entry header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; }
@@ -159,7 +160,8 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
 .entry-links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 12px 0 0; font-weight: 600; }
 #cursus #nowList { margin-top: 20px; }
 
-/* The CV (<html data-look="paper">): paper and ink, serif titles, quiet rules, a narrower column, like a printed CV.
+/* The CV (<html data-look="paper" data-theme="light">): always light, paper and ink, serif titles, quiet rules, a narrower
+   column, like a printed CV.
    The 42 page (/ravazque/) keeps the web app's look. More specific than ui.css and accent.js, which load around it. */
 :root[data-look="paper"] {
   --ground: #f5f0e6; --surface: #f5f0e6; --sunken: #ebe3d3; --ink: #1f1b16; --text-2: #463e35; --muted: #6a6054;
@@ -167,12 +169,6 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
   --c-section-h2-rule: 1px; --paper-col: 960px;
   --serif: "Iowan Old Style", Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
 }
-@media (prefers-color-scheme: dark) { :root[data-look="paper"]:not([data-theme="light"]) {
-  --ground: #1c1814; --surface: #1c1814; --sunken: #26211b; --ink: #eee5d5; --text-2: #cdc1ae; --muted: #a5998a;
-  --rule: #3b342b; --rule-strong: #eee5d5; --control: #8c8173; --accent-ink: #dda57a; --focus: #eee5d5; } }
-:root[data-look="paper"][data-theme="dark"] {
-  --ground: #1c1814; --surface: #1c1814; --sunken: #26211b; --ink: #eee5d5; --text-2: #cdc1ae; --muted: #a5998a;
-  --rule: #3b342b; --rule-strong: #eee5d5; --control: #8c8173; --accent-ink: #dda57a; --focus: #eee5d5; }
 [data-look="paper"] .cv-band { --accent: var(--ground); --on-accent: var(--ink); border-bottom: 1px solid var(--rule-strong); }
 [data-look="paper"] .login { font: 700 19px/1 var(--serif); letter-spacing: 0; }
 [data-look="paper"] .links a { font-weight: 600; }
@@ -195,5 +191,13 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
 [data-look="paper"] .tags li { background: transparent; box-shadow: inset 0 0 0 1px var(--rule); color: var(--text-2); font: 500 13px/1.2 var(--type-font-text); }
 [data-look="paper"] .entry-links a { color: var(--accent-ink); }
 [data-look="paper"] .languages b, [data-look="paper"] .stack dt { font-family: var(--serif); }
+[data-look="paper"] .stack { gap: 0; }
+[data-look="paper"] .stack div { padding: 12px 0; border-bottom: 1px solid var(--rule); }
+/* GitHub, LinkedIn and 42 Status as one segmented group, like the language switch */
+.seg-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--on-accent); text-decoration: none;
+  font: 600 15px/1 var(--type-font-display); transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
+.seg-links a + a { border-left: 1px solid var(--on-accent); }
+.seg-links a:hover { background: var(--on-accent); color: var(--accent); }
+.seg-links a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 [data-look="paper"] .entries > .entry:first-child, [data-look="paper"] .entries.two > .entry:nth-child(2) { border-top: 0; padding-top: 0; }
 @media (max-width: 599.98px) { [data-look="paper"] .entries.two > .entry:nth-child(2) { border-top: 1px solid var(--rule); padding-top: 16px; } }
