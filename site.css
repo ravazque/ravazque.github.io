@@ -193,12 +193,12 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
 [data-look="paper"] .languages b, [data-look="paper"] .stack dt { font-family: var(--serif); }
 [data-look="paper"] .stack { gap: 0; }
 [data-look="paper"] .stack div { padding: 12px 0; border-bottom: 1px solid var(--rule); }
-/* GitHub, LinkedIn and 42 Status as one segmented group, like the language switch */
-.seg-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--on-accent); text-decoration: none;
+/* the band's links: separate buttons side by side, each framed like the language switch */
+.seg-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg-links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 2px solid var(--on-accent); color: var(--on-accent); text-decoration: none;
   font: 700 15px/1 var(--type-font-display); transition: background-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out; }
 [data-look="paper"] .seg-links a { font-weight: 600; }
-.seg-links a + a { border-left: 2px solid var(--on-accent); }
-[data-look="paper"] .seg-links a + a { border-left-width: 1px; }
+[data-look="paper"] .seg-links a { border-width: 1px; }
 .seg-links a:hover { background: var(--on-accent); color: var(--accent); }
 .seg-links a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 [data-look="paper"] .entries > .entry:first-child, [data-look="paper"] .entries.two > .entry:nth-child(2) { border-top: 0; padding-top: 0; }
