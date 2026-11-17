@@ -17,7 +17,7 @@ const STRINGS = {
     "groups.rank-00": "Milestone 0", "groups.rank-01": "Milestone 1", "groups.rank-02": "Milestone 2", "groups.rank-03": "Milestone 3",
     "groups.rank-04": "Milestone 4", "groups.rank-05": "Milestone 5", "groups.rank-06": "Milestone 6", "groups.outer-core": "Outer Core",
     "groups.piscine": "C Piscine", "track.common-core": "Common Core", "track.outer-core": "Outer Core", "track.piscine": "C Piscine",
-    since: "since {when}", updated: "42 data as of {when}, published from ravazque.info.", unavailable: "The 42 snapshot could not be loaded right now.",
+    since: "since {when}", updated: "42 data as of {when}, published from ravazque.info, an independent project not affiliated with 42.", unavailable: "The 42 snapshot could not be loaded right now.",
     language: "Language", theme: "Theme", auto: "Auto", light: "Light", dark: "Dark", skills_label: "Skills of the {cursus}",
   },
   es: {
@@ -34,7 +34,7 @@ const STRINGS = {
     "groups.rank-00": "Milestone 0", "groups.rank-01": "Milestone 1", "groups.rank-02": "Milestone 2", "groups.rank-03": "Milestone 3",
     "groups.rank-04": "Milestone 4", "groups.rank-05": "Milestone 5", "groups.rank-06": "Milestone 6", "groups.outer-core": "Outer Core",
     "groups.piscine": "Piscina C", "track.common-core": "Common Core", "track.outer-core": "Outer Core", "track.piscine": "Piscina C",
-    since: "desde {when}", updated: "Datos de 42 a {when}, publicados desde ravazque.info.", unavailable: "Ahora mismo no se pudo cargar la foto de 42.",
+    since: "desde {when}", updated: "Datos de 42 a {when}, publicados desde ravazque.info, un proyecto independiente sin relación con 42.", unavailable: "Ahora mismo no se pudo cargar la foto de 42.",
     language: "Idioma", theme: "Tema", auto: "Auto", light: "Claro", dark: "Oscuro", skills_label: "Skills del {cursus}",
   },
 };
