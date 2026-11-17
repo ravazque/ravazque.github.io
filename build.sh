@@ -9,7 +9,7 @@ out=${1:-_site}
 rm -rf "$out"
 mkdir -p "$out/data" "$out/ravazque"
 cp "$here/ravazque/index.html" "$out/ravazque/"
-cp "$here/index.html" "$here/site.css" "$here/site.js" "$here/cv.json" "$here/favicon.svg" "$here/cv-icon.svg" "$here/ui.css" "$out/"
+cp "$here/index.html" "$here/site.css" "$here/site.js" "$here/cv.json" "$here/cv-icon.svg" "$here/status-icon.svg" "$here/ui.css" "$out/"
 cp "$here/data/42.json" "$out/data/" 2>/dev/null || echo "build.sh: no data/42.json yet, the 42 page shows nothing"
 cp "$here"/shared/* "$out/"
 echo "build.sh: site staged in $out"

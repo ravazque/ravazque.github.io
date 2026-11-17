@@ -23,12 +23,13 @@ ravazque.info: level, cursus stage, validated projects, evaluation counts, coali
 contact data, seats, logged hours, ids, tokens, photos or anything about other students.
 
 `site.js` draws both pages in the browser: `cv.json` on the first, `data/42.json` on the second (`body[data-page]`).
-It follows the browser's language (and, on the 42 page, its theme), and remembers the visitor's choice.
+It follows the browser's language and remembers the visitor's choice. The CV is always light; the 42 page follows the
+system's theme until the visitor picks one (kept as `theme-42`).
 
 | File | What it is |
 |------|------------|
 | `index.html`, `cv-icon.svg` | The CV (`<html data-look="paper" data-theme="light">` turns on its own look) and its icon |
-| `ravazque/index.html`, `favicon.svg` | The 42 page (`<base href="../">`, so it shares every file with the CV) and its icon, ravazque.info's |
+| `ravazque/index.html`, `status-icon.svg` | The 42 page (`<base href="../">`, so it shares every file with the CV) and its icon |
 | `site.css`, `site.js` | Styles and rendering of both pages |
 | `cv.json` | The CV text, edited by hand, EN and ES. Public: no phone number, private email or address |
 | `data/42.json` | The 42 snapshot, written by ravazque.info. Don't edit it by hand |

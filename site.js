@@ -240,7 +240,7 @@ if (typeof window !== "undefined" && document.body && document.body.dataset.page
     onSeg("#langToggle", (v) => { lang = v; store.set("lang", v); render(); });
     onSeg("#themeToggle", (v) => {
       if (v === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
-      store.set("theme", v === "auto" ? "" : v); syncToggles();
+      store.set("theme-42", v === "auto" ? "" : v); syncToggles();
     });
     if (page === "42") {
       onSeg("#skillSet", (v) => { skillSet = v; renderSkills(makeT(lang)); });
