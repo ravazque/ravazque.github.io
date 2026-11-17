@@ -1,16 +1,16 @@
 {
  "schema": 1,
- "updated": "2026-10-18 22:41",
+ "updated": "2026-11-17T10:14:29Z",
  "login": "ravazque",
  "name": "Raúl Vázquez Pérez",
  "campus": "42 Madrid Fundación Telefónica",
- "title": "Mastermind ravazque",
+ "title": "ravazque, First Sword of Zefiria",
  "coalition": {
   "name": "Zefiria",
   "color": "#E39F0B"
  },
  "cursus": {
-  "level": 16.9,
+  "level": 17.01,
   "grade": "Transcender",
   "stage": "outer-core",
   "kickoff": "2024-09-16",
@@ -19,12 +19,12 @@
  "skills": {
   "student": [
    {
-    "name": "Adaptation & creativity",
-    "level": 2.0
+    "name": "Adaptation \u0026 creativity",
+    "level": 2
    },
    {
-    "name": "Algorithms & AI",
-    "level": 12.08
+    "name": "Algorithms \u0026 AI",
+    "level": 12.35
    },
    {
     "name": "Basics",
@@ -35,7 +35,7 @@
     "level": 0
    },
    {
-    "name": "DB & Data",
+    "name": "DB \u0026 Data",
     "level": 4.41
    },
    {
@@ -47,7 +47,7 @@
     "level": 5.04
    },
    {
-    "name": "Group & interpersonal",
+    "name": "Group \u0026 interpersonal",
     "level": 5.17
    },
    {
@@ -55,7 +55,7 @@
     "level": 5.25
    },
    {
-    "name": "Network & system administration",
+    "name": "Network \u0026 system administration",
     "level": 13.36
    },
    {
@@ -88,7 +88,7 @@
    },
    {
     "name": "Technology integration",
-    "level": 7.05
+    "level": 7.58
    },
    {
     "name": "Unix",
@@ -101,15 +101,15 @@
   ],
   "piscine": [
    {
-    "name": "Adaptation & creativity",
+    "name": "Adaptation \u0026 creativity",
     "level": 1.5
    },
    {
-    "name": "Algorithms & AI",
+    "name": "Algorithms \u0026 AI",
     "level": 3.58
    },
    {
-    "name": "Group & interpersonal",
+    "name": "Group \u0026 interpersonal",
     "level": 0
    },
    {
@@ -127,8 +127,32 @@
   ]
  },
  "projects": {
-  "validated": 39,
+  "validated": 41,
   "list": [
+   {
+    "name": "Work Experience I  - Contract Upload",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 100,
+    "xp": 0,
+    "validated": "2026-11-12"
+   },
+   {
+    "name": "Work Experience I - Duration",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 118,
+    "xp": 0,
+    "validated": "2026-11-12"
+   },
+   {
+    "name": "ft_newton",
+    "track": "outer-core",
+    "group": "outer-core",
+    "mark": 125,
+    "xp": 30450,
+    "validated": "2026-11-04"
+   },
    {
     "name": "Leaffliction",
     "track": "outer-core",
@@ -168,14 +192,6 @@
     "mark": 100,
     "xp": 4200,
     "validated": "2026-09-28"
-   },
-   {
-    "name": "ft_newton",
-    "track": "outer-core",
-    "group": "outer-core",
-    "mark": 105,
-    "xp": 25578,
-    "validated": "2026-09-23"
    },
    {
     "name": "dslr",
@@ -227,8 +243,8 @@
    },
    {
     "name": "ft_resume",
-    "track": "outer-core",
-    "group": "outer-core",
+    "track": "common-core",
+    "group": "rank-06",
     "mark": 100,
     "xp": 2100,
     "validated": "2026-04-25"
@@ -522,12 +538,6 @@
     "since": "2026-05-28"
    },
    {
-    "name": "libasm",
-    "track": "outer-core",
-    "group": "outer-core",
-    "since": "2026-05-28"
-   },
-   {
     "name": "gomoku",
     "track": "outer-core",
     "group": "outer-core",
@@ -540,24 +550,36 @@
     "since": "2026-05-28"
    },
    {
-    "name": "dr-quine",
+    "name": "darkly",
     "track": "outer-core",
     "group": "outer-core",
-    "since": "2026-05-29"
+    "since": "2026-10-21"
    },
    {
-    "name": "ft_hangouts",
+    "name": "Work Experience I",
     "track": "outer-core",
     "group": "outer-core",
-    "since": "2026-09-18"
+    "since": "2026-11-12"
+   },
+   {
+    "name": "Work Experience I - Company Mid Evaluation",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-11-12"
+   },
+   {
+    "name": "Work Experience I - Company Final Evaluation",
+    "track": "outer-core",
+    "group": "outer-core",
+    "since": "2026-11-12"
    }
   ]
  },
  "evaluations": {
-  "given": 185,
-  "given_outstanding": 28,
-  "received": 118,
-  "received_outstanding": 43,
-  "received_avg_mark": 103.3
+  "given": 203,
+  "given_outstanding": 29,
+  "received": 131,
+  "received_outstanding": 53,
+  "received_avg_mark": 104.2
  }
 }
