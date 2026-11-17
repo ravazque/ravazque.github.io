@@ -1,7 +1,7 @@
 # ravazque.github.io
 
-The owner's public CV (https://ravazque.github.io) and a 42 snapshot page (https://ravazque.github.io/ravazque/), in
-the same visual world as [ravazque.info](https://github.com/ravazque/ravazque.info). The other paths under
+The owner's public CV (https://ravazque.github.io), with a paper look of its own (serif titles, warm dark mode), and a
+42 snapshot page (https://ravazque.github.io/ravazque/) in the look of [ravazque.info](https://github.com/ravazque/ravazque.info). The other paths under
 ravazque.github.io (`/NASA-Space-APPs-Challenge_2025/`, `/NASA-Space-APPs-Challenge_2026/`) are those repositories' own
 Pages, served from their repositories: never create a folder here with a repository's name.
 
