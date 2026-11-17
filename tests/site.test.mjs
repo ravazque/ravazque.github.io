@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { pickLang, levelParts, seatFill, stageLabel, fmtDate, esc, makeT } = require("../site.js");
+const { pickLang, levelParts, seatFill, stageLabel, fmtDate, esc, makeT } = require("../assets/site.js");
 
 test("Spanish browsers get Spanish, everyone else English", () => {
   assert.equal(pickLang(["es-ES", "en"]), "es");
@@ -44,7 +44,7 @@ test("dates are written for the reader's language", () => {
 
 test("text from the data files is escaped", () => assert.equal(esc(`<b a="1">&'`), "&lt;b a=&quot;1&quot;&gt;&amp;&#39;"));
 
-const { snapshotProjects, pick } = require("../site.js");
+const { snapshotProjects, pick } = require("../assets/site.js");
 
 test("published projects map onto the shared project view", () => {
   const rows = snapshotProjects({ projects: { list: [{ name: "Libft", track: "common-core", group: "rank-00", mark: 125, xp: 578, validated: "2024-10-01" }] } });
