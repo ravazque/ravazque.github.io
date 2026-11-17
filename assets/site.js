@@ -138,7 +138,7 @@ if (typeof window !== "undefined" && document.body && document.body.dataset.page
       $("#experience").hidden = !(cv?.experience || []).length;
       const out = (url, label) => url ? `<a href="${esc(url)}" rel="noopener" target="_blank">${esc(t(label))}</a>` : "";
       $("#highlightList").innerHTML = (cv?.projects || []).map((x) => `<article class="island entry">
-        <header><h3>${esc(x.name)}</h3><p class="meta">${esc(pick(x.where, lang) || "42 Madrid Fundación Telefónica")} · ${esc(x.year)}</p></header>
+        <header><h3>${esc(x.name)}</h3><p class="meta">${esc(pick(x.where, lang) || "42 Madrid Fundación Telefónica")}</p></header>
         <p>${esc(pick(x.text, lang))}</p>${tags(x.keywords)}${x.url || x.repo ? `<p class="entry-links">${out(x.url, "live")}${out(x.repo, "code")}</p>` : ""}</article>`).join("");
       $("#highlights").hidden = !(cv?.projects || []).length;
       $("#educationList").innerHTML = (cv?.education || []).map((x) => `<article class="island entry">

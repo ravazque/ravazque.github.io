@@ -15,6 +15,16 @@
  "experience": [
   {
    "year": "2026",
+   "role": {"en": "Backend & DevOps developer", "es": "Desarrollador backend y DevOps"},
+   "kind": {"en": "Internship", "es": "Prácticas"},
+   "text": {
+    "en": "Built internal tools and microservices in TypeScript with NestJS, their APIs specified in OpenAPI and tested with Postman; containerised them with Docker and deployed them to the cloud through CI/CD pipelines on GitHub Actions.",
+    "es": "Desarrollé herramientas internas y microservicios en TypeScript con NestJS, con sus APIs especificadas en OpenAPI y probadas con Postman; los empaqueté en contenedores Docker y los desplegué en la nube con pipelines de CI/CD en GitHub Actions."
+   },
+   "stack": ["TypeScript", "NestJS", "OpenAPI", "Postman", "Docker", "GitHub Actions"]
+  },
+  {
+   "year": "2026",
    "role": {"en": "Full-stack web developer", "es": "Desarrollador web full-stack"},
    "kind": {"en": "Freelance", "es": "Freelance"},
    "text": {
@@ -37,7 +47,6 @@
  "projects": [
   {
    "name": "Inception of Things",
-   "year": "2026",
    "text": {
     "en": "Set up a small Kubernetes cluster from scratch and automated its deployments: every change pushed to GitHub reaches the running apps on its own.",
     "es": "Monté desde cero un pequeño clúster de Kubernetes y automaticé sus despliegues: cada cambio subido a GitHub llega solo a las aplicaciones en marcha."
@@ -46,7 +55,6 @@
   },
   {
    "name": "DSLR",
-   "year": "2026",
    "text": {
     "en": "Data science from first principles: explored and charted a dataset, then wrote a logistic-regression classifier without machine-learning libraries to sort Hogwarts students into their houses.",
     "es": "Ciencia de datos desde cero: exploré y representé un conjunto de datos y programé, sin librerías de machine learning, un clasificador de regresión logística que reparte a los alumnos de Hogwarts en sus casas."
@@ -55,7 +63,6 @@
   },
   {
    "name": "Leaffliction",
-   "year": "2026",
    "text": {
     "en": "Image data pipeline for leaf-disease recognition: analysed and balanced the dataset, augmented and transformed the images, and trained a deep-learning classifier above 90% validation accuracy.",
     "es": "Pipeline de datos de imagen para reconocer enfermedades en hojas: analicé y equilibré el conjunto de datos, aumenté y transformé las imágenes y entrené un clasificador de deep learning por encima del 90% de acierto en validación."
@@ -64,10 +71,9 @@
   },
   {
    "name": "Learn2Slither",
-   "year": "2026",
    "text": {
-    "en": "Taught an agent to play Snake by trial and error, seeing only four directions from its head, and compared how fast it learned across training sizes.",
-    "es": "Enseñé a un agente a jugar a Snake a base de prueba y error, viendo solo cuatro direcciones desde su cabeza, y comparé lo rápido que aprendía según el tamaño del entrenamiento."
+    "en": "Taught an agent to play Snake by trial and error with Q-learning, seeing only the four directions from its head, and compared how fast it learned across different training sizes.",
+    "es": "Enseñé a un agente a jugar a Snake a base de prueba y error con Q-learning, viendo solo las cuatro direcciones desde su cabeza, y comparé lo rápido que aprendía según el tamaño del entrenamiento."
    },
    "keywords": ["Python", "Reinforcement learning", "Q-learning", "NumPy"]
   }
@@ -81,8 +87,8 @@
     "es": "Ingeniería de software y máster en datos — RNCP nivel 7"
    },
    "text": {
-    "en": "Project-based, peer-to-peer school: no lectures or teachers; you learn by building and by evaluating each other.",
-    "es": "Escuela por proyectos y entre iguales: sin clases ni profesores; se aprende construyendo y evaluándose unos a otros."
+    "en": "Software engineering and a Master's (EQF level 7) in databases, data science and machine learning. A peer-to-peer method that builds a high degree of autonomy and unsupervised problem-solving.",
+    "es": "Ingeniería de software y máster (nivel 7 del MEC) en bases de datos, ciencia de datos y machine learning. Una metodología entre iguales que fomenta un alto grado de autonomía y la resolución de problemas sin supervisión."
    }
   },
   {
