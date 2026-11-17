@@ -10,8 +10,7 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; 
 
 /* band and poster head */
 .cv-band { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; min-height: var(--c-topbar-height);
-  /* as on ravazque.info: the band spans the window, what is on it lines up with the text column below */
-  padding: 12px max(var(--c-topbar-padding-x), calc((100% - var(--col, var(--c-page-max-width))) / 2 + var(--c-page-padding-x))); background: var(--accent); color: var(--on-accent); --focus: var(--on-accent); }
+  padding: 12px var(--c-page-padding-x); background: var(--accent); color: var(--on-accent); --focus: var(--on-accent); }
 .cv-band ::selection { background: var(--on-accent); color: var(--accent); }
 .login { margin: 0; font: 900 20px/1 var(--type-font-display); letter-spacing: -.02em; }
 .links { display: flex; flex-wrap: wrap; gap: 2px; }
@@ -134,6 +133,7 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
 .updated:empty { display: none; }
 
 @media (max-width: 959.98px) {
+  .controls-band { margin-left: 0; }
   .cv-hero { padding-top: 32px; }
   main { padding: 44px var(--c-page-padding-x) 40px; }
   section { margin-bottom: 48px; }
@@ -164,7 +164,7 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
 :root[data-look="paper"] {
   --ground: #f5f0e6; --surface: #f5f0e6; --sunken: #ebe3d3; --ink: #1f1b16; --text-2: #463e35; --muted: #6a6054;
   --rule: #d6cbb7; --rule-strong: #1f1b16; --control: #857a6b; --accent-ink: #7a3b1d; --focus: #1f1b16;
-  --c-section-h2-rule: 1px; --paper-col: 960px; --col: var(--paper-col);
+  --c-section-h2-rule: 1px; --paper-col: 960px;
   --serif: "Iowan Old Style", Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
 }
 [data-look="paper"] .cv-band { --accent: var(--ground); --on-accent: var(--ink); border-bottom: 1px solid var(--rule-strong); }
