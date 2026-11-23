@@ -12,8 +12,9 @@ and a page with his 42 progress. Two static pages, in English and Spanish, light
 An independent project: not made, run or endorsed by 42 or 42 Madrid Fundación Telefónica.
 
 The other paths under ravazque.github.io (`/NASA-Space-APPs-Challenge_2025/`, `/NASA-Space-APPs-Challenge_2026/`) are
-the Pages of those repositories, served from them. Never create a folder here with a repository's name: it would hide
-that repository's page.
+the Pages of those repositories, served from them. `/NASA-2025/` and `/NASA-2026/` are short links to them, served from
+here: they redirect and keep the query (`?lang=es`, `?sim=storm_eva`). Never create a folder here with a repository's
+name: it would hide that repository's page.
 
 ## How it works
 
@@ -35,6 +36,7 @@ system's theme until the visitor picks one (kept as `theme-42`).
 | `data/42.json` | The 42 snapshot, written by ravazque.info. Don't edit or move it |
 | `ui.css`, `shared/fonts.css` | ravazque.info's colours, type and sizes, written there by `make site-sync`. Don't edit or move them |
 | `shared/` | Fonts, the accent colour (`accent.js`), the custom controls, the skills radar and the projects filters |
+| `NASA-2025/`, `NASA-2026/` | Short links that redirect to the Pages of the NASA Space Apps repositories |
 | `build.sh` | Copies what is published into one folder, with the same layout |
 | `tests/` | Tests of the scripts (not published) |
 
