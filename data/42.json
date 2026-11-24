@@ -1,10 +1,10 @@
 {
  "schema": 1,
- "updated": "2026-11-19T10:11:02Z",
+ "updated": "2026-11-24T19:55:15Z",
  "login": "ravazque",
  "name": "Raúl Vázquez Pérez",
  "campus": "42 Madrid Fundación Telefónica",
- "title": "ravazque, First Sword of Zefiria",
+ "title": "📚 legendary evaluator ravazque 📚",
  "coalition": {
   "name": "Zefiria",
   "color": "#E39F0B"
@@ -576,7 +576,7 @@
   ]
  },
  "evaluations": {
-  "given": 203,
+  "given": 205,
   "given_outstanding": 29,
   "received": 131,
   "received_outstanding": 53,
