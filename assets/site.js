@@ -82,13 +82,29 @@ function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 }
 
+// "ravazque" and "Raúl" as words (not inside ravazque.info or a URL) link to the CV
+const NAME_RE = /(?<![\p{L}\p{N}_./@-])(ravazque|Ra[uú]l)(?![\p{L}\p{N}_]|[./-][\p{L}\p{N}])/giu;
+const CV_URL = "https://ravazque.github.io/";
+function linkNames(text) {
+  return String(text ?? "").split(NAME_RE).map((part, i) => i % 2 ? `<a class="name-link" href="${CV_URL}">${esc(part)}</a>` : esc(part)).join("");
+}
+
+function linkifyNames(root) {
+  const test = new RegExp(NAME_RE.source, "iu");
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode: (n) =>
+    n.parentElement.closest("a, script, style, textarea, option, svg") || !test.test(n.data) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach((n) => n.replaceWith(document.createRange().createContextualFragment(linkNames(n.data))));
+}
+
 // published projects in the shape projects.js filters (every published project is validated)
 function snapshotProjects(snap) {
   return ((snap && snap.projects && snap.projects.list) || []).map((p) => ({name: p.name, track: p.track, group: p.group, mark: p.mark,
     xp_earned: p.xp, validated: true, status: "finished", marked: p.validated, date: p.validated}));
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = {pickLang, makeT, pick, levelParts, seatFill, stageLabel, fmtDate, esc, snapshotProjects};
+if (typeof module !== "undefined" && module.exports) module.exports = {pickLang, makeT, pick, levelParts, seatFill, stageLabel, fmtDate, esc, snapshotProjects, linkNames};
 
 const ICONS = {
   github: '<path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>',
@@ -228,6 +244,7 @@ if (typeof window !== "undefined" && document.body && document.body.dataset.page
       if (page === "42") renderCursus(t);
       if (page === "42" && snap) { renderSkills(t); renderProjects(t); }
       $$("select").forEach((s) => s._refresh && s._refresh());
+      linkifyNames(document.body);
       syncToggles();
     }
 

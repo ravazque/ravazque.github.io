@@ -5,6 +5,8 @@
 html { background: var(--ground); color: var(--ink); font: 400 var(--type-size-body)/var(--type-line-body) var(--type-font-text); -webkit-text-size-adjust: 100%; }
 body { margin: 0; min-height: 100vh; }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.name .name-link, .login .name-link { text-decoration: none; }
+.name .name-link:hover, .login .name-link:hover { text-decoration: underline; }
 [hidden] { display: none !important; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
