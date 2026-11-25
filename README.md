@@ -40,8 +40,8 @@ everywhere, so plain CSS scales them.
 | `assets/site.css`, `assets/site.js` | Styles and rendering of both pages |
 | `cv.json` | The CV text, edited by hand, EN and ES. Public: no phone number, private email or address |
 | `data/42.json` | The 42 snapshot, written by ravazque.info. Don't edit or move it |
-| `ui.css`, `shared/fonts.css` | ravazque.info's colours, type and sizes, written there by `make site-sync`. Don't edit or move them |
-| `shared/` | Fonts, the accent colour (`accent.js`), the custom controls, the skills radar and the projects filters |
+| `ui.css`, `shared/fonts.css` | ravazque.info's colors, type and sizes, written there by `make site-sync`. Don't edit or move them |
+| `shared/` | Fonts, the accent color (`accent.js`), the custom controls, the skills radar and the projects filters |
 | `NASA-2025/`, `NASA-2026/` | Short links that redirect to the Pages of the NASA Space Apps repositories |
 | `build.sh` | Copies what is published into one folder, with the same layout |
 | `tests/` | Tests of the scripts (not published) |
@@ -75,8 +75,9 @@ scripts, icon and data, and hands `site.js` the data in place of the network. Th
 
 ## Deploy
 
-Every push to `main` runs `.github/workflows/pages.yml`: the tests, then `build.sh`, then the deploy to GitHub Pages.
-Pull requests run the tests only. In Settings → Pages, **Source** must be **GitHub Actions**, so that only what
+Every push to `main` runs `.github/workflows/pages.yml` in three jobs: `test` (the tests), `build` (`build.sh` and the
+upload of the site) and `deploy` (the deploy to GitHub Pages). Pull requests run the tests only. If a deploy fails on
+GitHub's side, re-run the failed `deploy` job alone: it reuses the upload of the same run. In Settings → Pages, **Source** must be **GitHub Actions**, so that only what
 `build.sh` copies is published.
 
 The Publish button also pushes to `main`: run `git pull --rebase` before pushing local work.

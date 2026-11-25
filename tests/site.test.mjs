@@ -36,7 +36,7 @@ test("stages read like the dashboard", () => {
 });
 
 test("dates are written for the reader's language", () => {
-  assert.equal(fmtDate("2025-03-02", "en"), "2 Mar 2025");
+  assert.equal(fmtDate("2025-03-02", "en"), "Mar 2, 2025");
   assert.equal(fmtDate("2025-03-02", "es"), "2 mar 2025");
   assert.equal(fmtDate("2024-07", "en"), "July 2024");
   assert.equal(fmtDate("", "en"), "");

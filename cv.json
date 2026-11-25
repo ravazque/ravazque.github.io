@@ -1,11 +1,11 @@
 {
  "_note": "The CV on ravazque.github.io, edited by hand (EN and ES). The 42 progress page (ravazque/) reads data/42.json, published from ravazque.info. Projects take optional where, url (live demo) and repo. This file is public: never add a phone number, a private email or an address.",
  "headline": {
-  "en": "Data Engineer & Software Developer",
-  "es": "Data Engineer y desarrollador de software"
+  "en": "Software Developer & Data Engineer",
+  "es": "Desarrollador de software y Data Engineer"
  },
  "about": {
-  "en": "Software developer trained at 42 Madrid Fundación Telefónica, now specialising in data engineering. I design relational databases, process data with Python and run it on containerised, automated infrastructure (Docker, Kubernetes, CI/CD). I have co-built two freelance products in small teams, from the database to the screen.",
+  "en": "Software developer trained at 42 Madrid Fundación Telefónica, now specializing in data engineering. I design relational databases, process data with Python and run it on containerized, automated infrastructure (Docker, Kubernetes, CI/CD). I have co-built two freelance products in small teams, from the database to the screen.",
   "es": "Desarrollador de software formado en 42 Madrid Fundación Telefónica y especializándome en ingeniería de datos. Diseño bases de datos relacionales, proceso datos con Python y los pongo en marcha sobre infraestructura en contenedores y automatizada (Docker, Kubernetes, CI/CD). He co-desarrollado dos productos freelance en equipos pequeños, de la base de datos a la pantalla."
  },
  "now": {
@@ -18,7 +18,7 @@
    "role": {"en": "Backend & DevOps developer", "es": "Desarrollador backend y DevOps"},
    "kind": {"en": "Internship", "es": "Prácticas"},
    "text": {
-    "en": "Built internal tools and microservices in TypeScript with NestJS, their APIs specified in OpenAPI and tested with Postman; containerised them with Docker and deployed them to the cloud through CI/CD pipelines on GitHub Actions.",
+    "en": "Built internal tools and microservices in TypeScript with NestJS, their APIs specified in OpenAPI and tested with Postman; containerized them with Docker and deployed them to the cloud through CI/CD pipelines on GitHub Actions.",
     "es": "Desarrollé herramientas internas y microservicios en TypeScript con NestJS, con sus APIs especificadas en OpenAPI y probadas con Postman; los empaqueté en contenedores Docker y los desplegué en la nube con pipelines de CI/CD en GitHub Actions."
    },
    "stack": ["TypeScript", "NestJS", "OpenAPI", "Postman", "Docker", "GitHub Actions"]
@@ -28,7 +28,7 @@
    "role": {"en": "Full-stack web developer", "es": "Desarrollador web full-stack"},
    "kind": {"en": "Freelance", "es": "Freelance"},
    "text": {
-    "en": "Designed the database (PostgreSQL) of a live e-learning platform — multilingual course catalogue, single and bundled course sales, live-class scheduling and a CMS the client manages — and built its backend with payments (Stripe) and sign-in.",
+    "en": "Designed the database (PostgreSQL) of a live e-learning platform — multilingual course catalog, single and bundled course sales, live-class scheduling and a CMS the client manages — and built its backend with payments (Stripe) and sign-in.",
     "es": "Diseñé la base de datos (PostgreSQL) de una plataforma de e-learning en producción —catálogo multilingüe, venta de cursos sueltos y en packs, agenda de clases en directo y un CMS que gestiona el cliente— y construí su backend con pagos (Stripe) e inicio de sesión."
    },
    "stack": ["PostgreSQL", "Prisma", "Nuxt", "TypeScript", "Stripe"]
@@ -59,12 +59,12 @@
     "en": "Data science from first principles: explored and charted a dataset, then wrote a logistic-regression classifier without machine-learning libraries to sort Hogwarts students into their houses.",
     "es": "Ciencia de datos desde cero: exploré y representé un conjunto de datos y programé, sin librerías de machine learning, un clasificador de regresión logística que reparte a los alumnos de Hogwarts en sus casas."
    },
-   "keywords": ["Python", "Data analysis", "Data visualisation", "Logistic regression", "Gradient descent"]
+   "keywords": ["Python", "Data analysis", "Data visualization", "Logistic regression", "Gradient descent"]
   },
   {
    "name": "Leaffliction",
    "text": {
-    "en": "Image data pipeline for leaf-disease recognition: analysed and balanced the dataset, augmented and transformed the images, and trained a deep-learning classifier above 90% validation accuracy.",
+    "en": "Image data pipeline for leaf-disease recognition: analyzed and balanced the dataset, augmented and transformed the images, and trained a deep-learning classifier above 90% validation accuracy.",
     "es": "Pipeline de datos de imagen para reconocer enfermedades en hojas: analicé y equilibré el conjunto de datos, aumenté y transformé las imágenes y entrené un clasificador de deep learning por encima del 90% de acierto en validación."
    },
    "keywords": ["Python", "Computer vision", "Data augmentation", "Deep learning", "NumPy", "PlantCV"]
@@ -107,7 +107,7 @@
  ],
  "stack": [
   {"group": {"en": "Languages", "es": "Lenguajes"}, "items": ["SQL", "Python", "C / C++", "TypeScript", "JavaScript", "Bash"]},
-  {"group": {"en": "Data", "es": "Datos"}, "items": ["PostgreSQL", "Relational data modelling", "pandas", "NumPy"]},
+  {"group": {"en": "Data", "es": "Datos"}, "items": ["PostgreSQL", "Relational data modeling", "pandas", "NumPy", "PyTorch"]},
   {"group": {"en": "Infrastructure & DevOps", "es": "Infraestructura y DevOps"}, "items": ["Docker", "Kubernetes (K3s, K3d)", "Argo CD", "GitOps", "CI/CD", "Vagrant"]},
   {"group": {"en": "Tools", "es": "Herramientas"}, "items": ["Linux", "Git", "Clean Code", "SOLID"]}
  ],

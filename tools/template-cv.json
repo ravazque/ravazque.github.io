@@ -2,8 +2,8 @@
  "_note": "Example data for `make preview-template` (and `make preview` when cv.json is missing), in the shape of cv.json. `name` replaces the name written in index.html, in the preview only.",
  "name": "Alex Example Sample",
  "headline": {
-  "en": "Data Engineer & Software Developer",
-  "es": "Data Engineer y desarrollador de software"
+  "en": "Software Developer & Data Engineer",
+  "es": "Desarrollador de software y Data Engineer"
  },
  "about": {
   "en": "Example profile: a software developer who builds data pipelines and the services around them, from the database schema to deployment. This paragraph is placeholder text of a realistic length.",
@@ -19,7 +19,7 @@
    "role": {"en": "Data platform engineer with a deliberately long role title", "es": "Ingeniero de plataforma de datos con un título de puesto deliberadamente largo"},
    "kind": {"en": "Internship", "es": "Prácticas"},
    "text": {
-    "en": "Built example ingestion jobs in Python, modelled their tables in PostgreSQL and scheduled them in containers through CI/CD.",
+    "en": "Built example ingestion jobs in Python, modeled their tables in PostgreSQL and scheduled them in containers through CI/CD.",
     "es": "Construí procesos de ingesta de ejemplo en Python, modelé sus tablas en PostgreSQL y los programé en contenedores con CI/CD."
    },
    "stack": ["Python", "PostgreSQL", "Docker", "GitHub Actions"]
@@ -42,7 +42,7 @@
     "en": "An example project: cleans a public dataset, loads it into a warehouse and charts it.",
     "es": "Un proyecto de ejemplo: limpia un conjunto de datos público, lo carga en un almacén y lo representa."
    },
-   "keywords": ["Python", "pandas", "SQL", "Data visualisation"],
+   "keywords": ["Python", "pandas", "SQL", "Data visualization"],
    "url": "https://example.com/",
    "repo": "https://example.com/"
   },

@@ -38,7 +38,7 @@ const STRINGS = {
     language: "Idioma", theme: "Tema", auto: "Auto", light: "Claro", dark: "Oscuro", skills_label: "Skills del {cursus}",
   },
 };
-const LOCALES = {en: "en-GB", es: "es-ES"};
+const LOCALES = {en: "en-US", es: "es-ES"};
 
 function pickLang(languages) {
   return /^es\b/i.test((languages || [])[0] || "") ? "es" : "en";
@@ -69,13 +69,13 @@ function stageLabel(stage, t) {
   return rank ? t("stage.rank", {n: rank[1]}) : t(`stage.${stage}`);
 }
 
-// "2025-03-02" → 2 Mar 2025; "2024-07" → July 2024
+// "2025-03-02" → Mar 2, 2025 (2 mar 2025 in Spanish); "2024-07" → July 2024
 function fmtDate(iso, lang) {
   const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(iso || "");
   if (!m) return "";
   const date = new Date(Date.UTC(+m[1], +m[2] - 1, +(m[3] || 1)));
   const opts = m[3] ? {day: "numeric", month: "short", year: "numeric"} : {month: "long", year: "numeric"};
-  return date.toLocaleDateString(LOCALES[lang] || "en-GB", {...opts, timeZone: "UTC"}).replace(/\.$/, "").replace(/\bSept\b/, "Sep");
+  return date.toLocaleDateString(LOCALES[lang] || "en-US", {...opts, timeZone: "UTC"}).replace(/\.$/, "");
 }
 
 function esc(s) {

@@ -1,5 +1,7 @@
 # Tests the site's scripts and deploys it to GitHub Pages on every push to main (edits and ravazque.info's publish
 # button). Repository Settings → Pages → Source must be "GitHub Actions": only what build.sh stages is published.
+# build uploads the site and deploy publishes it in a job of its own, seconds later, so the upload is listed by then;
+# a failed deploy can be re-run alone, without a second "github-pages" artifact in the run.
 name: Pages
 
 on:
@@ -30,9 +32,23 @@ jobs:
       - name: The site's scripts
         run: node --test tests/*.test.mjs
 
-  deploy:
+  build:
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Stage the site
+        run: sh build.sh _site
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -43,14 +59,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Stage the site
-        run: sh build.sh _site
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: _site
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
