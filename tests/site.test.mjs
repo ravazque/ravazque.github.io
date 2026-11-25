@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { pickLang, levelParts, seatFill, stageLabel, fmtDate, esc, makeT, linkNames } = require("../assets/site.js");
+const { pickLang, levelParts, seatFill, stageLabel, fmtDate, esc, makeT, linkNames, fitSize } = require("../assets/site.js");
 
 test("Spanish browsers get Spanish, everyone else English", () => {
   assert.equal(pickLang(["es-ES", "en"]), "es");
@@ -68,4 +68,11 @@ test("ravazque and Raúl link to the CV, but not inside ravazque.info or URLs", 
   assert.equal(linkNames("github.com/ravazque or ravazque.github.io"), "github.com/ravazque or ravazque.github.io");
   assert.equal(linkNames("by ravazque."), `by ${a("ravazque")}.`);
   assert.equal(linkNames("Raúlito <b>"), "Raúlito &lt;b&gt;");
+});
+
+test("one-line text shrinks to its box, never grows", () => {
+  assert.equal(fitSize(40, 395, 343), 34.7);
+  assert.equal(fitSize(40, 300, 343), null);
+  assert.equal(fitSize(40, 343, 343), null);
+  assert.equal(fitSize(40, 395, 0), null);
 });

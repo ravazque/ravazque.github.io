@@ -1,0 +1,40 @@
+{
+ "schema": 1,
+ "updated": "2026-11-01T10:00:00Z",
+ "login": "student",
+ "name": "Alex Example Sample",
+ "campus": "42 Example Campus",
+ "title": "student, Example Title",
+ "coalition": {"name": "Example Coalition", "color": "#4A7FB5"},
+ "cursus": {"level": 9.42, "grade": "Learner", "stage": "rank-04", "kickoff": "2025-01-13"},
+ "skills": {
+  "student": [
+   {"name": "Adaptation & creativity", "level": 3.1}, {"name": "Shell", "level": 6.4}, {"name": "Group & interpersonal", "level": 4.2},
+   {"name": "Imperative programming", "level": 8.7}, {"name": "Network & system administration", "level": 3.9}, {"name": "Rigor", "level": 7.5},
+   {"name": "Unix", "level": 5.8}, {"name": "Web", "level": 2.3}
+  ],
+  "piscine": [
+   {"name": "Adaptation & creativity", "level": 1.2}, {"name": "Shell", "level": 2.6}, {"name": "Rigor", "level": 3.0},
+   {"name": "Unix", "level": 2.1}, {"name": "Group & interpersonal", "level": 0.9}
+  ]
+ },
+ "projects": {
+  "validated": 9,
+  "list": [
+   {"name": "Example project A", "track": "common-core", "group": "rank-00", "mark": 125, "xp": 462, "validated": "2025-02-10"},
+   {"name": "Example project B", "track": "common-core", "group": "rank-01", "mark": 100, "xp": 1092, "validated": "2025-04-02"},
+   {"name": "Example project C", "track": "common-core", "group": "rank-01", "mark": 110, "xp": 882, "validated": "2025-05-19"},
+   {"name": "Example project D", "track": "common-core", "group": "rank-02", "mark": 125, "xp": 2814, "validated": "2025-08-30"},
+   {"name": "Example project E", "track": "common-core", "group": "rank-03", "mark": 100, "xp": 2205, "validated": "2026-01-15"},
+   {"name": "A deliberately long example project name", "track": "common-core", "group": "rank-03", "mark": 115, "xp": 3150, "validated": "2026-03-04"},
+   {"name": "Example project G", "track": "common-core", "group": "rank-04", "mark": 100, "xp": 4410, "validated": "2026-07-21"},
+   {"name": "Example piscine day", "track": "piscine", "group": "piscine", "mark": 80, "xp": 0, "validated": "2024-09-27"},
+   {"name": "Example piscine exam", "track": "piscine", "group": "piscine", "mark": 100, "xp": 0, "validated": "2024-10-04"}
+  ],
+  "in_progress": [
+   {"name": "Example project H", "track": "common-core", "group": "rank-04", "since": "2026-09-01"},
+   {"name": "Example project I", "track": "common-core", "group": "rank-04", "since": "2026-10-12"}
+  ]
+ },
+ "evaluations": {"given": 64, "given_outstanding": 6, "received": 41, "received_outstanding": 9, "received_avg_mark": 103.6}
+}

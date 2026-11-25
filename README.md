@@ -4,7 +4,8 @@ The public CV of Raúl Vázquez Pérez (ravazque), a software developer trained 
 and a page with his 42 progress. Two static pages, in English and Spanish, light and dark, served by GitHub Pages.
 
 - **https://ravazque.github.io**: the CV. Experience, selected projects, education, languages and stack, with a paper
-  look of its own: always light, serif titles, quiet rules and its own icon.
+  look of its own: always light, serif titles, quiet rules and its own icon. On phones the band of links, the name and
+  the headline each keep to one line, scaled to fit, and every entry shows its title above its details.
 - **https://ravazque.github.io/ravazque/**: 42 progress. Level, stage, coalition, projects in progress, skills,
   projects and evaluations, in the look of [ravazque.info](https://github.com/ravazque/ravazque.info), the web app
   that publishes its data.
@@ -25,7 +26,12 @@ contact data, seats, logged hours, ids, tokens, photos or anything about other s
 
 `assets/site.js` draws both pages in the browser: `cv.json` on the first, `data/42.json` on the second (`body[data-page]`).
 It follows the browser's language and remembers the visitor's choice. The CV is always light; the 42 page follows the
-system's theme until the visitor picks one (kept as `theme-42`).
+system's theme until the visitor picks one (kept as `theme-42`). On both pages, "ravazque" and "Raúl" written as words
+link to the CV.
+
+The CV's titles use the system's serif, whose width changes from device to device, so `site.js` measures the name and the
+headline and shrinks their font until each fits on one line. The band's buttons use the shared webfont, the same width
+everywhere, so plain CSS scales them.
 
 | File | What it is |
 |------|------------|
@@ -39,16 +45,33 @@ system's theme until the visitor picks one (kept as `theme-42`).
 | `NASA-2025/`, `NASA-2026/` | Short links that redirect to the Pages of the NASA Space Apps repositories |
 | `build.sh` | Copies what is published into one folder, with the same layout |
 | `tests/` | Tests of the scripts (not published) |
+| `Makefile`, `tools/preview.py` | One-file previews of both pages, see [Preview](#preview) (not published) |
+| `tools/template-cv.json`, `tools/template-42.json` | Example data in the shape of `cv.json` and `data/42.json`, for the previews |
 
 ## Run it locally
 
-You need `sh`, Python 3 and Node.js (for the tests only).
+You need `sh`, `make`, Python 3 and Node.js (for the tests only).
 
 ```sh
 sh build.sh _site
 python3 -m http.server --bind 127.0.0.1 --directory _site 8080   # http://localhost:8080
 node --test tests/*.test.mjs
 ```
+
+## Preview
+
+To see a change before pushing it, without a server:
+
+```sh
+make preview            # preview/cv.html and preview/42.html, with cv.json and data/42.json
+make preview-template   # preview/template/cv.html and 42.html, with the example data in tools/
+make clean              # removes preview/
+```
+
+Each preview is a single HTML file that opens with a double click: `tools/preview.py` inlines the page's styles, fonts,
+scripts, icon and data, and hands `site.js` the data in place of the network. The two previews link to each other.
+`make preview` falls back to the example data for any data file that is missing. `preview/` is ignored by git, and
+`build.sh` doesn't publish `tools/` or the `Makefile`.
 
 ## Deploy
 

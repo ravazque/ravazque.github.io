@@ -1,4 +1,4 @@
-/* CV page. Colours, type, sizes and controls come from ui.css (generated from core's ui.json by build.sh),
+/* Both pages. Colours, type, sizes and controls come from ui.css (written by ravazque.info's make site-sync),
    controls.css and accent.js, shared with the web app. */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -147,7 +147,7 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
   .facts dd { padding-top: 2px; }
   .wide { display: none; }
   .narrow { display: block; font-size: 14px; }
-  .stack div { grid-template-columns: 1fr; gap: 4px; }
+  .stack div { grid-template-columns: 1fr; gap: 6px; }
   .skill-list li { grid-template-columns: minmax(0, 1fr) 3.4em; gap: 6px 12px; }
   .skill-list .seats { grid-column: 1 / -1; grid-row: 2; grid-auto-columns: minmax(0, 1fr); width: 100%; }
   .skill-list .seat { width: 100%; min-width: 0; }
@@ -184,6 +184,7 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
 [data-look="paper"] section { margin-bottom: 56px; }
 [data-look="paper"] h2 { margin-bottom: 20px; padding-bottom: 8px; font: 700 17px/1.2 var(--serif); letter-spacing: .14em; text-transform: uppercase; }
 [data-look="paper"] h3 { font: 700 20px/1.3 var(--serif); }
+[data-look="paper"] .entry h3 { text-wrap: balance; }
 [data-look="paper"] .now h3 { font: italic 400 17px/1.3 var(--serif); }
 [data-look="paper"] .island { border-top: 1px solid var(--rule); padding-top: 16px; }
 [data-look="paper"] .entries { gap: 24px; }
@@ -205,4 +206,14 @@ tbody.group .count { color: var(--muted); font-weight: 600; margin-left: 6px; }
 .seg-links a:hover { background: var(--on-accent); color: var(--accent); }
 .seg-links a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 [data-look="paper"] .entries > .entry:first-child, [data-look="paper"] .entries.two > .entry:nth-child(2) { border-top: 0; padding-top: 0; }
-@media (max-width: 799.98px) { .entries.two { grid-template-columns: 1fr; } [data-look="paper"] .entries.two > .entry:nth-child(2) { border-top: 1px solid var(--rule); padding-top: 16px; } }
+@media (max-width: 799.98px) { .entries.two { grid-template-columns: 1fr; } .entry header { flex-direction: column; } [data-look="paper"] .entries.two > .entry:nth-child(2) { border-top: 1px solid var(--rule); padding-top: 16px; } }
+.one-line { white-space: nowrap; }
+[data-look="paper"] .controls-band { margin-left: auto; }
+/* phones: the CV's band keeps to one row, its buttons scaled with the width (their font is the shared webfont, the same width
+   on every device) */
+@media (max-width: 599.98px) {
+  [data-look="paper"] .cv-band, [data-look="paper"] .seg-links { flex-wrap: nowrap; }
+  [data-look="paper"] .cv-band { column-gap: clamp(4px, 2vw, 32px); }
+  [data-look="paper"] .seg-links { gap: clamp(3px, 1.4vw, 8px); }
+  [data-look="paper"] .seg-links a, [data-look="paper"] .seg-band button { padding: 0 clamp(4px, 1.9vw, 14px); font-size: clamp(10px, 3.6vw, 15px); white-space: nowrap; }
+}

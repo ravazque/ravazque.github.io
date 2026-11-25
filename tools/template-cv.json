@@ -1,0 +1,93 @@
+{
+ "_note": "Example data for `make preview-template` (and `make preview` when cv.json is missing), in the shape of cv.json. `name` replaces the name written in index.html, in the preview only.",
+ "name": "Alex Example Sample",
+ "headline": {
+  "en": "Data Engineer & Software Developer",
+  "es": "Data Engineer y desarrollador de software"
+ },
+ "about": {
+  "en": "Example profile: a software developer who builds data pipelines and the services around them, from the database schema to deployment. This paragraph is placeholder text of a realistic length.",
+  "es": "Perfil de ejemplo: un desarrollador de software que construye pipelines de datos y los servicios que los rodean, del esquema de la base de datos al despliegue. Este párrafo es texto de relleno de una longitud realista."
+ },
+ "now": {
+  "en": "Example: preparing a certification in data architecture.",
+  "es": "Ejemplo: preparando una certificación en arquitectura de datos."
+ },
+ "experience": [
+  {
+   "year": "2026",
+   "role": {"en": "Data platform engineer with a deliberately long role title", "es": "Ingeniero de plataforma de datos con un título de puesto deliberadamente largo"},
+   "kind": {"en": "Internship", "es": "Prácticas"},
+   "text": {
+    "en": "Built example ingestion jobs in Python, modelled their tables in PostgreSQL and scheduled them in containers through CI/CD.",
+    "es": "Construí procesos de ingesta de ejemplo en Python, modelé sus tablas en PostgreSQL y los programé en contenedores con CI/CD."
+   },
+   "stack": ["Python", "PostgreSQL", "Docker", "GitHub Actions"]
+  },
+  {
+   "year": "2025",
+   "role": {"en": "Web developer", "es": "Desarrollador web"},
+   "kind": {"en": "Freelance", "es": "Freelance"},
+   "text": {
+    "en": "Made an example booking site for a small client, from the database to the screen.",
+    "es": "Hice una web de reservas de ejemplo para un cliente pequeño, de la base de datos a la pantalla."
+   },
+   "stack": ["TypeScript", "Nuxt", "Prisma"]
+  }
+ ],
+ "projects": [
+  {
+   "name": "Example Pipeline",
+   "text": {
+    "en": "An example project: cleans a public dataset, loads it into a warehouse and charts it.",
+    "es": "Un proyecto de ejemplo: limpia un conjunto de datos público, lo carga en un almacén y lo representa."
+   },
+   "keywords": ["Python", "pandas", "SQL", "Data visualisation"],
+   "url": "https://example.com/",
+   "repo": "https://example.com/"
+  },
+  {
+   "name": "A much longer example project name",
+   "where": {"en": "Personal project", "es": "Proyecto personal"},
+   "text": {
+    "en": "A second example, with a long name and its own place, to see how the heads wrap.",
+    "es": "Un segundo ejemplo, con un nombre largo y su propio lugar, para ver cómo se parten las cabeceras."
+   },
+   "keywords": ["Kubernetes", "Argo CD", "GitOps"]
+  }
+ ],
+ "education": [
+  {
+   "years": "2024 – 2028",
+   "where": "Example School · Level 7",
+   "title": {"en": "Software Engineering and Master's in Data", "es": "Ingeniería de software y máster en datos"},
+   "text": {
+    "en": "Example text: software engineering and a master's in databases, data science and machine learning.",
+    "es": "Texto de ejemplo: ingeniería de software y un máster en bases de datos, ciencia de datos y machine learning."
+   }
+  },
+  {
+   "years": "2023 – 2026",
+   "where": "Example High School",
+   "title": {"en": "Science and Technology Baccalaureate", "es": "Bachillerato de Ciencias y Tecnología"},
+   "text": {
+    "en": "Example text: a grounding in science, technology and the scientific method.",
+    "es": "Texto de ejemplo: base en ciencia, tecnología y método científico."
+   }
+  }
+ ],
+ "languages": [
+  {"name": {"en": "Spanish", "es": "Español"}, "level": {"en": "native", "es": "nativo"}},
+  {"name": {"en": "English", "es": "Inglés"}, "level": {"en": "B2", "es": "B2"}}
+ ],
+ "stack": [
+  {"group": {"en": "Languages", "es": "Lenguajes"}, "items": ["SQL", "Python", "TypeScript", "Bash"]},
+  {"group": {"en": "Data", "es": "Datos"}, "items": ["PostgreSQL", "pandas", "NumPy"]},
+  {"group": {"en": "Infrastructure & DevOps", "es": "Infraestructura y DevOps"}, "items": ["Docker", "Kubernetes", "CI/CD"]}
+ ],
+ "links": [
+  {"label": "GitHub", "icon": "github", "url": "https://example.com/"},
+  {"label": "LinkedIn", "icon": "linkedin", "url": "https://example.com/"},
+  {"label": "42 intra", "icon": "intra", "url": "https://example.com/"}
+ ]
+}
